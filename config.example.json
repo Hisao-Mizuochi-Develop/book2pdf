@@ -1,0 +1,43 @@
+{
+  "capture": {
+    "active_profile": "kindle",
+    "profiles": {
+      "kindle": {
+        "name": "Kindle for PC",
+        "window_title_keyword": "kindle",
+        "page_turn_key": "right",
+        "fullscreen_wait": 5,
+        "page_wait": 0.15,
+        "boundary_method": "full",
+        "click_position": "top_left",
+        "use_bring_to_top": false,
+        "timeout_seconds": 5.0,
+        "max_retries": 3
+      },
+      "google_play": {
+        "name": "Google Play ブックス",
+        "window_title_keyword": "Google Play ブックス",
+        "page_turn_key": "right",
+        "fullscreen_wait": 5,
+        "page_wait": 5.0,
+        "boundary_method": "full",
+        "click_position": "center",
+        "use_bring_to_top": true,
+        "timeout_seconds": 5.0,
+        "max_retries": 3
+      }
+    }
+  },
+  "trim": {
+    "left_margin": 0,
+    "right_margin": 0,
+    "top_margin": 0,
+    "bottom_margin": 0
+  },
+  "ocr": {
+    "reflow_paragraphs": true
+  },
+  "general": {
+    "default_save_folder": ""
+  }
+}
