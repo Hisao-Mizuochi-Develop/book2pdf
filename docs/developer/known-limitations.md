@@ -23,13 +23,13 @@
 
 - **NDLOCR-LiteはCPU実行**: GPUを使わないため、ページ数が多いと変換に
   時間がかかります（M-series Mac実測で1ページあたり約15〜20秒）。
-- **前処理のデフォルト値はKindle基準**: `upscale=1.5`, `enhance_contrast=True`
-  はKindleのアンチエイリアス文字を想定した既定値です。他アプリ・他解像度では
+- **前処理のデフォルト値は電子書籍基準**: `upscale=1.5`, `enhance_contrast=True`
+  は電子書籍のアンチエイリアス文字を想定した既定値です。他アプリ・他解像度では
   最適値が異なる可能性があります。
 
 ## 対応アプリ
 
-- 実機検証済みなのは **Amazon Kindle (Mac)** のみです。`google_play` /
+- 実機検証済みなのは **電子書籍 (Mac)** のみです。`google_play` /
   `rakuten_kobo` / `bookwalker` / `dmm_books` / `kinoppy` の各ビルトイン
   プロファイルはWindows版からの移植で、macOS上でのウィンドウタイトル・
   プロセス名が一致するかは未確認です。

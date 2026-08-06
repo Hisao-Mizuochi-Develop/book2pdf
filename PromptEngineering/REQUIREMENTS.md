@@ -55,7 +55,7 @@ book2pdf が満たすべき全機能要件です。`PROMPT.md` から参照さ�
 
 | キー | アプリ | ウィンドウタイトルキーワード |
 |------|--------|---------------------------|
-| `kindle` | Kindle (Windows: Kindle for PC / macOS: Amazon Kindle) | `kindle` |
+| `kindle` | 電子書籍 (Windows: 電子書籍 / macOS: 電子書籍) | `kindle` |
 | `google_play` | Google Play ブックス | `Google Play ブックス` |
 
 ### キャプチャアルゴリズム（必須要件）

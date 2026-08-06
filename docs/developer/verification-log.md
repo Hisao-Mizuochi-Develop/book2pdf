@@ -21,27 +21,27 @@ macOS移植作業中に実施した動作確認の記録です。実行環境は
 - `PIL.ImageGrab.grab(bbox=(0,0,400,300))`: `(400, 300)` — bbox値がそのまま
   出力ピクセル数になることを確認（ポイント座標とスクリーンショット座標系が
   一致し、追加のスケール変換が不要と判明）
-- 実際にKindleウィンドウを `find_window('kindle', process_name='Kindle.exe')`
+- 実際に電子書籍ウィンドウを `find_window('kindle', process_name='Kindle.exe')`
   で検出 → `get_window_rect()` で座標取得 → `activate_window()` で前面化 →
   `_grab()` で実際のページ内容（書籍本文）が正しく撮影できることを確認
 
 ## 自動キャプチャ（ページめくり）
 
-- `pyautogui.keyDown('right')` / `keyUp('right')` でKindleの実際のページが
+- `pyautogui.keyDown('right')` / `keyUp('right')` で電子書籍の実際のページが
   遷移することを、撮影前後の画像差分で確認
 - `CaptureEngine` を使った6ページ連続自動キャプチャを複数回実施し、いずれも
   ページ番号が正しく進行すること（616→619ページ等）を撮影画像で目視確認
 
 ## 発見した不具合と再現・修正確認
 
-1. **無関係ウィンドウの誤検出**: Kindleが閉じている状態で
+1. **無関係ウィンドウの誤検出**: 電子書籍アプリが閉じている状態で
    `find_window('kindle', process_name='Kindle.exe')` が、作業ディレクトリ名に
-   "kindle" を含むターミナルウィンドウ（`book2pdf_mac — -zsh...`）を誤って
+   "電子書籍" を含むターミナルウィンドウ（`book2pdf_mac — -zsh...`）を誤って
    返すことを確認 → プロセス名指定時はフォールバックしない仕様に修正 → 同条件で
    `None` が返ることを確認
 2. **信号機ボタンの誤クリック**: `activate_window(click_position='top_left')`
    のクリック座標 `(left+60, top+10)` が実際にmacOSの信号機ボタン付近であり、
-   これが原因でKindleが独立フルスクリーンSpaceへ切り替わる（`kCGWindowBounds`
+   これが原因で電子書籍アプリが独立フルスクリーンSpaceへ切り替わる（`kCGWindowBounds`
    が `Y=0, Height=1050`＝メニューバー分の考慮なしに変化）ことを、実際に
    発生させて確認 → クリック処理を撤廃 → 6ページ連続キャプチャが安定して
    成功することを再確認
@@ -59,12 +59,12 @@ macOS移植作業中に実施した動作確認の記録です。実行環境は
 - `git clone` + `pip install -r ndlocr-lite/requirements.txt` は
   Apple Silicon向けの `onnxruntime==1.23.2`（`sys_platform == "darwin"` 条件）
   により無修正でインストール成功
-- 実際にKindleキャプチャ画像に対して `ocr_engine.process_single()` を実行し、
+- 実際に電子書籍キャプチャ画像に対して `ocr_engine.process_single()` を実行し、
   約17秒/枚で本文テキストが概ね正しく抽出されることを確認
 
 ## PDF生成（画像+テキストPDF, 新機能）
 
-- 6ページのKindleキャプチャ画像 → OCR → `images_with_text_pdf()` で
+- 6ページの電子書籍キャプチャ画像 → OCR → `images_with_text_pdf()` で
   15ページのPDF（一部ページのOCRテキストが1ページに収まらず自動改ページ）を生成
 - `pypdfium2` でPDFの各ページをレンダリングし、「画像ページ→同じページの
   テキストページ→次の画像ページ→…」の順序が期待通りであることを目視確認
@@ -73,4 +73,4 @@ macOS移植作業中に実施した動作確認の記録です。実行環境は
 
 - PyInstaller等によるスタンドアロン `.app` 化（venvベースの起動のみ検証）
 - Intel Mac、マルチディスプレイ環境
-- Kindle以外のビルトインプロファイル（google_play等）の実アプリでの動作
+- 電子書籍以外のビルトインプロファイル（google_play等）の実アプリでの動作

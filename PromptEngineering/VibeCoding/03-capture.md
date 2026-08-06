@@ -37,7 +37,7 @@ class CaptureProfile:
 
 | キー | 名称 | ウィンドウタイトルキーワード |
 |------|------|---------------------------|
-| `kindle` | Kindle | `kindle` |
+| `kindle` | 電子書籍 | `kindle` |
 | `google_play` | Google Play ブックス | `Google Play ブックス` |
 
 カスタムプロファイルは `config.json` の `capture.profiles` に保存できる。

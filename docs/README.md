@@ -13,7 +13,7 @@
 | [quickstart.md](user/quickstart.md) | キャプチャ→トリミング→変換の最短手順 |
 | [tabs-reference.md](user/tabs-reference.md) | 4タブそれぞれの設定項目リファレンス |
 | [output-formats.md](user/output-formats.md) | 5つの出力形式の比較と選び方 |
-| [custom-profiles.md](user/custom-profiles.md) | Kindle以外のアプリ用プロファイルの作り方 |
+| [custom-profiles.md](user/custom-profiles.md) | 電子書籍以外のアプリ用プロファイルの作り方 |
 | [permissions.md](user/permissions.md) | 画面収録・アクセシビリティ権限の許可手順 |
 | [troubleshooting.md](user/troubleshooting.md) | 実際に発生した不具合と対処法のFAQ |
 
