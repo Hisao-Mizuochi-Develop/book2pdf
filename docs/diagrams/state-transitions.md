@@ -4,7 +4,7 @@
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle: アプリ起動 (KindleShotApp)
+    [*] --> Idle: アプリ起動 (BookCaptureApp)
 
     state "キャプチャタブ" as Capture
     state "PDF読込タブ" as PdfLoad
@@ -36,6 +36,6 @@ stateDiagram-v2
   `trim_complete` でも自分の入力フォルダ欄を更新します（`ui/convert_tab.py`
   の `_on_state_change()`）
 - 状態は `AppState` インスタンス1つがアプリ全体で共有されます
-  （`ui/main_window.py` の `KindleShotApp.__init__` で生成し、各タブの
+  （`ui/main_window.py` の `BookCaptureApp.__init__` で生成し、各タブの
   コンストラクタに渡すだけ）。永続化はされず、アプリ終了で失われます
   （永続化されるのは `config.json` に保存される設定値のみ）

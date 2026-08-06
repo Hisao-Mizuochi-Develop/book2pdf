@@ -1,10 +1,10 @@
 # 依存を変更したら uv で requirements.txt を再生成する:
-#   kindle_env\Scripts\uv.exe pip compile pyproject.toml -o requirements.txt
+#   book_env\Scripts\uv.exe pip compile pyproject.toml -o requirements.txt
 # requirements.txt が source of install (setup.bat / pip install -r が読む)、
 # pyproject.toml が source of truth (人間が編集する)。
 
 [project]
-name = "kindle2pdf"
+name = "book2pdf"
 version = "0.1.0"
 description = "電子書籍のスクリーンキャプチャ・PDF読込・トリミング・PDF変換・OCR統合ツール (macOS版)"
 readme = "README.md"
@@ -41,8 +41,8 @@ target-version = "py311"
 line-length = 100
 
 extend-exclude = [
-    "kindle_env",
-    "kindle_env.bak",
+    "book_env",
+    "book_env.bak",
     "python_runtime",
     "ndlocr-lite",
     "__pycache__",

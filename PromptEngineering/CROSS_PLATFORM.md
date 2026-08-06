@@ -1,6 +1,6 @@
 # CROSS_PLATFORM.md — Windows/macOS抽象化レイヤー設計
 
-kindle2pdf は Windows と macOS の両方で動作しなければならない。
+book2pdf は Windows と macOS の両方で動作しなければならない。
 「まずWindowsで作り、後でmacOS対応する」進め方は禁止する。最初から
 以下の抽象化を前提に設計・実装すること。
 

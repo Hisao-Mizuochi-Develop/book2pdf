@@ -46,57 +46,65 @@ class CaptureTab(ctk.CTkFrame):
 
         row0 = ctk.CTkFrame(profile_frame.body, fg_color="transparent")
         row0.pack(fill="x", padx=5, pady=5)
+        row0.grid_columnconfigure(1, weight=1)
 
         self.profile_var = tk.StringVar(
             value=self.config["capture"].get("active_profile", "kindle")
         )
         profile_keys = get_all_profile_keys(self.config)
 
-        ctk.CTkLabel(row0, text="アプリ:").pack(side="left", padx=5)
+        ctk.CTkLabel(row0, text="アプリ:").grid(row=0, column=0, padx=5, pady=3, sticky="e")
+
+        self.profile_info = tk.StringVar(value="")
+        profile_inner = ctk.CTkFrame(row0, fg_color="transparent")
+        profile_inner.grid(row=0, column=1, padx=5, pady=3, sticky="w")
         self.profile_combo = ctk.CTkComboBox(
-            row0, variable=self.profile_var,
+            profile_inner, variable=self.profile_var,
             values=profile_keys, state="readonly", width=180,
             command=self._on_profile_changed,
         )
         self.profile_combo.pack(side="left", padx=5)
+        ctk.CTkLabel(profile_inner, textvariable=self.profile_info).pack(side="left", padx=5)
 
-        self.profile_info = tk.StringVar(value="")
-        ctk.CTkLabel(row0, textvariable=self.profile_info).pack(side="left", padx=10)
-
-        ctk.CTkLabel(row0, text="ページめくり:").pack(side="left", padx=(20, 5))
+        ctk.CTkLabel(row0, text="ページめくり:").grid(row=0, column=2, padx=(20, 5), pady=3, sticky="e")
         self.page_turn_var = tk.StringVar(value="right")
-        ctk.CTkRadioButton(row0, text="→ 右 (通常)", variable=self.page_turn_var, value="right").pack(side="left", padx=3)
-        ctk.CTkRadioButton(row0, text="← 左 (漫画)", variable=self.page_turn_var, value="left").pack(side="left", padx=3)
+        page_turn_frame = ctk.CTkFrame(row0, fg_color="transparent")
+        page_turn_frame.grid(row=0, column=3, padx=5, pady=3, sticky="w")
+        ctk.CTkRadioButton(page_turn_frame, text="→ 右 (通常)", variable=self.page_turn_var, value="right").pack(side="left", padx=3)
+        ctk.CTkRadioButton(page_turn_frame, text="← 左 (漫画)", variable=self.page_turn_var, value="left").pack(side="left", padx=3)
 
-        # 待機時間（page_wait）入力 — 詳細設定にも同じ変数を共有
-        ctk.CTkLabel(row0, text="待機時間(秒):").pack(side="left", padx=(20, 5))
-        self.page_wait_var = tk.StringVar(value="0.15")
-        page_wait_entry = ctk.CTkEntry(row0, textvariable=self.page_wait_var, width=70)
-        page_wait_entry.pack(side="left", padx=3)
-        Tooltip(
-            page_wait_entry,
-            self._build_page_wait_tooltip(),
-        )
-
-        # --- 開始位置 (先頭ページから / 現在ページから) ---
+        # --- 開始位置 + 待機時間（下段） ---
         row1 = ctk.CTkFrame(profile_frame.body, fg_color="transparent")
         row1.pack(fill="x", padx=5, pady=(0, 5))
+        row1.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(row1, text="開始位置:").pack(side="left", padx=5)
+        ctk.CTkLabel(row1, text="開始位置:").grid(row=0, column=0, padx=5, pady=3, sticky="e")
+        start_pos_frame = ctk.CTkFrame(row1, fg_color="transparent")
+        start_pos_frame.grid(row=0, column=1, padx=5, pady=3, sticky="w")
         self.start_position_var = tk.StringVar(value="beginning")
-        ctk.CTkSegmentedButton(
-            row1,
-            values=["先頭ページから", "現在ページから"],
-            command=lambda v: self.start_position_var.set(
-                "beginning" if v == "先頭ページから" else "current"
-            ),
-            width=240,
-        ).pack(side="left", padx=3)
+        start_pos_begin_rb = ctk.CTkRadioButton(
+            start_pos_frame, text="先頭ページから", variable=self.start_position_var, value="beginning"
+        )
+        start_pos_begin_rb.pack(side="left", padx=3)
+        start_pos_current_rb = ctk.CTkRadioButton(
+            start_pos_frame, text="現在ページから", variable=self.start_position_var, value="current"
+        )
+        start_pos_current_rb.pack(side="left", padx=3)
         Tooltip(
-            row1,
+            start_pos_current_rb,
             "「先頭ページから」を選ぶと、キャプチャ開始前に本を先頭ページまで自動で"
             "戻してから撮影を始めます（本の長さによっては時間がかかります）。\n"
             "「現在ページから」は今表示しているページからそのまま撮影します。",
+        )
+
+        # 待機時間（page_wait）入力 — 詳細設定にも同じ変数を共有
+        ctk.CTkLabel(row1, text="待機時間(秒):").grid(row=0, column=2, padx=(20, 5), pady=3, sticky="e")
+        self.page_wait_var = tk.StringVar(value="0.15")
+        page_wait_entry = ctk.CTkEntry(row1, textvariable=self.page_wait_var, width=70)
+        page_wait_entry.grid(row=0, column=3, padx=5, pady=3, sticky="w")
+        Tooltip(
+            page_wait_entry,
+            self._build_page_wait_tooltip(),
         )
 
         self._on_profile_changed()

@@ -1,4 +1,4 @@
-"""kindle2pdf — 電子書籍キャプチャツール
+"""book2pdf — 電子書籍キャプチャツール
 
 電子書籍のスクリーンキャプチャ・トリミング・PDF変換・OCRを
 タブベースGUIで操作できる統合ツール。
@@ -10,7 +10,7 @@ import customtkinter as ctk
 import darkdetect
 from PIL import Image
 
-from ui.main_window import KindleShotApp
+from ui.main_window import BookCaptureApp
 
 Image.MAX_IMAGE_PIXELS = 200_000_000
 
@@ -34,7 +34,7 @@ def main():
     ctk.set_appearance_mode(theme)
     ctk.set_default_color_theme("dark-blue")
 
-    app = KindleShotApp()
+    app = BookCaptureApp()
     app.mainloop()
 
 

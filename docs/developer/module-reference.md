@@ -100,7 +100,7 @@ Quartz / AppKit によるウィンドウ検出・前面化。
 
 | ファイル | 役割 |
 |---------|------|
-| `main_window.py` | `KindleShotApp`（`ctk.CTk`サブクラス）。4タブを生成し `AppState`/`config` を配布 |
+| `main_window.py` | `BookCaptureApp`（`ctk.CTk`サブクラス）。4タブを生成し `AppState`/`config` を配布 |
 | `state.py` | `AppState`（タブ間イベント通知） |
 | `widgets.py` | `Tooltip`, `LabeledFrame`（`ttk.LabelFrame` 相当をcustomtkinterで自作） |
 | `capture_tab.py` | キャプチャタブ。`CaptureEngine` を生成し、進捗をUIスレッドに `root.after()` で反映 |

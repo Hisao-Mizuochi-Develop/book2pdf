@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 import customtkinter as ctk
-from ui.main_window import KindleShotApp
+from ui.main_window import BookCaptureApp
 
 
 def test_ctk_appearance_mode():
@@ -17,5 +17,5 @@ def test_ctk_color_theme():
 
 
 #def test_app_instantiation():
-#    app_instance = KindleShotApp()
+#    app_instance = BookCaptureApp()
 #    assert app_instance is not None

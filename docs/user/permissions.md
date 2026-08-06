@@ -1,6 +1,6 @@
 # macOSの権限設定ガイド
 
-kindle2pdf のキャプチャ機能は、macOSのプライバシー保護機能により
+book2pdf のキャプチャ機能は、macOSのプライバシー保護機能により
 2つの権限を必要とします。**どちらもアプリを起動している実体
 （ターミナル、または将来 .app 化した場合はそのアプリ）に対して許可します。**
 
@@ -14,10 +14,10 @@ kindle2pdf のキャプチャ機能は、macOSのプライバシー保護機能�
 
 許可手順:
 1. システム設定 > プライバシーとセキュリティ > **画面収録**
-2. kindle2pdf を起動しているアプリ（例: ターミナル、iTerm2など）にチェックを入れる
+2. book2pdf を起動しているアプリ（例: ターミナル、iTerm2など）にチェックを入れる
 3. 反映されない場合はそのアプリを再起動する
 
-kindle2pdf は起動時に権限を自動チェックし、なければキャプチャを開始せずに
+book2pdf は起動時に権限を自動チェックし、なければキャプチャを開始せずに
 エラーメッセージで案内します（`core/capture_engine.py` の
 `has_screen_recording_access()`）。
 
@@ -31,14 +31,14 @@ kindle2pdf は起動時に権限を自動チェックし、なければキャプ
 
 許可手順:
 1. システム設定 > プライバシーとセキュリティ > **アクセシビリティ**
-2. kindle2pdf を起動しているアプリにチェックを入れる
+2. book2pdf を起動しているアプリにチェックを入れる
 
 こちらも起動時に自動チェックされ、権限がなければ明確なエラーメッセージで
 案内されます（`has_accessibility_access()`）。
 
 ## なぜ「ターミナルに許可」なのか
 
-kindle2pdf は Python スクリプトとして起動するため、macOSのTCC
+book2pdf は Python スクリプトとして起動するため、macOSのTCC
 （透過性・同意・制御）機構は「実際に画面を操作しているプロセス」ではなく、
 それを起動したホストアプリ（ターミナルなど）に対して許可を要求します。
 別のターミナルアプリ（例: Terminal.app → iTerm2、VS Code統合ターミナルなど）
@@ -49,7 +49,7 @@ kindle2pdf は Python スクリプトとして起動するため、macOSのTCC
 以下のワンライナーで現在の権限状態を確認できます。
 
 ```bash
-kindle_env/bin/python3 -c "
+book_env/bin/python3 -c "
 from core.window_utils import has_screen_recording_access, has_accessibility_access
 print('画面収録:', has_screen_recording_access())
 print('アクセシビリティ:', has_accessibility_access())

@@ -14,12 +14,12 @@ from ui.state import AppState
 from ui.trim_tab import TrimTab
 
 
-class KindleShotApp(ctk.CTk):
+class BookCaptureApp(ctk.CTk):
     """メインアプリケーションウィンドウ"""
 
     def __init__(self):
         super().__init__()
-        self.title("kindle2pdf — 電子書籍キャプチャ・OCRツール")
+        self.title("book2pdf — 電子書籍キャプチャ・OCRツール")
         self.geometry("1024x920")
 
         self.config_data = load_config()

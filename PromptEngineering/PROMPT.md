@@ -1,6 +1,6 @@
-# PROMPT.md — kindle2pdf ゼロからの実装指示
+# PROMPT.md — book2pdf ゼロからの実装指示
 
-あなたはClaude Codeです。以下の指示に従い、kindle2pdf をゼロから実装してください。
+あなたはClaude Codeです。以下の指示に従い、book2pdf をゼロから実装してください。
 このディレクトリ（`PromptEngineering/`）には、あなたが従うべき詳細ドキュメントが
 揃っています。**実装を始める前に、必ず以下の順序で全ファイルを読み込んでください。**
 

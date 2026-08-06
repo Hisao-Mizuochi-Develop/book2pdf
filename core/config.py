@@ -7,8 +7,32 @@ config.json の読み書きを行い、アプリケーション全体の設定�
 import copy
 import json
 import os
+import sys
 
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+def _get_config_dir():
+    """ユーザー書き込み可能な設定ディレクトリを返す。
+
+    通常実行時はリポジトリ直下、PyInstaller 凍結時は
+    ~/Library/Application Support/book2pdf/（macOS）を使用する。
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        # macOS 以外のフォールバックとして XDG_CONFIG_HOME も考慮
+        home = os.path.expanduser("~")
+        if sys.platform == "darwin":
+            config_dir = os.path.join(home, "Library", "Application Support", "book2pdf")
+        else:
+            config_dir = os.path.join(
+                os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config"),
+                "book2pdf",
+            )
+        os.makedirs(config_dir, exist_ok=True)
+        return config_dir
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+CONFIG_DIR = _get_config_dir()
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 
 DEFAULT_CONFIG = {
     "capture": {

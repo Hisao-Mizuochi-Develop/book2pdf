@@ -38,7 +38,7 @@ class AppState:
 | `capture_complete` | CaptureTab, PdfLoadTab | 出力フォルダをトリミングタブ・変換タブへ伝搬 |
 | `trim_complete` | TrimTab | 出力フォルダを変換タブへ伝搬 |
 
-`ui/main_window.py` の `KindleShotApp` が4タブを生成し、共通の `AppState` と
+`ui/main_window.py` の `BookCaptureApp` が4タブを生成し、共通の `AppState` と
 `config_data`（`core/config.py` からロードした dict）を全タブに配って回るだけの
 薄いコンテナになっています。
 

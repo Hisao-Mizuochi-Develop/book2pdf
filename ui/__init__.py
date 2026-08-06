@@ -1,1 +1,1 @@
-"""kindle2pdf UI パッケージ"""
+"""book2pdf UI パッケージ"""

@@ -2,7 +2,7 @@
 
 ## 通信・データ送信について
 
-kindle2pdf は**外部ネットワーク通信を行いません**。すべての処理（画面キャプチャ・
+book2pdf は**外部ネットワーク通信を行いません**。すべての処理（画面キャプチャ・
 画像トリミング・OCR・PDF/Markdown生成）はローカルマシン上で完結します。
 
 - OCRエンジン（NDLOCR-Lite）はクラウドAPIではなく、ローカルにインストールした
@@ -17,7 +17,7 @@ GitHubから取得する操作（`https://github.com/ndl-lab/ndlocr-lite.git`）
 
 ## macOSのプライバシー権限が必要な理由
 
-kindle2pdf は以下の2つの権限を要求します。詳細は
+book2pdf は以下の2つの権限を要求します。詳細は
 [../user/permissions.md](../user/permissions.md) を参照してください。
 
 | 権限 | 用途 | 範囲 |

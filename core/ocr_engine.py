@@ -102,7 +102,10 @@ class NDLOCREngine:
             ndlocr_dir = self._find_dir()
             if not ndlocr_dir:
                 raise RuntimeError("ndlocr-lite が見つかりません")
-            cmd = [sys.executable, os.path.join(ndlocr_dir, "src", "ocr.py")]
+            # PyInstaller 凍結環境では sys.executable が凍結バイナリ自身になる
+            # その場合はシステムの python3 を探して使う
+            python_exe = self._get_python_executable()
+            cmd = [python_exe, os.path.join(ndlocr_dir, "src", "ocr.py")]
 
         if os.path.isdir(input_path):
             cmd.extend(["--sourcedir", input_path])
@@ -110,6 +113,22 @@ class NDLOCREngine:
             cmd.extend(["--sourceimg", input_path])
         cmd.extend(["--output", output_dir])
         return cmd
+
+    def _get_python_executable(self):
+        """PyInstaller 凍結環境で sys.executable が凍結バイナリになった場合の回避。"""
+        if getattr(sys, "frozen", False):
+            # 凍結中 → システムの python3 を探す
+            found = shutil.which("python3")
+            if found:
+                return found
+            # /usr/bin/python3 は macOS に同梱されている
+            if os.path.exists("/usr/bin/python3"):
+                return "/usr/bin/python3"
+            raise RuntimeError(
+                "PyInstaller 凍結環境でシステムの python3 が見つかりません。"
+                "NDLOCR-Lite を使用するには /usr/bin/python3 が必要です。"
+            )
+        return sys.executable
 
     def _collect_text(self, output_dir):
         # NDLOCR-Lite は同じ内容を .txt / .json / .xml で出力するため

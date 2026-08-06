@@ -3,40 +3,40 @@
 chardet==7.4.3
     # via reportlab
 customtkinter==5.2.2
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 darkdetect==0.8.0
     # via customtkinter
 mouseinfo==0.1.3
     # via pyautogui
 numpy==2.2.2
     # via
-    #   kindle-shot (pyproject.toml)
+    #   book2pdf (pyproject.toml)
     #   opencv-python
 opencv-python==4.13.0.92
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 packaging==26.2
     # via customtkinter
 pillow==12.1.1
     # via
-    #   kindle-shot (pyproject.toml)
+    #   book2pdf (pyproject.toml)
     #   pyscreeze
     #   reportlab
 pyautogui==0.9.54
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
 pymsgbox==2.0.1
     # via pyautogui
 pyobjc-core
-    # via kindle-shot (pyproject.toml), pyautogui (macOS)
+    # via book2pdf (pyproject.toml), pyautogui (macOS)
 pyobjc-framework-quartz
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 pyobjc-framework-cocoa
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 pyobjc-framework-applicationservices
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 pypdfium2==4.30.0
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)
 pyperclip==1.11.0
     # via mouseinfo
 pyrect==0.2.0
@@ -48,4 +48,4 @@ pytest>=9.0
 pytweening==1.2.0
     # via pyautogui
 reportlab==4.2.5
-    # via kindle-shot (pyproject.toml)
+    # via book2pdf (pyproject.toml)

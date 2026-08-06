@@ -43,7 +43,7 @@ macOS版の `find_window()` は、**プロセス名を指定した場合、そ�
 macOS上でのアプリのプロセス名（OwnerName）は、以下のワンライナーで一覧できます。
 
 ```bash
-kindle_env/bin/python3 -c "
+book_env/bin/python3 -c "
 import Quartz
 opts = Quartz.kCGWindowListOptionOnScreenOnly | Quartz.kCGWindowListExcludeDesktopElements
 for w in Quartz.CGWindowListCopyWindowInfo(opts, Quartz.kCGNullWindowID):

@@ -1,6 +1,6 @@
 # セットアップ（macOS版）
 
-kindle2pdf を Apple Silicon Mac（M1/M2/M3等）で動かすためのセットアップ手順です。
+book2pdf を Apple Silicon Mac（M1/M2/M3等）で動かすためのセットアップ手順です。
 
 ## 必要なもの
 
@@ -24,10 +24,10 @@ brew install python-tk@3.12
 ## 2. 仮想環境を作成し依存パッケージをインストール
 
 ```bash
-cd kindle2pdf_mac
-/opt/homebrew/bin/python3.12 -m venv kindle_env
-kindle_env/bin/pip install --upgrade pip
-kindle_env/bin/pip install -r requirements.txt
+cd book2pdf_mac
+/opt/homebrew/bin/python3.12 -m venv book_env
+book_env/bin/pip install --upgrade pip
+book_env/bin/pip install -r requirements.txt
 ```
 
 macOS版では、Windows版の `pywin32` 系の代わりに以下が入ります。
@@ -44,7 +44,7 @@ macOS版では、Windows版の `pywin32` 系の代わりに以下が入ります
 
 ```bash
 git clone https://github.com/ndl-lab/ndlocr-lite.git
-kindle_env/bin/pip install -r ndlocr-lite/requirements.txt
+book_env/bin/pip install -r ndlocr-lite/requirements.txt
 ```
 
 NDLOCR-Lite の `requirements.txt` はすでに macOS（Apple Silicon）向けの
@@ -54,7 +54,7 @@ GPUは不要で、CPU（onnxruntime）で動作します。
 ## 4. 起動
 
 ```bash
-kindle_env/bin/python3 app.py
+book_env/bin/python3 app.py
 ```
 
 詳しい操作手順は [quickstart.md](quickstart.md) を、必要な権限については

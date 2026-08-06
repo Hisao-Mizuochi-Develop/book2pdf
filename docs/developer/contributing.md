@@ -5,14 +5,14 @@
 `pyproject.toml` に `ruff` の設定があります。
 
 ```bash
-kindle_env/bin/pip install ruff
-kindle_env/bin/ruff check .
-kindle_env/bin/ruff format .
+book_env/bin/pip install ruff
+book_env/bin/ruff check .
+book_env/bin/ruff format .
 ```
 
 - `target-version = "py311"`, `line-length = 100`
 - 有効ルール: `E`, `F`, `W`, `I`（isort）, `UP`（pyupgrade）, `B`（bugbear）, `SIM`
-- `kindle_env`, `ndlocr-lite`, `__pycache__` は対象外
+- `book_env`, `ndlocr-lite`, `__pycache__` は対象外
 - クオートはダブルクオート、インデントはスペース
 
 このプロジェクト全体の方針として、コメントは「なぜそうしたか」を書き、
@@ -65,7 +65,7 @@ GUIをただ起動するだけでなく、`core/` の関数を直接スクリプ
 [verification-log.md](verification-log.md) に実施例があります。
 
 ```bash
-kindle_env/bin/python3 -c "
+book_env/bin/python3 -c "
 from core.capture_engine import CaptureEngine
 from core.capture_profiles import BUILTIN_PROFILES
 engine = CaptureEngine(BUILTIN_PROFILES['kindle'])

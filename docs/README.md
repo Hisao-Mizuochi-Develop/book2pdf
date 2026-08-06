@@ -1,6 +1,6 @@
-# kindle2pdf ドキュメント（macOS版）
+# book2pdf ドキュメント（macOS版）
 
-このディレクトリには、macOS移植版 kindle2pdf に関するドキュメントを
+このディレクトリには、macOS移植版 book2pdf に関するドキュメントを
 対象者別のフォルダに分けて格納しています。アプリのソースコードと実際の
 動作検証結果から作成したもので、元のWindows版ドキュメントとは独立しています。
 
@@ -9,6 +9,7 @@
 | ドキュメント | 内容 |
 |-------------|------|
 | [setup.md](user/setup.md) | セットアップ手順（Python/Homebrew導入〜起動まで） |
+| [install-macos.md](user/install-macos.md) | macOS へのインストール方法（スタンドアロン・開発環境の両方） |
 | [quickstart.md](user/quickstart.md) | キャプチャ→トリミング→変換の最短手順 |
 | [tabs-reference.md](user/tabs-reference.md) | 4タブそれぞれの設定項目リファレンス |
 | [output-formats.md](user/output-formats.md) | 5つの出力形式の比較と選び方 |
@@ -33,6 +34,7 @@
 | ドキュメント | 内容 |
 |-------------|------|
 | [build-distribution.md](operations/build-distribution.md) | venvベースの起動方式と配布手順 |
+| [pyinstaller-build.md](operations/pyinstaller-build.md) | PyInstaller でのスタンドアロン .app ビルド手順 |
 | [changelog.md](operations/changelog.md) | Windows版からの変更点まとめ |
 | [security-privacy.md](operations/security-privacy.md) | 通信の有無、権限要求の理由、利用上の注意 |
 

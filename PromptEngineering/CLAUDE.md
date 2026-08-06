@@ -1,6 +1,6 @@
-# CLAUDE.md — kindle2pdf 実装規約
+# CLAUDE.md — book2pdf 実装規約
 
-このファイルは、kindle2pdf をゼロから実装する Claude Code に対する恒常的な
+このファイルは、book2pdf をゼロから実装する Claude Code に対する恒常的な
 振る舞い指示です。`PROMPT.md` と併せて読み込ませてください。
 
 ## プロジェクトの性質

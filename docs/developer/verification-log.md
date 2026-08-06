@@ -6,7 +6,7 @@ macOS移植作業中に実施した動作確認の記録です。実行環境は
 ## 環境構築
 
 - `brew install python@3.12 python-tk@3.12` — customtkinter起動に必須（tkinter同梱）
-- `python3.12 -m venv kindle_env` + `pip install -r requirements.txt`
+- `python3.12 -m venv book_env` + `pip install -r requirements.txt`
 - `pyautogui` インストール時に `pyobjc-core` / `pyobjc-framework-Quartz` /
   `pyobjc-framework-Cocoa` が自動導入されることを確認
 - `pyobjc-framework-ApplicationServices` は別途追加インストールが必要だった
@@ -36,7 +36,7 @@ macOS移植作業中に実施した動作確認の記録です。実行環境は
 
 1. **無関係ウィンドウの誤検出**: Kindleが閉じている状態で
    `find_window('kindle', process_name='Kindle.exe')` が、作業ディレクトリ名に
-   "kindle" を含むターミナルウィンドウ（`kindle2pdf_mac — -zsh...`）を誤って
+   "kindle" を含むターミナルウィンドウ（`book2pdf_mac — -zsh...`）を誤って
    返すことを確認 → プロセス名指定時はフォールバックしない仕様に修正 → 同条件で
    `None` が返ることを確認
 2. **信号機ボタンの誤クリック**: `activate_window(click_position='top_left')`

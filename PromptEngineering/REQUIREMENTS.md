@@ -1,6 +1,6 @@
 # REQUIREMENTS.md — 機能要件仕様
 
-kindle2pdf が満たすべき全機能要件です。`PROMPT.md` から参照される一次情報源。
+book2pdf が満たすべき全機能要件です。`PROMPT.md` から参照される一次情報源。
 
 ## アプリ概要
 
