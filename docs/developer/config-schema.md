@@ -25,7 +25,7 @@
     "chapter_bookmarks": { "enabled": true },
     "markdown": { "embed_images": false }
   },
-  "general": { "default_save_folder": "" }
+  "general": { "default_save_folder": "", "theme": "auto" }
 }
 ```
 
@@ -75,6 +75,13 @@
 |-----------|------|
 | `chapter_bookmarks.enabled` | 章自動検出を行い、PDFしおり/Markdown見出しを挿入するか |
 | `markdown.embed_images` | Markdown出力時、ページ画像へのリンクを本文前に併記するか |
+
+## `general`
+
+| フィールド | 型 | 既定値 | 説明 |
+|-----------|-----|--------|------|
+| `default_save_folder` | str | `""` | 出力先フォルダのデフォルト。空なら OS 標準のダイアログ初期位置 |
+| `theme` | str | `"auto"` | UI テーマ。`"dark"` / `"light"` / `"auto"` |
 
 ## `trim`
 

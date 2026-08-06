@@ -1,5 +1,5 @@
 # 依存を変更したら uv で requirements.txt を再生成する:
-#   book_env\Scripts\uv.exe pip compile pyproject.toml -o requirements.txt
+#   book_env\Scripts\uv.exe pip compile pyproject.toml --dev -o requirements.txt
 # requirements.txt が source of install (setup.bat / pip install -r が読む)、
 # pyproject.toml が source of truth (人間が編集する)。
 
@@ -30,6 +30,7 @@ dependencies = [
 dev = [
     "ruff>=0.15",
     "uv>=0.11",
+    "pytest>=9.0",
 ]
 
 # ============================================================

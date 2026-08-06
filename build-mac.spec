@@ -44,8 +44,6 @@ a = Analysis(
         "PIL._tkinter_finder",
         "cv2",
         "numpy.core._dtype_ctypes",
-        "pyobjc.compat",
-        "pyobjc.frameworks",
         "Quartz",
         "Cocoa",
         "ApplicationServices",

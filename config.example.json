@@ -35,9 +35,27 @@
     "bottom_margin": 0
   },
   "ocr": {
-    "reflow_paragraphs": true
+    "reflow_paragraphs": true,
+    "preprocess": {
+      "enabled": true,
+      "upscale": 1.5,
+      "enhance_contrast": true,
+      "binarize": false,
+      "binarize_threshold": 180
+    },
+    "replacements": {
+      "enabled": true,
+      "path": ""
+    },
+    "chapter_bookmarks": {
+      "enabled": true
+    },
+    "markdown": {
+      "embed_images": false
+    }
   },
   "general": {
-    "default_save_folder": ""
+    "default_save_folder": "",
+    "theme": "auto"
   }
 }
