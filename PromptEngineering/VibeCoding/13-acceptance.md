@@ -1,4 +1,4 @@
-# 09-acceptance.md — 完成判定チェックリスト
+# 13-acceptance.md — 完成判定チェックリスト
 
 ## 目的
 

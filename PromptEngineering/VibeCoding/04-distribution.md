@@ -1,4 +1,4 @@
-# 13-distribution.md — 配布ビルド手順
+# 04-distribution.md — 配布ビルド手順
 
 ## 方針
 

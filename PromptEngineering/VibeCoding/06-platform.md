@@ -1,4 +1,4 @@
-# 02-platform.md — Windows/macOS プラットフォーム抽象化層
+# 06-platform.md — Windows/macOS プラットフォーム抽象化層
 
 ## ゴール
 

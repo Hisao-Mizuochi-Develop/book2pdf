@@ -1,4 +1,4 @@
-# 04-pdf-load.md — PDF 読込・画像展開
+# 08-pdf-load.md — PDF 読込・画像展開
 
 ## ゴール
 
