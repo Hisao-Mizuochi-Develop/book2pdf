@@ -19,17 +19,48 @@ core/
 
 ```python
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
+
+
+@dataclass
+class OCRWord:
+    """単語（矩形付き）"""
+    text: str
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass
+class OCRLine:
+    """行（矩形付き）"""
+    text: str
+    x: int
+    y: int
+    width: int
+    height: int
+    words: list[OCRWord]
+
+
+@dataclass
+class OCRPage:
+    """1 ページの OCR 結果"""
+    text: str
+    lines: list[OCRLine]
+    width: int
+    height: int
 
 
 class OCREngine(ABC):
     @abstractmethod
-    def is_available(self) -> bool: ...
+    def is_available(self) -> tuple[bool, str]: ...
 
     @abstractmethod
     def process_single(
         self, image_path: str, preprocess_opts: dict | None = None
-    ) -> dict[str, Any]: ...
+    ) -> tuple[bool, OCRPage | str]: ...
 
     @abstractmethod
     def process_folder(
@@ -37,16 +68,21 @@ class OCREngine(ABC):
         image_folder: str,
         preprocess_opts: dict | None = None,
         on_progress=None,
-    ) -> list[tuple[str, dict]]: ...
+    ) -> tuple[bool, list[tuple[str, OCRPage]] | str]: ...
 ```
+
+重要: NDLOCR-Lite 等の OCR エンジンが座標情報を返さない場合、**テキストのみを含む `OCRPage` を生成してもよい**。座標が得られない場合、`lines` / `words` は空リスト、`width` / `height` は 0 としても構わない。
 
 ## NDLOCR-Lite 実装
 
-- NDLOCR-Lite は外部リポジトリ `ndlocr-lite/` として配置
-- アプリ側は `python ndlocr-lite/main.py <入力画像> <出力ディレクトリ>` をサブプロセスで実行
+- NDLOCR-Lite は外部リポジトリ `ndlocr-lite/` として配置するか、システムの `ndlocr-lite` コマンドを利用する。
+- アプリ側はサブプロセスで実行する。具体的なコマンドは以下のいずれか:
+  - システムに `ndlocr-lite` コマンドがある場合: `ndlocr-lite --sourceimg <画像> --output <出力ディレクトリ>`
+  - リポジトリ内に `ndlocr-lite/src/ocr.py` がある場合: `python ndlocr-lite/src/ocr.py --sourceimg <画像> --output <出力ディレクトリ>`
 - GPU 不要、CPU 実行前提
-- `is_available()` で `ndlocr-lite` ディレクトリと必要ファイルの存在を確認
+- `is_available()` で `ndlocr-lite` コマンドまたは `ndlocr-lite/src/ocr.py` の存在を確認
 - 未導入時は「画像 PDF」以外の形式選択時に明確な警告を表示
+- NDLOCR-Lite の標準出力は `.txt` / `.json` / `.xml` のいずれかで提供される。**座標情報は含まれないことが多い**ため、`process_single()` は取得できたテキストのみを `OCRPage.text` に格納し、`lines` / `words` は空リストとして返す。
 
 ## OCR 前処理
 
@@ -100,13 +136,16 @@ def reflow_text(text: str) -> str:
 @dataclass
 class Chapter:
     page_index: int      # 0-based
+    filename: str
     title: str
     level: int
 
 
-def detect_chapters(results: list[tuple[str, dict]]) -> list[Chapter]:
+def detect_chapters(results: list[tuple[str, str | OCRPage]]) -> list[Chapter]:
     """第◯章 / Chapter N 等を検出し、Chapter リストを返す。"""
 ```
+
+`results` は `(filename, text)` または `(filename, OCRPage)` のリスト。`OCRPage` が渡された場合は `.text` を使用する。
 
 - 「第◯章」「Chapter N」等の定型パターンを検出
 - ヒューリスティックで章タイトルを判定
@@ -126,3 +165,4 @@ def detect_chapters(results: list[tuple[str, dict]]) -> list[Chapter]:
 - 置換辞書ルールが OCR 結果に反映される
 - 章自動検出が有効な場合、PDF しおり/Markdown 見出しに反映される
 - 段落自動整形で OCR の改行ノイズが結合される
+- OCR 結果に座標が含まれない場合でも、テキストのみの処理は正常に動作する

@@ -10,7 +10,9 @@
 - **加工**: 余白トリミング
 - **出力**: 画像 PDF / テキスト PDF / 検索可能 PDF / Markdown / 画像＋テキスト PDF
 - **GUI**: 4 タブ構成（キャプチャ / PDF 読込 / トリミング / 変換）
-- **対象 OS**: Windows 11 / macOS（Apple Silicon / Intel）
+- **対象 OS**: Windows 11 / macOS
+  - macOS は Apple Silicon / Intel 両方を対象とする
+  - 開発・検証環境は Apple Silicon（Intel Mac は `build-mac.spec` のアーキテクチャ自動判定で対応可能）
 
 ## 技術選定（変更禁止）
 
@@ -25,6 +27,7 @@
 | Windows 専用 | `ctypes` (`windll`) | `core/platform/windows_utils.py` に隔離 |
 | macOS 専用 | `pyobjc-framework-Quartz`, `pyobjc-framework-Cocoa`, `pyobjc-framework-ApplicationServices` | `core/platform/macos_utils.py` に隔離 |
 | OCR | NDLOCR-Lite（外部リポジトリ、サブプロセス起動） | GPU 不要、CPU 実行前提。将来のエンジン追加に備えた抽象化も用意 |
+| ビルド | PyInstaller | macOS `.app` / Windows `.exe` のスタンドアロン配布。開発時は `venv` + `python app.py` |
 | lint | `ruff` | target-version = "py311", line-length = 100 |
 
 技術選定を変更する場合は、必ず理由をコメントまたはコミットメッセージに残すこと。

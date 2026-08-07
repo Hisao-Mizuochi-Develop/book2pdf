@@ -175,8 +175,8 @@ app = BUNDLE(
 |------|------|
 | `console=False` | ターミナルウィンドウを表示せず GUI で起動 |
 | `argv_emulation=True` | macOS でファイル開くダイアログ等に対応 |
-| `target_arch="arm64"` | Apple Silicon 用 (Intel Mac では `x86_64`) |
-| `codesign_identity=None` | コードサイン未設定。配布時には Developer ID 推奨 |
+| `target_arch` | `platform.machine()` から自動判定 (`arm64` / `x86_64`) |
+| `codesign_identity` | 環境変数 `BOOK2PDF_CODESIGN_ID` から取得。未設定時は署名なし |
 
 ## 5. ビルド実行
 
@@ -186,9 +186,24 @@ app = BUNDLE(
 # 仮想環境を有効化（pyinstaller をインストールしている環境）
 source book_env/bin/activate
 
-# 1回目（Analyze + Collect）
-pyinstaller build-mac.spec --clean
+# Apple Silicon / Intel 自動判定
+pyinstaller build-mac.spec --clean --noconfirm
 ```
+
+### Intel Mac でのビルド
+
+`build-mac.spec` 内で `platform.machine()` から自動判定されるため、通常は手動変更不要です。強制的にアーキテクチャを指定したい場合は、`.spec` ファイルの `target_arch` を直接編集するか、別途 `build-mac-x86_64.spec` を作成してください。
+
+### コードサイン付きでビルド
+
+Developer ID を取得済みの場合:
+
+```bash
+export BOOK2PDF_CODESIGN_ID="Developer ID Application: Your Name (TEAM_ID)"
+pyinstaller build-mac.spec --clean --noconfirm
+```
+
+環境変数 `BOOK2PDF_CODESIGN_ID` が未設定の場合、`codesign_identity=None`（署名なし）でビルドされます。ローカルテストでは署名なしでも起動可能ですが、配布時は Gatekeeper 回避のため Developer ID 署名を推奨します。
 
 ビルドが完了すると以下が生成されます。
 
@@ -238,7 +253,20 @@ git clone https://github.com/ndl-lab/ndlocr-lite.git /Applications/book2pdf.app/
 
 NDLOCR-Lite のパス解決は `core/ocr_engine.py` の `_find_dir()` が `ndlocr-lite/` サブフォルダを自動検索します。
 
-## 8. 配布時の注意点
+## 8. Windows ビルド
+
+Windows 環境では `build-win.spec` を使用します。
+
+```bat
+call book_env\Scripts\activate
+python -m PyInstaller build-win.spec --clean --noconfirm
+```
+
+生成物: `dist/book2pdf/book2pdf.exe`
+
+`build-win.spec` では macOS 専用フレームワーク (`Quartz`, `Cocoa`, `ApplicationServices`, `objc`) を `excludes` に指定しているため、Windows 上でクリーンにビルドできます。Windows ビルドでは `BUNDLE` は不要です。
+
+## 9. 配布時の注意点
 
 | 項目 | 推奨 |
 |------|------|

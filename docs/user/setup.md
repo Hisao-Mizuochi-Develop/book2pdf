@@ -1,10 +1,12 @@
 # セットアップ（macOS版）
 
-book2pdf を Apple Silicon Mac（M1/M2/M3等）で動かすためのセットアップ手順です。
+book2pdf を macOS で動かすためのセットアップ手順です。
 
 ## 必要なもの
 
-- macOS（Apple Silicon 推奨。Intel Macでも動作するはずですが未検証です）
+- macOS（Apple Silicon / Intel）
+  - 開発・検証環境は Apple Silicon
+  - Intel Mac も `build-mac.spec` のアーキテクチャ自動判定で対応可能
 - Python 3.11〜3.13（Homebrewでのインストールを推奨）
 - Xcode Command Line Tools（`git` コマンドに必要）
 
@@ -21,11 +23,17 @@ brew install python-tk@3.12
 `python-tk@3.12` を忘れると、customtkinter（GUIツールキット）が
 「tkinterが見つからない」エラーで起動できません。
 
+Apple Silicon の場合の Homebrew Python パスは `/opt/homebrew/bin/python3.12` です。
+Intel Mac の場合は `/usr/local/bin/python3.12` になります。
+
 ## 2. 仮想環境を作成し依存パッケージをインストール
 
 ```bash
 cd book2pdf_mac
+# Apple Silicon の場合
 /opt/homebrew/bin/python3.12 -m venv book_env
+# Intel Mac の場合
+# /usr/local/bin/python3.12 -m venv book_env
 book_env/bin/pip install --upgrade pip
 book_env/bin/pip install -r requirements.txt
 ```
@@ -68,5 +76,6 @@ book_env/bin/python3 app.py
 | 起動権限 | 不要 | 画面収録・アクセシビリティ権限が必要 |
 | セットアップ | `setup.bat` | 手動（本ドキュメント）または `docs/operations/build-distribution.md` |
 | 実行ファイル | `run.bat` | venv越しに `python3 app.py`、または .app ランチャー |
+| 対応アーキテクチャ | x86_64 | arm64（Apple Silicon）/ x86_64（Intel、未検証） |
 
 技術的な変更点の詳細は [../developer/macos-port-notes.md](../developer/macos-port-notes.md) を参照してください。

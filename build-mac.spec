@@ -2,11 +2,25 @@
 """PyInstaller spec for book2pdf macOS standalone .app (onedir mode)"""
 
 import os
+import platform
 from PyInstaller.building.build_main import Analysis, PYZ, EXE, COLLECT, BUNDLE
 
 block_cipher = None
 
 base_dir = os.path.abspath(SPECPATH)
+
+# macOS アーキテクチャ自動判定（Apple Silicon / Intel）
+_machine = platform.machine()
+if _machine == "arm64":
+    target_arch = "arm64"
+elif _machine == "x86_64":
+    target_arch = "x86_64"
+else:
+    target_arch = None  # 不明な場合は PyInstaller に任せる
+
+# コードサイン: 環境変数 BOOK2PDF_CODESIGN_ID があれば使用する
+# 例: export BOOK2PDF_CODESIGN_ID="Developer ID Application: Your Name (TEAM_ID)"
+codesign_identity = os.environ.get("BOOK2PDF_CODESIGN_ID", None)
 
 # ローカルパッケージ（ui, core）を再帰収集するための隠しインポートを列挙
 def collect_local_imports():
@@ -81,8 +95,8 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=True,
-    target_arch="arm64",
-    codesign_identity=None,
+    target_arch=target_arch,
+    codesign_identity=codesign_identity,
     entitlements_file=None,
     icon=None,
 )
@@ -110,3 +124,6 @@ app = BUNDLE(
         "CFBundleVersion": "0.1.0",
     },
 )
+
+# ビルド情報出力（確認用）
+print(f"[build-mac.spec] target_arch={target_arch}, codesign_identity={codesign_identity!r}")

@@ -1,16 +1,25 @@
 # ビルド・配布手順書
 
-## 採用した方式: venvベースの .app ランチャー
+## 配布方式の選択肢
 
-book2pdf macOS版は、PyInstaller等によるフルスタンドアロン化ではなく、
-**venv（仮想環境）を前提とした起動方式**を採用しています。
+book2pdf macOS版には、以下の 2 つの配布・起動方式があります。
 
-### 採用理由
+| 方式 | 用途 | 説明 |
+|------|------|------|
+| venv ベース起動 | 開発・自分用運用 | `book_env/` を作成し `python app.py` で起動。安定していて保守しやすい |
+| PyInstaller スタンドアロン | エンドユーザー配布 | `.app` バンドルとして配布。コードサインが必要 |
+
+開発・テスト時は原則 **venv ベースの起動** を推奨します。配布時には
+`docs/operations/pyinstaller-build.md` に記載の PyInstaller ビルドを使用します。
+
+### venv 方式を推奨する理由
 
 - OCR機能（NDLOCR-Lite）が `sys.executable`（実行中のPythonインタプリタ）を
   使ってサブプロセス起動する実装になっており、PyInstallerで凍結すると
   `sys.executable` がフリーズされたバイナリ自身を指してしまい、OCRの
   サブプロセス起動が壊れる
+  - ただし `core/ocr_engine.py` で `sys.frozen` 判定によりシステムの `python3` を
+    使うフォールバックを実装済みのため、PyInstaller 化も可能
 - tkinter/customtkinter・opencv・numpyを含むPyInstallerビルドはmacOSで
   不安定になりやすく、ビルドサイズも数百MB〜1GB超になりがち
 - venv方式は元のWindows版（`book_env` + `run.bat`）とアーキテクチャが
@@ -63,7 +72,11 @@ book_env/bin/python3 app.py
   分岐させ、凍結環境ではシステムの `python3` を使用するよう修正済み
 - [x] `build-mac.spec` を作成し、customtkinter・PIL・cv2・numpy・pyobjc
   を含むビルドが成功（サイズ約 60 MB）
+- [x] `build-mac.spec` は `platform.machine()` で Apple Silicon / Intel を自動判定
 - [x] NDLOCR-Lite は同梱せず、未インストール時は OCR タブが無効化される
 
 ビルド済み `.app` は `dist/book2pdf.app` に出力されます。
 配布時には Gatekeeper 回避のためのコードサイン（Developer ID）が必要です。
+
+Intel Mac でビルドする場合、通常は `build-mac.spec` の自動判定で `x86_64` が
+選択されます。強制的に指定する場合は `.spec` 内の `target_arch` を編集してください。

@@ -121,7 +121,12 @@ GPUなし・CPU（onnxruntime）で1ページあたり約15〜20秒（M-series M
 ## 8. 未検証の項目
 
 - Intel Mac（Rosetta含む）での動作
+  - `build-mac.spec` は `platform.machine()` で `arm64` / `x86_64` を自動判定するため、
+    両アーキテクチャでビルドは可能
+  - 実機での動作検証は Apple Silicon のみ実施済み
 - `google_play` / `rakuten_kobo` / `bookwalker` / `dmm_books` / `kinoppy`
   各プロファイルの実アプリでの動作（macOS版でネイティブアプリが存在するか
   自体が未確認のものを含む）
 - マルチディスプレイ環境でのキャプチャ精度
+  - `all_screens=True` を指定することで基本動作は担保しているが、
+    実際の電子書籍アプリを使った検証は未実施

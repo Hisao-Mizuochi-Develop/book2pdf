@@ -39,6 +39,17 @@ core/
 - その上に不可視の OCR テキストレイヤーを重ねる
 - 見た目は画像のまま、Ctrl+F 等でテキスト検索可能
 
+### OCR 座標情報の有無に応じた実装
+
+OCR 結果が `OCRPage` オブジェクトで、かつ `lines` / `words` に矩形情報を含む場合:
+- 各単語/行の矩形に対応する位置に不可視テキストを配置する。
+- フォントサイズは矩形の高さから概算する。
+
+OCR 結果がテキストのみ（`lines` / `words` が空）の場合:
+- 画像の左上から等間隔で不可視テキストを流し込むフォールバックを行う。
+- 行間は固定の leading（例: フォントサイズ × 1.4）で配置する。
+- この場合でも検索と選択は可能だが、テキストの位置は実際の文字位置と一致しない。品質重視なら座標付き OCR を推奨する旨をユーザーに通知してもよい。
+
 ## 画像＋テキスト PDF（見開き型）
 
 - 各ページについて「画像 1 ページ → 同じページの OCR テキスト 1 ページ以上（自動改ページ）」を繰り返す
@@ -80,7 +91,7 @@ def text_to_pdf(
 
 def images_to_searchable_pdf(
     image_folder: str,
-    results: list[tuple[str, dict]],
+    results: list[tuple[str, str | OCRPage]],
     output_path: str,
     on_progress=None,
     chapters=None,
@@ -89,21 +100,25 @@ def images_to_searchable_pdf(
 
 def images_with_text_pdf(
     image_folder: str,
-    results: list[tuple[str, dict]],
+    results: list[tuple[str, str | OCRPage]],
     output_path: str,
     on_progress=None,
     chapters=None,
+    reflow: bool = False,
 ): ...
 
 
 def write_markdown(
-    results: list[tuple[str, str]],
+    results: list[tuple[str, str | OCRPage]],
     output_path: str,
     image_folder: str | None = None,
     embed_images: bool = False,
     chapters=None,
+    reflow: bool = False,
 ): ...
 ```
+
+`results` は `(filename, text)` または `(filename, OCRPage)` のリスト。`OCRPage` が渡された場合は `.text` を使用する。
 
 ## UI 要件（convert_tab.py）
 
@@ -120,5 +135,6 @@ def write_markdown(
 - 画像 PDF は全ページが正しい順序で含まれる
 - テキスト PDF は長文時に自動改ページされる
 - 検索可能 PDF は画像の見た目を保ちつつテキスト検索できる
+  - OCR 座標があれば位置合わせして配置し、なければ左上から流し込むフォールバックを行う
 - Markdown はページ区切りとフロントマターが含まれる
 - 画像＋テキスト PDF はページ順が正しく繰り返されている

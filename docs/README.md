@@ -1,8 +1,10 @@
-# book2pdf ドキュメント（macOS版）
+# book2pdf ドキュメント（Windows / macOS 対応）
 
-このディレクトリには、macOS移植版 book2pdf に関するドキュメントを
+このディレクトリには、Windows / macOS 両対応の book2pdf に関するドキュメントを
 対象者別のフォルダに分けて格納しています。アプリのソースコードと実際の
-動作検証結果から作成したもので、元のWindows版ドキュメントとは独立しています。
+動作検証結果から作成したもので、macOS 移植版を中心に記述しています。
+Windows 版固有の手順については、リポジトリトップレベルの README.md も
+併せて参照してください。
 
 ## [user/](user/) — 使う人向け
 
@@ -33,7 +35,7 @@
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [build-distribution.md](operations/build-distribution.md) | venvベースの起動方式と配布手順 |
+| [build-distribution.md](operations/build-distribution.md) | venv 起動と PyInstaller 配布の選択肢、手順 |
 | [pyinstaller-build.md](operations/pyinstaller-build.md) | PyInstaller でのスタンドアロン .app ビルド手順 |
 | [changelog.md](operations/changelog.md) | Windows版からの変更点まとめ |
 | [security-privacy.md](operations/security-privacy.md) | 通信の有無、権限要求の理由、利用上の注意 |

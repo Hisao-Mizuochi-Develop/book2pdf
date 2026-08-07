@@ -1,5 +1,13 @@
 # 06-platform.md — Windows/macOS プラットフォーム抽象化層
 
+## 併せて参照するドキュメント
+
+本プロンプトと併せて以下の docs/ ファイルを参照してください。
+
+- `docs/developer/macos-port-notes.md`: Windows から macOS への移植時の技術的判断の詳細
+- `docs/user/permissions.md`: macOS の画面収録・アクセシビリティ権限の取得手順
+- `docs/developer/known-limitations.md`: 既知の制約（Retina 座標系、プロファイル未検証等）
+
 ## ゴール
 
 `core/platform/` 配下に Windows/macOS 共通のウィンドウ操作・権限確認 API を実装する。呼び出し側は OS を意識せずに使えるようにする。
@@ -21,12 +29,24 @@ core/
 
 ## ファイル構成
 
+既存の `core/window_utils.py` は macOS 用実装としてそのまま流用できるが、**呼び出し側を `core.platform` 抽象化レイヤーに統一するため、以下の再構成を行う**。
+
 ```
-core/platform/
-├── __init__.py       # sys.platform に応じて re-export
-├── windows_utils.py  # ctypes + windll 実装
-└── macos_utils.py    # pyobjc (Quartz/Cocoa/ApplicationServices) 実装
+core/
+├── platform/
+│   ├── __init__.py       # sys.platform に応じて windows_utils / macos_utils を re-export
+│   ├── windows_utils.py  # ctypes + windll による実装（新規作成）
+│   └── macos_utils.py    # 既存 core/window_utils.py から移動
+├── capture_engine.py     # from core.platform import ... のみを使う
 ```
+
+実施手順:
+1. `mkdir core/platform`
+2. `core/window_utils.py` を `core/platform/macos_utils.py` に移動する。
+3. 新規に `core/platform/windows_utils.py` を作成する。
+4. 新規に `core/platform/__init__.py` を作成し、`sys.platform` 判定で `windows_utils` または `macos_utils` を re-export する。
+5. `core/capture_engine.py`、`ui/capture_tab.py` 等の呼び出し側の import を `from core.platform import ...` に置き換える。
+6. 古い `core/window_utils.py` は削除する。
 
 ## 共通インターフェース仕様
 
@@ -80,19 +100,77 @@ def request_input_automation_access() -> None: ...
 
 ## Windows 実装（windows_utils.py）
 
-- `ctypes.windll.user32` の `EnumWindows`, `GetWindowTextW`, `GetWindowRect`, `SetForegroundWindow` 等を使用
-- `SetForegroundWindow` が確実でないケースに備え、`AttachThreadInput` トリックや `HWND_TOPMOST` / `HWND_NOTOPMOST` の一時切り替えでフォールバックしてよい
-- 画面収録・入力自動化の権限は概念自体が無いため、`has_*_access()` は常に `True` を返す
-- DPI スケーリング対策として、アプリ起動時に `windll.user32.SetProcessDPIAware()` を呼ぶこと（`GetWindowRect` とスクリーンショットの座標系を一致させるため）
+`core/platform/windows_utils.py` を新規作成し、以下を実装する。
+
+### 依存
+
+- Python 標準 `ctypes`、`ctypes.wintypes`
+- サードパーティ不要（pyautogui は呼び出し側が直接使用）
+
+### ウィンドウ検索
+
+1. `EnumWindows` でトップレベルウィンドウを列挙する。
+2. 各ウィンドウに対し `IsWindowVisible` で可視ウィンドウのみ対象にする。
+3. `GetWindowTextW` でタイトルを取得し、大文字小文字無視で `title_keyword` が含まれるものを候補にする。
+4. タイトル部分一致の優先度（score）は以下とする（macOS 版と同一ロジック）:
+   - 完全一致または末尾一致: 10
+   - 先頭一致: 8
+   - 単語区切り一致（空白または `-` の後）: 5
+   - 単なる部分一致: 1
+5. `process_name` が指定された場合:
+   - `GetWindowThreadProcessId` で PID を取得し、`OpenProcess` + `QueryFullProcessImageNameW` または `GetModuleBaseNameW` で実行ファイル名を取得する。
+   - 指定された `process_name`（例: `Kindle.exe`）と大文字小文字無視で一致するウィンドウが **1 件もなければ None を返す**。タイトルのみのフォールバックは禁止。
+   - 一致するウィンドウが複数あれば score の高いものを返す。
+
+### ウィンドウ矩形・前面化
+
+- `GetWindowRect(hwnd)` で `(left, top, right, bottom)`（スクリーン座標、DPI 非対応ディスプレイでは論理ピクセル）を返す。
+- `SetForegroundWindow(hwnd)` で前面化する。
+  - 失敗した場合は `AttachThreadInput` トリック（フォアグラウンドウィンドウのスレッド ID と対象ウィンドウのスレッド ID を一時的にアタッチ）を試す。
+  - それでも失敗する場合は一時的に `SetWindowPos(hwnd, HWND_TOPMOST, ...)` してから `HWND_NOTOPMOST` に戻すことで前面化を促す。
+- `is_window_frontmost(hwnd)` は、フォアグラウンドウィンドウ（`GetForegroundWindow`）が `hwnd` と一致するかで判定する。
+
+### 権限関数
+
+Windows には画面収録権限・入力自動化権限の概念がないため、以下は常に `True` を返す。
+
+```python
+def has_screen_capture_access() -> bool: return True
+def request_screen_capture_access() -> None: pass
+def has_input_automation_access() -> bool: return True
+def request_input_automation_access() -> None: pass
+```
+
+### DPI スケーリング対策
+
+アプリ起動時（`app.py` または `main_window.py`）に以下を呼び出し、`GetWindowRect` の論理座標と `PIL.ImageGrab.grab(bbox=...)` の座標系を一致させる。
+
+```python
+import ctypes
+ctypes.windll.user32.SetProcessDPIAware()
+```
+
+## マルチディスプレイ環境
+
+マルチディスプレイ環境では `PIL.ImageGrab.grab(bbox=..., all_screens=True)` を必ず指定する。指定しないと PIL はプライマリモニタしか取得せず、セカンドモニタ上のウィンドウが真っ黒画像になる。
+
+ただし、マルチディスプレイ環境でのキャプチャ精度は **未検証** である。基本動作は `all_screens=True` で担保するが、実際の電子書籍アプリを使った検証は `docs/developer/verification-log.md` の対象外となっている。
 
 ## macOS 実装（macos_utils.py）
+
+- 既存 `core/window_utils.py` の内容を `core/platform/macos_utils.py` に移動する。
+- 以下の関数名を `06-platform.md` の共通インターフェースに合わせて変更する。
+  - `has_screen_recording_access` → `has_screen_capture_access`
+  - `request_screen_recording_access` → `request_screen_capture_access`
+  - `has_accessibility_access` → `has_input_automation_access`
+  - `request_accessibility_access` → `request_input_automation_access`
 
 - ウィンドウ列挙: `Quartz.CGWindowListCopyWindowInfo`（`kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements`）
 - ウィンドウ矩形: `kCGWindowBounds`（**ポイント単位**。Retina でも物理ピクセルではない点に注意）
 - ウィンドウ前面化: `NSRunningApplication.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)`。クリック操作は行わない（信号機ボタンの誤操作を防ぐため）
 - 前面化後、`NSWorkspace.sharedWorkspace().frontmostApplication()` で実際に切り替わったか確認し、未反映なら短いポーリングでリトライ
 - 画面収録権限: `Quartz.CGPreflightScreenCaptureAccess()` / `CGRequestScreenCaptureAccess()`
-- アクセシビリティ権限: `ApplicationServices.AXIsProcessTrusted()` / `AXIsProcessTrustedWithOptions()`（`pyobjc-framework-ApplicationServices` の追加インストールが必要）
+- 入力自動化権限: `ApplicationServices.AXIsProcessTrusted()` / `AXIsProcessTrustedWithOptions()`（`pyobjc-framework-ApplicationServices` の追加インストールが必要）
 
 ## スクリーンショット座標系
 
@@ -127,3 +205,4 @@ assert is_window_frontmost(hwnd)
 - 対象アプリが起動していない状態で `find_window(..., process_name=...)` は `None` を返す
 - `activate_window()` 実行後、対象ウィンドウがフルスクリーン化・最小化・閉じていない
 - `get_window_rect()` の座標をそのまま `ImageGrab.grab(bbox=...)` に渡すと、対象ウィンドウの中身が写る
+- `core/window_utils.py` が存在せず、すべて `core/platform/` 配下に集約されている

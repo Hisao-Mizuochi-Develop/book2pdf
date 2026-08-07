@@ -75,3 +75,60 @@ pytest tests/ -q
 - 画像処理のテストには小さなフィクスチャ画像を `tests/fixtures/` に配置する
 - テスト名は `test_<対象>_<シナリオ>_<期待結果>` の形式を推奨
 - 各 `core/` モジュールには `if __name__ == "__main__":` による簡易 CLI 動作確認も残す
+
+## テスト雛形
+
+新規モジュールを作成した際は、対応する `tests/test_<module>.py` を以下の雛形で開始する。
+
+```python
+import os
+import sys
+import pytest
+
+# リポジトリルートを import パスに追加
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from core.<module> import <target_function>
+
+
+def test_<target>_<scenario>_<expected>():
+    # Arrange
+    input_value = ...
+
+    # Act
+    result = <target_function>(input_value)
+
+    # Assert
+    assert result == expected
+```
+
+GUI タブのテスト雛形:
+
+```python
+import pytest
+
+def test_<tab>_initial_state():
+    from ui.<tab> import <TabClass>
+    from ui.state import AppState
+
+    state = AppState()
+    tab = <TabClass>(parent=None, state=state)
+    assert tab is not None
+```
+
+外部コマンドを使う結合テストでは、一時ディレクトリ `tmp_path` フィクスチャを利用する:
+
+```python
+def test_ocr_pipeline_processes_single_image(tmp_path):
+    from core.ocr_engine import NDLOCRLiteEngine
+
+    engine = NDLOCRLiteEngine()
+    ok, msg = engine.is_available()
+    if not ok:
+        pytest.skip(f"NDLOCR-Lite not available: {msg}")
+
+    image_path = "tests/fixtures/sample.png"
+    ok, result = engine.process_single(image_path)
+    assert ok
+    assert result.text.strip() != ""
+```
