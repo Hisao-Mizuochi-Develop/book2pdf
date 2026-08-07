@@ -4,14 +4,18 @@
 
 あなたは 熟練したソフトウェアエンジニアの AI コーディングアシスタント です。以下の手順に従い、book2pdf を 0 から VibeCoding してください。
 
+## アプリの一行要約
+
+電子書籍のスクリーンキャプチャ・PDF 読込・トリミング・PDF 変換・OCR を 1 つの GUI アプリ（4 タブ: キャプチャ / PDF 読込 / トリミング / 変換）で行う、Windows・macOS 両対応の個人学習用ツール。
+
 ## 実装前に必ず読み込むファイル
 
 以下の順序で全ファイルを読み込んでください。
 
-1. `00-design.md` — アーキテクチャ・技術選定・設計原則
-2. `11-pitfalls.md` — 過去の実装で発生した不具合と回避策
-3. `12-testing.md` — テスト戦略と観点
-4. `13-distribution.md` — 配布ビルド方針
+1. `01-design.md` — アーキテクチャ・技術選定・設計原則
+2. `02-pitfalls.md` — 過去の実装で発生した不具合と回避策
+3. `03-testing.md` — テスト戦略と観点
+4. `04-distribution.md` — 配布ビルド方針
 
 ## 実装フェーズ
 
@@ -19,7 +23,7 @@
 
 ### Phase 1: セットアップ
 
-`01-setup.md` に従い、プロジェクト構造と依存関係を構築する。
+`05-setup.md` に従い、プロジェクト構造と依存関係を構築する。
 
 完了条件:
 - `python app.py` で GUI が起動する
@@ -28,7 +32,7 @@
 
 ### Phase 2: プラットフォーム抽象化層
 
-`02-platform.md` に従い、`core/platform/` を実装する。
+`06-platform.md` に従い、`core/platform/` を実装する。
 
 完了条件:
 - Windows/macOS 両方で共通シグネチャを持つ
@@ -37,7 +41,7 @@
 
 ### Phase 3: キャプチャエンジン
 
-`03-capture.md` に従い、`core/capture_profiles.py`、`core/boundary_detector.py`、`core/capture_engine.py` を実装する。
+`07-capture.md` に従い、`core/capture_profiles.py`、`core/boundary_detector.py`、`core/capture_engine.py` を実装する。
 
 完了条件:
 - 実際の電子書籍アプリで 6 ページ程度の連続自動キャプチャが成功する
@@ -46,7 +50,7 @@
 
 ### Phase 4: PDF 読込
 
-`04-pdf-load.md` に従い、`core/pdf_extractor.py` と `ui/pdf_load_tab.py` を実装する。
+`08-pdf-load.md` に従い、`core/pdf_extractor.py` と `ui/pdf_load_tab.py` を実装する。
 
 完了条件:
 - PDF 展開後に画像フォルダが自動引き継がれる
@@ -54,7 +58,7 @@
 
 ### Phase 5: トリミング
 
-`05-trim.md` に従い、`core/trimmer.py` と `ui/trim_tab.py` を実装する。
+`09-trim.md` に従い、`core/trimmer.py` と `ui/trim_tab.py` を実装する。
 
 完了条件:
 - 自動検出で安全マージン付きの余白が提示される
@@ -62,7 +66,7 @@
 
 ### Phase 6: OCR パイプライン
 
-`06-ocr.md` に従い、OCR 関連モジュールを実装する。
+`10-ocr.md` に従い、OCR 関連モジュールを実装する。
 
 完了条件:
 - NDLOCR-Lite 未導入時の警告が表示される
@@ -70,7 +74,7 @@
 
 ### Phase 7: 変換・出力
 
-`07-convert.md` に従い、`core/pdf_builder.py` と `core/markdown_writer.py` を実装する。
+`11-convert.md` に従い、`core/pdf_builder.py` と `core/markdown_writer.py` を実装する。
 
 完了条件:
 - 5 出力形式すべてが正常に生成される
@@ -78,7 +82,7 @@
 
 ### Phase 8: GUI
 
-`08-gui.md` に従い、4 タブ GUI を実装する。
+`12-gui.md` に従い、4 タブ GUI を実装する。
 
 - 各タブ実装前に、熟練したソフトウェアエンジニアの AI コーディングアシスタント は 2〜3 パターンのデザイン案をユーザーに提示する
 - ユーザーが選択したデザイン案に基づいて実装する
@@ -90,9 +94,25 @@
 
 ### Phase 9: 最終確認
 
-- `09-acceptance.md` の全項目を実機で確認する
+- `13-acceptance.md` の全項目を実機で確認する
 - `ruff check .` と `pytest` を実行する
-- `13-distribution.md` に従って配布ビルドを作成する
+- `04-distribution.md` に従って配布ビルドを作成する
+
+## 成果物に含めるべきファイル
+
+最終的に以下のファイルが含まれていることを確認すること。
+
+- `app.py`（エントリーポイント）
+- `core/`、`ui/` 一式
+- `requirements.txt` / `pyproject.toml`（`01-design.md` の技術選定に準拠）
+- `config.example.json`（設定ファイルの雛形）
+- `README.md`（セットアップ手順・使い方。Windows/macOS 両方の手順を含める）
+- OS 別の起動スクリプト（Windows: `setup.bat`/`run.bat` 相当、macOS: セットアップ手順 + `run.sh` 等。venv ベースの起動を基本とする）
+
+## 質問がある場合
+
+要件が曖昧な箇所（例: 対応する電子書籍アプリの追加、UI の細かいレイアウト）については、実装を止めてユーザーに確認すること。
+ただし `01-design.md` の抽象化設計や `02-pitfalls.md` の回避策など、**過去の実装で既に結論が出ている事項については再度確認を取らず、そのまま仕様として採用すること**。
 
 ## 開発中の留意事項
 
