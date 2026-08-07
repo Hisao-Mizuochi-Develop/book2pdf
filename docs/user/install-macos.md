@@ -19,8 +19,8 @@ PyInstaller でビルド済みの `.app` バンドルを使用します。Python
 # ダウンロードした tar.gz を展開
 tar xzf book2pdf-macos-arm64.tar.gz
 
-# アプリケーションフォルダに移動
-mv book2pdf.app /Applications/
+# アプリケーションフォルダにコピー
+cp -R book2pdf.app ~/Applications/
 ```
 
 または Finder で `book2pdf.app` を **アプリケーションフォルダ** にドラッグ＆ドロップ。
@@ -41,7 +41,7 @@ Finder → アプリケーション → `book2pdf.app` をダブルクリック�
 /usr/bin/python3 -m pip install --user onnxruntime opencv-python torch numpy pillow
 
 # NDLOCR-Lite をアプリ内に配置
-git clone https://github.com/ndl-lab/ndlocr-lite.git /Applications/book2pdf.app/Contents/Resources/ndlocr-lite
+git clone https://github.com/ndl-lab/ndlocr-lite.git ~/Applications/book2pdf.app/Contents/Resources/ndlocr-lite
 ```
 
 ---
@@ -129,7 +129,7 @@ python app.py
 
 ### 方法 A（スタンドアロン）
 ```bash
-rm -rf /Applications/book2pdf.app
+rm -rf ~/Applications/book2pdf.app
 ```
 
 ### 方法 B（開発環境）
