@@ -19,8 +19,8 @@ PyInstaller でビルド済みの `.app` バンドルを使用します。Python
 # ダウンロードした tar.gz を展開
 tar xzf book2pdf-macos-arm64.tar.gz
 
-# アプリケーションフォルダに移動
-mv book2pdf.app /Applications/
+# アプリケーションフォルダにコピー
+cp -R book2pdf.app /Applications/
 ```
 
 または Finder で `book2pdf.app` を **アプリケーションフォルダ** にドラッグ＆ドロップ。
