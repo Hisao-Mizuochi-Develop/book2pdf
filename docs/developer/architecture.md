@@ -1,5 +1,21 @@
 # アーキテクチャ概要
 
+## 技術スタック
+
+| 分類 | 技術 |
+|------|------|
+| 実装言語 | Python 3.11 以降 |
+| GUI フレームワーク | customtkinter |
+| 画面操作・キャプチャ | pyautogui |
+| 画像処理 | Pillow (PIL)、OpenCV (cv2) |
+| PDF 入出力 | reportlab（生成）、pypdfium2（読み込み） |
+| macOS ネイティブ連携 | pyobjc（Quartz / Cocoa / ApplicationServices） |
+| ビルド | PyInstaller |
+| テスト | pytest |
+| 外部 OCR エンジン | NDLOCR-Lite（別途セットアップ） |
+
+設定ファイルは JSON、`requirements.txt` / `pyproject.toml` で依存を管理しています。
+
 ## 全体構成
 
 ```
