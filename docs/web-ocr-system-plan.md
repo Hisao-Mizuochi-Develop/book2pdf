@@ -225,6 +225,7 @@ book2pdf/
 ├── docs/                        # プロジェクト全体の設計・決定事項
 │   ├── coding-conventions.md    # コーディング規約
 │   ├── design-decisions.md      # 設計決定事項
+│   ├── integration-test-guide.md  # 結合テスト手順書
 │   └── web-ocr-system-plan.md   # 本ドキュメント
 └── old/                         # 既存アプリケーションの仕様参考用
     └── （ソースコード・ドキュメントは新規開発では参照しない）
