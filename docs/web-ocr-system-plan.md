@@ -27,12 +27,13 @@
 | 種別 | 配置先 | 主な内容 |
 |---|---|---|
 | 全体設計・決定事項 | `./docs/` | プロジェクト全体の方針、アーキテクチャ、技術選定 |
+| 全体横断のタスク・作業ログ・注意事項 | `./docs/` | 複数モジュールにまたがるタスク管理、作業ログ、注意事項 |
 | backend 固有 | `backend/docs/` | backend のタスク管理、環境構築ログ、詳細計画 |
 | frontend 固有 | `frontend/docs/` | frontend のタスク管理、環境構築ログ、詳細計画 |
 | localapp 固有 | `localapp/docs/` | localapp のタスク管理、環境構築ログ、詳細計画 |
 | ocr-worker 固有 | `ocr-worker/docs/` | ocr-worker のタスク管理、環境構築ログ、詳細計画 |
 
-各モジュールの `docs/` には `tasks.md`（タスク管理表）と `setup-log.md`（環境構築ログ）を配置します。詳細な運用ルールは `./.clinerules` を参照してください。
+各モジュールの `docs/` には `tasks.md`（タスク管理表）、`work_log.md`（作業ログ）、`caveats.md`（注意事項）を配置します。複数モジュールにまたがる内容は `./docs/` 配下に配置します。詳細な運用ルールは `./.clinerules` を参照してください。
 
 ## 3. 全体アーキテクチャ
 
@@ -223,10 +224,13 @@ book2pdf/
 │       ├── setup-log.md               # ocr-worker 環境構築ログ
 │       └── tasks.md                   # ocr-worker タスク管理表
 ├── docs/                        # プロジェクト全体の設計・決定事項
+│   ├── caveats.md               # 全体横断の注意事項
 │   ├── coding-conventions.md    # コーディング規約
 │   ├── design-decisions.md      # 設計決定事項
 │   ├── integration-test-guide.md  # 結合テスト手順書
-│   └── web-ocr-system-plan.md   # 本ドキュメント
+│   ├── tasks.md                 # 全体横断のタスク管理表
+│   ├── web-ocr-system-plan.md   # 本ドキュメント
+│   └── work_log.md              # 全体横断の作業ログ
 └── old/                         # 既存アプリケーションの仕様参考用
     └── （ソースコード・ドキュメントは新規開発では参照しない）
 ```

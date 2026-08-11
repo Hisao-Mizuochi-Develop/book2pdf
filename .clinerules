@@ -21,8 +21,15 @@
     - localapp は Web OCR/PDF システムではないため、`localapp/docs/localapp-spec.md` とする
 - `./docs/` には、各モジュール共通の全体設計・決定事項を配置する
   - プロジェクト全体のフォルダ・ファイル構成は `./docs/web-ocr-system-plan.md` に記載する
-- 作業ログは `<module>/docs/work_log.md` に記録する
-- タスク管理表は `<module>/docs/tasks.md` に配置する
+- 作業ログは以下の場所に記録する
+  - `<module>/docs/work_log.md`: 各モジュール固有の作業ログ
+  - `./docs/work_log.md`: 複数モジュールにまたがる全体横断の作業ログ
+- タスク管理表は以下の場所に配置する
+  - `<module>/docs/tasks.md`: 各モジュール固有のタスク管理表
+  - `./docs/tasks.md`: 複数モジュールにまたがる全体横断のタスク管理表
+- 注意事項ファイルは以下の場所に配置する
+  - `<module>/docs/caveats.md`: 各モジュール固有の注意事項
+  - `./docs/caveats.md`: 複数モジュールにまたがる全体横断の注意事項
 
 ## 3. `docs/` 変更時の承認フロー
 
