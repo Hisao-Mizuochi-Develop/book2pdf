@@ -45,10 +45,25 @@
 
 ```
 frontend/                         # フロントエンドルート
-└── docs/                         # frontend 専用ドキュメント
-    ├── frontend-system-spec.md   # 本仕様書
-    ├── setup-log.md              # 環境構築ログ
-    └── tasks.md                  # タスク管理表
+├── docs/                         # frontend 専用ドキュメント
+│   ├── frontend-system-spec.md   # 本仕様書
+│   ├── work_log.md               # 作業ログ
+│   └── tasks.md                  # タスク管理表
+├── src/                          # アプリケーションコード
+│   ├── app/                      # App Router ページディレクトリ
+│   │   ├── page.tsx              # ZIP アップロード画面（トップページ）
+│   │   ├── layout.tsx            # 共通レイアウト
+│   │   └── globals.css           # グローバルスタイル（Tailwind CSS v4）
+│   └── lib/                      # 共通ライブラリ
+│       └── api.ts                # FastAPI 通信用クライアント
+├── public/                       # 静的アセット
+├── package.json                  # Node.js 依存定義
+├── package-lock.json             # npm ロックファイル
+├── next.config.ts                # Next.js 設定（standalone 出力）
+├── tsconfig.json                 # TypeScript 設定
+├── postcss.config.mjs            # PostCSS 設定
+├── eslint.config.mjs             # ESLint 設定
+└── Dockerfile                    # フロントエンド Docker イメージ
 ```
 
 ### 将来の構成案

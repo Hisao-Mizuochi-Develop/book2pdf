@@ -118,11 +118,30 @@ OCR 完了後に検索可能 PDF をダウンロードする
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 003001 | 検索可能 PDF 生成機能の実装 | 2026-08-11 |  | 機能実装 |
+| 003001 | 検索可能 PDF 生成機能の実装 | 2026-08-11 | 2026-08-11 | 機能実装 |
 |  | タスク詳細 |  |  |  |
-|  | OCR 結果の座標情報を使って透明テキストレイヤーを配置する |  |  |  |
-|  | 元ページ画像を背景にして PDF を生成する |  |  |  |
-|  | 生成した PDF をダウンロードできる API を実装する |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | XML 解析サービス: `backend/app/services/xml_parser.py` を新規作成し、ndlocr_cli の `.sorted.xml` をパースしてページ画像パス・テキスト・座標（X, Y, WIDTH, HEIGHT）を取得する |  |  |  |
+|  | PDF 生成サービス: `backend/app/services/pdf_generator.py` を新規作成し、PyMuPDF（fitz）で元画像を背景・認識テキストを透明テキストレイヤーとして配置した PDF を `/data/pdfs/{job_id}.pdf` に出力する |  |  |  |
+|  | ジョブ管理拡張: `backend/app/services/job_manager.py` に PDF パスを保存する関数を追加する |  |  |  |
+|  | ダウンロード API: `backend/app/routers/jobs.py` に `GET /api/jobs/{job_id}/pdf` を追加し、生成済み PDF を返す（未生成・未完了時は 400/404） |  |  |  |
+|  | OCR 後処理: `POST /api/jobs/{job_id}/ocr` 成功後に PDF 生成を自動実行する |  |  |  |
+|  | テスト追加: `backend/tests/test_pdf.py` を新規作成し、MockOcrEngine + 手動作成 XML で PDF 生成とダウンロード API を検証する |  |  |  |
+|  | ドキュメント更新: `tasks.md` / `work_log.md` / `caveats.md` / `backend-system-spec.md` を更新する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-08-11: `backend/app/services/xml_parser.py` を新規作成し、ndlocr_cli の `.sorted.xml` からページ画像パス・テキスト・座標を取得する機能を実装した |  |  |  |
+|  | 2026-08-11: `backend/app/services/pdf_generator.py` を新規作成し、PyMuPDF（fitz）で元画像を背景・認識テキストを透明テキストレイヤーとして配置した検索可能 PDF を生成する機能を実装した |  |  |  |
+|  | 2026-08-11: `backend/app/services/job_manager.py` に `update_job_with_pdf_path()` 関数を追加し、ジョブ情報に PDF パスを保存できるようにした |  |  |  |
+|  | 2026-08-11: `backend/app/routers/jobs.py` に `GET /api/jobs/{job_id}/pdf` エンドポイントを追加し、生成済み PDF をダウンロードできるようにした（未生成・未完了時は 400/404 を返す） |  |  |  |
+|  | 2026-08-11: `POST /api/jobs/{job_id}/ocr` 成功後に `generate_searchable_pdf()` を呼び出し、OCR 結果から PDF を自動生成する処理を追加した |  |  |  |
+|  | 2026-08-11: `backend/tests/test_pdf.py` を新規作成し、PDF 生成・XML 解析・ダウンロード API の正常系・異常系テストを 7 件追加した |  |  |  |
+|  | 2026-08-11: テスト実行中に `tests/test_progress.py` の SSE ストリーミングテストが停止・失敗する事象が発生した。原因は `fastapi.testclient.TestClient` + `StreamingResponse` + 非同期 generator のタイミング競合。対応として `_progress_event_generator` を直接 `async for` でテストする形に変更し、安定して pass するようになった |  |  |  |
+|  | 2026-08-11: `pytest` を実行し、backend の全 23 件のテストが pass することを確認した |  |  |  |
+|  | 2026-08-11: `backend/docs/backend-system-spec.md` / `caveats.md` / `tasks.md` / `work_log.md` を更新した |  |  |  |
+|  | 2026-08-11: 結合テストを実施し、PDF ダウンロード API (`GET /api/jobs/{job_id}/pdf`) が 404 エラーを返す事象を確認 |  |  |  |
+|  | 2026-08-11: 原因は backend コンテナが最新ソースで再ビルドされていなかったこと。`docker compose up -d --build backend` で再ビルド・再起動して解消 |  |  |  |
+|  | 2026-08-11: 再テストで ZIP アップロード → OCR 実行 → PDF ダウンロードが正常に完了することを確認（HTTP 200、Content-Type: application/pdf、2 ページの PDF） |  |  |  |
+|  | 2026-08-11: 結合テストに関する内容を `backend/docs/work_log.md` / `caveats.md` / `tasks.md` に追記 |  |  |  |
 | 003002 | 縦書き PDF 対応 | 2026-08-11 |  | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 縦書きテキストの検出結果を PDF 上で正しく配置する |  |  |  |

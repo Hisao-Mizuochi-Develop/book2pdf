@@ -111,3 +111,19 @@
   - backend コンテナからは `http://ocr-worker:8000` でアクセスする
   - ホスト側の curl やブラウザからは `http://localhost:8001` でアクセスする
 
+## 16. Hydra の GlobalHydra は同一プロセス内で複数回初期化できない
+
+- `ocr-worker/app/main.py` の `infer` 関数内で `hydra.initialize()` を呼び出している
+- 1 回目のリクエストでは問題ないが、Uvicorn worker プロセスが使い回されるため、
+  2 回目以降のリクエストで `ValueError: GlobalHydra is already initialized` が発生する
+- 回避策として、`GlobalHydra.instance().is_initialized()` で既に初期化済みかを確認し、
+  初期化済みの場合は `clear()` してから `initialize()` する
+  ```python
+  from hydra.core.global_hydra import GlobalHydra
+
+  if GlobalHydra.instance().is_initialized():
+      GlobalHydra.instance().clear()
+  hydra.initialize(config_path="conf", job_name="ocr", version_base=None)
+  ```
+- 将来的に `hydra.compose()` などを使う場合は、この reinitialize パターンを見直す
+

@@ -11,6 +11,16 @@ from __future__ import annotations
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
+# 現在日時を取得するための標準ライブラリです
+# 進捗ファイルに更新時刻を記録するために使用します
+from datetime import datetime, timezone
+
+# JSON 形式で進捗ファイルを書き出すための標準ライブラリです
+import json
+
+# ファイル操作でディレクトリ作成が必要なための標準ライブラリです
+import os
+
 # FastAPI の機能を読み込みます
 # FastAPI: アプリケーション本体
 # HTTPException: HTTP エラーレスポンスを返す
@@ -28,6 +38,10 @@ from cli.core import OcrInferrer
 
 # ndlocr_cli のユーティリティ関数を読み込みます
 from cli.core import utils as ndlocr_utils
+
+# Hydra のグローバルインスタンスをクリアするための import です
+# 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にします
+from hydra.core.global_hydra import GlobalHydra
 
 # FastAPI アプリケーションを作成します
 app = FastAPI(title="ocr-worker")
@@ -79,6 +93,10 @@ class OcrRequest(BaseModel):
     # デバッグ用ダンプを出力するかどうかです
     dump: bool = Field(default=False, description="デバッグ用ダンプを出力するかどうか")
 
+    # 進捗通知用のジョブ ID です
+    # backend 側で SSE 配信を行う際に、どのジョブの進捗かを識別するために使用します
+    job_id: str | None = Field(default=None, description="進捗通知用のジョブ ID")
+
 
 class OcrResponse(BaseModel):
     """OCR 実行レスポンスのモデルです。"""
@@ -126,6 +144,98 @@ def _collect_text(output_root: Path) -> str:
     return "\n".join(parts)
 
 
+# OCR 対象として扱う画像ファイルの拡張子一覧です
+# これらの拡張子を持つファイルを画像としてカウントします
+_IMAGE_EXTENSIONS: set[str] = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".bmp",
+    ".gif",
+}
+
+
+def _count_images(input_root: str) -> int:
+    """入力ディレクトリ内の画像ファイル数を数えます。
+
+    Args:
+        input_root: OCR 対象画像の親ディレクトリパス
+
+    Returns:
+        画像ファイルの総数
+    """
+    # ndlocr_cli の single 形式では input_root/img/ 以下に画像を配置します
+    img_dir = Path(input_root) / "img"
+
+    # 画像ディレクトリが存在しない場合は 0 ページとします
+    if not img_dir.exists():
+        return 0
+
+    # 画像ファイルの数を数えます
+    count = 0
+    for file_path in img_dir.iterdir():
+        # ファイルかつ対象拡張子の場合のみカウントします
+        if file_path.is_file() and file_path.suffix.lower() in _IMAGE_EXTENSIONS:
+            count += 1
+
+    return count
+
+
+def _write_progress(
+    job_id: str | None,
+    status: str,
+    progress: float,
+    current_page: int = 0,
+    total_pages: int = 0,
+    message: str = "",
+) -> None:
+    """進捗情報を共有ファイルに書き出します。
+
+    Args:
+        job_id: 進捗通知対象のジョブ ID（未設定時は何もしません）
+        status: ジョブの状態文字列
+        progress: 進捗率（0.0 〜 1.0）
+        current_page: 現在処理中のページ番号
+        total_pages: 処理対象の総ページ数
+        message: 補足メッセージ
+    """
+    # job_id が指定されていない場合は進捗書き出しを行いません
+    if job_id is None:
+        return
+
+    # 進捗ファイルの保存先ディレクトリです
+    # docker-compose.yml で backend と共有しています
+    progress_dir = Path("/data/progress")
+
+    # ディレクトリが存在しない場合は作成します
+    progress_dir.mkdir(parents=True, exist_ok=True)
+
+    # ジョブ ID ごとに JSON ファイルを作成します
+    progress_file = progress_dir / f"{job_id}.json"
+
+    # 現在時刻を UTC で ISO 8601 形式で取得します
+    now = datetime.now(timezone.utc).isoformat()
+
+    # 進捗情報を辞書にまとめます
+    data = {
+        "job_id": job_id,
+        "status": status,
+        "progress": progress,
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "message": message,
+        "timestamp": now,
+    }
+
+    # JSON 形式でファイルに書き出します
+    progress_file.write_text(
+        json.dumps(data, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
 @app.post("/ocr", response_model=OcrResponse)
 async def run_ocr(request: OcrRequest) -> OcrResponse:
     """OCR 処理を実行するエンドポイントです。
@@ -139,6 +249,12 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
     Raises:
         HTTPException: OCR 処理に失敗した場合
     """
+    # 進捗通知に使用するジョブ ID を取得します
+    job_id = request.job_id
+
+    # 処理対象の総ページ数（画像数）を事前に数えます
+    total_pages = _count_images(request.input_root)
+
     # ndlocr_cli 用の設定辞書を作成します
     cfg = {
         "input_root": request.input_root,
@@ -153,6 +269,21 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
     }
 
     try:
+        # OCR 処理開始を進捗ファイルに記録します
+        _write_progress(
+            job_id,
+            status="processing",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="OCR 処理を開始しました",
+        )
+
+        # Hydra のグローバルインスタンスをクリアします
+        # 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にします
+        if GlobalHydra.instance().is_initialized():
+            GlobalHydra.instance().clear()
+
         # 設定を解析して ndlocr_cli 用の形式に変換します
         # OCR の初期化は重い可能性があるため、スレッドプールで実行します
         infer_cfg = await run_in_threadpool(ndlocr_utils.parse_cfg, cfg)
@@ -177,6 +308,16 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             Path(infer_cfg["output_root"]),
         )
 
+        # OCR 処理完了を進捗ファイルに記録します
+        _write_progress(
+            job_id,
+            status="completed",
+            progress=1.0,
+            current_page=total_pages,
+            total_pages=total_pages,
+            message="OCR 処理が完了しました",
+        )
+
         # OCR 結果を返します
         return OcrResponse(
             success=True,
@@ -185,6 +326,16 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             message="",
         )
     except Exception as exc:
+        # エラー発生を進捗ファイルに記録します
+        _write_progress(
+            job_id,
+            status="failed",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message=f"OCR 処理に失敗しました: {exc}",
+        )
+
         # エラーが発生した場合は HTTP 500 エラーを返します
         raise HTTPException(
             status_code=500,

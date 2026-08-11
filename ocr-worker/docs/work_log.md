@@ -250,3 +250,55 @@ curl -s --max-time 600 \
 - 初回の ndlocr_cli 推論時はモデルの初期化などにより時間がかかる
 - 大きな画像や多数のページを処理する場合はタイムアウト設定に注意
 
+---
+
+## 2026-08-11 タスク001002続き：結合テストでの GlobalHydra エラー修正
+
+### 目的
+
+backend → ocr-worker 連携の結合テストを実施し、発生した `GlobalHydra` 初期化エラーを修正する。
+
+### 前提
+
+- タスク001002 で ocr-worker HTTP API の実装が完了していること
+- backend / ocr-worker / frontend が Docker Compose で起動していること
+- テスト用の ZIP ファイル（PNG 画像 2 枚）が用意されていること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# テスト用 ZIP 作成
+mkdir -p /tmp/book2pdf-test
+# （2 枚のサンプル画像を /tmp/book2pdf-test/001.png, 002.png として配置）
+cd /tmp/book2pdf-test && zip -r sample.zip 001.png 002.png
+
+# frontend 開発サーバー起動確認
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000
+
+# backend 結合テスト（ジョブ作成 → アップロード → OCR）
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@/tmp/book2pdf-test/sample.zip;type=application/zip" \
+  "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
+curl -s --max-time 600 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
+```
+
+### 結果
+
+- 初回の OCR リクエストは成功したが、2 回目以降のリクエストで以下のエラーが発生した
+  - `ValueError: GlobalHydra is already initialized`
+- 原因は `ocr-worker/app/main.py` 内で `infer` 関数が `hydra.initialize()` を毎回呼び出していたこと
+  - 1 回目は問題ないが、同じ Python プロセス内で 2 回目以降を実行すると衝突する
+- 対応として `infer` 関数の先頭で `GlobalHydra.instance().is_initialized()` を確認し、
+  既に初期化済みの場合は `clear()` してから `initialize()` するように修正した
+- 修正後、backend コンテナと ocr-worker コンテナを再ビルド・再起動した
+- 再度結合テストを実施し、複数回の OCR リクエストが正常に完了することを確認した
+  - ジョブ状態が `completed` になり、認識テキストがレスポンスに含まれることを確認
+
+### 注意事項
+
+- Hydra の GlobalHydra は同一プロセス内で複数回 `initialize()` できない
+- ocr-worker は Uvicorn worker プロセスを使い回すため、リクエストごとに reinitialize が必要
+- 将来的に `hydra.compose()` など別の方法に切り替える場合は、この clear/initialize パターンを見直す
+

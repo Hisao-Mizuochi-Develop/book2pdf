@@ -56,6 +56,12 @@ def create_job() -> str:
         "message": "",
         # 展開された画像ファイルの相対パスを保存するリストです
         "files": [],
+        # OCR 処理の進捗率です（0.0 〜 1.0）
+        "progress": 0.0,
+        # 現在処理中のページ番号です
+        "current_page": 0,
+        # 処理対象の総ページ数です
+        "total_pages": 0,
     }
 
     # 作成したジョブの ID を呼び出し元に返します
@@ -156,3 +162,109 @@ def update_job_with_ocr_result(
     _jobs[job_id]["message"] = message
 
     return True
+
+
+def update_job_with_pdf_path(
+    job_id: str,
+    pdf_path: str,
+    message: str = "",
+) -> bool:
+    """生成された PDF ファイルパスをジョブ情報に保存します。
+
+    Args:
+        job_id: 更新対象のジョブ ID
+        pdf_path: 生成された PDF ファイルのパス
+        message: 補足メッセージ（省略可）
+
+    Returns:
+        更新に成功した場合は True、ジョブが存在しなかった場合は False
+    """
+    # ジョブが存在しない場合は更新せず False を返します
+    if job_id not in _jobs:
+        return False
+
+    # PDF パスを保存します
+    _jobs[job_id]["pdf_path"] = pdf_path
+
+    # 更新時刻を現在時刻に設定します
+    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    # メッセージが指定されている場合は追記します
+    if message:
+        _jobs[job_id]["message"] = message
+
+    return True
+
+
+def update_job_progress(
+    job_id: str,
+    progress: float,
+    current_page: int = 0,
+    total_pages: int = 0,
+    message: str = "",
+) -> bool:
+    """指定されたジョブの進捗情報を更新します。
+
+    Args:
+        job_id: 更新対象のジョブ ID
+        progress: 進捗率（0.0 〜 1.0）
+        current_page: 現在処理中のページ番号
+        total_pages: 処理対象の総ページ数
+        message: 補足メッセージ
+
+    Returns:
+        更新に成功した場合は True、ジョブが存在しなかった場合は False
+    """
+    # ジョブが存在しない場合は更新せず False を返します
+    if job_id not in _jobs:
+        return False
+
+    # 進捗率を 0.0 〜 1.0 の範囲にClampします
+    # min/max を使って範囲外の値を補正します
+    _jobs[job_id]["progress"] = min(1.0, max(0.0, progress))
+
+    # 現在処理中のページ番号を更新します
+    _jobs[job_id]["current_page"] = current_page
+
+    # 総ページ数を更新します
+    _jobs[job_id]["total_pages"] = total_pages
+
+    # 更新時刻を現在時刻に設定します
+    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    # 補足メッセージを保存します
+    if message:
+        _jobs[job_id]["message"] = message
+
+    return True
+
+
+def get_job_progress(job_id: str) -> dict | None:
+    """指定されたジョブの進捗情報を取得します。
+
+    Args:
+        job_id: 取得対象のジョブ ID
+
+    Returns:
+        進捗情報の辞書。存在しない場合は None を返します。
+    """
+    # ジョブが存在しない場合は None を返します
+    job = _jobs.get(job_id)
+    if job is None:
+        return None
+
+    # 進捗に関するフィールドのみを抽出して返します
+    return {
+        # ジョブの現在の状態です
+        "status": job["status"],
+        # 進捗率です
+        "progress": job.get("progress", 0.0),
+        # 現在処理中のページ番号です
+        "current_page": job.get("current_page", 0),
+        # 処理対象の総ページ数です
+        "total_pages": job.get("total_pages", 0),
+        # 補足メッセージです
+        "message": job.get("message", ""),
+        # 最終更新時刻です
+        "updated_at": job.get("updated_at", ""),
+    }

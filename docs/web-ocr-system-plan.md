@@ -16,7 +16,7 @@
 | システム | 用途 | 技術スタック | 担当モジュール |
 |---|---|---|---|
 | ローカルスタンドアローンアプリ | 電子書籍画面のキャプチャ＋不要部分のトリミング | Tauri v2 + Rust + React + Vite | `localapp/` |
-| Web OCR/PDF システム | ZIP 画像 → OCR → 検索可能 PDF 生成 | Next.js 15 + FastAPI + Docker + ndlocr_cli | `frontend/` / `backend/` / `ocr-worker/` |
+| Web OCR/PDF システム | ZIP 画像 → OCR → 検索可能 PDF 生成 | Next.js 16 + FastAPI + Docker + ndlocr_cli | `frontend/` / `backend/` / `ocr-worker/` |
 
 各システムの選定理由や非機能要件などの詳細は `docs/design-decisions.md` を参照してください。
 
@@ -45,7 +45,7 @@
        ▼                                       ▼
 ┌──────────────┐                    ┌──────────────────────────┐
 │   localapp   │── トリミング済み ─▶│        frontend          │
-│ (Tauri v2)   │   画像を ZIP 化    │      (Next.js 15)        │
+│ (Tauri v2)   │   画像を ZIP 化    │      (Next.js 16)        │
 └──────────────┘                    └───────────┬──────────────┘
                                                 │ 3. ジョブ作成・進捗確認
                                                 ▼
@@ -152,7 +152,7 @@
 | レイヤー | 技術 | 理由 |
 |---|---|---|
 | ローカルアプリ | Tauri v2 + Rust + React + Vite | クロスプラットフォーム対応、軽量、画面キャプチャプラグインが利用可能 |
-| Web フロントエンド | Next.js 15 App Router | モダン Web 技術の学習、SSR/SSG/Route Handlers の実践 |
+| Web フロントエンド | Next.js 16 App Router | モダン Web 技術の学習、SSR/SSG/Route Handlers の実践 |
 | Web バックエンド | FastAPI | Python 製 OCR ライブラリとの親和性が高い、非同期処理が得意 |
 | OCR | ndlocr_cli | 日本語縦書き・ルビ・複雑レイアウトに強い国立国会図書館製 OCR |
 | PDF 生成 | PyMuPDF | 画像背景＋透明テキストレイヤーの検索可能 PDF 作成に向いている |

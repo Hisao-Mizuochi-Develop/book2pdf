@@ -74,12 +74,18 @@ class BaseOcrEngine(ABC):
     """
 
     @abstractmethod
-    def run(self, image_files: list[str], work_dir: Path) -> OcrResult:
+    def run(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
         """画像ファイルに対して OCR 処理を実行します。
 
         Args:
             image_files: OCR 対象の画像ファイルパスのリスト
             work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知に使用するジョブ ID（省略可）
 
         Returns:
             OCR 処理結果
@@ -110,12 +116,18 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
         # ocr-worker コンテナ内の設定ファイルパスを保持します
         self.config_file = str(config_file)
 
-    def run(self, image_files: list[str], work_dir: Path) -> OcrResult:
+    def run(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
         """画像ファイルに対して OCR 処理を実行します。
 
         Args:
             image_files: OCR 対象の画像ファイルパスのリスト
             work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知に使用するジョブ ID（省略可）
 
         Returns:
             OCR 処理結果
@@ -147,6 +159,8 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
             "dump": False,
             "input_structure": "s",
             "ruby_only": False,
+            # ocr-worker 側で進捗ファイルを更新するために job_id を渡します
+            "job_id": job_id,
         }
 
         # ocr-worker に HTTP POST で OCR 実行をリクエストします
@@ -186,16 +200,26 @@ class NdloCrOcrEngine(BaseOcrEngine):
         # ndlocr_cli の設定ファイルパスを保持します
         self.config_file = str(config_file)
 
-    def run(self, image_files: list[str], work_dir: Path) -> OcrResult:
+    def run(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
         """画像ファイルに対して OCR 処理を実行します。
 
         Args:
             image_files: OCR 対象の画像ファイルパスのリスト
             work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知に使用するジョブ ID（省略可）
 
         Returns:
             OCR 処理結果
         """
+        # job_id は現状では直接使用しません
+        # 将来、同じコンテナ内で進捗ファイルを更新する際に使用する予定です
+        _ = job_id
+
         # ndlocr_cli が利用できない場合は実行できません
         if not _NDLOCR_AVAILABLE:
             raise RuntimeError("ndlocr_cli が利用できない環境で OCR を実行しようとしました")
@@ -289,16 +313,26 @@ class MockOcrEngine(BaseOcrEngine):
     OCR 処理の流れを確認するために使用します。
     """
 
-    def run(self, image_files: list[str], work_dir: Path) -> OcrResult:
+    def run(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
         """画像ファイル名をもとにモックの OCR 結果を返します。
 
         Args:
             image_files: OCR 対象の画像ファイルパスのリスト
             work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知に使用するジョブ ID（省略可）
 
         Returns:
             モックの OCR 処理結果
         """
+        # job_id はモックでは直接使用しません
+        # テストで進捗通知の流れを確認する際に受け取るだけです
+        _ = job_id
+
         # 出力先ディレクトリを作成します
         output_root = work_dir / "output"
         output_root.mkdir(parents=True, exist_ok=True)

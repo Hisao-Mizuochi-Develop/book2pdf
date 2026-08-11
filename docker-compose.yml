@@ -1,5 +1,5 @@
 # book2pdf Web OCR/PDF システム用 Docker Compose 構成です
-# backend（FastAPI）と ocr-worker（ndlocr_cli）を別コンテナとして分離します
+# backend（FastAPI）、ocr-worker（ndlocr_cli）、frontend（Next.js）を別コンテナとして分離します
 
 services:
   # FastAPI バックエンドコンテナです
@@ -20,6 +20,9 @@ services:
       - extracted:/data/extracted
       - ocr_output:/data/ocr_output
       - pdfs:/data/pdfs
+      # 進捗通知用ファイルの共有ディレクトリです
+      # backend と ocr-worker が進捗 JSON をやり取りするために使用します
+      - progress:/data/progress
     environment:
       # 本番環境では実際の秘密鍵を設定してください
       - SECRET_KEY=change-me-in-production
@@ -47,7 +50,33 @@ services:
       - extracted:/data/extracted
       - ocr_output:/data/ocr_output
       - pdfs:/data/pdfs
+      # 進捗通知用ファイルの共有ディレクトリです
+      - progress:/data/progress
     # Dockerfile の CMD で FastAPI サーバーを起動します
+
+  # フロントエンドコンテナです
+  # Next.js 開発サーバーを起動し、ブラウザから操作できるようにします
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    platform: linux/amd64
+    container_name: book2pdf-frontend
+    ports:
+      # ホストの 3000 番ポートをコンテナの 3000 番ポートにマッピングします
+      - "3000:3000"
+    volumes:
+      # ソースコードをホストと共有し、ホットリロードを有効にします
+      - ./frontend:/app
+      # node_modules はコンテナ内のものを使用し、ホストのもので上書きしないようにします
+      - /app/node_modules
+    environment:
+      # ブラウザから backend API へアクセスするためのホスト側 URL です
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    depends_on:
+      # backend コンテナの起動を待ちます
+      - backend
 
 # 共有ボリュームの定義です
 # コンテナ間でデータを共有し、プロセス再起動後もデータを保持します
@@ -56,3 +85,4 @@ volumes:
   extracted:
   ocr_output:
   pdfs:
+  progress:

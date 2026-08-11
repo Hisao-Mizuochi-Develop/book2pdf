@@ -47,6 +47,7 @@ ocr-worker コンテナ: ndlocr_cli（Python パッケージとして import）
 - `/data/extracted`: 展開された画像
 - `/data/ocr_output`: OCR 結果
 - `/data/pdfs`: 生成された PDF
+- `/data/progress`: 進捗通知用 JSON ファイル（backend と ocr-worker で共有）
 
 ### コンテナ連携
 
@@ -55,6 +56,8 @@ ocr-worker コンテナ: ndlocr_cli（Python パッケージとして import）
 - `ocr-worker` コンテナは起動時に Uvicorn で API サーバーを立ち上げ、
   `POST /ocr` リクエストを待ち受ける
 - backend から ocr-worker へは Docker Compose サービス名を使って `http://ocr-worker:8000` でアクセスする
+- OCR 処理の進捗は `/data/progress/{job_id}.json` に書き出され、
+  backend の `GET /api/jobs/{job_id}/events` で SSE 形式で配信される
 
 ## 5. 処理フロー
 
@@ -62,9 +65,10 @@ ocr-worker コンテナ: ndlocr_cli（Python パッケージとして import）
 2. FastAPI が ZIP を保存して展開
 3. ジョブ ID を発行し、ジョブ状態を管理
 4. FastAPI が `ocr-worker` コンテナ経由で ndlocr_cli を呼び出して OCR 実行
-5. OCR 結果を取得し、検索可能 PDF を生成
-6. SSE で処理進捗を通知
-7. ユーザーが PDF をダウンロード
+5. OCR 処理中、`ocr-worker` が `/data/progress/{job_id}.json` に進捗を書き出す
+6. backend が進捗ファイルをポーリングし、SSE でブラウザに配信する
+7. OCR 結果を取得し、検索可能 PDF を生成
+8. ユーザーが PDF をダウンロード
 
 ## 6. PDF 仕様
 
@@ -161,7 +165,8 @@ backend/
     ├── conftest.py               # pytest 用共通設定（EXTRACT_BASE_DIR 上書きなど）
     ├── test_main.py              # 基本動作確認用テスト
     ├── test_jobs.py              # ジョブ・ZIP アップロード関連テスト
-    └── test_ocr.py               # OCR 実行関連テスト
+    ├── test_ocr.py               # OCR 実行関連テスト
+    └── test_progress.py          # SSE 進捗通知関連テスト
 ```
 
 ## 11. 注意事項

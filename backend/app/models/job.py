@@ -93,3 +93,40 @@ class JobOcrResponse(BaseModel):
 
     # 補足メッセージ（エラー時など）です
     message: str = Field(default="", description="補足メッセージ")
+
+
+class ProgressEvent(BaseModel):
+    """OCR 処理の進捗通知イベントモデルです。
+
+    SSE（Server-Sent Events）でクライアントに配信される進捗情報を表します。
+    """
+
+    # 進捗通知対象のジョブを識別するための ID です
+    job_id: str = Field(..., description="ジョブの一意な ID")
+
+    # ジョブの現在の状態を表します
+    status: JobStatus = Field(..., description="ジョブの現在の状態")
+
+    # 全体に対する進捗率です
+    # 0.0（開始時）から 1.0（完了時）までの値を取ります
+    progress: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="進捗率（0.0 〜 1.0）",
+    )
+
+    # 現在処理中のページ番号です
+    # 1 から始まるページ番号で、未開始時は 0 になります
+    current_page: int = Field(default=0, ge=0, description="現在処理中のページ番号")
+
+    # 処理対象の総ページ数です
+    # ZIP 展開後に確定します
+    total_pages: int = Field(default=0, ge=0, description="処理対象の総ページ数")
+
+    # 補足メッセージ（エラー時など）です
+    message: str = Field(default="", description="補足メッセージ")
+
+    # イベントが発生した時刻です
+    # ISO 8601 形式の UTC 時刻文字列として保存されます
+    timestamp: str = Field(default="", description="イベント発生時刻（ISO 8601 UTC）")

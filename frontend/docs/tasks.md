@@ -23,11 +23,47 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 001001 | Next.js プロジェクトの初期構成 | 2026-08-11 |  | 設計 |
+| 001001 | Next.js プロジェクトの初期構成 | 2026-08-11 | 2026-08-11 | 設計 |
 |  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
 |  | Next.js 15 App Router プロジェクトを作成する |  |  |  |
+|  | - `npx create-next-app@latest frontend` を実行し、TypeScript・Tailwind CSS・App Router 構成を選択する |  |  |  |
+|  | - 作成後、不要なサンプルファイル（`public/` 内の不要物、`src/app/page.tsx` の初期表示内容など）を整理する |  |  |  |
 |  | Tailwind CSS を設定する |  |  |  |
+|  | - `create-next-app` のオプションで Tailwind CSS を有効化する |  |  |  |
+|  | - 必要に応じて `tailwind.config.ts` を確認・調整する |  |  |  |
 |  | frontend/Dockerfile を作成する |  |  |  |
+|  | - Node.js 公式イメージ（LTS）をベースに、開発用 Dockerfile を作成する |  |  |  |
+|  | - 本番用のビルドステージも検討し、最小構成を目指す |  |  |  |
+|  | docker-compose.yml に frontend サービスを追加する |  |  |  |
+|  | - ポート 3000 をホストにマップする |  |  |  |
+|  | - backend サービスへの依存とネットワーク共有を設定する |  |  |  |
+|  | API 通信用雛形を作成する |  |  |  |
+|  | - `frontend/src/lib/api.ts` を新規作成し、FastAPI エンドポイントを呼び出す関数を整備する |  |  |  |
+|  | - 対象エンドポイント: `POST /api/jobs`、`POST /api/jobs/{job_id}/upload`、`POST /api/jobs/{job_id}/ocr`、`GET /api/jobs/{job_id}/events`（SSE）、`GET /api/jobs/{job_id}/pdf` |  |  |  |
+|  | トップページの簡易実装を行う |  |  |  |
+|  | - `frontend/src/app/page.tsx` にファイル選択 input、ジョブ作成・ZIP アップロード・OCR 実行ボタン、進捗表示エリア、PDF ダウンロードリンクを配置する |  |  |  |
+|  | ドキュメントを更新する |  |  |  |
+|  | - `frontend/docs/frontend-system-spec.md` の「フォルダ・ファイル構成」を実態に合わせて更新する |  |  |  |
+|  | - `frontend/docs/tasks.md` に本計画と実施結果を追記する |  |  |  |
+|  | - `frontend/docs/work_log.md` に実行コマンドと結果を記録する |  |  |  |
+|  | - `docs/web-ocr-system-plan.md` の frontend 構成も更新する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-08-11: `npx create-next-app@latest` で Next.js 16.3.0 + React 19 + Tailwind CSS v4 + TypeScript + App Router 構成のプロジェクトを作成した |  |  |  |
+|  | 2026-08-11: 不要なサンプルファイル（README.md, AGENTS.md, CLAUDE.md, public/*.svg）を削除した |  |  |  |
+|  | 2026-08-11: `src/app/layout.tsx` の metadata・lang を日本語・book2pdf 向けに更新した |  |  |  |
+|  | 2026-08-11: `frontend/Dockerfile` を新規作成（Node.js 26 Alpine ベース、dev/build/runner マルチステージ） |  |  |  |
+|  | 2026-08-11: `next.config.ts` に `output: "standalone"` を追加した |  |  |  |
+|  | 2026-08-11: `docker-compose.yml` に frontend サービスを追加（target: dev、port 3000、backend 依存） |  |  |  |
+|  | 2026-08-11: `src/lib/api.ts` を新規作成し、backend API 通信用関数（createJob, uploadZip, runOcr, subscribeJobProgress, getPdfDownloadUrl）を整備した |  |  |  |
+|  | 2026-08-11: `src/app/page.tsx` を新規作成し、ファイル選択から ZIP アップロード、OCR 実行、進捗表示、PDF ダウンロードまでの簡易 UI を実装した |  |  |  |
+|  | 2026-08-11: `npm run build` が成功し、`npm run dev` で開発サーバーが起動することを確認した |  |  |  |
+|  | 2026-08-11: ブラウザで `http://localhost:3000` にアクセスし、トップページが正常に表示されることを確認した |  |  |  |
+|  | 2026-08-11: `frontend/docs/frontend-system-spec.md` / `tasks.md` / `work_log.md`、および `docs/web-ocr-system-plan.md` を更新した |  |  |  |
+|  | 2026-08-11: Docker Compose 上の frontend コンテナが `Up` 状態であり、`curl http://localhost:3000` が HTTP 200 を返すことを確認した |  |  |  |
+|  | 2026-08-11: Puppeteer による自動確認で、`http://localhost:3000` のトップページにタイトル・サブタイトル・ZIP ファイル選択 input・「アップロードして OCR 実行」ボタンが表示されることを確認した |  |  |  |
+|  | 2026-08-11: `GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認（Puppeteer の PDF 直接表示はブラウザ制限で `net::ERR_ABORTED` となるが、API 自体は正常動作） |  |  |  |
+|  | 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/work_log.md` / `backend/docs/caveats.md` に記録 |  |  |  |
 | 001002 | ZIP アップロード UI の実装 | 2026-08-11 |  | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |

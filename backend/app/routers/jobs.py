@@ -12,6 +12,17 @@ from __future__ import annotations
 # 不正な ZIP ファイルを判定するために使用します
 import zipfile
 
+# 非同期処理でスリープするための標準ライブラリです
+# SSE 配信中の進捗ファイルポーリング間隔で使用します
+import asyncio
+
+# JSON 形式の進捗ファイルを読み込むための標準ライブラリです
+import json
+
+# 環境変数を読み込むための標準ライブラリです
+# 進捗ファイルディレクトリをテスト時に変更するために使用します
+import os
+
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
@@ -21,6 +32,10 @@ from pathlib import Path
 # UploadFile: アップロードされたファイルを受け取る
 from fastapi import APIRouter, HTTPException, UploadFile
 
+# FileResponse: ファイルダウンロード用レスポンス
+# StreamingResponse: SSE 配信用レスポンス
+from fastapi.responses import FileResponse, StreamingResponse
+
 # ジョブ関連の Pydantic モデルを読み込みます
 # リクエスト・レスポンスの型とルールを定義しています
 from app.models.job import (
@@ -29,6 +44,7 @@ from app.models.job import (
     JobResponse,
     JobUploadResponse,
     JobStatus,
+    ProgressEvent,
 )
 
 # ジョブ状態管理サービスを読み込みます
@@ -39,6 +55,9 @@ from app.services import zip_extractor
 
 # OCR エンジンを読み込みます
 from app.services.ocr_engine import create_ocr_engine
+
+# 検索可能 PDF 生成サービスを読み込みます
+from app.services.pdf_generator import generate_searchable_pdf
 
 # このルーターで定義するエンドポイントの共通設定です
 # tags は自動生成される API ドキュメントでグループ名として使われます
@@ -197,6 +216,7 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
         result = ocr_engine.run(
             image_files=absolute_image_files,
             work_dir=Path(extract_dir),
+            job_id=job_id,
         )
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
@@ -218,9 +238,183 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
         output_dir=str(result.output_dir),
     )
 
+    # OCR 結果から検索可能 PDF を生成します
+    # PDF 生成に失敗しても OCR 結果自体は返します
+    try:
+        pdf_path = generate_searchable_pdf(
+            job_id=job_id,
+            output_dir=result.output_dir,
+            extract_dir=Path(extract_dir),
+        )
+        job_manager.update_job_with_pdf_path(
+            job_id,
+            pdf_path=str(pdf_path),
+            message="PDF 生成が完了しました",
+        )
+    except Exception as pdf_exc:
+        # PDF 生成に失敗した場合はメッセージに記録します
+        job_manager.update_job_with_pdf_path(
+            job_id,
+            pdf_path="",
+            message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
+        )
+
     # レスポンスモデルに合わせて返却します
     return JobOcrResponse(
         job_id=job_id,
         status=JobStatus.COMPLETED,
         text=result.text,
+    )
+
+
+# 進捗ファイルの保存先ディレクトリです
+# docker-compose.yml で ocr-worker と共有しています
+# テスト時は PROGRESS_DIR 環境変数で上書きできます
+_PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
+
+# 進捗ファイルのポーリング間隔（秒）です
+# テスト時は PROGRESS_POLL_INTERVAL 環境変数で短縮できます
+_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.5"))
+
+
+@router.get("/{job_id}/pdf")
+async def download_pdf(job_id: str) -> FileResponse:
+    """指定されたジョブの生成済み PDF をダウンロードします。
+
+    Args:
+        job_id: ダウンロード対象のジョブ ID
+
+    Returns:
+        PDF ファイルのレスポンス
+
+    Raises:
+        HTTPException: ジョブが存在しない、未完了、または PDF が未生成の場合
+    """
+    # ジョブが存在するか確認します
+    job = job_manager.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="指定されたジョブが見つかりません")
+
+    # OCR 処理が完了しているか確認します
+    if job["status"] != JobStatus.COMPLETED.value:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF のダウンロードは OCR 処理完了後に可能です",
+        )
+
+    # PDF パスが保存されているか確認します
+    pdf_path = job.get("pdf_path", "")
+    if not pdf_path:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF が生成されていません",
+        )
+
+    # PDF ファイルが実際に存在するか確認します
+    path = Path(pdf_path)
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="PDF ファイルが見つかりません",
+        )
+
+    # PDF ファイルを返します
+    return FileResponse(
+        path=str(path),
+        media_type="application/pdf",
+        filename=f"{job_id}.pdf",
+    )
+
+
+async def _progress_event_generator(job_id: str):
+    """SSE 配信用の進捗イベントジェネレータです。
+
+    /data/progress/{job_id}.json をポーリングし、
+    更新があれば Server-Sent Events 形式でクライアントに送信します。
+    ジョブが completed または failed になったら配信を終了します。
+
+    Args:
+        job_id: 進捗配信対象のジョブ ID
+
+    Yields:
+        SSE 形式の進捗イベント文字列
+    """
+    # 進捗ファイルのパスを作成します
+    progress_file = _PROGRESS_DIR / f"{job_id}.json"
+
+    # 前回読み込んだ進捗データを保持します
+    last_data: dict | None = None
+
+    # イベントループに制御を渡し、TestClient がレスポンスを受信できるようにします
+    await asyncio.sleep(0)
+
+    # ジョブが完了または失敗するまでポーリングを続けます
+    while True:
+        # 進捗ファイルが存在する場合は読み込みます
+        if progress_file.exists():
+            content = progress_file.read_text(encoding="utf-8")
+            data = json.loads(content)
+
+            # 前回と内容が異なる場合のみイベントを送信します
+            if data != last_data:
+                last_data = data
+
+                # 進捗イベントモデルを作成します
+                event = ProgressEvent(
+                    job_id=job_id,
+                    status=JobStatus(data["status"]),
+                    progress=data.get("progress", 0.0),
+                    current_page=data.get("current_page", 0),
+                    total_pages=data.get("total_pages", 0),
+                    message=data.get("message", ""),
+                    timestamp=data.get("timestamp", ""),
+                )
+
+                # SSE 形式でイベントを yield します
+                event_text = f"data: {event.model_dump_json()}\n\n"
+                yield event_text
+
+                # クライアントに chunk を消費する時間を与えます
+                # TestClient の同期ストリーミングでは、yield 直後に次のループに進むと
+                # イベントが欠落する可能性があるため、ここで制御を渡します
+                await asyncio.sleep(0)
+
+                # 完了または失敗状態になったら配信を終了します
+                if data["status"] in (JobStatus.COMPLETED.value, JobStatus.FAILED.value):
+                    # ストリーム終了前に制御を渡し、最後のチャンクが確実に送信されるようにします
+                    await asyncio.sleep(0)
+                    break
+
+        # 次のポーリングまで短時間スリープします
+        await asyncio.sleep(_POLL_INTERVAL)
+
+    # ジェネレータ終了時に最後の制御を渡し、ストリームのクリーンアップを助けます
+    await asyncio.sleep(0)
+
+
+@router.get("/{job_id}/events")
+async def stream_job_events(job_id: str) -> StreamingResponse:
+    """指定されたジョブの進捗を SSE で配信します。
+
+    Args:
+        job_id: 進捗配信対象のジョブ ID
+
+    Returns:
+        Server-Sent Events 形式のストリーミングレスポンス
+
+    Raises:
+        HTTPException: ジョブが存在しない場合に 404 エラーを返します
+    """
+    # ジョブが存在するか確認します
+    job = job_manager.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="指定されたジョブが見つかりません")
+
+    # 進捗ファイル保存ディレクトリが存在しない場合は作成します
+    _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # SSE 形式でストリーミングレスポンスを返します
+    return StreamingResponse(
+        _progress_event_generator(job_id),
+        media_type="text/event-stream",
     )

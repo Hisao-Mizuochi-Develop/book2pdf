@@ -1,27 +1,128 @@
 # 作業ログ
 
-本ドキュメントは、frontend のタスク実施にあたり実行したコマンドとその結果を記録したものです。
+本ドキュメントは、book2pdf プロジェクトのフロントエンドタスク実施にあたり実行したコマンドとその結果を記録したものです。
 
-## 日時
+## 2026-08-11 タスク001001：Next.js プロジェクトの初期構成
 
 ### 目的
 
-（構築の目的を記載する）
+Next.js 15（App Router）+ TypeScript + Tailwind CSS のフロントエンドプロジェクトを作成し、backend / ocr-worker と連携するための初期構成を整える。
 
 ### 前提
 
-- （前提条件を記載する）
+- Node.js がインストール済みであること
+- backend / ocr-worker の Docker Compose 構成が整備済みであること
+- `frontend/docs/` に既存のドキュメントが存在すること
 
 ### 実施コマンド
 
 ```bash
-# ここに実施コマンドを記載する
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 既存の docs を退避
+mv frontend/docs /tmp/book2pdf-frontend-docs
+
+# 既存の frontend ディレクトリを削除
+rm -rf frontend
+
+# Next.js プロジェクトを作成（TypeScript・Tailwind CSS・App Router）
+npx create-next-app@latest frontend \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir \
+  --import-alias "@/*" \
+  --no-turbopack \
+  --use-npm
+
+# docs を復元
+rm -rf frontend/docs
+mv /tmp/book2pdf-frontend-docs frontend/docs
+
+# 不要ファイルの削除
+cd frontend
+rm -f README.md AGENTS.md CLAUDE.md public/*.svg
+
+# ビルド確認
+npm run build
+
+# 開発サーバー起動
+npm run dev
 ```
 
 ### 結果
 
-- （結果を記載する）
+- Next.js 16.3.0 + React 19 + Tailwind CSS v4 + TypeScript + App Router 構成のプロジェクトを作成した
+- 不要なサンプルファイルを削除し、`frontend/docs/` を復元した
+- `src/app/layout.tsx` の metadata・lang を日本語・book2pdf 向けに更新した
+- `frontend/Dockerfile` を新規作成（Node.js 26 Alpine ベース、dev/build/runner のマルチステージ構成）
+- `next.config.ts` に `output: "standalone"` を追加した
+- `docker-compose.yml` に frontend サービスを追加（target: dev、port 3000、backend 依存）
+- `src/lib/api.ts` を新規作成し、backend API 通信用関数を整備した
+  - `createJob`、`uploadZip`、`runOcr`、`subscribeJobProgress`、`getPdfDownloadUrl`
+- `src/app/page.tsx` を新規作成し、ファイル選択から ZIP アップロード、OCR 実行、進捗表示、PDF ダウンロードまでの簡易 UI を実装した
+- `npm run build` が成功した
+- `npm run dev` で開発サーバーが起動し、ブラウザで `http://localhost:3000` にアクセスしてトップページが正常に表示されることを確認した
+- `frontend/docs/frontend-system-spec.md` / `tasks.md` / `work_log.md`、および `docs/web-ocr-system-plan.md` を更新した
 
 ### 注意事項
 
-- （注意事項があれば記載する）
+- `create-next-app` で作成されたのは Next.js 16.3.0（最新版）であり、Next.js 15 以上を要求するプロジェクトルールに違反しない
+- Tailwind CSS は v4 がインストールされ、設定は `src/app/globals.css` の `@import "tailwindcss"` と `@theme inline` で行う方式になっている
+- 開発サーバーはフォアグラウンドで起動するため、Docker Compose 経由で利用する場合は `target: dev` のイメージを使用する
+- 本番ビルド時は `output: "standalone"` を利用し、最小構成の runner ステージで起動する
+- backend が起動していない状態では API 呼び出しは失敗するが、トップページの表示は可能
+
+---
+
+## 2026-08-11 タスク001001続き：frontend 結合テスト
+
+### 目的
+
+frontend 開発サーバーが起動し、ブラウザで UI が表示されることを確認する。
+また、backend API との連携を含めた結合テストの前提となる動作確認を行う。
+
+### 前提
+
+- タスク001001 で Next.js プロジェクトの初期構成が完了していること
+- Docker Compose で backend / ocr-worker / frontend が起動していること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# frontend コンテナの状態確認
+docker compose ps frontend
+
+# 開発サーバーへの HTTP アクセス確認
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000
+
+# ブラウザで http://localhost:3000 を開いて UI 表示を確認
+# （Puppeteer による自動確認）
+```
+
+### 結果
+
+- `docker compose ps frontend` で `book2pdf-frontend` が `Up` 状態であることを確認した
+- `curl http://localhost:3000` が HTTP 200 を返すことを確認した
+- ブラウザで `http://localhost:3000` を開き、以下が正常に表示されることを確認した
+  - タイトル「book2pdf」
+  - サブタイトル「ZIP 画像から OCR 処理を行い、検索可能 PDF を生成します」
+  - ZIP ファイル選択 input
+  - 「アップロードして OCR 実行」ボタン
+- また、`GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認した
+  - Puppeteer による PDF 直接表示では `net::ERR_ABORTED` が発生したが、
+    これはブラウザの PDF ビューア/ダウンロード処理に関する制限であり、API 自体は正常に動作している
+  - `downloadPdf()` 関数は Blob 経由でファイル保存を行うため、実際のユーザー操作では問題ない想定
+
+### 注意事項
+
+- frontend から backend API を呼び出す際、CORS 設定が必要になる可能性がある
+  - 現状は同一オリジン（`localhost:3000` → `localhost:8000`）ではないため、
+    ブラウザのセキュリティ制限で API 呼び出しがブロックされる可能性がある
+  - 必要に応じて backend に `fastapi.middleware.cors.CORSMiddleware` を追加する
+- Puppeteer 等の自動化ツールではファイル選択ダイアログの操作が困難なため、
+  ファイルアップロードから PDF ダウンロードまでの完全な E2E テストは手動で実施することを推奨する
+

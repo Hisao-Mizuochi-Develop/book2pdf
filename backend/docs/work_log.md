@@ -308,3 +308,169 @@ curl -s --max-time 600 \
 - ローカル pytest では共有ボリューム `/data/extracted` が使用できないため、
   `backend/tests/conftest.py` で `EXTRACT_BASE_DIR` 環境変数に一時ディレクトリを設定
   - `pytest_configure` フックを使用し、テストファイルの import より前に環境変数を設定
+
+---
+
+## 2026-08-11 タスク002001：SSE 進捗通知機能の実装
+
+### 目的
+
+OCR 処理の進捗を Server-Sent Events（SSE）でリアルタイムに配信する機能を実装する。
+
+### 前提
+
+- backend と ocr-worker が Docker Compose で分離している
+- 両コンテナ間で `/data/progress` 共有ボリュームを使用する
+- `backend/tests/conftest.py` でテスト用の一時ディレクトリ設定が行われている
+
+### 実施コマンド
+
+```bash
+# backend ローカルテスト実行
+# PROGRESS_POLL_INTERVAL を短縮して高速に実行
+# conftest.py で自動設定済み
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+python -m pytest tests/test_progress.py -q
+
+# すべての backend テスト実行
+python -m pytest tests/ -q
+```
+
+### 結果
+
+- `backend/tests/test_progress.py` の 3 件のテストが pass
+- 既存の `test_main.py` / `test_jobs.py` / `test_ocr.py` も含めた全テストが pass
+
+### 注意事項
+
+- SSE エンドポイントは進捗ファイル `/data/progress/{job_id}.json` をポーリングして配信する
+- 本番環境では `PROGRESS_POLL_INTERVAL` を省略し、デフォルトの 0.5 秒間隔を使用する
+- テスト時は `conftest.py` で `PROGRESS_POLL_INTERVAL=0.05` を設定し、高速化している
+- プロキシ環境で SSE が不安定な場合は、別途ポーリング方式（005001）を検討する
+
+---
+
+## 2026-08-11 タスク003001：検索可能 PDF 生成機能の実装
+
+### 目的
+
+OCR 結果（ndlocr_cli の `.sorted.xml` と画像ファイル）から検索可能 PDF を生成し、
+`GET /api/jobs/{job_id}/pdf` でダウンロードできるようにする。
+
+### 前提
+
+- タスク001004 までで ZIP アップロード・OCR 実行・ocr-worker 連携が完了済み
+- `backend/.venv` が Python 3.12 で作成済み
+- `pymupdf`（fitz）が `requirements.txt` 経由でインストール済み
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+
+# 特定のテストファイルを実行
+.venv/bin/python -m pytest tests/test_pdf.py -v
+
+# 進捗通知テストの動作確認
+.venv/bin/python -m pytest tests/test_progress.py -v --timeout=15
+
+# すべての backend テストを実行
+.venv/bin/python -m pytest tests/ -v --timeout=60
+```
+
+### 結果
+
+- 以下のファイルを作成・更新した
+  - `app/services/xml_parser.py`：ndlocr_cli の `.sorted.xml` をパースし、ページ画像パス・テキスト・座標を取得するサービスを新規作成
+  - `app/services/pdf_generator.py`：PyMuPDF（fitz）で画像を背景・認識テキストを透明テキストレイヤーとして配置し、検索可能 PDF を生成するサービスを新規作成
+  - `app/services/job_manager.py`：`update_job_with_pdf_path()` 関数を追加し、ジョブ情報への PDF パス保存に対応
+  - `app/routers/jobs.py`：`GET /api/jobs/{job_id}/pdf` エンドポイントを追加し、OCR 成功後に PDF 生成を自動実行する処理を追加
+  - `tests/test_pdf.py`：PDF 生成・XML 解析・ダウンロード API の正常系・異常系テストを 7 件新規作成
+  - `tests/test_progress.py`：SSE 進捗 generator を直接 `async for` でテストする形に書き換え
+  - `backend/docs/backend-system-spec.md`：フォルダ・ファイル構成と API 一覧を更新
+  - `backend/docs/caveats.md`：`TestClient` 経由の SSE テストの不安定性を追記
+  - `backend/docs/tasks.md`：タスク003001 の完了日付と実施結果を追記
+- `pytest` を実行し、backend の全 23 件のテストが pass した
+
+### 注意事項
+
+- ndlocr_cli の出力 XML にはページ順を示す `.sorted.xml` ファイルがある
+  - `xml_parser.py` では `*_?.sorted.xml` を glob 検索し、ファイル名でソートして順序を決定する
+- PDF 生成時に元画像が見つからない場合、`ValueError` を発生させる
+  - テストでは存在しない画像パスを指定し、エラー発生を確認している
+- `fastapi.testclient.TestClient` 経由の `StreamingResponse` テストは不安定だった
+  - 非同期 generator が yield した chunk がクライアント側に確実に届かず、テストが停止・失敗する
+  - 対応として `_progress_event_generator` を直接 import して `async for` で検証する形に変更した
+  - 詳細は `backend/docs/caveats.md` の「`fastapi.testclient.TestClient` 経由の SSE テストの不安定性」を参照
+- PDF 生成は OCR 成功後に自動実行されるが、PDF 生成に失敗しても OCR 結果は返す
+  - 失敗時はジョブメッセージに「OCR は成功しましたが PDF 生成に失敗しました」と記録する
+
+---
+
+## 2026-08-11 タスク003001続き：PDF ダウンロード API の結合テスト
+
+### 目的
+
+backend / ocr-worker / frontend を連携させて、ZIP アップロード → OCR → PDF ダウンロードまでの結合テストを実施する。
+
+### 前提
+
+- タスク003001 で PDF 生成機能の実装とユニットテストが完了していること
+- Docker Compose で backend / ocr-worker / frontend が起動していること
+- テスト用 ZIP ファイルが用意されていること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# すべてのサービスを最新イメージで起動
+docker compose up -d --build backend
+
+# OpenAPI エンドポイント一覧確認
+curl -s http://localhost:8000/openapi.json | jq '.paths | keys'
+
+# 結合テスト: ジョブ作成 → ZIP アップロード → OCR → PDF ダウンロード
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+echo "Job ID: $JOB_ID"
+
+curl -s -X POST -F "file=@/tmp/book2pdf-test/sample.zip;type=application/zip" \
+  "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
+
+curl -s --max-time 600 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" &
+OCR_PID=$!
+for i in $(seq 1 120); do
+  sleep 5
+  STATUS=$(curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq -r '.status')
+  echo "$(date +%H:%M:%S) status: $STATUS"
+  [ "$STATUS" = "completed" ] || [ "$STATUS" = "failed" ] && break
+done
+wait $OCR_PID 2>/dev/null
+
+curl -s -o /tmp/book2pdf-test/output.pdf -w "HTTP status: %{http_code}\n" \
+  "http://localhost:8000/api/jobs/$JOB_ID/pdf"
+file /tmp/book2pdf-test/output.pdf
+```
+
+### 結果
+
+- 初回のテストで `GET /api/jobs/{job_id}/pdf` が 404 エラー（`{"detail":"Not Found"}`）になった
+  - OpenAPI ドキュメントにも `/api/jobs/{job_id}/pdf` が含まれていなかった
+- 原因は backend コンテナが最新のソースコードで再ビルドされていなかったこと
+  - ホスト側の `backend/app/routers/jobs.py` には `download_pdf` 関数が存在していたが、
+    実行中のコンテナイメージには含まれていなかった
+- 対応として `docker compose up -d --build backend` を実行し、backend イメージを再ビルド・再起動した
+- 再起動後、OpenAPI ドキュメントに `/api/jobs/{job_id}/pdf` が表示されるようになった
+- 再度結合テストを実施し、以下を確認した
+  - `POST /api/jobs/` でジョブ作成に成功
+  - `POST /api/jobs/{job_id}/upload` で ZIP アップロードに成功（画像 2 枚を検出）
+  - `POST /api/jobs/{job_id}/ocr` で OCR が完了し `completed` ステータスになる
+  - `GET /api/jobs/{job_id}/pdf` で HTTP 200、`Content-Type: application/pdf`、2 ページの PDF が取得できる
+
+### 注意事項
+
+- backend コードを変更した後は、必ず `docker compose up -d --build backend` などでイメージを再ビルドすること
+  - 単なる `docker compose restart backend` ではホスト側のソース変更が反映されない
+- テスト用のジョブは backend のメモリ内に保持されているため、backend 再起動後は過去のジョブにアクセスできなくなる
+  - 永続化は別タスク（004001）で対応予定
+

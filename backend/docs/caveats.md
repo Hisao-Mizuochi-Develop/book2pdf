@@ -179,3 +179,163 @@ backend 側の `OCR_WORKER_REQUEST_TIMEOUT` も必要に応じて調整する。
   OCR 処理完了まで削除されない
   - ただし backend プロセス再起動時に失われるため、将来の永続化対応時に設計を見直す
 
+---
+
+## 2026-08-11 SSE 進捗通知の実装と検証
+
+### 事象 1：ocr-worker から backend へ進捗を伝える方法
+
+backend と ocr-worker が別コンテナのため、OCR 処理中の進捗を backend に伝える仕組みが必要だった。
+
+### 原因 1
+
+ocr-worker は HTTP リクエストに対して同期的に OCR 処理を返すだけで、
+処理中の細かい進捗を backend に通知する手段がなかった。
+
+### 対応 1
+
+`docker-compose.yml` に `/data/progress` 共有ボリュームを追加し、
+ocr-worker が `/data/progress/{job_id}.json` に進捗を書き出す方式とした。
+backend は同じファイルをポーリングし、`GET /api/jobs/{job_id}/events` で SSE 形式に変換して配信する。
+
+現状の実装では、OCR 処理の開始時・完了時・失敗時に進捗ファイルを更新する。
+ndlocr_cli の内部処理段階に合わせた細かい進捗取得は、今後の改善課題として残している。
+
+### 事象 2：テスト時に `/data/progress` ディレクトリが書き込みできない
+
+### 原因 2
+
+`app/routers/jobs.py` の `_PROGRESS_DIR` が `/data/progress` に固定されており、
+ローカルの pytest 環境では該当ディレクトリが存在しないか書き込み権限がない。
+
+### 対応 2
+
+`_PROGRESS_DIR` を `PROGRESS_DIR` 環境変数で上書きできるようにした。
+テストでは `monkeypatch` を使って一時ディレクトリに差し替える。
+
+```python
+_PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
+```
+
+また、進捗ファイルのポーリング間隔 `_POLL_INTERVAL` も `PROGRESS_POLL_INTERVAL` 環境変数で調整できるようにし、
+`backend/tests/conftest.py` で 0.05 秒に短縮してテストを高速化している。
+
+### 備考
+
+- SSE は `fastapi.responses.StreamingResponse`（`media_type="text/event-stream"`）を使用して実装した
+- プロキシ環境やタイムアウト設定によって SSE が不安定になる場合は、
+  別途ポーリング方式（005001）への切り替えを検討する
+- フロントエンドでの進捗バー表示は、タスク002002 として別途対応する
+
+---
+
+## 2026-08-11 `fastapi.testclient.TestClient` 経由の SSE テストの不安定性
+
+### 事象
+
+`tests/test_progress.py` において、`TestClient` + `StreamingResponse` を使った
+HTTP ストリーム経由の SSE テストを実装したところ、テストが停止したり
+最初の進捗イベントがクライアント側に届かず失敗したりする現象が発生した。
+
+### 原因
+
+`TestClient`（`starlette.testclient.TestClient`）は内部的に同期的な `httpx` ストリームを使用するが、
+これが非同期 generator から yield された chunk を確実に消費・受信できない場合がある。
+特に `iter_text()` を開始する前に generator が yield してしまうと、
+イベントが欠落し、テストがタイムアウトまたは失敗する。
+
+`httpx.AsyncClient` + `ASGITransport` による非同期 HTTP ストリームでも、
+chunk の受信タイミングが不定となり安定したテストが書けないことも確認した。
+
+### 対応
+
+SSE イベントを生成する async generator 関数 `_progress_event_generator` を
+`app/routers/jobs.py` から直接 import し、`async for` でイテレーションする形に
+テストを変更した。これにより HTTP レイヤー（`StreamingResponse` / `TestClient`）を
+介さずに、SSE 配信の核心部分（進捗ファイルポーリングとイベント yield ロジック）を
+安定して検証できるようになった。
+
+HTTP エンドポイント `GET /api/jobs/{job_id}/events` 自体の動作確認は、
+存在しないジョブに対する 404 応答テスト（`test_stream_job_events_not_found`）でカバーしている。
+
+### 備考
+
+- `_progress_event_generator` のみを直接テストしても、`StreamingResponse` による
+  HTTP 配信部分は未カバーとなる。ただし FastAPI / Starlette の標準機能を使用しており、
+  フレームワーク側の挙動を信頼するのが現実的である
+- 本番環境での SSE 配信動作は、Docker コンテナ起動後に実際のブラウザや curl で確認する
+- `test_progress.py` 内に「なぜ HTTP ストリームを経由しないか」を説明するコメントを残している
+
+---
+
+## 2026-08-11 backend コンテナのソース変更反映には再ビルドが必要
+
+### 事象
+
+タスク003001の結合テストで、`GET /api/jobs/{job_id}/pdf` エンドポイントが 404 エラー（`{"detail":"Not Found"}`）を返した。
+また、`http://localhost:8000/openapi.json` のエンドポイント一覧にも `/api/jobs/{job_id}/pdf` が含まれていなかった。
+
+### 原因
+
+ホスト側の `backend/app/routers/jobs.py` には `download_pdf` 関数が実装されていたが、
+実行中の backend コンテナイメージにはその変更が反映されていなかった。
+Docker イメージは `docker compose up` 時点のソースで固定されており、
+その後のホスト側ソース変更は自動的には反映されない。
+
+### 対応
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+docker compose up -d --build backend
+```
+
+`--build` を指定して backend イメージを再ビルドし、コンテナを再起動したところ、
+新しいエンドポイントが反映され、PDF ダウンロードが正常に動作した。
+
+### 備考
+
+- `docker compose restart backend` ではソース変更は反映されない
+- コード変更後は `--build` を使うか、イメージを削除してから再作成する必要がある
+  - `docker compose rm -f backend && docker compose up -d --build backend`
+- backend のジョブ状態は現在メモリ内で管理されているため、再起動後は過去のジョブにアクセスできなくなる
+  - 永続化は別タスク（004001）で対応予定
+
+---
+
+## 2026-08-11 frontend から backend API を呼び出す際の CORS 設定
+
+### 事象
+
+frontend（`http://localhost:3000`）から backend（`http://localhost:8000`）の API を呼び出す際、
+ブラウザの同一オリジンポリシーによりリクエストがブロックされる可能性がある。
+
+### 原因
+
+開発環境では frontend と backend が別々のオリジン（ポート 3000 と 8000）で動作しているため、
+ブラウザは Cross-Origin Resource Sharing（CORS）のプリフライトリクエストを送信する。
+backend で CORS 許可設定が行われていない場合、`fetch` が失敗する。
+
+### 対応
+
+現状の結合テストでは API 自体の動作を cURL とブラウザ直接アクセスで確認しているが、
+frontend からの実際の API 呼び出しを安定させるため、backend に `CORSMiddleware` を追加することを推奨する。
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+本番環境では `allow_origins` を適切なドメインに制限すること。
+
+### 備考
+
+- 同一オリジン配置（リバースプロキシ等）を採用する場合は CORS 設定が不要になる
+- Next.js の API Route 経由で backend を呼び出す方式も検討できる
+
