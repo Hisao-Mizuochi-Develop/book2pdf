@@ -1,24 +1,6 @@
-.DS_Store
-
-# Python cache
+old/
+sample-png/
+.venv/
 __pycache__/
-*.pyc
-*.pyo
-
-# Virtual environment
-kindle_env/
-book_env/
-
-# External tools
-ndlocr-lite/
-
-# User-specific config
-core/config.json
-config.json
-
-# Build artifacts
-build/
 dist/
-*.spec
-!build-mac.spec
-!build-win.spec
+.DS_Store

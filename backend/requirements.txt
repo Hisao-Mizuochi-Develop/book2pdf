@@ -1,0 +1,38 @@
+# FastAPI: モダンな非同期 Web フレームワーク
+# 用途: HTTP API エンドポイントの提供
+fastapi
+
+# Uvicorn: ASGI サーバー
+# 用途: FastAPI アプリケーションの実行
+# [standard] を付けることで高速なイベントループと自動リロード機能を含む
+uvicorn[standard]
+
+# Python-multipart: マルチパートフォームデータのパース
+# 用途: ブラウザからの ZIP ファイルアップロード処理
+python-multipart
+
+# PyMuPDF: PDF 生成・操作ライブラリ
+# 用途: OCR 結果を元に検索可能 PDF を生成
+pymupdf
+
+# Pydantic: データバリデーション・シリアライゼーション
+# 用途: リクエスト・レスポンスモデルの定義
+pydantic
+
+# Pydantic Settings: 環境変数や設定ファイルの管理
+# 用途: アプリケーション設定の型安全な読み込み
+pydantic-settings
+
+# pytest: Python のテストフレームワーク
+# 用途: ユニットテスト・統合テストの実行
+pytest
+
+# HTTPX: モダンな HTTP クライアント
+# 用途: FastAPI の TestClient が内部で使用する
+httpx
+
+# ndlocr_cli: 国立国会図書館製の日本語 OCR ライブラリ
+# 用途: ページ画像のテキスト認識
+# 注意: 本パッケージは GitHub リポジトリから別途インストールする
+#       公式 Docker スクリプトを参考に、Docker 環境で構築予定
+# ndlocr_cli

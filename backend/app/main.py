@@ -1,0 +1,33 @@
+"""FastAPI アプリケーションのエントリポイントです。
+
+このファイルは Web サーバーを起動するためのメイン処理を提供します。
+各機能は routers ディレクトリに分割して実装し、ここではそれらをアプリに登録します。
+"""
+
+# 型注釈を文字列として遅延評価できるようにするための import です
+# Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
+from __future__ import annotations
+
+# FastAPI のメインクラスを読み込みます
+# Web アプリケーションの本体（エンドポイント登録・リクエスト処理など）を提供します
+from fastapi import FastAPI
+
+# routers パッケージから API ルーターをインポートします
+# APIRouter を使うことで、エンドポイントを機能ごとに分割できます
+from app.routers import jobs
+
+# FastAPI のアプリケーションインスタンスを作成します
+# title は API ドキュメントに表示される名前です
+app = FastAPI(title="book2pdf Web OCR API")
+
+# jobs ルーターをアプリケーションに登録します
+# prefix="/api/jobs" で、jobs ルーターのエンドポイント URL が /api/jobs/... になります
+app.include_router(jobs.router, prefix="/api/jobs")
+
+
+# ヘルスチェック用のエンドポイントです
+# サーバーが正常に起動しているかを簡単に確認するために使います
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    """サーバーの稼働状態を確認するためのシンプルなエンドポイントです。"""
+    return {"status": "ok"}

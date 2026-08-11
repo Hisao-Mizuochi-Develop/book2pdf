@@ -1,0 +1,58 @@
+# book2pdf Web OCR/PDF システム用 Docker Compose 構成です
+# backend（FastAPI）と ocr-worker（ndlocr_cli）を別コンテナとして分離します
+
+services:
+  # FastAPI バックエンドコンテナです
+  # ZIP アップロード、ジョブ管理、PDF 生成、ダウンロード API を提供します
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: book2pdf-backend
+    ports:
+      # ホストの 8000 番ポートをコンテナの 8000 番ポートにマッピングします
+      - "8000:8000"
+    volumes:
+      # 共有データディレクトリをマウントします
+      # 現状はメモリ内管理ですが、将来の永続化・共有ストレージ対応に向けて準備しています
+      - uploads:/data/uploads
+      - extracted:/data/extracted
+      - ocr_output:/data/ocr_output
+      - pdfs:/data/pdfs
+    environment:
+      # 本番環境では実際の秘密鍵を設定してください
+      - SECRET_KEY=change-me-in-production
+      # ocr-worker コンテナの OCR API エンドポイントを設定します
+      - OCR_WORKER_URL=http://ocr-worker:8001
+    depends_on:
+      # ocr-worker コンテナの起動を待ちます
+      # ただし、起動を待つだけで OCR 処理の完了は待ちません
+      - ocr-worker
+
+  # OCR ワーカーコンテナです
+  # ndlocr_cli を Python パッケージとして import して OCR 処理を実行します
+  ocr-worker:
+    build:
+      context: ./ocr-worker
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: book2pdf-ocr-worker
+    ports:
+      # backend コンテナから ocr-worker の HTTP API にアクセスできるようにします
+      - "8001:8001"
+    volumes:
+      # backend と同じ共有データディレクトリをマウントします
+      - uploads:/data/uploads
+      - extracted:/data/extracted
+      - ocr_output:/data/ocr_output
+      - pdfs:/data/pdfs
+    # Dockerfile の CMD で FastAPI サーバーを起動します
+
+# 共有ボリュームの定義です
+# コンテナ間でデータを共有し、プロセス再起動後もデータを保持します
+volumes:
+  uploads:
+  extracted:
+  ocr_output:
+  pdfs:
