@@ -1,5 +1,10 @@
 # book2pdf Web OCR/PDF システム用 Docker Compose 構成です
 # backend（FastAPI）、ocr-worker（ndlocr_cli）、frontend（Next.js）を別コンテナとして分離します
+#
+# 使い方:
+#   docker compose up -d --build
+# 上記コマンドで backend / ocr-worker / frontend の 3 サービスが起動します。
+# 初回ビルド時は npm install に時間がかかるため、frontend の起動まで 1 〜 2 分ほど待ってください。
 
 services:
   # FastAPI バックエンドコンテナです
@@ -23,11 +28,17 @@ services:
       # 進捗通知用ファイルの共有ディレクトリです
       # backend と ocr-worker が進捗 JSON をやり取りするために使用します
       - progress:/data/progress
+      # ソースコードをホストと共有し、ホットリロードを有効にします
+      - ./backend:/app
     environment:
       # 本番環境では実際の秘密鍵を設定してください
       - SECRET_KEY=change-me-in-production
       # ocr-worker コンテナの OCR API エンドポイントを設定します
       - OCR_WORKER_URL=http://ocr-worker:8001
+      # OCR 処理は数分〜数十分かかるため、backend から ocr-worker へのリクエストタイムアウトを長めに設定します
+      - OCR_WORKER_REQUEST_TIMEOUT=1800
+      # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
+      - LOG_LEVEL=DEBUG
     depends_on:
       # ocr-worker コンテナの起動を待ちます
       # ただし、起動を待つだけで OCR 処理の完了は待ちません
@@ -52,6 +63,9 @@ services:
       - pdfs:/data/pdfs
       # 進捗通知用ファイルの共有ディレクトリです
       - progress:/data/progress
+    environment:
+      # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
+      - LOG_LEVEL=DEBUG
     # Dockerfile の CMD で FastAPI サーバーを起動します
 
   # フロントエンドコンテナです
@@ -77,6 +91,13 @@ services:
     depends_on:
       # backend コンテナの起動を待ちます
       - backend
+    healthcheck:
+      # Next.js 開発サーバーの起動を確認します
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
 # 共有ボリュームの定義です
 # コンテナ間でデータを共有し、プロセス再起動後もデータを保持します

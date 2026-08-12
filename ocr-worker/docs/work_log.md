@@ -302,3 +302,81 @@ curl -s --max-time 600 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq
 - ocr-worker は Uvicorn worker プロセスを使い回すため、リクエストごとに reinitialize が必要
 - 将来的に `hydra.compose()` など別の方法に切り替える場合は、この clear/initialize パターンを見直す
 
+---
+
+## 2026-08-12 タスク002001：ocr-worker DEBUG ログ・計測処理の追加
+
+### 目的
+
+性能計測時に ocr-worker 内の OCR 処理所要時間を DEBUG ログで確認できるようにする。
+
+### 前提
+
+- タスク001002 までで ocr-worker HTTP API が実装済みであること
+- `ocr-worker/app/main.py` が存在すること
+- `docker-compose.yml` で ocr-worker サービスが定義されていること
+
+### 実施コマンド
+
+```bash
+# ソース変更は手動で実施
+# 以下、変更後のファイル内容確認
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+git diff -- ocr-worker/app/main.py
+git diff -- docker-compose.yml
+```
+
+### 結果
+
+- `ocr-worker/app/main.py` に `LOG_LEVEL` 環境変数に応じたロガー設定を追加した
+- `POST /ocr` エンドポイントの `infer` 関数の開始・完了・所要時間を DEBUG ログに出力するようにした
+- `docker-compose.yml` の ocr-worker サービスに `LOG_LEVEL=DEBUG` を追加した
+- `ocr-worker/docs/tasks.md` にタスク 002001 を追記した
+- `ocr-worker/docs/work_log.md` に本エントリを追記した
+
+### 注意事項
+
+- `LOG_LEVEL=DEBUG` 時には OCR 処理の詳細な DEBUG ログが出力される
+- 本番環境では `LOG_LEVEL=INFO` に設定することを推奨する
+- ndlocr_cli 内部のログも `LOG_LEVEL` に応じて増減する可能性があるため、注意が必要
+
+---
+
+## 2026-08-13 タスク004003（一部）：ndlocr_cli ページ処理時間 DEBUG ログの追加
+
+### 目的
+
+backend 004003「OCR 処理性能計測の実施」のうち、ユーザー指示により ocr-worker 側で 1 ページごとの OCR 処理時間を DEBUG ログで出力できるようにする。
+
+### 前提
+
+- `ocr-worker/ndlocr_cli_patches/inference.py` が `ocr-worker/Dockerfile` によって `${PROJECT_DIR}/cli/core/inference.py` にコピーされる構成であること
+- `ocr-worker/ndlocr_cli_patches/inference.py` に既に「ページ処理完了」の DEBUG ログが存在すること
+- `LOG_LEVEL` 環境変数によって DEBUG ログの出力を切り替えられること
+
+### 実施コマンド
+
+```bash
+# シンタックスチェック
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+python3 -m py_compile ocr-worker/ndlocr_cli_patches/inference.py
+```
+
+### 結果
+
+- `ocr-worker/ndlocr_cli_patches/inference.py` を修正した
+  - `_infer()`（通常 OCR モード）で `for page_idx, img_path in enumerate(single_outputdir_data['img_list'], start=1)` とし、ページ番号を 1 始まりで扱うようにした
+  - ページ処理開始時に `logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')` を追加
+  - ページ処理完了時に `page=N` を含む形式に統一: `logger.debug(f'[ndlocr_cli] ページ処理完了: page={page_idx}, img_path={img_path}, elapsed={elapsed_page:.3f}s')`
+  - `_infer_ruby_only()`（ルビ推定モード）でも同様に開始・完了ログに `page=N` を含めるように統一
+- `ocr-worker/docs/work_log.md` に本エントリを追記した
+
+### 注意事項
+
+- 本パッチは `ocr-worker/Dockerfile` の `COPY` 命令によってコンテナイメージ構築時に適用される
+- したがって、ホスト側の修正を反映するには ocr-worker イメージの再ビルドが必要
+  - `docker compose up -d --build ocr-worker`
+- DEBUG ログは `LOG_LEVEL=DEBUG` 時にのみ出力される
+- 性能計測の実行と結果のドキュメント記録は、ユーザー指示により今回は実施しない
+

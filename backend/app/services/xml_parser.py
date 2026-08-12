@@ -15,6 +15,12 @@ import xml.etree.ElementTree as ET
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
+# ログ出力のための標準ライブラリです
+import logging
+
+# 本モジュール用のロガーを取得します
+logger = logging.getLogger(__name__)
+
 
 class OcrLine:
     """OCR によって検出された 1 行のテキストを表します。"""
@@ -61,6 +67,8 @@ class OcrPage:
         width: int,
         height: int,
         lines: list[OcrLine],
+        xml_width: int | None = None,
+        xml_height: int | None = None,
     ) -> None:
         """OCR ページデータを初期化します。
 
@@ -69,6 +77,8 @@ class OcrPage:
             width: ページ画像の幅
             height: ページ画像の高さ
             lines: ページ内のテキスト行一覧
+            xml_width: XML 内のページ幅（スケーリング用）
+            xml_height: XML 内のページ高さ（スケーリング用）
         """
         # ページ画像のファイル名です
         self.image_name = image_name
@@ -78,6 +88,12 @@ class OcrPage:
 
         # ページ画像の高さです
         self.height = height
+
+        # XML 内のページ幅です（PDF 座標系へのスケーリングに使用）
+        self.xml_width = xml_width if xml_width is not None else width
+
+        # XML 内のページ高さです（PDF 座標系へのスケーリングに使用）
+        self.xml_height = xml_height if xml_height is not None else height
 
         # ページ内のテキスト行一覧です
         self.lines = lines
@@ -107,17 +123,19 @@ def parse_sorted_xml(xml_path: str | Path) -> list[OcrPage]:
 
     # XML ファイルが存在しない場合は空のリストを返します
     if not path.exists():
+        logger.debug("XML ファイルが存在しません: %s", path)
         return []
 
     # XML ファイルを読み込んで要素ツリーを構築します
     tree = ET.parse(path)
     root = tree.getroot()
+    logger.debug("XML ファイルを解析します: %s", path)
 
     # 解析結果のページ一覧を格納するリストです
     pages: list[OcrPage] = []
 
     # ルート要素（OCRDATASET）以下の PAGE 要素を順に処理します
-    for page_elem in root.findall("PAGE"):
+    for page_idx, page_elem in enumerate(root.findall("PAGE")):
         # ページ画像のファイル名を取得します
         image_name = page_elem.get("IMAGENAME", "")
 
@@ -131,7 +149,9 @@ def parse_sorted_xml(xml_path: str | Path) -> list[OcrPage]:
         lines: list[OcrLine] = []
 
         # PAGE 要素以下の LINE 要素を順に処理します
-        for line_elem in page_elem.findall("LINE"):
+        # LINE は <BLOCK> や <TEXTBLOCK> などの子孫要素として配置されるため、
+        # iter("LINE") で再帰的にすべての LINE 要素を取得します
+        for line_elem in page_elem.iter("LINE"):
             # 認識されたテキストを取得します
             text = line_elem.get("STRING", "")
 
@@ -156,14 +176,27 @@ def parse_sorted_xml(xml_path: str | Path) -> list[OcrPage]:
             lines.append(line)
 
         # ページ情報を作成して結果リストに追加します
+        # XML 内のページサイズは xml_width / xml_height として保持し、
+        # 元画像サイズとは別に PDF 座標スケーリングに利用します
         page = OcrPage(
             image_name=image_name,
             width=width,
             height=height,
             lines=lines,
+            xml_width=width,
+            xml_height=height,
         )
         pages.append(page)
+        logger.debug(
+            "XML ページ解析結果: page_idx=%d, image_name=%s, width=%d, height=%d, lines=%d",
+            page_idx,
+            image_name,
+            width,
+            height,
+            len(lines),
+        )
 
+    logger.debug("XML 解析完了: total_pages=%d", len(pages))
     # 解析したページ一覧を返します
     return pages
 
@@ -179,13 +212,16 @@ def find_sorted_xml(output_dir: str | Path) -> Path | None:
     """
     # 文字列の場合は Path オブジェクトに変換します
     root = Path(output_dir)
+    logger.debug("sorted.xml ファイルを検索します: output_dir=%s", root)
 
     # output_dir 以下の xml ディレクトリを再帰的に探します
     for xml_dir in root.rglob("xml"):
         # xml ディレクトリ内の .sorted.xml ファイルを探します
         for xml_path in xml_dir.glob("*.sorted.xml"):
+            logger.debug("sorted.xml ファイルを発見しました: %s", xml_path)
             # 最初に見つかったファイルを返します
             return xml_path
 
+    logger.debug("sorted.xml ファイルが見つかりませんでした: output_dir=%s", root)
     # 見つからない場合は None を返します
     return None

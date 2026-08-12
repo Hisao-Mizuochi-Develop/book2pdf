@@ -16,6 +16,13 @@ import zipfile
 # テスト時の展開先ディレクトリを切り替えるために使用します
 import os
 
+# ログ出力のための標準ライブラリです
+# 環境変数 LOG_LEVEL で出力レベルを切り替えます
+import logging
+
+# 処理時間を計測するための標準ライブラリです
+import time
+
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 # 文字列のパス結合より安全で読みやすくなります
 from pathlib import Path
@@ -34,6 +41,18 @@ _IMAGE_EXTENSIONS: frozenset[str] = frozenset(
 # 本番環境では backend / ocr-worker 両コンテナで共有される /data/extracted を使用します
 # テスト環境では EXTRACT_BASE_DIR 環境変数で別のパスを指定できます
 _EXTRACT_BASE_DIR = Path(os.environ.get("EXTRACT_BASE_DIR", "/data/extracted"))
+
+# ログレベルを環境変数 LOG_LEVEL から取得します（未設定時は INFO）
+_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+
+# logging モジュールにログレベルを設定します
+logging.basicConfig(
+    level=getattr(logging, _log_level, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+# 本モジュール用のロガーを取得します
+logger = logging.getLogger(__name__)
 
 
 def is_image_file(path: Path) -> bool:
@@ -73,9 +92,13 @@ def extract_images_from_zip(
 
     # ZIP ファイルを展開します
     # with 文を使うと、ファイルを自動的にクローズできます
+    logger.debug("ZIP 解凍を開始します: job_id=%s", job_id)
+    zip_start_time = time.time()
     with zipfile.ZipFile(zip_file) as zf:
         # ZIP 内のすべてのファイルを展開ディレクトリに展開します
         zf.extractall(extract_path)
+    zip_elapsed = time.time() - zip_start_time
+    logger.debug("ZIP 解凍が完了しました: job_id=%s, elapsed=%.3fs", job_id, zip_elapsed)
 
     # 展開されたファイルの中から画像ファイルを再帰的に探します
     # rglob("*") で extract_path 以下のすべてのファイルとディレクトリを取得します

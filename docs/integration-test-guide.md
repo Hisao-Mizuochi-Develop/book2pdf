@@ -52,7 +52,9 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf
 docker compose up -d --build
 ```
 
-初回または backend / ocr-worker / frontend のソースコードを変更した後は、必ず `--build` を指定してください。`docker compose restart` だけでは、ホスト側のソース変更がコンテナイメージに反映されません。
+上記コマンドで `backend` / `ocr-worker` / `frontend` の 3 サービスがすべて起動します。初回または backend / ocr-worker / frontend のソースコードを変更した後は、必ず `--build` を指定してください。`docker compose restart` だけでは、ホスト側のソース変更がコンテナイメージに反映されません。
+
+初回ビルド時は frontend の `npm install` に時間がかかるため、コンテナ起動から `http://localhost:3000` が応答するまで 1 〜 2 分ほどかかることがあります。`docker compose ps` や `docker compose logs -f frontend` で状態を確認してください。
 
 ### 4.2 サービス起動確認
 
@@ -65,9 +67,13 @@ curl -s http://localhost:8000/health
 curl -s http://localhost:8001/health
 # 期待結果: {"status":"ok"}
 
-# frontend 起動確認
+# frontend 起動確認（初回は 1 〜 2 分ほど待つことがあります）
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 # 期待結果: 200
+
+# frontend コンテナの状態確認
+docker compose ps
+# 期待結果: book2pdf-frontend の STATUS が healthy または Up になっている
 ```
 
 ## 5. 結合テスト手順
@@ -187,7 +193,149 @@ Puppeteer や一部のブラウザでは、API から直接返される PDF に�
 
 ndlocr_cli の初回推論時はモデル初期化に時間がかかります。curl では `--max-time 600`、backend 側の `OCR_WORKER_REQUEST_TIMEOUT` 環境変数も必要に応じて調整してください。
 
-## 7. 終了処理
+## 7. 性能テスト
+
+性能テストは `scripts/benchmark_ocr.sh` を実行して行います。
+
+### 7.1 目的
+
+OCR 処理のボトルネックを特定し、以下の工程時間を定量化します。
+
+- Docker Compose 起動時間
+- ジョブ作成時間
+- ZIP アップロード時間
+- OCR 全体時間
+- 1 ページごとの OCR 処理時間
+- 1 ページあたり平均 OCR 処理時間
+- PDF 生成時間
+- PDF ダウンロード時間
+- 合計処理時間
+
+### 7.2 入力データ
+
+- **サンプル画像**: `sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/001.png` 〜 `010.png`
+- **入力 ZIP**: `/tmp/book2pdf-benchmark/benchmark-input-10pages.zip`
+- **ページ数**: 10 ページ固定
+
+### 7.3 実行手順
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+./scripts/benchmark_ocr.sh
+```
+
+### 7.4 結果の確認
+
+実行後、以下のファイルに結果が出力されます。
+
+- `/tmp/book2pdf-benchmark/results.csv`
+- `/tmp/book2pdf-benchmark/results.txt`
+
+`results.csv` と `results.txt` には、以下の項目がすべて出力されます。
+
+- Docker Compose 起動時間
+- ジョブ作成時間
+- ZIP アップロード時間
+- OCR 全体時間
+- 1 ページあたり平均 OCR 処理時間
+- ZIP 解凍時間（ログ）
+- PDF 生成時間（ログ）
+- PDF ダウンロード時間
+- 合計処理時間
+
+CSV の例:
+
+```csv
+item,seconds
+Docker Compose 起動時間,12.345
+ジョブ作成時間,0.012
+ZIP アップロード時間,0.234
+OCR 全体時間,123.456
+1 ページあたり平均 OCR 処理時間,11.234
+ZIP 解凍時間（ログ）,0.056
+PDF 生成時間（ログ）,0.789
+PDF ダウンロード時間,0.045
+合計処理時間,136.681
+```
+
+`results.txt` には、上記 CSV 内容に加えて、1 ページごとの OCR 処理時間も時系列で記録されます。
+
+### 7.5 注意事項
+
+- 初回実行時は ndlocr_cli のモデル初期化に時間がかかるため、OCR 全体時間が長めに出ることがあります
+- `LOG_LEVEL=DEBUG` が設定されていることを確認してください（`docker-compose.yml`）
+- 性能テスト終了後、入力 ZIP や展開画像、OCR 出力は自動的に削除されます
+
+### 7.6 性能テスト結果
+
+本節は、`scripts/benchmark_ocr.sh` を使用して実際に性能テストを実施した結果を記録したものです。
+
+#### 実行環境
+
+- 日時: 2026-08-12
+- 実行方式: Docker Compose（`backend` / `ocr-worker` / `frontend` を別コンテナとして分離）
+- 実行環境: CPU 実行（GPU 未使用）
+- 入力データ: 10 ページ分の PNG 画像
+  - `sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/001.png` 〜 `010.png`
+  - 入力 ZIP: `/tmp/book2pdf-benchmark/benchmark-input-10pages.zip`
+
+#### 計測結果サマリー（修正後）
+
+| 項目 | 時間（秒） |
+|---|---|---|
+| Docker Compose 起動時間 | 0.147 |
+| ジョブ作成時間 | 0.053 |
+| ZIP アップロード時間 | 0.111 |
+| OCR 全体時間 | 1115.677 |
+| 1 ページあたり平均 OCR 処理時間 | 110.806 |
+| ZIP 解凍時間（ログ） | 0.024 |
+| PDF 生成時間（ログ） | 0.332 |
+| PDF ダウンロード時間 | 0.057 |
+| 合計処理時間 | 1116.045 |
+
+- OCR 全体時間は約 18 分 36 秒でした
+- 1 ページあたりの平均 OCR 処理時間は約 110.8 秒でした
+- ZIP 解凍・PDF 生成はいずれも 1 秒未満で完了しました
+
+#### 個別ページの OCR 処理時間
+
+今回の実行では、OCR 処理開始時刻以降の ocr-worker ログのみを対象としたため、10 ページ分の OCR 処理時間が正しく抽出されました。
+
+| ページ | 処理時間（秒） |
+|---|---|
+| 1 | 98.213 |
+| 2 | 109.110 |
+| 3 | 103.367 |
+| 4 | 124.505 |
+| 5 | 103.464 |
+| 6 | 88.248 |
+| 7 | 85.691 |
+| 8 | 135.683 |
+| 9 | 171.684 |
+| 10 | 88.091 |
+
+#### 個別ページの OCR 処理時間の統計
+
+| 統計 | 値（秒） |
+|---|---|
+| 最大値 | 171.684 |
+| 最小値 | 85.691 |
+| 中央値 | 103.416 |
+| 平均 | 110.806 |
+
+#### 計測上の注意点
+
+- 初回実行時は ndlocr_cli のモデル初期化に時間がかかるため、OCR 全体時間が長めに出ることがあります
+- 2 回目以降の実行でも、CPU 負荷やコンテナの状態により処理時間は変動します
+- 性能テストスクリプトは `LOG_LEVEL=DEBUG` の設定を前提としています
+
+#### 既知の問題
+
+- 2026-08-12 時点で以下の問題を修正済みです
+  - `scripts/benchmark_ocr.sh` の backend ログ抽出パターンが実際のログ形式と一致していないため、ZIP 解凍時間と PDF 生成時間が `N/A` となっていた問題
+  - `docker compose logs` が ocr-worker の全ログを対象としていたため、1 ページごとの OCR 処理時間に過去の実行分が混在していた問題
+
+## 8. 終了処理
 
 テスト完了後、コンテナを停止・削除する場合は以下を実行してください。
 
@@ -202,7 +350,7 @@ docker compose down
 docker compose down -v
 ```
 
-## 8. 関連ドキュメント
+## 9. 関連ドキュメント
 
 - [`backend/docs/backend-system-spec.md`](../backend/docs/backend-system-spec.md)
 - [`backend/docs/caveats.md`](../backend/docs/caveats.md)

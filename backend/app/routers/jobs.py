@@ -26,6 +26,16 @@ import os
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
+# ログ出力のための標準ライブラリです
+# 環境変数 LOG_LEVEL で出力レベルを切り替えます
+import logging
+
+# 処理時間を計測するための標準ライブラリです
+import time
+
+# 日時付き PDF ファイル名を生成するための標準ライブラリです
+from datetime import datetime, timedelta, timezone
+
 # FastAPI の機能を読み込みます
 # APIRouter: エンドポイントをグループ化する
 # HTTPException: HTTP エラーレスポンスを返す
@@ -62,6 +72,10 @@ from app.services.pdf_generator import generate_searchable_pdf
 # このルーターで定義するエンドポイントの共通設定です
 # tags は自動生成される API ドキュメントでグループ名として使われます
 router = APIRouter(tags=["jobs"])
+
+# 本モジュール用のロガーを取得します
+# ログレベルは app.main で一括設定されます
+logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=JobCreateResponse)
@@ -202,6 +216,10 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     # ジョブ状態を PROCESSING に更新します
     job_manager.update_job_status(job_id, JobStatus.PROCESSING)
 
+    # OCR エンドポイント全体の処理時間を計測します
+    logger.debug("OCR エンドポイント処理を開始します: job_id=%s", job_id)
+    endpoint_start_time = time.time()
+
     # OCR エンジンを作成します
     # ocr-worker が設定されていればリモート呼び出し、なければモックにフォールバックします
     ocr_engine = create_ocr_engine(use_mock=False)
@@ -259,6 +277,14 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
             message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
         )
 
+    # OCR エンドポイント全体の処理時間を計算します
+    endpoint_elapsed = time.time() - endpoint_start_time
+    logger.debug(
+        "OCR エンドポイント処理が完了しました: job_id=%s, elapsed=%.3fs",
+        job_id,
+        endpoint_elapsed,
+    )
+
     # レスポンスモデルに合わせて返却します
     return JobOcrResponse(
         job_id=job_id,
@@ -313,16 +339,35 @@ async def download_pdf(job_id: str) -> FileResponse:
     # PDF ファイルが実際に存在するか確認します
     path = Path(pdf_path)
     if not path.exists():
+        logger.debug(
+            "PDF ダウンロード要求に対象ファイルが存在しません: job_id=%s, pdf_path=%s",
+            job_id,
+            pdf_path,
+        )
         raise HTTPException(
             status_code=404,
             detail="PDF ファイルが見つかりません",
         )
 
+    file_size = path.stat().st_size
+    logger.debug(
+        "PDF ダウンロードを返します: job_id=%s, pdf_path=%s, size=%d bytes",
+        job_id,
+        pdf_path,
+        file_size,
+    )
+
+    # 日時付きのユニークな PDF ファイル名を生成します
+    # 日本時間（JST）でタイムスタンプを付与します
+    jst = timezone(timedelta(hours=9))
+    timestamp = datetime.now(jst).strftime("%Y%m%d_%H%M%S")
+    filename = f"{job_id}_{timestamp}.pdf"
+
     # PDF ファイルを返します
     return FileResponse(
         path=str(path),
         media_type="application/pdf",
-        filename=f"{job_id}.pdf",
+        filename=filename,
     )
 
 

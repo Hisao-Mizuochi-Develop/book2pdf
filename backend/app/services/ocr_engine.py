@@ -164,11 +164,13 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
         }
 
         # ocr-worker に HTTP POST で OCR 実行をリクエストします
-        # OCR は数分かかることがあるため、タイムアウトを長めに設定します
+        # OCR は数分〜数十分かかることがあるため、タイムアウトを長めに設定します
+        # 環境変数 OCR_WORKER_REQUEST_TIMEOUT（秒）で上書き可能です
+        timeout_seconds = float(os.environ.get("OCR_WORKER_REQUEST_TIMEOUT", "1800.0"))
         response = httpx.post(
             f"{self.worker_url}/ocr",
             json=request_body,
-            timeout=600.0,
+            timeout=timeout_seconds,
         )
 
         # HTTP エラーがあれば例外を発生させます

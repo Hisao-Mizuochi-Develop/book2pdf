@@ -28,6 +28,10 @@ from fastapi.testclient import TestClient
 # PyMuPDF: 生成された PDF を検証するために使用します
 import fitz
 
+# 異体字を正規字体に統一するための標準ライブラリです
+# PDF から抽出したテキストも正規化して比較します
+import unicodedata
+
 # テスト対象の FastAPI アプリケーションを読み込みます
 from app.main import app
 
@@ -38,7 +42,10 @@ from app.services.ocr_engine import MockOcrEngine
 from app.services.xml_parser import find_sorted_xml, parse_sorted_xml
 
 # 検索可能 PDF 生成サービスを読み込みます
-from app.services.pdf_generator import generate_searchable_pdf
+from app.services.pdf_generator import (
+    _xml_to_pdf_y,
+    generate_searchable_pdf,
+)
 
 
 # FastAPI のテストクライアントを作成します
@@ -202,6 +209,60 @@ def test_generate_searchable_pdf() -> None:
             doc.close()
 
 
+def test_generate_searchable_pdf_normalizes_variant_characters() -> None:
+    """異体字が正規字体に正規化されて PDF に埋め込まれることを確認します。
+
+    ndlocr_cli は旧字体・異体字を認識することがあり、
+    そのまま PDF に埋め込むとテキスト検索時にヒットしません。
+    本実装では NFKC 正規化を適用し、異体字を正規字体に統一します。
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        output_dir = Path(tmp_dir) / "output"
+        extract_dir = Path(tmp_dir) / "extract"
+        extract_dir.mkdir(parents=True, exist_ok=True)
+
+        # ダミーの画像ファイルを作成します
+        (extract_dir / "page1.png").write_bytes(b"dummy image data")
+
+        # XML に異体字「索」（U+F92A）を含めます
+        # 正規字体は「索」（U+7D22）です
+        variant_text = "図書館の探\uf92a"
+        create_sorted_xml(
+            output_dir,
+            image_name="page1.png",
+            text=variant_text,
+        )
+
+        # PDF 出力用の一時ディレクトリを設定します
+        pdf_output_dir = Path(tmp_dir) / "pdfs"
+        import os
+        os.environ["PDF_OUTPUT_DIR"] = str(pdf_output_dir)
+
+        # PDF を生成します
+        pdf_path = generate_searchable_pdf(
+            job_id="test-variant-job",
+            output_dir=output_dir,
+            extract_dir=extract_dir,
+        )
+
+        # PDF ファイルが生成されていることを確認します
+        assert pdf_path.exists()
+
+        # PyMuPDF で PDF を開いてテキストを抽出します
+        doc = fitz.open(str(pdf_path))
+        try:
+            assert len(doc) == 1
+            page = doc[0]
+            extracted_text = page.get_text()
+            # 抽出テキストを NFKC 正規化して正規字体で比較します
+            normalized_extracted = unicodedata.normalize("NFKC", extracted_text)
+            assert "図書館の探索" in normalized_extracted
+            # 異体字そのものは含まれていないことを確認します
+            assert "\uf92a" not in normalized_extracted
+        finally:
+            doc.close()
+
+
 def test_download_pdf(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """OCR 完了後に PDF ダウンロード API で PDF を取得できることを確認します。"""
     # ジョブを作成します
@@ -249,7 +310,10 @@ def test_download_pdf(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> No
     response = client.get(f"/api/jobs/{job_id}/pdf")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
-    assert response.headers["content-disposition"].endswith(f"{job_id}.pdf\"")
+    # PDF ダウンロード時のファイル名は {job_id}_YYYYMMDD_HHMMSS.pdf の形式です
+    content_disposition = response.headers["content-disposition"]
+    assert f'filename="{job_id}_' in content_disposition
+    assert content_disposition.endswith('.pdf"')
 
     # ダウンロードした内容が PDF 形式であることを確認します
     content = response.content
@@ -302,3 +366,47 @@ def test_download_pdf_not_generated(client: TestClient) -> None:
     # PDF が生成されていないため 400 エラーになります
     response = client.get(f"/api/jobs/{job_id}/pdf")
     assert response.status_code == 400
+
+
+def test_xml_to_pdf_y_bottom_position() -> None:
+    """XML の Y=xml_height が PDF のページ下端に相当することを確認します。"""
+    # XML の Y=xml_height はページ下端を表す
+    # PDF 座標系でも下端が y=pdf_height 付近になる
+    # baseline 補正（font_size 分下げる）を考慮すると、
+    # pdf_y = pdf_height + font_size となる
+    pdf_y = _xml_to_pdf_y(
+        xml_y=842.0,
+        xml_height=842.0,
+        pdf_height=842.0,
+        font_size=12.0,
+    )
+    assert pdf_y == 842.0 + 12.0
+
+
+def test_xml_to_pdf_y_top_position() -> None:
+    """XML の Y=0 が PDF のページ上端に相当することを確認します。"""
+    # XML の Y=0 はページ上端を表す
+    # PDF 座標系では上端に近いほど y 値が大きくなる
+    # baseline 補正（font_size 分下げる）を考慮すると、
+    # pdf_y = font_size となる
+    pdf_y = _xml_to_pdf_y(
+        xml_y=0.0,
+        xml_height=842.0,
+        pdf_height=842.0,
+        font_size=12.0,
+    )
+    assert pdf_y == 12.0
+
+
+def test_xml_to_pdf_y_with_scaling() -> None:
+    """XML と PDF の高さが異なる場合のスケーリングを確認します。"""
+    # XML 高さ 1000、PDF 高さ 500 の場合、scale_y = 0.5
+    # XML の Y=100 は PDF 上で下端から 50 の位置に相当
+    # baseline 補正（font_size=10）を足すと pdf_y = 50 + 10 = 60
+    pdf_y = _xml_to_pdf_y(
+        xml_y=100.0,
+        xml_height=1000.0,
+        pdf_height=500.0,
+        font_size=10.0,
+    )
+    assert pdf_y == 60.0

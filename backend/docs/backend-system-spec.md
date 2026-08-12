@@ -169,7 +169,59 @@ backend/
     └── test_progress.py          # SSE 進捗通知関連テスト
 ```
 
-## 11. 注意事項
+## 11. 性能テスト
+
+### 11.1 目的
+
+OCR 処理のボトルネックを特定し、各工程の処理時間を定量化するための性能テストです。
+
+### 11.2 入力データ
+
+- **サンプル画像**: `sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/001.png` 〜 `010.png`
+- **入力 ZIP**: `/tmp/book2pdf-benchmark/benchmark-input-10pages.zip`
+- **ページ数**: 10 ページ固定
+
+### 11.3 計測対象
+
+| 順番 | 項目 | 取得方法 |
+|---|---|---|
+| 1 | Docker Compose 起動時間 | スクリプト内で `docker compose up -d` 〜 ヘルスチェック 200 までを計測 |
+| 2 | ジョブ作成時間 | `POST /api/jobs` の応答時間を計測 |
+| 3 | ZIP アップロード時間 | `POST /api/jobs/{job_id}/upload` の応答時間を計測 |
+| 4 | OCR 全体時間 | `POST /api/jobs/{job_id}/ocr` 〜 ジョブ状態が `completed` になるまでを計測 |
+| 5 | 1 ページごとの OCR 処理時間 | `ocr-worker` の DEBUG ログから抽出 |
+| 6 | 1 ページあたり平均 OCR 処理時間 | 1 ページごとの OCR 処理時間の平均を算出 |
+| 7 | PDF 生成時間 | `backend` の DEBUG ログから抽出 |
+| 8 | PDF ダウンロード時間 | `GET /api/jobs/{job_id}/pdf` の応答時間を計測 |
+| 9 | 合計処理時間 | 上記工程時間の合計 |
+
+### 11.4 ログ取得元
+
+- **backend DEBUG ログ**: ZIP 解凍時間、`pdf_generator.py` の PDF 生成時間
+- **ocr-worker DEBUG ログ**: `ndlocr_cli` の 1 ページごとの OCR 処理時間
+
+### 11.5 出力
+
+- `/tmp/book2pdf-benchmark/results.csv`
+- `/tmp/book2pdf-benchmark/results.txt`
+
+### 11.6 実行方法
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+./scripts/benchmark_ocr.sh
+```
+
+### 11.7 クリーンアップ
+
+性能テスト終了後、以下を削除します。
+
+- 入力 ZIP ファイル
+- 展開されたページ画像（`/data/extracted/{job_id}/`）
+- OCR 出力（`/data/ocr_output/{job_id}/`）
+- ダウンロードされた PDF ファイル
+
+## 12. 注意事項
 
 - ndlocr_cli は公式 Docker スクリプトがあるが、今回は自分で Dockerfile を組み立てる
   - `ocr-worker` 用 Dockerfile の詳細は `../ocr-worker/docs/caveats.md` を参照

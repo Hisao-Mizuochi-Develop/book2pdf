@@ -21,6 +21,13 @@ import json
 # ファイル操作でディレクトリ作成が必要なための標準ライブラリです
 import os
 
+# ログ出力のための標準ライブラリです
+# 環境変数 LOG_LEVEL で出力レベルを切り替えます
+import logging
+
+# 処理時間を計測するための標準ライブラリです
+import time
+
 # FastAPI の機能を読み込みます
 # FastAPI: アプリケーション本体
 # HTTPException: HTTP エラーレスポンスを返す
@@ -42,6 +49,17 @@ from cli.core import utils as ndlocr_utils
 # Hydra のグローバルインスタンスをクリアするための import です
 # 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にします
 from hydra.core.global_hydra import GlobalHydra
+
+# アプリケーション全体のログレベルを設定します
+# uvicorn 起動前に設定することで、各モジュールの DEBUG ログも出力されます
+_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, _log_level, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
+# 本モジュール用のロガーを取得します
+logger = logging.getLogger(__name__)
 
 # FastAPI アプリケーションを作成します
 app = FastAPI(title="ocr-worker")
@@ -299,8 +317,22 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         # OCR 推論インスタンスを作成します
         inferrer = await run_in_threadpool(OcrInferrer, infer_cfg)
 
+        # OCR 処理の実行時間を計測します
+        logger.debug("OCR 処理を開始します: job_id=%s, total_pages=%d", job_id, total_pages)
+        ocr_start_time = time.time()
+
         # OCR 処理を実行します
         await run_in_threadpool(inferrer.run)
+
+        # OCR 処理の実行時間を計算します
+        ocr_elapsed = time.time() - ocr_start_time
+        ocr_avg = ocr_elapsed / total_pages if total_pages > 0 else 0.0
+        logger.debug(
+            "OCR 処理が完了しました: job_id=%s, elapsed=%.3fs, avg_per_page=%.3fs",
+            job_id,
+            ocr_elapsed,
+            ocr_avg,
+        )
 
         # 出力ディレクトリからテキストファイルを収集します
         result_text = await run_in_threadpool(

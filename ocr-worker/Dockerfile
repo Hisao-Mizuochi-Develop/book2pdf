@@ -57,10 +57,13 @@ RUN mkdir -p ${PROJECT_DIR}/submodules/text_recognition_lightning/models/rf_auth
 # PyTorch CPU 版をインストールします
 # 公式 Dockerfile は CUDA 版を使用していますが、本プロジェクトは CPU 実行を前提とします
 # torchtext / torchaudio は画像処理で不要なため、torch と torchvision のみインストールします
-RUN pip install --no-cache-dir \
-    torch==2.0.1+cpu \
-    torchvision==0.15.2+cpu \
-    --index-url https://download.pytorch.org/whl/cpu
+# --extra-index-url を使用し、PyTorch 固有パッケージのみ PyTorch index から取得します
+# pip を先にアップグレードして、メタデータ名の大文字小文字不一致による解決失敗を回避します
+RUN pip install --upgrade "pip<24.1" setuptools wheel \
+    && pip install --no-cache-dir \
+        torch==2.0.1+cpu \
+        torchvision==0.15.2+cpu \
+        --extra-index-url https://download.pytorch.org/whl/cpu
 
 RUN pip install --no-cache-dir torchtext==0.15.2
 
@@ -119,6 +122,10 @@ RUN sed -i '/- measure_time.yaml/d' ${PROJECT_DIR}/submodules/text_recognition_l
 # text_recognition_lightning のデフォルト trainer は accelerator: gpu です
 # CPU 実行を前提とするため、accelerator: cpu に変更します
 RUN sed -i 's/accelerator: gpu/accelerator: cpu/g' ${PROJECT_DIR}/submodules/text_recognition_lightning/configs/trainer/default.yaml
+
+# ndlocr_cli にページごとの OCR 処理時間 DEBUG ログを追加します
+# オリジナルの cli/core/inference.py は logging を使用していないため、修正版を上書きします
+COPY ndlocr_cli_patches/inference.py ${PROJECT_DIR}/cli/core/inference.py
 
 # ocr-worker アプリケーションのソースコードをコピーします
 COPY app/ ${PROJECT_DIR}/app/

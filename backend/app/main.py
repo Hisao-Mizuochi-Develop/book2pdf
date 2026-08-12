@@ -16,6 +16,19 @@ from fastapi import FastAPI
 # APIRouter を使うことで、エンドポイントを機能ごとに分割できます
 from app.routers import jobs
 
+# ログ出力のための標準ライブラリです
+# アプリケーション全体のログレベルを環境変数 LOG_LEVEL から設定します
+import logging
+import os
+
+# アプリケーション全体のログレベルを設定します
+# uvicorn 起動前に設定することで、各モジュールの DEBUG ログも出力されます
+_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, _log_level, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
 # FastAPI のアプリケーションインスタンスを作成します
 # title は API ドキュメントに表示される名前です
 app = FastAPI(title="book2pdf Web OCR API")

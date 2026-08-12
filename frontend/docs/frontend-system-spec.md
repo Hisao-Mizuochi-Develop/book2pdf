@@ -59,7 +59,7 @@ frontend/                         # フロントエンドルート
 ├── public/                       # 静的アセット
 ├── package.json                  # Node.js 依存定義
 ├── package-lock.json             # npm ロックファイル
-├── next.config.ts                # Next.js 設定（standalone 出力）
+├── next.config.mjs               # Next.js 設定（standalone 出力）
 ├── tsconfig.json                 # TypeScript 設定
 ├── postcss.config.mjs            # PostCSS 設定
 ├── eslint.config.mjs             # ESLint 設定

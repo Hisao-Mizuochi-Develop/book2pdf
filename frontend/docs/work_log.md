@@ -126,3 +126,70 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000
 - Puppeteer 等の自動化ツールではファイル選択ダイアログの操作が困難なため、
   ファイルアップロードから PDF ダウンロードまでの完全な E2E テストは手動で実施することを推奨する
 
+## 2026-08-13 frontend Docker イメージの Next.js 15.1.6 再構成と起動確認
+
+### 目的
+
+frontend コンテナを Next.js 15.1.6 に固定し、Docker 上で正常に起動することを確認する。
+
+### 前提
+
+- `package.json` で `next: 15.1.6` を指定済み
+- `package-lock.json` はホスト側で `next@15.1.6` が解決されるよう再生成済み
+- `Dockerfile` は `node:22-slim` ベースで最小構成に整理済み
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 既存コンテナ・イメージ・ボリュームのクリーンアップ
+docker compose down --rmi local --volumes --remove-orphans
+docker builder prune -f
+docker system prune -f
+
+# frontend dev イメージのビルド
+cd frontend
+docker build --no-cache --target dev -t book2pdf-frontend-dev .
+
+# コンテナ内の next バージョン確認
+docker run --rm -it book2pdf-frontend-dev:latest \
+  cat /app/node_modules/next/package.json | grep '"version"'
+# -> "version": "15.1.6"
+
+# 単体起動確認
+docker run -d --name book2pdf-frontend -p 3000:3000 book2pdf-frontend-dev:latest
+
+# 起動ログ確認
+docker logs --tail 50 book2pdf-frontend
+# -> ▲ Next.js 15.1.6
+# -> Ready in 1487ms
+
+# ヘルスチェック
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+# -> 200
+```
+
+### 結果
+
+- コンテナ内で `next@15.1.6` がインストールされていることを確認
+- `next dev` が `loadBindings is not a function` エラーなく起動
+- `http://localhost:3000` への curl で HTTP 200 を確認
+- ブラウザで `http://localhost:3000/` を開き、以下が表示されることを確認
+  - タイトル「book2pdf」
+  - サブタイトル「ZIP 画像から OCR 処理を行い、検索可能 PDF を生成します」
+  - ZIP ファイル選択 input
+  - 「アップロードして OCR 実行」ボタン
+
+### 注意事項
+
+- コンテナ名は `book2pdf-frontend-test` ではなく `book2pdf-frontend` を使用するよう統一した
+- `node_modules` はホスト側に存在せず、コンテナ内のものを使用する
+- 本番ビルド用の `builder` / `runner` ステージは未検証（`dev` ターゲットのみ検証）
+
+### 関連タスク
+
+- frontend タスク：Next.js 15.1.6 への Docker 再構成（完了）
+- 全体タスク：docker compose での 3 コンテナ起動確認（完了）
+- 全体タスク：frontend から ZIP アップロード・PDF ダウンロードの統合検証（未完了）
+
