@@ -358,6 +358,16 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             message="",
         )
     except Exception as exc:
+        # エラーのトレースバックを文字列に変換します
+        # ログと HTTP レスポンスの両方に含めて、原因調査を容易にします
+        import traceback
+
+        tb_str = traceback.format_exc()
+        error_message = f"OCR 処理に失敗しました: {exc}\n{tb_str}"
+
+        # エラー内容をログに出力します
+        logger.error(error_message)
+
         # エラー発生を進捗ファイルに記録します
         _write_progress(
             job_id,
@@ -365,11 +375,12 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             progress=0.0,
             current_page=0,
             total_pages=total_pages,
-            message=f"OCR 処理に失敗しました: {exc}",
+            message=error_message,
         )
 
         # エラーが発生した場合は HTTP 500 エラーを返します
+        # detail にはトレースバックも含めて、backend 側で原因を確認できるようにします
         raise HTTPException(
             status_code=500,
-            detail=f"OCR 処理に失敗しました: {exc}",
+            detail=error_message,
         ) from exc

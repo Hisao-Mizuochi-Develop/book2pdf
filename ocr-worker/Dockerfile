@@ -65,6 +65,10 @@ RUN pip install --upgrade "pip<24.1" setuptools wheel \
         torchvision==0.15.2+cpu \
         --extra-index-url https://download.pytorch.org/whl/cpu
 
+# pytorch_lightning が import 時に pkg_resources を参照するため setuptools を明示的にインストールします
+# ただし setuptools 84.0.0 では pkg_resources が削除されているため、79.0.1 に固定します
+RUN pip install --no-cache-dir setuptools==79.0.1
+
 RUN pip install --no-cache-dir torchtext==0.15.2
 
 # ndlocr_cli の Python 依存パッケージをインストールします

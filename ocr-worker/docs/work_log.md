@@ -380,3 +380,75 @@ python3 -m py_compile ocr-worker/ndlocr_cli_patches/inference.py
 - DEBUG ログは `LOG_LEVEL=DEBUG` 時にのみ出力される
 - 性能計測の実行と結果のドキュメント記録は、ユーザー指示により今回は実施しない
 
+---
+
+## 2026-08-13 タスク003001：ocr-worker OCR 実行時 500 エラーの原因調査・修正
+
+### 目的
+
+backend 経由で OCR 実行時に ocr-worker が 500 Internal Server Error を返す問題の原因を特定し、修正する。
+
+### 前提
+
+- docker compose で backend / ocr-worker / frontend の 3 コンテナが起動済み
+- `test_zips/sample_002-004.zip`（002.png, 003.png, 004.png）を作成済み
+- backend の `/api/jobs/{job_id}/upload` には `Content-Type: application/zip` を明示すると正常にアップロードできることを確認済み
+
+### 調査計画
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# ocr-worker コンテナ内で /ocr エンドポイントを直接呼び出し
+docker compose exec ocr-worker python -c "
+import traceback
+from app.main import infer
+try:
+    result = infer('/data/extracted/54302f97-2dba-405d-9950-a141a9761f11', '/data/ocr_output/54302f97-2dba-405d-9950-a141a9761f11')
+    print(result)
+except Exception as e:
+    traceback.print_exc()
+"
+
+# ocr-worker ログ確認
+docker compose logs --tail 100 ocr-worker
+```
+
+### 結果
+
+- `ocr-worker/app/main.py` のエラーハンドリングを改善し、例外発生時に `traceback.format_exc()` で詳細なスタックトレースをログと HTTP レスポンスに含めるようにした
+- ocr-worker コンテナ内で直接 `/ocr` 相当の OCR 呼び出しを実行したところ、以下のエラーが発生した
+  - `ModuleNotFoundError: No module named 'pkg_resources'`
+- 原因は `pytorch_lightning` が import 時に `pkg_resources` を参照しているが、
+  `python:3.10-slim` ベースイメージに `setuptools` が含まれていないためだった
+- 最初の対応として `ocr-worker/Dockerfile` に `RUN pip install --no-cache-dir setuptools` を追加したが、
+  2026-08-13 時点の最新版 `setuptools 84.0.0` では `pkg_resources` が削除されていたため、
+  `setuptools==79.0.1` を明示的にインストールするよう修正した
+- 以下の手順で修正を反映した
+  - `docker compose down ocr-worker`
+  - `docker compose up -d --build ocr-worker`
+- 再ビルド後、ocr-worker コンテナ内で直接 OCR 実行したところ、3 ページ（002.png, 003.png, 004.png）の OCR が正常に完了した
+  - 出力ファイル：`/data/ocr_output/54302f97-2dba-405d-9950-a141a9761f11_20260813054308/input/txt/002_main.txt` など
+  - 進捗ファイル：`/data/progress/debug-003001.json` が `status: "completed"`、`progress: 1.0` となった
+- backend 経由でも OCR 実行を再検証した
+  - ジョブ作成：`curl -s -X POST http://localhost:8000/api/jobs/`
+  - ZIP アップロード：`curl -s -X POST -F "file=@test_zips/sample_002-004.zip;type=application/zip" http://localhost:8000/api/jobs/{job_id}/upload`
+  - OCR 実行：`curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/{job_id}/ocr`
+  - ジョブ状態：`curl -s http://localhost:8000/api/jobs/{job_id}` が `status: "completed"`、`message: "PDF 生成が完了しました"` を返した
+- 再ビルド後のコンテナで `import pkg_resources` が成功することも確認した
+  - `DeprecationWarning` は表示されるが、import 自体は成功する
+
+### 発生した事象と対応
+
+| 事象 | 原因 | 対応 |
+|---|---|---|
+| OCR 実行時に 500 エラー | `pytorch_lightning` が `pkg_resources` を参照するが、コンテナに `setuptools` がなかった | `ocr-worker/Dockerfile` に `setuptools==79.0.1` を追加 |
+| `pkg_resources` の `ModuleNotFoundError` | 最新版 `setuptools 84.0.0` では `pkg_resources` が削除されている | バージョンを `79.0.1` に固定 |
+| エラーの詳細がログに出ていない | `ocr-worker/app/main.py` の例外処理が `str(e)` のみ | `traceback.format_exc()` でスタックトレースをログ・レスポンスに含める |
+
+### 注意事項
+
+- `setuptools` のバージョン固定を怠ると、将来の `setuptools` 更新で同様の問題が再発する可能性がある
+- `pkg_resources` は非推奨 API なので、`pytorch_lightning` 側で `importlib.metadata` などに移行されることを期待する
+- 修正内容は `ocr-worker/docs/caveats.md` の「17. `setuptools` のバージョンは 79.0.1 に固定する」「18. エラーハンドリングでトレースバックをログに出力する」にも記録した
+

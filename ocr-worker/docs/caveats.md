@@ -127,3 +127,18 @@
   ```
 - 将来的に `hydra.compose()` などを使う場合は、この reinitialize パターンを見直す
 
+## 17. `setuptools` のバージョンは 79.0.1 に固定する
+
+- `pytorch_lightning` が import 時に `pkg_resources` を参照している
+- `python:3.10-slim` のベースイメージでは `setuptools` が含まれていないケースがあるため、明示的にインストールが必要
+- ただし、2026-08-13 時点で最新の `setuptools 84.0.0` では `pkg_resources` モジュールが削除されており、
+  `ModuleNotFoundError: No module named 'pkg_resources'` が発生する
+- そのため、`ocr-worker/Dockerfile` では `setuptools==79.0.1` を明示的にインストールしている
+- この固定を怠ると、OCR 実行時に 500 エラーが発生する
+
+## 18. エラーハンドリングでトレースバックをログに出力する
+
+- `ocr-worker/app/main.py` の `run_ocr` では、例外発生時に `traceback.format_exc()` を使って
+  スタックトレースをログと HTTP レスポンスの両方に含めている
+- これにより、ocr-worker 内で発生したエラーの原因を backend 側やコンテナログから迅速に特定できる
+
