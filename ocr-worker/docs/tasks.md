@@ -103,13 +103,14 @@ OCR 読み取り精度向上
 | 003001 | 現状 OCR 認識精度の再測定 | 2026-08-13 |  | 調査 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
-|  | コンテナ内 /data/* とホスト側 /tmp/book2pdf-*、作業ディレクトリ内テスト出力を削除する |  |  |  |
-|  | `sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png` を ZIP にまとめる |  |  |  |
-|  | frontend UI から ZIP をアップロードし、backend → ocr-worker で OCR を実行する |  |  |  |
-|  | 認識結果 XML / テキスト / frontend ダウンロード PDF を取得する |  |  |  |
-|  | 認識ミス（英数字・記号・漢字・異体字など）を一覧化する |  |  |  |
-|  | frontend ダウンロード PDF（`{日付時間}test.pdf`）の精度を解析する |  |  |  |
-|  | 測定結果を `ocr-worker/docs/work_log.md` / `backend/docs/work_log.md` に記載する |  |  |  |
+|  | 目的：OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行）の認識精度を定量的・定性的に把握する |  |  |  |
+|  | 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*`、作業ディレクトリ内テスト出力を削除する |  |  |  |
+|  | 2. テスト用 ZIP 作成：`sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png` を 1 つの ZIP（例: `benchmark-ocr-003001.zip`）にまとめる |  |  |  |
+|  | 3. Docker Compose 起動：`backend` / `ocr-worker` コンテナを最新イメージで起動する |  |  |  |
+|  | 4. OCR 実行：frontend UI または backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する |  |  |  |
+|  | 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、frontend ダウンロード PDF（`{日付時間}test.pdf`）を取得する |  |  |  |
+|  | 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。PDF テキスト抽出と元画像の視覚的比較も実施する |  |  |  |
+|  | 7. ドキュメント記録：測定結果を `ocr-worker/docs/work_log.md` / `backend/docs/work_log.md` に記載し、本タスクの【実施結果】欄に追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | （再測定後に記載予定） |  |  |  |
 | 003002 | 入力画像前処理の効果検証 | 2026-08-13 |  | 改善調査 |
