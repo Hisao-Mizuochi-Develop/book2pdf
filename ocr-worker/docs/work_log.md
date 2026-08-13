@@ -547,3 +547,55 @@ docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" 
 - CONF 値だけを信頼せず、目視確認や後処理による精度向上が必要
 - 測定結果の詳細は `ocr-results-003001/ocr-accuracy-report-003001.md` を参照
 
+
+---
+
+## 2026-08-13 タスク003002：入力画像前処理の効果検証
+
+### 目的
+
+003001 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、入力画像前処理の効果を定量的に検証する。
+
+### 前提
+
+- タスク 003001 で benchmark-ocr-003001.zip（002.png, 003.png, 004.png）の現状認識精度が把握済みであること
+- scripts/preprocess_image.py が作成済みであること
+- Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 前処理パターンごとの ZIP 生成
+python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-sharpen.zip sharpen_light
+python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-sharpen-upscale.zip sharppython scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-0030p benchmark-ocr-003002-contrast-gamma.zip contrast_gamma
+python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-contrast-gamma-sharpen.zip contrast_gamma_sharpen_light
+
+# 各パターンで backend API 経由で OCR を実行
+# （ジョブ作成 → ZIP アップロード → OCR 実行 → 成果物取得）
+# baseline は 003001 の結果を流用
+```
+
+### 結果
+
+- baseline（前処理なし）は 003001 と同一条件のため、本タスクでは再実行せず ocr-results-003001/ の結果を比較基準として使用した
+- 前処理 4 パターン（sharpen_light / sharpen_light_upscale_2x / contrast_gamma / contrast_gamma_sharpen_light）で OCR を実行し、結果を ocr-results-003002/ に取得した
+- 各パターンの「〓」出現数：
+  - baseline: 5
+  - sharpen_light: 7
+  - sharpen_light_upscale_2x: 3
+  - contrast_gamma: 7
+  - contrast_gamma_sharpen_light: 6
+- 最も効果的だったのは sharpen_light_upscale_2x（2 倍アップスケーリング＋軽度シャープニング）
+  - 003.png・004.png でほぼ完全な認識を実現
+  - 英数字頭文字欠落・記号置換・小文字化などの誤認識が大幅に改善
+- contrast_gamma は逆に文字の濁りやノイズを強調し、記号・英数字の誤認識を増加させる傾向があった
+- 精度比較レポートを ocr-results-003002/preprocess-comparison-report.md に作成した
+
+### 注意事項
+
+- baseline は 003001 と同一条件のため再実行せず、結果を流用した
+- 前処理による処理時間増加の影響は今回定量的に測定していない
+- 表紙ページ（002.png）は元の文字サイズ・デザインの影響から、依然として一部の誤認識が残った
+- 詳細な比較結果は ocr-results-003002/preprocess-comparison-report.md を参照
