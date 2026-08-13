@@ -382,7 +382,7 @@ python3 -m py_compile ocr-worker/ndlocr_cli_patches/inference.py
 
 ---
 
-## 2026-08-13 タスク003001：ocr-worker OCR 実行時 500 エラーの原因調査・修正
+## 2026-08-13 タスク003005：ocr-worker OCR 実行時 500 エラーの原因調査・修正
 
 ### 目的
 
