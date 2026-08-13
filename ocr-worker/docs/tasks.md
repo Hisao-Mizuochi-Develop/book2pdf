@@ -214,26 +214,26 @@ OCR 読み取り精度向上
 |  | 2026-08-13: 最も効果的だったのは `sharpen_light_upscale_2x`（2 倍アップスケーリング＋軽度シャープニング）で、「〓」出現数が baseline 5 個から 3 個へ減少し、003.png・004.png でほぼ完全な認識を実現した |  |  |  |
 |  | 2026-08-13: `sharpen_light` のみでは効果が限定的で、`contrast_gamma` は逆に記号・英数字の誤認識を増加させる傾向があった |  |  |  |
 |  | 2026-08-13: 精度比較レポート [ocr-results-003002/preprocess-comparison-report.md](ocr-results-003002/preprocess-comparison-report.md) を作成した |  |  |  |
-| 003003 | config.yml パラメータ調整の効果検証 | 2026-08-13 |  | 改善調査 |
+| 003003 | config.yml パラメータ調整の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
 |  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
+|  | 【計画】（2026-08-13: config.yml 確認後に計画を変更 ― line_ocr.score_thr は存在せず layout_extraction.score_thr のみが調整可能であった） |  |  |  |
 |  | 目的：003001 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、ndlocr_cli のモデルパラメータを調整することで、前処理だけでは解決しきれなかった誤認識を改善する |  |  |  |
 |  | 前提：003001・003002 が完了しており、sharpen_light_upscale_2x が最も効果的だったことが分かっていること |  |  |  |
 |  | 前提：評価基準は 003002 と同一（「〓」出現数、明らかな誤認識箇所数）を用い、比較可能とする |  |  |  |
-|  | 前提：コンテナ内に ndlocr_cli の config.yml が存在することを事前に確認する |  |  |  |
-|  | `ocr-worker/config.yml` の `layout_extraction.score_thr`、`line_ocr.additional_elements` などを調整する |  |  |  |
+|  | 前提：コンテナ内の config.yml（/opt/ocr-worker/config.yml）を確認済み。調整可能な閾値は `layout_extraction.score_thr: 0.3` のみ。`line_ocr.score_thr` は存在しない |  |  |  |
+|  | `layout_extraction.score_thr`、`line_ocr.additional_elements`（柱/ノンブル/ルビの有無）を調整する |  |  |  |
 |  | パラメータパターンごとに OCR 精度を比較する |  |  |  |
 |  | 改善効果と処理時間への影響を評価する |  |  |  |
 |  | 実施順序と比較パターン： |  |  |  |
 |  | 1. baseline（config.yml 変更なし）※003002 の sharpen_light_upscale_2x 結果を流用する |  |  |  |
-|  | 2. pattern A: line_ocr.score_thr 下げ ― 認識確信度が低い文字も出力させ、頭文字欠落・小文字化を改善する |  |  |  |
-|  | 3. pattern B: layout_extraction.detect.score_thr 下げ ― 小さな文字領域の検出漏れを減らす |  |  |  |
-|  | 4. pattern C: A + B の組み合わせ ― 両方のパラメータを同時に変更 |  |  |  |
+|  | 2. pattern A: layout_extraction.score_thr 0.2 ― 小さな文字領域の検出漏れを減らす |  |  |  |
+|  | 3. pattern B: layout_extraction.score_thr 0.1 ― さらに検出感度を上げる |  |  |  |
+|  | 4. pattern C: layout_extraction.score_thr 0.2 + line_ocr.additional_elements の柱/ノンブル/ルビを False ― ノイズ認識を抑制しつつ検出感度を上げる |  |  |  |
 |  | ### 詳細実施手順 |  |  |  |
 |  | #### 1. コンテナ内 config.yml の確認 |  |  |  |
-|  | docker compose exec ocr-worker でコンテナ内の config.yml パスと内容を確認する |  |  |  |
+|  | `docker compose exec ocr-worker cat /opt/ocr-worker/config.yml` で内容を確認する（済） |  |  |  |
 |  | #### 2. パラメータ調整用スクリプトの作成 |  |  |  |
-|  | `scripts/adjust_ocr_config.py` を新規作成し、config.yml の特定パラメータを上書きする機能を実装する |  |  |  |
+|  | `scripts/adjust_ocr_config.py` を新規作成し、config.yml の `layout_extraction.score_thr` と `line_ocr.additional_elements` を上書きする機能を実装する |  |  |  |
 |  | #### 3. 各パターンでの OCR 実行 |  |  |  |
 |  | 各パターンごとに調整後の config.yml を ocr-worker に配置する |  |  |  |
 |  | sharpen_light_upscale_2x 適用済み ZIP（または同条件で新規生成）を使用し、backend API 経由で OCR を実行する |  |  |  |
@@ -249,8 +249,13 @@ OCR 読み取り精度向上
 |  | `score_thr` を下げすぎると、ノイズや見出し線まで文字として認識する可能性がある |  |  |  |
 |  | config.yml のパラメータ名・構造は ndlocr_cli のバージョンによって異なる可能性がある |  |  |  |
 |  | パラメータ変更の効果は前処理と比べて限定的である可能性がある |  |  |  |
+|  | 実際の config.yml には `line_ocr.score_thr` は存在せず、調整可能な閾値は `layout_extraction.score_thr` のみであった |  |  |  |
 |  | 【実施結果】 |  |  |  |
-|  | （未実施） |  |  |  |
+|  | 2026-08-13: 3 パターン（score_thr: 0.2 / 0.1 / 0.2+additional_elements False）で config.yml パラメータ調整を実施 |  |  |  |
+|  | 2026-08-13: すべてのパターンで baseline（sharpen_light_upscale_2x、〓 3 個）と同一の結果となり、config.yml パラメータ調整に効果なしと判断 |  |  |  |
+|  | 2026-08-13: 精度比較レポート `ocr-results-003003/config-comparison-report.md` を作成した |  |  |  |
+|  | 2026-08-13: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記した |  |  |  |
+|  | 2026-08-13: タスク完了日付を記載 |  |  |  |
 | 003005 | ocr-worker OCR 実行時 500 エラーの原因調査・修正（OCR 精度向上前の環境不具合修正） | 2026-08-13 | 2026-08-13 | 不具合修正 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |

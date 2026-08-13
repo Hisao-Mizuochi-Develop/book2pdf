@@ -599,3 +599,99 @@ python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002
 - 前処理による処理時間増加の影響は今回定量的に測定していない
 - 表紙ページ（002.png）は元の文字サイズ・デザインの影響から、依然として一部の誤認識が残った
 - 詳細な比較結果は ocr-results-003002/preprocess-comparison-report.md を参照
+
+---
+
+## 2026-08-13 タスク003003：config.yml パラメータ調整の効果検証
+
+### 目的
+
+003002 で最も効果的だった `sharpen_light_upscale_2x` 適用済み画像に対し、ndlocr_cli の config.yml パラメータ調整がさらなる精度向上に寄与するかを検証する。
+
+### 前提
+
+- タスク 003002 で `sharpen_light_upscale_2x` が最も効果的だったことが分かっていること
+- コンテナ内の config.yml（/opt/ocr-worker/config.yml）を確認済みで、調整可能な閾値は `layout_extraction.score_thr: 0.3` のみであること
+- `line_ocr.score_thr` は存在せず、`line_ocr.additional_elements`（柱/ノンブル/ルビの有無）のみ調整可能であること
+- Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 1. コンテナ内 config.yml の内容確認
+docker compose exec ocr-worker cat /opt/ocr-worker/config.yml
+
+# 2. オリジナル config.yml のバックアップ作成
+docker compose exec ocr-worker cp /opt/ocr-worker/config.yml /tmp/config-original.yml
+
+# 3-1. Pattern A: score_thr 0.2
+docker compose exec ocr-worker sed -i "s/score_thr: 0.3/score_thr: 0.2/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker cat /opt/ocr-worker/config.yml | grep score_thr
+# → 確認後、OCR 実行
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002-sharpen-upscale.zip;type=application/zip" \
+  "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
+curl -s --max-time 1800 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
+
+# 3-2. Pattern B: score_thr 0.1（Pattern A 実行後、さらに変更）
+docker compose exec ocr-worker sed -i "s/score_thr: 0.2/score_thr: 0.1/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker cat /opt/ocr-worker/config.yml | grep score_thr
+# → 確認後、OCR 実行
+
+# 3-3. Pattern C: score_thr 0.2 + additional_elements 無効化
+docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/config.yml
+docker compose exec ocr-worker sed -i "s/score_thr: 0.3/score_thr: 0.2/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker sed -i "s/  柱: True/  柱: False/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker sed -i "s/  ノンブル: True/  ノンブル: False/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker sed -i "s/  ルビ: True/  ルビ: False/g" /opt/ocr-worker/config.yml
+docker compose exec ocr-worker cat /opt/ocr-worker/config.yml
+# → 確認後、OCR 実行
+
+# 4. 結果を ocr-results-003003/<pattern>/ に保存
+
+# 5. config.yml を元に戻す
+docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/config.yml
+```
+
+### 結果
+
+#### Pattern A: score_thr 0.2
+- ジョブ ID: `4087d086-4b45-4ca2-a1c4-7af8f1f17a9e`
+- OCR 完了、成果物を `ocr-results-003003/pattern-a/` に取得
+
+#### Pattern B: score_thr 0.1
+- ジョブ ID: `b4cf5a45-4893-45ec-9c78-9be5ccab2144`
+- OCR 完了、成果物を `ocr-results-003003/pattern-b/` に取得
+
+#### Pattern C: score_thr 0.2 + additional_elements 無効化
+- ジョブ ID: `56f1ec06-16a3-47bc-85bb-804790d43953`
+- OCR 完了、成果物を `ocr-results-003003/pattern-c/` に取得
+
+#### 精度比較
+
+| パターン | 「〓」出現数 | 002_main | 003_main | 004_main |
+|---|---|---|---|---|
+| **baseline** | **3** | 2 | 1 | 0 |
+| **pattern A** | **3** | 2 | 1 | 0 |
+| **pattern B** | **3** | 2 | 1 | 0 |
+| **pattern C** | **3** | 2 | 1 | 0 |
+
+- baseline（003002 の sharpen_light_upscale_2x）と比較して、すべてのパターンで **完全一致**
+- `diff` コマンドで `_main.txt`、`_ruby.txt`、`.xml` を比較した結果、**すべてのファイルで差分なし**
+- config.yml のパラメータ調整は、少なくとも本テストデータセットにおいては **OCR 精度に影響を与えなかった**
+
+### config.yml 調整が効果を持たなかった理由（推測）
+
+1. **ハードコードされた閾値**: ndlocr_cli のソースコード内部で `score_thr` が固定値でハードコードされており、config.yml の値が参照されていない可能性がある
+2. **別の設定ファイルが優先**: モデルの学習済み重みや推論パイプラインが独自のパラメータを持っており、config.yml の値が無視されている可能性がある
+3. **該当セクションの未使用**: `layout_extraction.score_thr` は領域検出の閾値だが、使用しているモデルの推論フローではこのパラメータが参照されていない可能性がある
+4. **additional_elements の影響範囲**: `line_ocr.additional_elements` の柱/ノンブル/ルビ設定は後処理の出力選択に影響する可能性があるが、`_main.txt` には既に選別済みのテキストが含まれている
+
+### 注意事項
+
+- config.yml の調整は一時的なものであり、テスト完了後に必ず元の値（score_thr: 0.3、柱/ノンブル/ルビ: True）に戻した
+- `score_thr` を下げすぎるとノイズや見出し線まで文字として認識するリスクがあるが、本テストでは差分が出なかったため実際の影響は不明
+- ndlocr_cli のソースコード（`cli/core/inference.py` や各 submodule）を確認し、config.yml の値が実際にどこで参照されているかを追跡する必要がある
+- 精度比較レポートは `ocr-results-003003/config-comparison-report.md` を参照
