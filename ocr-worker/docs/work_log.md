@@ -452,3 +452,98 @@ docker compose logs --tail 100 ocr-worker
 - `pkg_resources` は非推奨 API なので、`pytorch_lightning` 側で `importlib.metadata` などに移行されることを期待する
 - 修正内容は `ocr-worker/docs/caveats.md` の「17. `setuptools` のバージョンは 79.0.1 に固定する」「18. エラーハンドリングでトレースバックをログに出力する」にも記録した
 
+---
+
+## 2026-08-13 タスク003001：現状 OCR 認識精度の再測定
+
+### 目的
+
+OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行）の認識精度を定量的・定性的に把握する。
+
+### 前提
+
+- タスク 003005 で OCR 実行時の 500 エラーが解消済みであること
+- 既存の `benchmark-ocr-003001.zip`（002.png, 003.png, 004.png）が利用可能であること
+- Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
+
+### 測定計画
+
+1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*` を削除する
+2. テスト用 ZIP の確認：`benchmark-ocr-003001.zip` の内容を `unzip -l` で確認する
+3. Docker Compose 起動：`docker compose up -d --build` で最新イメージで起動する
+4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する
+5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする
+6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する
+7. ドキュメント記録：測定結果を `ocr-worker/docs/work_log.md` / `ocr-worker/docs/tasks.md` に記録する
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 1. 環境クリーンアップ
+docker compose exec backend sh -c 'rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*'
+docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/*'
+rm -rf /tmp/book2pdf-*
+
+# 2. テスト用 ZIP の確認
+unzip -l benchmark-ocr-003001.zip
+
+# 3. Docker Compose 起動
+docker compose up -d --build
+
+# 4. OCR 実行
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003001.zip;type=application/zip" \
+  "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
+curl -s --max-time 1800 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
+curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq .
+
+# 5. 成果物取得
+mkdir -p ocr-results-003001/source ocr-results-003001/extracted ocr-results-003001/pdfs
+unzip -j benchmark-ocr-003001.zip -d ocr-results-003001/source/
+# ジョブ情報から output_dir / pdf_path を確認
+curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq -r '.output_dir'
+curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq -r '.pdf_path'
+# 実測時のジョブ情報例
+# output_dir: /data/extracted/aca976fb-db10-47f1-847e-97ecf9b38ae5/output_20260813101634
+# pdf_path:   /data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf
+docker compose cp "backend:/data/extracted/aca976fb-db10-47f1-847e-97ecf9b38ae5/output_20260813101634" ocr-results-003001/extracted/
+docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" ocr-results-003001/pdfs/
+```
+
+### 結果
+
+- ジョブ ID: `aca976fb-db10-47f1-847e-97ecf9b38ae5`
+- 測定対象: `benchmark-ocr-003001.zip`（002.png 表紙、003.png 注意書き、004.png 本文）
+- OCR 実行は正常に完了し、ジョブ状態が `completed` となった
+- 出力ファイルを `ocr-results-003001/` に取得した
+  - `ocr-results-003001/extracted/output_20260813101634/input/xml/input.sorted.xml`
+  - `ocr-results-003001/extracted/output_20260813101634/input/txt/002_main.txt`
+  - `ocr-results-003001/extracted/output_20260813101634/input/txt/003_main.txt`
+  - `ocr-results-003001/extracted/output_20260813101634/input/txt/004_main.txt`
+  - `ocr-results-003001/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf`
+- 認識精度レポートを新規作成した
+  - `ocr-results-003001/ocr-accuracy-report-003001.md`
+- 主な測定結果
+  - 全体文字数: 約 1,327 文字
+  - 「〓」出現数: 5 回
+  - 明らかな誤認識箇所: 002.png で約 7 箇所、003.png で約 5 箇所、004.png で約 8 箇所
+  - 推定文字レベル誤り率（CER 推定）: 約 1〜3%（表紙ページはより高い）
+- 主な誤認識パターン
+  - 英数字頭文字: G→〓、I→（欠落）、L→l など
+  - 記号: ■→K、(→〓、®/™→〓 など
+  - 漢字の部品類似: 商→育、題→乃、夫→ヲ、存→右 など
+  - 異体字・旧字体: 年→年、理→理 など
+  - 語尾・助詞: つ→っ、に→4 など
+- 重要な発見
+  - XML の `CONF` 値は 0.998〜1.000 と非常に高いが、実際には明らかな誤認識が含まれていた
+  - つまり、ndlocr_cli は誤認識結果に対しても高い信頼度を出力する傾向がある
+
+### 注意事項
+
+- 正解テキストがないため、CER は厳密には算出できず、推定値とする
+- 目視確認では、英数字・記号・漢字の部品類似誤認識が主要な問題として浮上した
+- CONF 値だけを信頼せず、目視確認や後処理による精度向上が必要
+- 測定結果の詳細は `ocr-results-003001/ocr-accuracy-report-003001.md` を参照
+
