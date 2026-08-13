@@ -1,11 +1,11 @@
-# 003003 config.yml パラメータ調整効果検証 レポート
+# 003004 config.yml パラメータ調整効果検証 レポート
 
 ## 概要
 
-- タスク: 003003「config.yml パラメータ調整の効果検証」
+- タスク: 003004「config.yml パラメータ調整の効果検証」
 - 実施日: 2026-08-13
-- 対象データ: `benchmark-ocr-003002-sharpen-upscale.zip`（002.png, 003.png, 004.png）
-  ※003002 で最も効果的だった `sharpen_light_upscale_2x` 適用済み画像（1328×1884）
+- 対象データ: `benchmark-ocr-003003-sharpen-upscale.zip`（002.png, 003.png, 004.png）
+  ※003003 で最も効果的だった `sharpen_light_upscale_2x` 適用済み画像（1328×1884）
 - OCR エンジン: ndlocr_cli（CPU 実行）
 - 評価指標: 「〓」出現数、ファイル差分、目視確認
 
@@ -13,7 +13,7 @@
 
 | パターン | 調整内容 | config.yml 変更 |
 |---|---|---|
-| baseline | 003002 の `sharpen_light_upscale_2x` 結果を流用 | なし（score_thr: 0.3） |
+| baseline | 003003 の `sharpen_light_upscale_2x` 結果を流用 | なし（score_thr: 0.3） |
 | pattern A | layout_extraction.score_thr 下调 | score_thr: 0.2 |
 | pattern B | layout_extraction.score_thr さらに下调 | score_thr: 0.1 |
 | pattern C | score_thr 0.2 + 柱/ノンブル/ルビ無効化 | score_thr: 0.2, 柱: False, ノンブル: False, ルビ: False |
@@ -48,10 +48,10 @@
 3. **該当セクションの未使用**: `layout_extraction.score_thr` は領域検出の閾値だが、使用しているモデルの推論フローではこのパラメータが参照されていない可能性がある
 4. **additional_elements の影響範囲**: `line_ocr.additional_elements` の柱/ノンブル/ルビ設定は、後処理の出力選択に影響する可能性があるが、`_main.txt` には既に選別済みのテキストが含まれており差分が出ない
 
-### 前処理（003002）との対比
+### 前処理（003003）との対比
 
-- 003002 の `sharpen_light_upscale_2x` は「〓」を 5→3 に減少させ、誤認識を大幅に改善した
-- 003003 の config.yml 調整は**すべてのパターンでベースラインと同一の結果**となり、**改善効果なし**
+- 003003 の `sharpen_light_upscale_2x` は「〓」を 5→3 に減少させ、誤認識を大幅に改善した
+- 003004 の config.yml 調整は**すべてのパターンでベースラインと同一の結果**となり、**改善効果なし**
 
 ## 結論
 

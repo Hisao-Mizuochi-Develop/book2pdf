@@ -382,7 +382,7 @@ python3 -m py_compile ocr-worker/ndlocr_cli_patches/inference.py
 
 ---
 
-## 2026-08-13 タスク003005：ocr-worker OCR 実行時 500 エラーの原因調査・修正
+## 2026-08-13 タスク003001：ocr-worker OCR 実行時 500 エラーの原因調査・修正
 
 ### 目的
 
@@ -454,7 +454,7 @@ docker compose logs --tail 100 ocr-worker
 
 ---
 
-## 2026-08-13 タスク003001：現状 OCR 認識精度の再測定
+## 2026-08-13 タスク003002：現状 OCR 認識精度の再測定
 
 ### 目的
 
@@ -462,14 +462,14 @@ OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行�
 
 ### 前提
 
-- タスク 003005 で OCR 実行時の 500 エラーが解消済みであること
-- 既存の `benchmark-ocr-003001.zip`（002.png, 003.png, 004.png）が利用可能であること
+- タスク 003001 で OCR 実行時の 500 エラーが解消済みであること
+- 既存の `benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）が利用可能であること
 - Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
 
 ### 測定計画
 
 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*` を削除する
-2. テスト用 ZIP の確認：`benchmark-ocr-003001.zip` の内容を `unzip -l` で確認する
+2. テスト用 ZIP の確認：`benchmark-ocr-003002.zip` の内容を `unzip -l` で確認する
 3. Docker Compose 起動：`docker compose up -d --build` で最新イメージで起動する
 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する
 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする
@@ -487,44 +487,44 @@ docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/
 rm -rf /tmp/book2pdf-*
 
 # 2. テスト用 ZIP の確認
-unzip -l benchmark-ocr-003001.zip
+unzip -l benchmark-ocr-003002.zip
 
 # 3. Docker Compose 起動
 docker compose up -d --build
 
 # 4. OCR 実行
 JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
-curl -s -X POST -F "file=@benchmark-ocr-003001.zip;type=application/zip" \
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" \
   "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
 curl -s --max-time 1800 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
 curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq .
 
 # 5. 成果物取得
-mkdir -p ocr-results-003001/source ocr-results-003001/extracted ocr-results-003001/pdfs
-unzip -j benchmark-ocr-003001.zip -d ocr-results-003001/source/
+mkdir -p ocr-results-003002/source ocr-results-003002/extracted ocr-results-003002/pdfs
+unzip -j benchmark-ocr-003002.zip -d ocr-results-003002/source/
 # ジョブ情報から output_dir / pdf_path を確認
 curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq -r '.output_dir'
 curl -s "http://localhost:8000/api/jobs/$JOB_ID" | jq -r '.pdf_path'
 # 実測時のジョブ情報例
 # output_dir: /data/extracted/aca976fb-db10-47f1-847e-97ecf9b38ae5/output_20260813101634
 # pdf_path:   /data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf
-docker compose cp "backend:/data/extracted/aca976fb-db10-47f1-847e-97ecf9b38ae5/output_20260813101634" ocr-results-003001/extracted/
-docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" ocr-results-003001/pdfs/
+docker compose cp "backend:/data/extracted/aca976fb-db10-47f1-847e-97ecf9b38ae5/output_20260813101634" ocr-results-003002/extracted/
+docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" ocr-results-003002/pdfs/
 ```
 
 ### 結果
 
 - ジョブ ID: `aca976fb-db10-47f1-847e-97ecf9b38ae5`
-- 測定対象: `benchmark-ocr-003001.zip`（002.png 表紙、003.png 注意書き、004.png 本文）
+- 測定対象: `benchmark-ocr-003002.zip`（002.png 表紙、003.png 注意書き、004.png 本文）
 - OCR 実行は正常に完了し、ジョブ状態が `completed` となった
-- 出力ファイルを `ocr-results-003001/` に取得した
-  - `ocr-results-003001/extracted/output_20260813101634/input/xml/input.sorted.xml`
-  - `ocr-results-003001/extracted/output_20260813101634/input/txt/002_main.txt`
-  - `ocr-results-003001/extracted/output_20260813101634/input/txt/003_main.txt`
-  - `ocr-results-003001/extracted/output_20260813101634/input/txt/004_main.txt`
-  - `ocr-results-003001/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf`
+- 出力ファイルを `ocr-results-003002/` に取得した
+  - `ocr-results-003002/extracted/output_20260813101634/input/xml/input.sorted.xml`
+  - `ocr-results-003002/extracted/output_20260813101634/input/txt/002_main.txt`
+  - `ocr-results-003002/extracted/output_20260813101634/input/txt/003_main.txt`
+  - `ocr-results-003002/extracted/output_20260813101634/input/txt/004_main.txt`
+  - `ocr-results-003002/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf`
 - 認識精度レポートを新規作成した
-  - `ocr-results-003001/ocr-accuracy-report-003001.md`
+  - `ocr-results-003002/ocr-accuracy-report-003002.md`
 - 主な測定結果
   - 全体文字数: 約 1,327 文字
   - 「〓」出現数: 5 回
@@ -545,12 +545,12 @@ docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" 
 - 正解テキストがないため、CER は厳密には算出できず、推定値とする
 - 目視確認では、英数字・記号・漢字の部品類似誤認識が主要な問題として浮上した
 - CONF 値だけを信頼せず、目視確認や後処理による精度向上が必要
-- 測定結果の詳細は `ocr-results-003001/ocr-accuracy-report-003001.md` を参照
+- 測定結果の詳細は `ocr-results-003002/ocr-accuracy-report-003002.md` を参照
 
 
 ---
 
-## 2026-08-13 タスク003002：入力画像前処理の効果検証
+## 2026-08-13 タスク003003：入力画像前処理の効果検証
 
 ### 目的
 
@@ -558,7 +558,7 @@ docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" 
 
 ### 前提
 
-- タスク 003001 で benchmark-ocr-003001.zip（002.png, 003.png, 004.png）の現状認識精度が把握済みであること
+- タスク 003002 で benchmark-ocr-003002.zip（002.png, 003.png, 004.png）の現状認識精度が把握済みであること
 - scripts/preprocess_image.py が作成済みであること
 - Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
 
@@ -568,9 +568,9 @@ docker compose cp "backend:/data/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf" 
 cd /Users/hisao/Documents/work4/sakura/book2pdf
 
 # 前処理パターンごとの ZIP 生成
-python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-sharpen.zip sharpen_light
-python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-sharpen-upscale.zip sharppython scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-0030p benchmark-ocr-003002-contrast-gamma.zip contrast_gamma
-python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002-contrast-gamma-sharpen.zip contrast_gamma_sharpen_light
+python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-sharpen.zip sharpen_light
+python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-sharpen-upscale.zip sharppython scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-0030p benchmark-ocr-003003-contrast-gamma.zip contrast_gamma
+python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-contrast-gamma-sharpen.zip contrast_gamma_sharpen_light
 
 # 各パターンで backend API 経由で OCR を実行
 # （ジョブ作成 → ZIP アップロード → OCR 実行 → 成果物取得）
@@ -579,8 +579,8 @@ python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002
 
 ### 結果
 
-- baseline（前処理なし）は 003001 と同一条件のため、本タスクでは再実行せず ocr-results-003001/ の結果を比較基準として使用した
-- 前処理 4 パターン（sharpen_light / sharpen_light_upscale_2x / contrast_gamma / contrast_gamma_sharpen_light）で OCR を実行し、結果を ocr-results-003002/ に取得した
+- baseline（前処理なし）は 003001 と同一条件のため、本タスクでは再実行せず ocr-results-003002/ の結果を比較基準として使用した
+- 前処理 4 パターン（sharpen_light / sharpen_light_upscale_2x / contrast_gamma / contrast_gamma_sharpen_light）で OCR を実行し、結果を ocr-results-003003/ に取得した
 - 各パターンの「〓」出現数：
   - baseline: 5
   - sharpen_light: 7
@@ -591,18 +591,18 @@ python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002
   - 003.png・004.png でほぼ完全な認識を実現
   - 英数字頭文字欠落・記号置換・小文字化などの誤認識が大幅に改善
 - contrast_gamma は逆に文字の濁りやノイズを強調し、記号・英数字の誤認識を増加させる傾向があった
-- 精度比較レポートを ocr-results-003002/preprocess-comparison-report.md に作成した
+- 精度比較レポートを ocr-results-003003/preprocess-comparison-report-003003.md に作成した
 
 ### 注意事項
 
 - baseline は 003001 と同一条件のため再実行せず、結果を流用した
 - 前処理による処理時間増加の影響は今回定量的に測定していない
 - 表紙ページ（002.png）は元の文字サイズ・デザインの影響から、依然として一部の誤認識が残った
-- 詳細な比較結果は ocr-results-003002/preprocess-comparison-report.md を参照
+- 詳細な比較結果は ocr-results-003003/preprocess-comparison-report-003003.md を参照
 
 ---
 
-## 2026-08-13 タスク003003：config.yml パラメータ調整の効果検証
+## 2026-08-13 タスク003004：config.yml パラメータ調整の効果検証
 
 ### 目的
 
@@ -610,7 +610,7 @@ python scripts/preprocess_image.py benchmark-ocr-003001.zip benchmark-ocr-003002
 
 ### 前提
 
-- タスク 003002 で `sharpen_light_upscale_2x` が最も効果的だったことが分かっていること
+- タスク 003003 で `sharpen_light_upscale_2x` が最も効果的だったことが分かっていること
 - コンテナ内の config.yml（/opt/ocr-worker/config.yml）を確認済みで、調整可能な閾値は `layout_extraction.score_thr: 0.3` のみであること
 - `line_ocr.score_thr` は存在せず、`line_ocr.additional_elements`（柱/ノンブル/ルビの有無）のみ調整可能であること
 - Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動していること
@@ -631,7 +631,7 @@ docker compose exec ocr-worker sed -i "s/score_thr: 0.3/score_thr: 0.2/g" /opt/o
 docker compose exec ocr-worker cat /opt/ocr-worker/config.yml | grep score_thr
 # → 確認後、OCR 実行
 JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
-curl -s -X POST -F "file=@benchmark-ocr-003002-sharpen-upscale.zip;type=application/zip" \
+curl -s -X POST -F "file=@benchmark-ocr-003003-sharpen-upscale.zip;type=application/zip" \
   "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
 curl -s --max-time 1800 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
 
@@ -649,7 +649,7 @@ docker compose exec ocr-worker sed -i "s/  ルビ: True/  ルビ: False/g" /opt/
 docker compose exec ocr-worker cat /opt/ocr-worker/config.yml
 # → 確認後、OCR 実行
 
-# 4. 結果を ocr-results-003003/<pattern>/ に保存
+# 4. 結果を ocr-results-003004/<pattern>/ に保存
 
 # 5. config.yml を元に戻す
 docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/config.yml
@@ -659,15 +659,15 @@ docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/confi
 
 #### Pattern A: score_thr 0.2
 - ジョブ ID: `4087d086-4b45-4ca2-a1c4-7af8f1f17a9e`
-- OCR 完了、成果物を `ocr-results-003003/pattern-a/` に取得
+- OCR 完了、成果物を `ocr-results-003004/pattern-a/` に取得
 
 #### Pattern B: score_thr 0.1
 - ジョブ ID: `b4cf5a45-4893-45ec-9c78-9be5ccab2144`
-- OCR 完了、成果物を `ocr-results-003003/pattern-b/` に取得
+- OCR 完了、成果物を `ocr-results-003004/pattern-b/` に取得
 
 #### Pattern C: score_thr 0.2 + additional_elements 無効化
 - ジョブ ID: `56f1ec06-16a3-47bc-85bb-804790d43953`
-- OCR 完了、成果物を `ocr-results-003003/pattern-c/` に取得
+- OCR 完了、成果物を `ocr-results-003004/pattern-c/` に取得
 
 #### 精度比較
 
@@ -694,4 +694,4 @@ docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/confi
 - config.yml の調整は一時的なものであり、テスト完了後に必ず元の値（score_thr: 0.3、柱/ノンブル/ルビ: True）に戻した
 - `score_thr` を下げすぎるとノイズや見出し線まで文字として認識するリスクがあるが、本テストでは差分が出なかったため実際の影響は不明
 - ndlocr_cli のソースコード（`cli/core/inference.py` や各 submodule）を確認し、config.yml の値が実際にどこで参照されているかを追跡する必要がある
-- 精度比較レポートは `ocr-results-003003/config-comparison-report.md` を参照
+- 精度比較レポートは `ocr-results-003004/config-comparison-report.md` を参照

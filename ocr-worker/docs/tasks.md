@@ -100,12 +100,22 @@ OCR 読み取り精度向上
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 003001 | 現状 OCR 認識精度の再測定 | 2026-08-13 | 2026-08-13 | 調査 |
+| 003001 | ocr-worker OCR 実行時 500 エラーの原因調査・修正（OCR 精度向上前の環境不具合修正） | 2026-08-13 | 2026-08-13 | 不具合修正 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | OCR 精度向上に取り掛かる前に、Docker 環境で OCR 実行時に 500 エラーが発生していた原因を調査する |  |  |  |
+|  | ndlocr_cli の依存関係・コンテナ設定・推論パイプラインを確認する |  |  |  |
+|  | 必要な修正を実施し、OCR が正常に完了することを検証する |  |  |  |
+|  | 作業内容を `ocr-worker/docs/work_log.md` / `caveats.md` に記録する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-08-13: Docker 環境の不具合を修正し、OCR 実行時の 500 エラーが解消された |  |  |  |
+|  | 2026-08-13: 本タスクは OCR 精度向上の前段階として必要となった環境整備である |  |  |  |
+| 003002 | 現状 OCR 認識精度の再測定 | 2026-08-13 | 2026-08-13 | 調査 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | 目的：OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行）の認識精度を定量的・定性的に把握する |  |  |  |
 |  | 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*`、作業ディレクトリ内テスト出力を削除する |  |  |  |
-|  | 2. テスト用 ZIP の確認：既存の `benchmark-ocr-003001.zip` を使用し、含まれる画像を `unzip -l` で確認する |  |  |  |
+|  | 2. テスト用 ZIP の確認：既存の `benchmark-ocr-003002.zip` を使用し、含まれる画像を `unzip -l` で確認する |  |  |  |
 |  | 3. Docker Compose 起動：`backend` / `ocr-worker` コンテナを最新イメージで起動する |  |  |  |
 |  | 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する |  |  |  |
 |  | 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする |  |  |  |
@@ -121,7 +131,7 @@ OCR 読み取り精度向上
 |  | ``` |  |  |  |
 |  | #### 2. テスト用 ZIP の確認 |  |  |  |
 |  | ```bash |  |  |  |
-|  | unzip -l benchmark-ocr-003001.zip |  |  |  |
+|  | unzip -l benchmark-ocr-003002.zip |  |  |  |
 |  | ``` |  |  |  |
 |  | #### 3. Docker Compose 起動 |  |  |  |
 |  | ```bash |  |  |  |
@@ -130,7 +140,7 @@ OCR 読み取り精度向上
 |  | #### 4. OCR 実行 |  |  |  |
 |  | ```bash |  |  |  |
 |  | JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id') |  |  |  |
-|  | curl -s -X POST -F "file=@benchmark-ocr-003001.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq . |  |  |  |
+|  | curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq . |  |  |  |
 |  | curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq . |  |  |  |
 |  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
 |  | ``` |  |  |  |
@@ -139,46 +149,46 @@ OCR 読み取り精度向上
 |  | # ジョブ情報から output_dir と pdf_path を特定 |  |  |  |
 |  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
 |  | # 例：ocr-worker 出力をホストにコピー |  |  |  |
-|  | docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-003001/ |  |  |  |
-|  | docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-003001/ |  |  |  |
+|  | docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-003002/ |  |  |  |
+|  | docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-003002/ |  |  |  |
 |  | ``` |  |  |  |
 |  | #### 6. 精度解析 |  |  |  |
 |  | - 目視確認：元画像と OCR 結果テキスト（`_main.txt`, `_ruby.txt`, XML）を照合し、英数字・記号・漢字・異体字の誤認識を一覧化 |  |  |  |
 |  | - 定量的評価：正解テキストがあれば CER を算出。ない場合は認識文字数に対する誤認識箇所数でミス率を算出 |  |  |  |
 |  | ```bash |  |  |  |
 |  | # 例：CER 計算スクリプト |  |  |  |
-|  | python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-003001.txt --ocr ./ocr-results-003001/<job_dir>/txt/<page>_main.txt |  |  |  |
+|  | python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-003002.txt --ocr ./ocr-results-003002/<job_dir>/txt/<page>_main.txt |  |  |  |
 |  | ``` |  |  |  |
 |  | #### 7. ドキュメント記録 |  |  |  |
 |  | - `ocr-worker/docs/work_log.md` に測定結果を記載 |  |  |  |
-|  | - `ocr-worker/docs/tasks.md` の 003001【実施結果】欄に追記 |  |  |  |
+|  | - `ocr-worker/docs/tasks.md` の 003002【実施結果】欄に追記 |  |  |  |
 |  | - 必要に応じて `backend/docs/work_log.md` にも記載 |  |  |  |
 |  | 【実施結果】 |  |  |  |
-|  | 2026-08-13: `benchmark-ocr-003001.zip`（002.png, 003.png, 004.png）を使用して再測定を実施 |  |  |  |
+|  | 2026-08-13: `benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）を使用して再測定を実施 |  |  |  |
 |  | 2026-08-13: ジョブ ID `aca976fb-db10-47f1-847e-97ecf9b38ae5` で OCR を実行し、status: "completed" となったことを確認 |  |  |  |
-|  | 2026-08-13: ocr-worker 出力（XML, `_main.txt`）と backend 生成 PDF を `ocr-results-003001/` に取得 |  |  |  |
-|  | 2026-08-13: 認識精度レポート `ocr-results-003001/ocr-accuracy-report-003001.md` を新規作成 |  |  |  |
+|  | 2026-08-13: ocr-worker 出力（XML, `_main.txt`）と backend 生成 PDF を `ocr-results-003002/` に取得 |  |  |  |
+|  | 2026-08-13: 認識精度レポート `ocr-results-003002/ocr-accuracy-report-003002.md` を新規作成 |  |  |  |
 |  | 2026-08-13: 全体文字数約 1,327 文字、「〓」出現 5 回、明らかな誤認識箇所 002.png で約 7 箇所、003.png で約 5 箇所、004.png で約 8 箇所を確認 |  |  |  |
 |  | 2026-08-13: 推定 CER は約 1〜3%（表紙ページはより高い） |  |  |  |
 |  | 2026-08-13: 主要な誤認識パターンとして「英数字頭文字」「記号」「漢字の部品類似」「異体字・旧字体」「語尾・助詞」を特定 |  |  |  |
 |  | 2026-08-13: XML の CONF 値が 0.998〜1.000 と高いにもかかわらず、実際には明らかな誤認識が含まれることを確認 |  |  |  |
 |  | 2026-08-13: 精度向上の方向性として「入力画像前処理」「config.yml パラメータ調整」「推論パイプライン見直し」「後処理」を整理 |  |  |  |
 |  | 2026-08-13: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記 |  |  |  |
-| 003002 | 入力画像前処理の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
+| 003003 | 入力画像前処理の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
-|  | 目的：003001 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、入力画像前処理の効果を定量的に検証する |  |  |  |
-|  | 対象データ：`benchmark-ocr-003001.zip`（002.png, 003.png, 004.png）を再利用する |  |  |  |
+|  | 目的：003002 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、入力画像前処理の効果を定量的に検証する |  |  |  |
+|  | 対象データ：`benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）を再利用する |  |  |  |
 |  | 前処理は Python スクリプト（Pillow / OpenCV）で実装し、backend へ ZIP アップロードする前に適用する |  |  |  |
 |  | 評価指標：「〓」出現数、明らかな誤認識箇所数、推定 CER、処理時間 |  |  |  |
 |  | 実施順序と比較パターン： |  |  |  |
-|  | 1. baseline（前処理なし） ※003001 と同一条件のため、本タスクでは再実行せず `ocr-results-003001/` の結果を比較基準として使用する |  |  |  |
+|  | 1. baseline（前処理なし） ※003002 と同一条件のため、本タスクでは再実行せず `ocr-results-003002/` の結果を比較基準として使用する |  |  |  |
 |  | 2. sharpen_light（軽度シャープニング） |  |  |  |
 |  | 3. sharpen_light_upscale_2x（2 倍アップスケーリング＋軽度シャープニング） |  |  |  |
 |  | 4. contrast_gamma（コントラスト強調＋ガンマ補正） |  |  |  |
 |  | 5. contrast_gamma_sharpen_light（コントラスト強調＋ガンマ補正＋軽度シャープニング） |  |  |  |
 |  | なお、denoise（ノイズ除去）は機械的スキャンでありノイズがない前提で、今回は実施しない |  |  |  |
-|  | 各パターンで OCR を実行し、結果を `ocr-results-003002/` に保存する（baseline は 003001 の結果を流用） |  |  |  |
+|  | 各パターンで OCR を実行し、結果を `ocr-results-003003/` に保存する（baseline は 003002 の結果を流用） |  |  |  |
 |  | 各ステップごとに結果を報告し、次のパターンを実施するかを確認する |  |  |  |
 |  | 最も効果的な前処理パターンを選定し、`ocr-worker/docs/work_log.md` / `ocr-worker/docs/tasks.md` に記録する |  |  |  |
 |  | ### 詳細実施手順 |  |  |  |
@@ -200,32 +210,32 @@ OCR 読み取り精度向上
 |  | #### 3. OCR 実行 |  |  |  |
 |  | - 各パターンごとに ZIP を生成し、backend API から OCR を実行する |  |  |  |
 |  | - ジョブが `completed` になるまで待機する |  |  |  |
-|  | - 出力を `ocr-results-003002/<pattern>/` に保存する |  |  |  |
+|  | - 出力を `ocr-results-003003/<pattern>/` に保存する |  |  |  |
 |  | #### 4. 精度比較 |  |  |  |
 |  | - 各パターンの OCR 結果と baseline を比較する |  |  |  |
 |  | - 主な誤認識箇所（RAG→RAC、GPT-4→〓PT-4、LLM→lm、商→育 など）の改善状況を確認する |  |  |  |
 |  | - 「〓」出現数、明らかな誤認識箇所数、推定 CER を集計する |  |  |  |
 |  | #### 5. ドキュメント記録 |  |  |  |
 |  | - `ocr-worker/docs/work_log.md` に作業ログを追記する |  |  |  |
-|  | - `ocr-worker/docs/tasks.md` の 003002【実施結果】欄に結果を追記する |  |  |  |
-|  | - 精度比較レポートを `ocr-results-003002/preprocess-comparison-report.md` に作成する |  |  |  |
+|  | - `ocr-worker/docs/tasks.md` の 003003【実施結果】欄に結果を追記する |  |  |  |
+|  | - 精度比較レポートを `ocr-results-003003/preprocess-comparison-report-003003.md` に作成する |  |  |  |
 |  | 【実施結果】 |  |  |  |
-|  | 2026-08-13: 5 パターンの入力画像前処理を適用し、OCR 精度を比較した（baseline は 003001 の結果を流用） |  |  |  |
+|  | 2026-08-13: 5 パターンの入力画像前処理を適用し、OCR 精度を比較した（baseline は 003002 の結果を流用） |  |  |  |
 |  | 2026-08-13: 最も効果的だったのは `sharpen_light_upscale_2x`（2 倍アップスケーリング＋軽度シャープニング）で、「〓」出現数が baseline 5 個から 3 個へ減少し、003.png・004.png でほぼ完全な認識を実現した |  |  |  |
 |  | 2026-08-13: `sharpen_light` のみでは効果が限定的で、`contrast_gamma` は逆に記号・英数字の誤認識を増加させる傾向があった |  |  |  |
-|  | 2026-08-13: 精度比較レポート [ocr-results-003002/preprocess-comparison-report.md](ocr-results-003002/preprocess-comparison-report.md) を作成した |  |  |  |
-| 003003 | config.yml パラメータ調整の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
+|  | 2026-08-13: 精度比較レポート [ocr-results-003003/preprocess-comparison-report-003003.md](ocr-results-003003/preprocess-comparison-report-003003.md) を作成した |  |  |  |
+| 003004 | config.yml パラメータ調整の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】（2026-08-13: config.yml 確認後に計画を変更 ― line_ocr.score_thr は存在せず layout_extraction.score_thr のみが調整可能であった） |  |  |  |
-|  | 目的：003001 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、ndlocr_cli のモデルパラメータを調整することで、前処理だけでは解決しきれなかった誤認識を改善する |  |  |  |
-|  | 前提：003001・003002 が完了しており、sharpen_light_upscale_2x が最も効果的だったことが分かっていること |  |  |  |
-|  | 前提：評価基準は 003002 と同一（「〓」出現数、明らかな誤認識箇所数）を用い、比較可能とする |  |  |  |
+|  | 目的：003002 で特定した誤認識パターン（英数字頭文字・記号・漢字部品類似）に対し、ndlocr_cli のモデルパラメータを調整することで、前処理だけでは解決しきれなかった誤認識を改善する |  |  |  |
+|  | 前提：003002・003003 が完了しており、sharpen_light_upscale_2x が最も効果的だったことが分かっていること |  |  |  |
+|  | 前提：評価基準は 003003 と同一（「〓」出現数、明らかな誤認識箇所数）を用い、比較可能とする |  |  |  |
 |  | 前提：コンテナ内の config.yml（/opt/ocr-worker/config.yml）を確認済み。調整可能な閾値は `layout_extraction.score_thr: 0.3` のみ。`line_ocr.score_thr` は存在しない |  |  |  |
 |  | `layout_extraction.score_thr`、`line_ocr.additional_elements`（柱/ノンブル/ルビの有無）を調整する |  |  |  |
 |  | パラメータパターンごとに OCR 精度を比較する |  |  |  |
 |  | 改善効果と処理時間への影響を評価する |  |  |  |
 |  | 実施順序と比較パターン： |  |  |  |
-|  | 1. baseline（config.yml 変更なし）※003002 の sharpen_light_upscale_2x 結果を流用する |  |  |  |
+|  | 1. baseline（config.yml 変更なし）※003003 の sharpen_light_upscale_2x 結果を流用する |  |  |  |
 |  | 2. pattern A: layout_extraction.score_thr 0.2 ― 小さな文字領域の検出漏れを減らす |  |  |  |
 |  | 3. pattern B: layout_extraction.score_thr 0.1 ― さらに検出感度を上げる |  |  |  |
 |  | 4. pattern C: layout_extraction.score_thr 0.2 + line_ocr.additional_elements の柱/ノンブル/ルビを False ― ノイズ認識を抑制しつつ検出感度を上げる |  |  |  |
@@ -237,14 +247,14 @@ OCR 読み取り精度向上
 |  | #### 3. 各パターンでの OCR 実行 |  |  |  |
 |  | 各パターンごとに調整後の config.yml を ocr-worker に配置する |  |  |  |
 |  | sharpen_light_upscale_2x 適用済み ZIP（または同条件で新規生成）を使用し、backend API 経由で OCR を実行する |  |  |  |
-|  | 結果を `ocr-results-003003/<pattern>/` に保存する |  |  |  |
+|  | 結果を `ocr-results-003004/<pattern>/` に保存する |  |  |  |
 |  | #### 4. 精度比較 |  |  |  |
 |  | 各パターンの OCR 結果と baseline を比較する |  |  |  |
 |  | 「〓」出現数、明らかな誤認識箇所数を集計する |  |  |  |
 |  | #### 5. ドキュメント記録 |  |  |  |
 |  | `ocr-worker/docs/work_log.md` に作業ログを追記する |  |  |  |
-|  | `ocr-worker/docs/tasks.md` の 003003【実施結果】欄に結果を追記する |  |  |  |
-|  | 精度比較レポートを `ocr-results-003003/config-comparison-report.md` に作成する |  |  |  |
+|  | `ocr-worker/docs/tasks.md` の 003004【実施結果】欄に結果を追記する |  |  |  |
+|  | 精度比較レポートを `ocr-results-003004/config-comparison-report-003004.md` に作成する |  |  |  |
 |  | ### 注意事項・リスク |  |  |  |
 |  | `score_thr` を下げすぎると、ノイズや見出し線まで文字として認識する可能性がある |  |  |  |
 |  | config.yml のパラメータ名・構造は ndlocr_cli のバージョンによって異なる可能性がある |  |  |  |
@@ -253,16 +263,6 @@ OCR 読み取り精度向上
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-13: 3 パターン（score_thr: 0.2 / 0.1 / 0.2+additional_elements False）で config.yml パラメータ調整を実施 |  |  |  |
 |  | 2026-08-13: すべてのパターンで baseline（sharpen_light_upscale_2x、〓 3 個）と同一の結果となり、config.yml パラメータ調整に効果なしと判断 |  |  |  |
-|  | 2026-08-13: 精度比較レポート `ocr-results-003003/config-comparison-report.md` を作成した |  |  |  |
+|  | 2026-08-13: 精度比較レポート `ocr-results-003004/config-comparison-report-003004.md` を作成した |  |  |  |
 |  | 2026-08-13: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記した |  |  |  |
 |  | 2026-08-13: タスク完了日付を記載 |  |  |  |
-| 003005 | ocr-worker OCR 実行時 500 エラーの原因調査・修正（OCR 精度向上前の環境不具合修正） | 2026-08-13 | 2026-08-13 | 不具合修正 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | OCR 精度向上に取り掛かる前に、Docker 環境で OCR 実行時に 500 エラーが発生していた原因を調査する |  |  |  |
-|  | ndlocr_cli の依存関係・コンテナ設定・推論パイプラインを確認する |  |  |  |
-|  | 必要な修正を実施し、OCR が正常に完了することを検証する |  |  |  |
-|  | 作業内容を `ocr-worker/docs/work_log.md` / `caveats.md` に記録する |  |  |  |
-|  | 【実施結果】 |  |  |  |
-|  | 2026-08-13: Docker 環境の不具合を修正し、OCR 実行時の 500 エラーが解消された |  |  |  |
-|  | 2026-08-13: 本タスクは OCR 精度向上の前段階として必要となった環境整備である |  |  |  |

@@ -1,11 +1,11 @@
-# OCR 認識精度再測定レポート（003001）
+# OCR 認識精度再測定レポート（003002）
 
 ## 測定条件
 
 - 測定日: 2026-08-13
-- タスク: 003001「現状 OCR 認識精度の再測定」
+- タスク: 003002「現状 OCR 認識精度の再測定」
 - OCR エンジン: ndlocr_cli（CPU 実行）
-- テストデータ: `benchmark-ocr-003001.zip`
+- テストデータ: `benchmark-ocr-003002.zip`
   - 002.png（表紙）
   - 003.png（はじめに/注意書き）
   - 004.png（はじめに本文）
@@ -93,6 +93,6 @@ XML の `CONF`（信頼度）値は、004.png の本文では 0.998〜1.000 と�
 
 ## 備考
 
-- 測定結果の詳細な座標・XML データは `ocr-results-003001/extracted/output_20260813101634/input/xml/input.sorted.xml` に保存
-- 生成 PDF は `ocr-results-003001/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf` に保存
-- 元画像は `ocr-results-003001/source/` に保存
+- 測定結果の詳細な座標・XML データは `ocr-results-003002/extracted/output_20260813101634/input/xml/input.sorted.xml` に保存
+- 生成 PDF は `ocr-results-003002/pdfs/aca976fb-db10-47f1-847e-97ecf9b38ae5.pdf` に保存
+- 元画像は `ocr-results-003002/source/` に保存
