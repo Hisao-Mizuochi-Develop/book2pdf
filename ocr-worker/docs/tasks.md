@@ -105,12 +105,54 @@ OCR 読み取り精度向上
 |  | 【計画】 |  |  |  |
 |  | 目的：OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行）の認識精度を定量的・定性的に把握する |  |  |  |
 |  | 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*`、作業ディレクトリ内テスト出力を削除する |  |  |  |
-|  | 2. テスト用 ZIP 作成：`sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png` を 1 つの ZIP（例: `benchmark-ocr-003001.zip`）にまとめる |  |  |  |
+|  | 2. テスト用 ZIP の確認：既存の `benchmark-ocr-003001.zip` を使用し、含まれる画像を `unzip -l` で確認する |  |  |  |
 |  | 3. Docker Compose 起動：`backend` / `ocr-worker` コンテナを最新イメージで起動する |  |  |  |
-|  | 4. OCR 実行：frontend UI または backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する |  |  |  |
-|  | 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、frontend ダウンロード PDF（`{日付時間}test.pdf`）を取得する |  |  |  |
-|  | 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。PDF テキスト抽出と元画像の視覚的比較も実施する |  |  |  |
+|  | 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する |  |  |  |
+|  | 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする |  |  |  |
+|  | 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する |  |  |  |
 |  | 7. ドキュメント記録：測定結果を `ocr-worker/docs/work_log.md` / `backend/docs/work_log.md` に記載し、本タスクの【実施結果】欄に追記する |  |  |  |
+|  | ### 詳細実施手順 |  |  |  |
+|  | #### 1. 環境クリーンアップ |  |  |  |
+|  | ```bash |  |  |  |
+|  | cd /Users/hisao/Documents/work4/sakura/book2pdf |  |  |  |
+|  | docker compose exec backend rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/* |  |  |  |
+|  | docker compose exec ocr-worker rm -rf /data/ocr_output/* /data/extracted/* |  |  |  |
+|  | rm -rf /tmp/book2pdf-* |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 2. テスト用 ZIP の確認 |  |  |  |
+|  | ```bash |  |  |  |
+|  | unzip -l benchmark-ocr-003001.zip |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 3. Docker Compose 起動 |  |  |  |
+|  | ```bash |  |  |  |
+|  | docker compose up -d --build |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 4. OCR 実行 |  |  |  |
+|  | ```bash |  |  |  |
+|  | JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id') |  |  |  |
+|  | curl -s -X POST -F "file=@benchmark-ocr-003001.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq . |  |  |  |
+|  | curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq . |  |  |  |
+|  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 5. 成果物取得 |  |  |  |
+|  | ```bash |  |  |  |
+|  | # ジョブ情報から output_dir と pdf_path を特定 |  |  |  |
+|  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
+|  | # 例：ocr-worker 出力をホストにコピー |  |  |  |
+|  | docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-003001/ |  |  |  |
+|  | docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-003001/ |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 6. 精度解析 |  |  |  |
+|  | - 目視確認：元画像と OCR 結果テキスト（`_main.txt`, `_ruby.txt`, XML）を照合し、英数字・記号・漢字・異体字の誤認識を一覧化 |  |  |  |
+|  | - 定量的評価：正解テキストがあれば CER を算出。ない場合は認識文字数に対する誤認識箇所数でミス率を算出 |  |  |  |
+|  | ```bash |  |  |  |
+|  | # 例：CER 計算スクリプト |  |  |  |
+|  | python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-003001.txt --ocr ./ocr-results-003001/<job_dir>/txt/<page>_main.txt |  |  |  |
+|  | ``` |  |  |  |
+|  | #### 7. ドキュメント記録 |  |  |  |
+|  | - `ocr-worker/docs/work_log.md` に測定結果を記載 |  |  |  |
+|  | - `ocr-worker/docs/tasks.md` の 003001【実施結果】欄に追記 |  |  |  |
+|  | - 必要に応じて `backend/docs/work_log.md` にも記載 |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | （再測定後に記載予定） |  |  |  |
 | 003002 | 入力画像前処理の効果検証 | 2026-08-13 |  | 改善調査 |
