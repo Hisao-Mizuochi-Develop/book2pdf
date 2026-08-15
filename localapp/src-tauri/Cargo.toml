@@ -27,4 +27,6 @@ zip = "8.6.0"
 pdfium-render = "0.9.3"
 dirs = "6.0.0"
 thiserror = "2.0.20"
+screenshots = "0.8.10"
+base64 = "0.23.1"
 

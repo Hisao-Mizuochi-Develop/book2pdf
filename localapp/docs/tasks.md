@@ -98,7 +98,7 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 002001 | 画面キャプチャ方式調査・実装 | 2026-08-15 |  | 調査/実装 |
+| 002001 | 画面キャプチャ方式調査・実装 | 2026-08-15 | 2026-08-16 | 調査/実装 |
 | 002002 | アプリプロファイル管理 UI | 2026-08-15 |  | 実装 |
 | 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 |  | 実装 |
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 |  | 実装 |
@@ -106,16 +106,70 @@
 ### 002001 画面キャプチャ方式調査・実装
 
 【計画】
-- Tauri screenshot プラグインの調査
-- macOS / Windows / Linux 対応のキャプチャ方法を選定
-- Rust 側で対象ウィンドウ検出とスクリーンショット取得のコマンドを実装
-- 単発キャプチャの動作確認
+1. Tauri v2 標準API・プラグイン調査
+   - `tauri-plugin-screenshot` の有無確認
+   - なければ Rust crate 方式を採用
+2. 候補 crate の調査・選定
+   - `screenshots` crate: macOS / Windows / Linux 対応、画面・領域指定キャプチャ可能
+   - `xcap` crate: クロスプラットフォーム、ウィンドウ指定キャプチャ対応
+   - 比較要件: ウィンドウ指定キャプチャ、連続キャプチャ性能、ビルド安定性
+3. 実装（変更対象ファイル）
+   - `localapp/src-tauri/Cargo.toml`
+     - `screenshots` crate を追加
+   - `localapp/src-tauri/src/commands/capture.rs`（新規作成）
+     - 単発スクリーンショット取得コマンド `capture_screen` を実装
+     - 全画面キャプチャ（`screenshots::Screen::all()` → `capture()`）
+     - PNG 形式でバイト列を返却（`image::DynamicImage` → `write_to`）
+     - Base64 エンコードしてフロントエンドに返却
+   - `localapp/src-tauri/src/commands/mod.rs`（新規作成）
+     - `pub mod capture;`
+   - `localapp/src-tauri/src/lib.rs`
+     - `mod commands;` を追加
+     - `commands::capture::capture_screen` を `invoke_handler` に登録
+   - `localapp/src-tauri/capabilities/default.json`
+     - `screenshots` crate はTauri標準権限外のネイティブ処理なので変更なし
+   - `localapp/src/views/CaptureView.tsx`
+     - 「キャプチャテスト」ボタンを追加
+     - `invoke("capture_screen")` で取得し `<img>` に表示
+4. フロントエンド側にテスト用 UI を実装
+   - `CaptureView.tsx` に「キャプチャテスト」ボタンを追加
+   - 取得した画像を一時表示して動作確認
+5. ビルド・動作確認
+   - `cargo check` で Rust 側コンパイル確認
+   - `npm run tauri dev` で単発キャプチャ動作確認
+   - 取得した画像が指定フォルダに保存されることを確認
 
 【実施結果】
+- `screenshots` crate v0.8.10 を `Cargo.toml` に追加
+- `base64` crate v0.23.1 を追加（Base64エンコード用）
+- `src-tauri/src/commands/capture.rs` を新規作成
+  - `capture_screen` コマンド: 全画面キャプチャ → PNGエンコード → Base64返却
+  - `screenshots::Screen::all()` → `capture()` → `image::PngEncoder` でPNG化
+  - `image::ImageEncoder` トレイトをインポートして `write_image()` を使用
+  - Base64 エンコードしてフロントエンドに返却
+- `src-tauri/src/commands/mod.rs` を新規作成（`pub mod capture;`）
+- `src-tauri/src/lib.rs` を更新
+  - `mod commands;` を追加
+  - `greet` コマンドを削除し、新規コマンドとして `commands::capture::capture_screen` を登録
+- `src/views/CaptureView.tsx` を更新
+  - 「キャプチャテスト」ボタン追加（shadcn/ui Button + lucide-react Cameraアイコン）
+  - `invoke<CaptureResult>("capture_screen")` でRustコマンドを呼び出し
+  - 結果を `data:image/png;base64,...` 形式で `<img>` に表示
+  - エラーハンドリング、ローディング状態を実装
+- `cargo check`: コンパイル成功
+- `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- `npm run tauri dev`: 起動成功
+  - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示される
+  - 注意: `invoke` API は Tauri WebView 内でのみ動作するため、ブラウザ直接アクセスでのキャプチャ実行は不可（想定内の制限）
+- `src-tauri/tauri.conf.json` / `capabilities/default.json` は変更なし
+  - `screenshots` crate は Tauri 標準権限外のネイティブ処理のため
 
 ### 002002 アプリプロファイル管理 UI
 
 【計画】
+- 002001 で追加した `CaptureView.tsx` にプロファイル選択セレクタを追加
+- Rust側に `CaptureProfile` struct（参考: `capture_profiles.py`）を定義し、`get_builtin_profiles` コマンドを実装
+- Zustandストアで選択状態を管理
 - Kindle / BookWalker / カスタム のプロファイル選択 UI
 - ページ送り方向（右/左）、待機時間の設定
 - ウィンドウタイトルキーワード、プロセス名の編集
@@ -126,6 +180,9 @@
 ### 002003 連続キャプチャ実行・進捗表示
 
 【計画】
+- 002001 で追加した `capture.rs` に `start_continuous_capture` / `stop_continuous_capture` コマンドを追加
+- バックグラウンドスレッドで「キャプチャ→差分検出→ページ送り→待機」のループを実行
+- 進捗は `tauri::Emitter` でフロントエンドに通知（参考: `capture_engine.py` の `_has_meaningful_change` → Rust版に移植）
 - キャプチャ → ページ送り → 画像変化検出 のループ実装
 - バックグラウンド実行（Rust 側で非同期）
 - 進捗バー、ステータステキスト、ログ表示
@@ -136,6 +193,9 @@
 ### 002004 キャプチャ画像のフォルダ管理
 
 【計画】
+- 002001 で追加した `capture.rs` に保存処理を追加
+- タイトル名でフォルダ作成 → 連番PNG保存（`001.png, 002.png...`）
+- 保存パスはフロントエンド通知時に含め、`navigationStore` でトリミングタブへの連携データとして保持
 - タイトル名で出力フォルダ作成
 - 連番 PNG 保存
 - キャプチャ完了後、トリミングタブに自動引き継ぎ
