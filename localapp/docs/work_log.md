@@ -1,5 +1,48 @@
 # localapp 作業ログ
 
+## 006001 — デザインシステム定義
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: Apple HIG 風のカラーパレット・タイポグラフィ・コンポーネントスタイルを定義し文書化する
+- 前提: 006002（サイドバー＋メインレイアウト実装）が完了していること
+- 実施コマンド:
+  1. `npm run build`（ビルド確認）
+  2. `npm run tauri dev`（スタイル反映確認）
+- 変更対象:
+  - `localapp/src/index.css` — CSS 変数（カラー・角丸）の調整
+  - `localapp/src/components/ui/button.tsx` — バリアント・サイズのコメント追加
+  - `localapp/docs/localapp-spec.md` — カラーパレット表、タイポグラフィ情報の更新
+- 想定される結果や注意点:
+  - Tailwind v4 の oklch カラースケールを Apple HIG に近づける
+  - 各 CSS 変数に「用途 + 理由」のコメントを付加（初学者向け可読性）
+  - shadcn/ui Button コンポーネントの各バリアントに詳細な JSDoc コメント
+
+### 【実施実績】
+
+- `localapp/src/index.css` — Apple HIG 風カラーパレットに変更
+  - `--primary` を oklch(0.588 0.194 257.1)（#007AFF 相当）に変更
+  - `--foreground` を oklch(0.225 0 0)（#1D1D1F 相当）に変更
+  - `--muted-foreground` を oklch(0.53 0 0)（#6E6E73 相当）に変更
+  - `--border` を oklch(0.853 0 0)（#D2D2D7 相当）に変更
+  - `--sidebar` を oklch(0.97 0 0)（#F5F5F7 相当）に変更
+  - `--destructive` を oklch(0.63 0.22 30)（#FF3B30 相当）に変更
+  - `--radius` を 0.5rem に変更（より控えめな角丸）
+  - 各変数に「用途 + Apple HIG 対応色」のコメントを付加
+- `localapp/src/components/ui/button.tsx` — 各 variant・size に JSDoc コメントを付加
+  - variant（default, outline, secondary, ghost, destructive, link）に用途・見た目コメント
+  - size（default, xs, sm, lg, icon, icon-xs, icon-sm, icon-lg）に高さ・適用場面コメント
+  - buttonVariants 関数と Button コンポーネントにも概要コメント
+- `localapp/docs/localapp-spec.md` — デザイン仕様を更新
+  - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
+  - フォントに `Geist Variable` を明記
+- `.clinerules` — 第8章に「初学者向け詳細コメント」ルールを加筆
+  - 「すべてのソースコードには初学者にも可読性がよくなるように、各変数・関数・クラス・複雑なロジックに『用途+デザイン意図』のコメントを付けることを基本とする」を追記
+- `npm run build` でビルド成功（CSS ファイル 24.97 kB）
+- `npm run tauri dev` で起動確認
+  - 白基調・余白多め・控えめな角丸の Apple HIG 風レイアウトが正しく表示されることを確認
+
 ## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
 
 ### 【実施予定】

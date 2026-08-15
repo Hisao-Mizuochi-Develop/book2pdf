@@ -284,7 +284,7 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 006001 | デザインシステム定義 | 2026-08-15 |  | 実装 |
+| 006001 | デザインシステム定義 | 2026-08-15 | 2026-08-16 | 実装 |
 | 006002 | サイドバー＋メインレイアウト実装 | 2026-08-15 | 2026-08-15 | 実装 |
 | 006003 | ライトモード対応 + OS 設定連動 | 2026-08-15 |  | 実装 |
 | 006004 | マイクロインタラクション実装 | 2026-08-15 |  | 実装 |
@@ -292,11 +292,35 @@
 ### 006001 デザインシステム定義
 
 【計画】
-- Tailwind CSS テーマ設定（カラー・タイポグラフィ・角丸・影）
-- shadcn/ui コンポーネントのベーススタイル調整
-- カラーパレットを文書化
+1. `localapp/src/index.css` の CSS 変数調整
+   - `--primary` を `#007AFF` 相当の oklch に変更（暗いモノクロ → Apple HIG 風鮮やかな青）
+   - `--foreground` を `#1D1D1F` 相当の oklch に変更（黒 → ソフトブラック）
+   - `--muted-foreground` を `#6E6E73` 相当の oklch に変更（中間灰 → セカンダリテキスト色）
+   - `--border` を `#D2D2D7` 相当の oklch に変更（ライト灰 → 区切り線色）
+   - `--sidebar` を `#F5F5F7` 相当の oklch に変更（白 → サイドバー背景色）
+   - `--destructive` を `#FF3B30` 相当の oklch に変更（赤 → エラー/警告色）
+   - `--radius` を 0.5rem に変更（0.625rem → より控えめな角丸）
+   - 各変数に「用途 + Apple HIG 対応色」の `/* コメント */` を付加
+2. `localapp/src/components/ui/button.tsx` のコメント強化
+   - 各 variant（default, outline, secondary, ghost, destructive, link）に JSDoc コメント
+   - 各 size（default, xs, sm, lg, icon...）に JSDoc コメント
+   - `buttonVariants` 関数と `Button` コンポーネントにも概要コメント
+3. `localapp/docs/localapp-spec.md` のデザイン仕様更新
+   - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
+   - フォントに `Geist Variable` を明記
+   - タイポグラフィのサイズ指定を rem で明記
+4. ビルド確認・起動確認
+   - `npm run build`
+   - `npm run tauri dev`
 
 【実施結果】
+- `localapp/src/index.css` を Apple HIG 風カラーパレットに変更し、各変数に「用途 + 理由」のコメントを付加
+- `localapp/src/components/ui/button.tsx` の各 variant・size に詳細な JSDoc コメントを付加
+- `localapp/docs/localapp-spec.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
+- `.clinerules` 第8章に「初学者向け詳細コメント」ルールを加筆
+- `npm run build` でビルド成功
+- `npm run tauri dev` で起動確認完了
+  - 白基調・余白多め・控えめな角丸のレイアウトが正しく表示されることを確認
 
 ### 006002 サイドバー＋メインレイアウト実装
 
