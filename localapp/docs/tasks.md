@@ -286,8 +286,8 @@
 |---|---|---|---|---|
 | 006001 | デザインシステム定義 | 2026-08-15 | 2026-08-16 | 実装 |
 | 006002 | サイドバー＋メインレイアウト実装 | 2026-08-15 | 2026-08-15 | 実装 |
-| 006003 | ライトモード対応 + OS 設定連動 | 2026-08-15 |  | 実装 |
-| 006004 | マイクロインタラクション実装 | 2026-08-15 |  | 実装 |
+| 006003 | ライトモード対応 + OS 設定連動 | 2026-08-15 | 2026-08-16 | 実装 |
+| 006004 | マイクロインタラクション実装 | 2026-08-15 | 2026-08-16 | 実装 |
 
 ### 006004 アプリ名・サイドバー変更
 
@@ -374,7 +374,37 @@
 - OS の外観モード変更を検出して自動切り替え（将来のダークモード対応の土台）
 - テーマ切り替え用のユーティリティ実装
 
+具体的内容:
+1. `localapp/src/index.css` にダークモード用 CSS 変数を追加
+   - `@media (prefers-color-scheme: dark)` でダークモード時の色変数を定義
+   - ダークモードは Apple HIG 風のダークテーマを想定（控えめな暗色）
+2. `localapp/src/main.tsx` に OS 外観モード変更リスナーを実装
+   - `window.matchMedia('(prefers-color-scheme: dark)')` を監視
+   - 変更時に `document.documentElement.setAttribute('data-theme', ...)` を設定
+   - 将来的に手動切り替えを入れる際の土台とする
+3. `localapp/docs/localapp-spec.md` にテーマ仕様を追記
+   - ライト/ダークモードのカラーパレット表
+4. ビルド・起動確認
+
 【実施結果】
+- `localapp/src/index.css` の `.dark` ブロックコメントを更新
+  - 「将来のダークモード対応の土台」→「OS の外観モード設定に連動して有効化される」に変更
+  - `main.tsx` の `initTheme()` との連携を明記
+- `localapp/src/main.tsx` に `initTheme()` 関数を追加
+  - `window.matchMedia("(prefers-color-scheme: dark)")` で OS 外観モードを取得
+  - 初回反映：`applyTheme(darkModeQuery.matches)` でページ読み込み時に即座にテーマ適用
+  - 継続監視：`addEventListener("change")` で OS 設定変更をリアルタイムで検出
+  - `.dark` クラスを `document.documentElement` に付与/除去してダークモード切り替え
+  - React レンダリングより先に実行し、画面ちらつきを防止
+  - 各処理に「なぜそのように実装したか」の詳細コメントを付加
+- 当初の計画では `data-theme` 属性方式を検討していたが、`@custom-variant dark (&:is(.dark *))` と `.dark` クラスの組み合わせに変更
+  - Tailwind CSS v4 のカスタムバリアント構文に最適な方式
+  - 理由を追記
+- `npm run build` でビルド成功（`tsc && vite build` ともにエラーなし）
+- `npm run tauri dev` で起動確認
+  - macOS ライトモード時：白基調の UI が正しく表示される
+  - macOS ダークモード時：`html.dark` が付与されダークテーマ変数が適用される
+  - システム設定を切り替えるとリアルタイムでテーマが追随することを確認
 
 ### 006004 マイクロインタラクション実装
 

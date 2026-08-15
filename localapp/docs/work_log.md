@@ -1,5 +1,37 @@
 # localapp 作業ログ
 
+## 006003 — ライトモード対応 + OS 設定連動
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: ライトモードを基本テーマとしつつ、OS の外観モード変更を検出して自動切り替えできる土台を構築する
+- 前提: 006001（デザインシステム定義）、006002（レイアウト実装）が完了していること
+- 変更内容:
+  1. `localapp/src/index.css` — `@media (prefers-color-scheme: dark)` でダークモード用 CSS 変数を追加
+  2. `localapp/src/main.tsx` — OS 外観モード変更リスナーを実装（`data-theme` 属性設定）
+  3. `localapp/docs/localapp-spec.md` — テーマ仕様の追記
+- 実施コマンド:
+  1. `npm run build`（ビルド確認）
+  2. `npm run tauri dev`（OS 設定連動確認）
+
+### 【実施実績】
+
+- `localapp/src/main.tsx` に `initTheme()` 関数を追加
+  - コード方針: `@custom-variant dark (&:is(.dark *))` に対応するため `.dark` クラス方式を採用
+  - `window.matchMedia("(prefers-color-scheme: dark)")` で OS の外観モードを取得
+  - 初回反映: `applyTheme(darkModeQuery.matches)` で即座にテーマ適用（React レンダリングより先に実行し画面ちらつきを防止）
+  - 継続監視: `addEventListener("change")` で OS 設定変更をリアルタイムで検出
+  - `.dark` クラスを `document.documentElement` に付与/除去してダークモード切り替え
+  - 各処理に「なぜそのように実装したか」の詳細コメントを付加
+- `localapp/src/index.css` の `.dark` ブロックコメントを更新
+  - 「将来のダークモード対応の土台」→「OS の外観モード設定（ダーク）に連動して有効化される」に変更
+- `npm run build` でビルド成功（`tsc && vite build` ともにエラーなし）
+- `npm run tauri dev` で起動確認
+  - ライトモード時：白基調の UI が正しく表示される
+  - ダークモード時：`html.dark` が付与されダークテーマ変数が適用される
+  - システム設定を切り替えるとリアルタイムでテーマが追随することを確認
+
 ## 006004 — アプリ名・サイドバー項目変更
 
 ### 【実施予定】
