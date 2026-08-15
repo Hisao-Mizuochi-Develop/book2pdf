@@ -1,5 +1,45 @@
 # localapp 作業ログ
 
+## 006004 — アプリ名・サイドバー項目変更
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: アプリ名とサイドバーの表示順・ラベルを変更する
+- 前提: 006001 が完了していること
+- 変更内容:
+  1. アプリ名 `book2pdf` → `BoockCapture`
+     - `tauri.conf.json`: productName, windows.title
+     - `Sidebar.tsx`: ロゴテキスト
+  2. サイドバー表示順・ラベル変更
+     - 1: `電子書籍`（capture）
+     - 2: `PDF`（pdf）
+     - 3: `トリミング`（trim）
+     - 4: `ZIP作成`（export）
+- 実施コマンド:
+  1. `npm run build`（ビルド確認）
+  2. `npm run tauri dev`（表示確認）
+
+### 【実施実績】
+
+- `localapp/src-tauri/tauri.conf.json` を修正
+  - `productName` を `book2pdf` → `BoockCapture` → `Book Capture` に変更
+  - `windows.title` を `book2pdf` → `BoockCapture` → `Book Capture` に変更
+- `localapp/src/components/layout/Sidebar.tsx` を修正
+  - ロゴテキストを `book2pdf` → `Book Capture` に変更
+  - navItems のラベルを変更
+    - `キャプチャ` → `電子書籍`
+    - `PDF読込` → `PDF`
+    - `ZIP出力` → `ZIP作成`
+  - navItems の並び順を変更
+    - 変更前: キャプチャ → トリミング → PDF読込 → ZIP出力
+    - 変更後: 電子書籍 → PDF → トリミング → ZIP作成
+- `npm run build` でビルド成功
+- `npm run tauri dev` で起動確認
+  - ウィンドウタイトルが「Book Capture」に変更されていることを確認
+  - サイドバーのロゴが「Book Capture」に変更されていることを確認
+  - サイドバー項目が「電子書籍 / PDF / トリミング / ZIP作成」の順で正しく表示されることを確認
+
 ## 006001 — デザインシステム定義
 
 ### 【実施予定】

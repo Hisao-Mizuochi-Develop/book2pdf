@@ -10,10 +10,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { view: "capture", label: "キャプチャ", icon: Camera },
+  { view: "capture", label: "電子書籍", icon: Camera },
+  { view: "pdf", label: "PDF", icon: FileUp },
   { view: "trim", label: "トリミング", icon: Crop },
-  { view: "pdf", label: "PDF読込", icon: FileUp },
-  { view: "export", label: "ZIP出力", icon: Package },
+  { view: "export", label: "ZIP作成", icon: Package },
 ];
 
 export function Sidebar() {
@@ -22,7 +22,7 @@ export function Sidebar() {
   return (
     <aside className="w-[200px] flex flex-col border-r bg-background">
       <div className="flex h-14 items-center px-5">
-        <span className="text-sm font-semibold tracking-tight">book2pdf</span>
+        <span className="text-sm font-semibold tracking-tight">Book Capture</span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
         {navItems.map(({ view, label, icon: Icon }) => {

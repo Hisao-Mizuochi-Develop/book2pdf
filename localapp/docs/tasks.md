@@ -289,6 +289,28 @@
 | 006003 | ライトモード対応 + OS 設定連動 | 2026-08-15 |  | 実装 |
 | 006004 | マイクロインタラクション実装 | 2026-08-15 |  | 実装 |
 
+### 006004 アプリ名・サイドバー変更
+
+【計画】
+- アプリ名 `book2pdf` → `Book Capture`
+- サイドバー項目変更
+  1. `電子書籍`（capture）
+  2. `PDF`（pdf）
+  3. `トリミング`（trim）
+  4. `ZIP作成`（export）
+
+【実施結果】
+- `tauri.conf.json`: productName、windows.title を `Book Capture` に変更
+- `Sidebar.tsx`: ロゴテキストを `Book Capture` に変更
+- `Sidebar.tsx`: navItems のラベルと並び順を変更
+  - `キャプチャ` → `電子書籍`
+  - `PDF読込` → `PDF`
+  - `ZIP出力` → `ZIP作成`
+  - 順序: 電子書籍 → PDF → トリミング → ZIP作成
+- `npm run build` でビルド成功
+- `npm run tauri dev` で起動確認完了
+
+
 ### 006001 デザインシステム定義
 
 【計画】
