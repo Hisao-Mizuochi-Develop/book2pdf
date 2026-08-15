@@ -1,5 +1,6 @@
 old/
-sample-png/
+reference/
+test_cases/
 .venv/
 __pycache__/
 dist/

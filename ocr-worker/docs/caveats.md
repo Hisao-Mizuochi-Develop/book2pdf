@@ -142,3 +142,34 @@
   スタックトレースをログと HTTP レスポンスの両方に含めている
 - これにより、ocr-worker 内で発生したエラーの原因を backend 側やコンテナログから迅速に特定できる
 
+## 19. `config.yml` の `layout_extraction.score_thr` は `process_textblock.py` パッチ適用後に反映される
+
+- ndlocr_cli 標準では、`submodules/ndl_layout/tools/process_textblock.py` / `process.py` に
+  `score_thr: float = 0.3` がハードコードされており、`config.yml` の値が無視される
+- `ocr-worker/ndlocr_cli_patches/process_textblock.py` を Docker ビルド時に上書きコピーすることで、
+  `config.yml` の `layout_extraction.score_thr` が推論に反映されるように修正している
+- パッチ適用後は以下の動作となる
+  - `InferencerWithCLI.__init__` で `conf_dict.get('score_thr', 0.3)` を保持
+  - `LayoutDetector.predict()` で `inference_detector(model, img, score_thr=score_thr)` を呼び出し
+  - XML 変換時にも `score_thr` を渡して低 CONF の領域をフィルタリング
+- ホスト側でパッチファイルを変更した場合は、`docker compose up -d --build ocr-worker` でイメージを再ビルドすること
+- 将来 ndlocr_cli のバージョンアップで `process_textblock.py` の構造が変わった場合、パッチの適用箇所を見直す必要がある
+
+## 20. 自動画像前処理機能（sharpen_light_upscale_2x）
+
+- `POST /ocr` リクエスト受信時、`ocr-worker/app/main.py` が入力画像に対して自動前処理を行う
+- 前処理内容は「2 倍アップスケール（LANCZOS 補間）＋軽度シャープニング（UnsharpMask radius=2, percent=80, threshold=3）」
+- 前処理は環境変数 `PREPROCESS_ENABLED` で ON/OFF を制御できる
+  - デフォルトは `true`（ON）
+  - `false` / `0` / `no` / `off` のいずれかを指定すると OFF になる
+  - `docker-compose.yml` の `ocr-worker.environment` で設定する
+- 前処理済み画像は `/tmp/ocr_preprocess_<job_id>_*/input/img/` という一時ディレクトリに保存される
+- OCR 処理の成功・失敗に関わらず、`try ... finally` で一時ディレクトリを削除する
+- Pillow の依存が必要であるが、`python:3.10-slim` イメージには標準で含まれていないため、`ocr-worker/Dockerfile` で `python3-pil` を apt-get インストールしている
+- 前処理を有効にすると、画像が 2 倍になるため OCR 処理時間が増加する
+  - 参考: 3 ページのサンプルで、OFF 時 120〜130 秒に対し、ON 時 180〜190 秒程度（約 1.5 倍）
+- 前処理は「〓」のような不明文字の出現を減らす効果があるが、表紙や特殊なレイアウトのページでは誤認識が残ることがある
+  - 参考: 3 ページのサンプルで、OFF 時 5 個だった「〓」が ON 時 3 個に減少
+- 前処理適用後も座標は ndlocr_cli 内部で前処理済み画像に対して計算されるため、backend 側の座標変換（必要に応じて）で元画像スケールに戻す必要がある
+
+

@@ -127,7 +127,7 @@ sys.path.insert(0, '/opt/ocr-worker')
 from submodules.separate_pages_mmdet.inference_divide import GutterDetector
 det = GutterDetector(
     'submodules/separate_pages_mmdet/models/cascade_rcnn_r50_fpn_1x_ndl_1024.py',
-    'submodules/separate_pages_mmdet/models/epoch_180.pth',
+    'submodels/separate_pages_mmdet/models/epoch_180.pth',
     'cpu'
 )
 print('OK')
@@ -569,7 +569,8 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf
 
 # 前処理パターンごとの ZIP 生成
 python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-sharpen.zip sharpen_light
-python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-sharpen-upscale.zip sharppython scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-0030p benchmark-ocr-003003-contrast-gamma.zip contrast_gamma
+python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-sharpen-upscale.zip sharpen_light_upscale_2x
+python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-contrast-gamma.zip contrast_gamma
 python scripts/preprocess_image.py benchmark-ocr-003002.zip benchmark-ocr-003003-contrast-gamma-sharpen.zip contrast_gamma_sharpen_light
 
 # 各パターンで backend API 経由で OCR を実行
@@ -695,3 +696,468 @@ docker compose exec ocr-worker cp /tmp/config-original.yml /opt/ocr-worker/confi
 - `score_thr` を下げすぎるとノイズや見出し線まで文字として認識するリスクがあるが、本テストでは差分が出なかったため実際の影響は不明
 - ndlocr_cli のソースコード（`cli/core/inference.py` や各 submodule）を確認し、config.yml の値が実際にどこで参照されているかを追跡する必要がある
 - 精度比較レポートは `ocr-results-003004/config-comparison-report.md` を参照
+
+---
+
+## 003005: OCR精度向上の統合検討と実装修正
+
+- 日時: 2026-08-14（実施中）
+- 目的: 003003・003004 の調査結果を統合し、config.yml パラメータ修正・自動前処理統合・表紙残存誤認識対策を実装・動作確認する
+- 前提:
+  - 003003 で `sharpen_light_upscale_2x` が最も効果的であることが確認済み
+  - 003004 で config.yml の `layout_extraction.score_thr` 調整に効果なし（ハードコードと推測）
+  - `benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）をテストデータとして使用
+  - 作業ディレクトリ: `/Users/hisao/Documents/work4/sakura/book2pdf`
+
+### 実施コマンド
+
+#### 1. config.yml パラメータ無視の原因調査
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# ndlocr_cli ソースを確認
+cat ocr-worker/ndlocr_cli_patches/inference.py
+
+# ハードコードされた閾値を検索
+docker compose exec ocr-worker grep -rn "score_thr" /opt/ocr-worker/ 2>/dev/null | grep -v __pycache__ | head -40
+```
+
+#### 2. 調査結果
+
+- `submodules/ndl_layout/tools/process_textblock.py` と `process.py` に `score_thr: float = 0.3` がハードコードされていることを発見
+- config.yml の `layout_extraction.score_thr` は ndl_layout モジュールに渡されていないことが判明
+- `ocr-worker/ndlocr_cli_patches/inference.py` に `ConfigPatcher` クラスを追加し、パッチを適用する方針を検討中
+
+#### 3. 実装計画（承認済み）
+
+**修正1: `ocr-worker/ndlocr_cli_patches/inference.py`**
+- `ConfigPatcher` クラスを追加
+- `__init__` で config.yml 値を取得し、コンテナ内の `process_textblock.py` と `process.py` 内の `score_thr: float = 0.3` を動的に上書き
+- `infer()` の初回実行時にパッチを適用
+
+**修正2: `ocr-worker/app/main.py`**
+- `PreprocessEngine` クラスを追加し、`sharpen_light_upscale_2x` の自動前処理を実装
+- `OcrWorker.__init__` で `PreprocessEngine` インスタンス化
+- `infer()` で前処理ON/OFFを制御（デフォルトON、環境変数 `PREPROCESS_ENABLED=false` でOFF）
+
+**修正3: 表紙専用前処理**
+- `scripts/preprocess_cover.py` を新規作成
+- 002.png に対して 4x アップスケール＋強力シャープニングを適用
+- XML の分類結果（表紙ページか本文ページか）を基に、表紙のみ追加前処理を適用
+
+#### 4. 動作確認計画（実施前）
+
+```bash
+# コンテナリビルド
+docker compose build ocr-worker --no-cache
+docker compose up -d ocr-worker
+
+# 前処理ONでOCR実行
+docker compose exec backend rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*
+docker compose exec ocr-worker rm -rf /data/ocr_output/* /data/extracted/*
+
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" \
+  "http://localhost:8000/api/jobs/$JOB_ID/upload" | jq .
+curl -s --max-time 1800 -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | jq .
+
+# 前処理OFFでOCR実行（PREPROCESS_ENABLED=falseを設定して再起動後）
+# ...
+```
+
+### 調査結果
+
+- `submodules/ndl_layout/tools/process_textblock.py` と `process.py` に `score_thr: float = 0.3` がハードコードされていることを発見
+- `InferencerWithCLI` クラスでは `conf_dict`（config.yml から読み込んだ値）を受け取っているが、`score_thr` を推論時に渡していないことが判明
+- `LayoutDetector.predict()` は `inference_detector(model, img)` を呼んでおり、`score_thr` キーワード引数を受け取っていない
+- `convert_to_xml_string_with_data()` / `convert_to_xml_string2()` もデフォルト引数 `score_thr: float = 0.3` を使用しており、config.yml の値が反映されていない
+
+### 修正内容
+
+**修正1: `ocr-worker/ndlocr_cli_patches/process_textblock.py` を新規作成**
+
+- `InferencerWithCLI.__init__` で `conf_dict.get('score_thr', 0.3)` を `self.score_thr` に保持するように変更
+- `inference_with_cli` メソッドで `score_thr` 引数が未指定の場合は `self.score_thr` を使用
+- `LayoutDetector.predict()` に `score_thr` キーワード引数を追加し、`inference_detector(model, img, score_thr=score_thr)` を呼び出すように変更
+- `convert_to_xml_string_with_data()` / `convert_to_xml_string2()` に `score_thr` を明示的に渡すように変更
+
+**修正2: `ocr-worker/Dockerfile` を更新**
+
+- 既存の `COPY ndlocr_cli_patches/inference.py ...` の下に、新たに `process_textblock.py` をコピーする行を追加
+- これにより Docker イメージ構築時にパッチが自動適用される
+
+```dockerfile
+# FIX(003005): config.yml の score_thr が無視される問題を修正
+# ndl_layout submodule の process_textblock.py をパッチ版で上書きします
+COPY ndlocr_cli_patches/process_textblock.py ${PROJECT_DIR}/submodules/ndl_layout/tools/process_textblock.py
+```
+
+### 動作確認
+
+- `docker compose build ocr-worker --no-cache` でコンテナをリビルド
+- `docker compose up -d ocr-worker` で起動
+- コンテナ内 `/opt/ocr-worker/config.yml` の `layout_extraction.score_thr` を一時的に変更し、同一画像で OCR 実行
+- 確認結果:
+  - score_thr=0.2 と score_thr=0.1 は同一の出力（TEXTBLOCK 数 5）
+  - score_thr=0.5 では低 CONF の見出し行が欠落し、TEXTBLOCK 数が 3 に減少
+  - config.yml の `layout_extraction.score_thr` が実際に反映されることを定量的に確認
+
+### 結果
+
+- config.yml の `layout_extraction.score_thr` が無視されていた問題を解消
+- Docker ビルド時に `process_textblock.py` をパッチ版で上書きすることで、最小限の変更で修正を実現
+- 003004 のパラメータ変更が効果を持たなかった原因が、ハードコードされた `score_thr` にあったことを確認
+- 本タスクでは score_thr 修正・再検証にスコープを絞り、自動前処理統合と表紙ページ対策は今後のタスクとして保留
+
+### 注意事項
+
+- ndl_layout submodule の修正はパッチファイルによる上書きで行うため、ndlocr_cli 本体のリポジトリは変更しない
+- パッチは Docker イメージ構築時に適用される。ホスト側の修正を反映するには ocr-worker イメージの再ビルドが必要
+- 将来 ndlocr_cli のバージョンアップで `process_textblock.py` の構造が変わる可能性があるため、パッチ適用後の動作確認が必要
+- 前処理の一時ファイルクリーンアップと表紙ページ対策は別タスクで実施する
+
+
+## 2026-08-14 タスク003005再検証：backend API 経由フルフローでの score_thr 比較
+
+### 目的
+
+タスク 003005 で実施した score_thr 修正・検証を、`.clinerules` 第 10 章に基づき backend API 経由のフルフローで再実施し、backend 生成 PDF を含めた精度比較を行う。
+
+### 前提
+
+- `ocr-worker/ndlocr_cli_patches/process_textblock.py` パッチにより、`layout_extraction.score_thr` が反映される状態であること
+- backend / ocr-worker コンテナが `docker compose up -d` で起動していること
+- `benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）が存在すること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# Pattern-A: score_thr=0.2
+docker compose exec ocr-worker sed -i 's/^  score_thr: .*/  score_thr: 0.2/' /opt/ocr-worker/config.yml
+docker compose exec ocr-worker sed -n '/^layout_extraction:/,/^line_ocr:/p' /opt/ocr-worker/config.yml | grep score_thr
+docker compose exec backend sh -c 'rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*'
+docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/*'
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq .
+curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq .
+# ポーリング（status=completed まで）
+docker compose cp backend:/data/pdfs/$JOB_ID.pdf ocr-results-003005/pattern-a/pdfs/
+docker compose cp backend:/data/extracted/$JOB_ID/output_<timestamp> ocr-results-003005/pattern-a/output_<timestamp>
+
+# Pattern-B: score_thr=0.1
+docker compose exec ocr-worker sed -i 's/^  score_thr: .*/  score_thr: 0.1/' /opt/ocr-worker/config.yml
+# （Pattern-A と同様のフルフロー）
+
+# Pattern-C: score_thr=0.5
+docker compose exec ocr-worker sed -i 's/^  score_thr: .*/  score_thr: 0.5/' /opt/ocr-worker/config.yml
+# （Pattern-A と同様のフルフロー）
+```
+
+### 結果
+
+- Pattern-A: ジョブ `9c09ae26-bc1b-48e8-a0e1-5408ce42a3a6`、status: completed、PDF 22,368,443 bytes
+- Pattern-B: ジョブ `a4345c8a-9842-440d-8731-200f7785f059`、status: completed、PDF 22,368,443 bytes
+- Pattern-C: ジョブ `068fee0f-6ab1-4dfa-be9a-958568687897`、status: completed、PDF 22,367,788 bytes
+- Pattern-A/B の `_main.txt` は `diff` で完全一致
+- Pattern-C では 002.png から「咸毅成[著]」と「RAC」が、004.png から「はじめに」が欠落
+- PDF 目視確認により、Pattern-C の表紙右下「咸毅成[著]」が欠落していることを確認
+- `ocr-results-003005/config-comparison-report-003005.md` を新規作成
+- `ocr-results-003005/visual-compare.html`、`visual-compare-pages.html` を作成
+
+### 注意事項
+
+- 各パターン間で `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` をクリーンアップしてから実行した
+- config.yml の変更は各パターンごとに即時反映される
+- Pattern-C のみ異なる結果となり、`score_thr` の変更が backend API フルフローでも反映されていることを確認
+
+---
+
+## 2026-08-14 タスク003006：sharpen_light_upscale_2x 自動前処理の ocr-worker 組み込み
+
+### 【実施予定】
+
+#### 日時
+
+2026-08-14
+
+#### 目的
+
+003003 で最も効果的だった `sharpen_light_upscale_2x` 前処理を ocr-worker 内部で自動適用し、全ページに対して OCR 認識精度を向上させる。
+
+#### 前提
+
+- 003003 で `sharpen_light_upscale_2x` が最も効果的であることが確認済み
+- `benchmark-ocr-003002.zip`（002.png, 003.png, 004.png）をテストデータとして使用
+- `ocr-worker/app/main.py` には現状前処理機能が存在しない
+- Docker Compose で backend / ocr-worker / frontend の 3 コンテナが起動している
+
+#### 実施予定のコマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# ocr-worker/app/main.py への前処理実装
+# （Pillow による 2x アップスケール + 軽度シャープニングを追加）
+
+# Pillow インストール確認・追加のため Dockerfile 更新
+# ocr-worker/Dockerfile に `pip install --no-cache-dir Pillow` を追加
+
+# コンテナ再構築
+docker compose down
+docker compose up -d --build
+
+# 前処理 ON（デフォルト）で OCR 実行
+docker compose exec backend sh -c 'rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*'
+docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/*'
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq .
+curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq .
+
+# 前処理 OFF で OCR 実行
+docker compose exec ocr-worker sed -i 's/PREPROCESS_ENABLED=.*/PREPROCESS_ENABLED=false/' /opt/ocr-worker/.env
+# または docker-compose.yml を編集して docker compose up -d し直す
+```
+
+#### 想定される結果や注意点
+
+- 前処理 ON の場合、003003 と同等の精度向上（「〓」出現数 5→3 程度）が期待される
+- 前処理 OFF の場合、003002 の baseline と同等の結果（「〓」出現数 5）が期待される
+- 画像サイズが 2 倍になるため、OCR 処理時間は増加する可能性がある
+- ndlocr_cli の `input_root/img/` 構造を維持する必要がある
+- 一時ディレクトリの cleanup は try/finally で確実に実施する
+
+### 【実施実績】
+
+#### 実装内容
+
+- `ocr-worker/app/main.py` に前処理関数を追加した
+  - `_preprocess_image(img_path: Path, out_path: Path)`: Pillow で画像を 2 倍アップスケール（LANCZOS）し、軽度シャープニング（`ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)`）を適用する
+  - `_preprocess_input_root(input_root: Path, job_id: str) -> Path`: `input_root/img/` 以下の画像を走査し、前処理済み画像を `/tmp/ocr_preprocess/<job_id>/img/` に出力する
+  - `run_ocr()` に `PREPROCESS_ENABLED` 分岐を追加し、前処理有効時は一時ディレクトリを OCR 入力に使用する
+  - OCR 成功・失敗に関わらず一時ディレクトリを削除する try/finally 構造を実装した
+- 環境変数 `PREPROCESS_ENABLED`（デフォルト `true`）で前処理の ON/OFF を制御可能にした
+- `ocr-worker/Dockerfile` に `RUN pip install --no-cache-dir Pillow` を追加した
+- `docker-compose.yml` の ocr-worker サービスに `PREPROCESS_ENABLED=true` を追加し、デフォルトで前処理が有効になるよう設定した
+
+#### 動作確認（backend API 経由フルフロー）
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# コンテナ再ビルド・再起動
+docker compose down
+docker compose up -d --build
+
+# 前処理 ON（デフォルト）
+docker compose exec backend sh -c 'rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*'
+docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/*'
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq .
+curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq .
+# status: completed までポーリング
+curl -s http://localhost:8000/api/jobs/$JOB_ID | jq .
+# 成果物取得
+mkdir -p ocr-results-003006/preprocess-on/pdfs ocr-results-003006/preprocess-on/output
+docker compose cp backend:/data/pdfs/$JOB_ID.pdf ocr-results-003006/preprocess-on/pdfs/
+OUTPUT_DIR=$(curl -s http://localhost:8000/api/jobs/$JOB_ID | jq -r '.output_dir')
+docker compose cp backend:$OUTPUT_DIR ocr-results-003006/preprocess-on/output/
+
+# 前処理 OFF（docker-compose.yml を編集して PREPROCESS_ENABLED=false に変更後、再起動）
+docker compose down
+# docker-compose.yml の ocr-worker.environment.PREPROCESS_ENABLED を false に変更
+docker compose up -d
+docker compose exec backend sh -c 'rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*'
+docker compose exec ocr-worker sh -c 'rm -rf /data/ocr_output/* /data/extracted/*'
+JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+curl -s -X POST -F "file=@benchmark-ocr-003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq .
+curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq .
+# status: completed までポーリング
+curl -s http://localhost:8000/api/jobs/$JOB_ID | jq .
+# 成果物取得
+mkdir -p ocr-results-003006/preprocess-off/pdfs ocr-results-003006/preprocess-off/output
+docker compose cp backend:/data/pdfs/$JOB_ID.pdf ocr-results-003006/preprocess-off/pdfs/
+OUTPUT_DIR=$(curl -s http://localhost:8000/api/jobs/$JOB_ID | jq -r '.output_dir')
+docker compose cp backend:$OUTPUT_DIR ocr-results-003006/preprocess-off/output/
+```
+
+#### 結果
+
+- 前処理 ON: ジョブ `ec9acd66-563f-41e0-8410-08619208e6e9`、status: completed
+  - `002_main.txt`: 「〓」2 個（表紙ページの残存誤認識）
+  - `003_main.txt`: 「〓」0 個
+  - `004_main.txt`: 「〓」1 個
+  - 合計「〓」出現数: 3 個（003003 の `sharpen_light_upscale_2x` と同等）
+- 前処理 OFF: ジョブ `e07faa8c-195b-4d36-bc7c-d44e0aa28582`、status: completed
+  - `002_main.txt`: 「〓」2 個
+  - `003_main.txt`: 「〓」2 個
+  - `004_main.txt`: 「〓」1 個
+  - 合計「〓」出現数: 5 個（003002 baseline と同等）
+- 前処理 ON/OFF で差分が確認でき、ocr-worker 内部の自動前処理が正しく機能していることを確認した
+- 処理時間は前処理 ON で約 1.5 倍程度に増加（画像サイズが 2 倍になるため）
+
+#### ドキュメント
+
+- 精度比較レポート `ocr-results-003006/preprocess-integration-report-003006.md` を作成した
+- 本エントリを `ocr-worker/docs/work_log.md` に追記した
+- `ocr-worker/docs/caveats.md` / `ocr-worker/docs/ocr-worker-system-spec.md` を更新した
+
+### 注意事項
+
+- 前処理を無効にする場合は `docker-compose.yml` の `PREPROCESS_ENABLED` を `false` に変更し、コンテナを再起動する必要がある
+- 一時ディレクトリ `/tmp/ocr_preprocess/` は OCR 完了後に cleanup されるが、プロセス強制終了時は残存する可能性がある
+- 表紙ページ（002.png）は前処理 ON でも一部誤認識が残存した。これは表紙の特殊なフォント・レイアウトによるもので、別途対策が必要
+
+---
+
+## 2026-08-14 タスク003007：追加前処理（4x アップスケール、局所的二値化、コントラスト強調など）の効果検証
+
+### 目的
+
+003003 で `sharpen_light_upscale_2x`（2倍アップスケール＋軽度シャープニング）が最も効果的だったが、表紙ページなどで残存誤認識があったため、さらに強力な前処理パターンの効果を定量的に検証する。
+
+### 前提
+
+- `sample-png/手を動かしながら学ぶDocker入門_trimmed/001.png` 〜 `010.png`（10枚）を対象とする
+- backend / ocr-worker コンテナが起動済みであること
+- `docker-compose.yml` の `PREPROCESS_ENABLED=false` を確認済み（ocr-worker 側の自動前処理を OFF にするため）
+
+### 【実施予定】
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# 前処理済み ZIP の作成（003003/003006 のパターン含む）
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-baseline-2x.zip --pattern sharpen_light_upscale_2x
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-4x-upscale.zip --pattern 4x_upscale
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-4x-upscale-sharpen.zip --pattern 4x_upscale_sharpen
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-local-binarization.zip --pattern local_binarization
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-local-binarization-sharpen.zip --pattern local_binarization_sharpen
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-contrast-strong.zip --pattern contrast_strong
+python scripts/preprocess_image.py --input-zip benchmark-ocr-003007.zip --output-zip benchmark-ocr-003007-contrast-strong-4x.zip --pattern contrast_strong_4x
+
+# backend API 経由で 7 パターンの OCR フルフローを自動実行
+chmod +x scripts/run_003007_ocr.sh
+./scripts/run_003007_ocr.sh
+```
+
+### 想定される結果や注意点
+
+- 各パターンの OCR 結果と PDF を `ocr-results-003007/<pattern>/` に取得する
+- 7 パターンすべての OCR 完了には数時間〜半日程度かかる見込み
+- 比較指標は「〓」出現数、明らかな誤認識箇所数、目視確認とする
+
+### 【実施実績】
+
+- 2026-08-14: `scripts/preprocess_image.py` に 7 パターンの前処理を追加（baseline_2x / 4x_upscale / 4x_upscale_sharpen / local_binarization / local_binarization_sharpen / contrast_strong / contrast_strong_4x）
+- 2026-08-14: 001.png 〜 010.png を含む `benchmark-ocr-003007.zip` と、7 パターンの前処理済み ZIP を作成
+- 2026-08-14: `docker-compose.yml` の `PREPROCESS_ENABLED=false` を確認し、ocr-worker 側の自動前処理を OFF にした
+- 2026-08-14: backend API 経由で 7 パターンの OCR フルフロー自動実行スクリプト `scripts/run_003007_ocr.sh` を作成
+- 2026-08-14: OCR 自動実行を開始。baseline_2x は完了したが、10ページ処理で backend → ocr-worker 間の HTTP リクエストが 1800秒でタイムアウトする問題が発生
+- 2026-08-14: `OCR_WORKER_REQUEST_TIMEOUT` を 3600秒に延長し、backend / ocr-worker コンテナを再起動
+- 2026-08-15: `4x_upscale` のみ単独実行し、結果を報告
+- 2026-08-15: 残りの `4x_upscale_sharpen`, `local_binarization`, `local_binarization_sharpen`, `contrast_strong`, `contrast_strong_4x` を手動・分割実行方式で続行
+- 2026-08-15: すべての 7 パターンの OCR が `completed` となり、PDF および ocr-worker 出力（XML / txt）を `ocr-results-003007/<pattern>/` に取得
+- 2026-08-15: `scripts/count_fui_per_page_003007.py` を作成し、各パターン・ページごとの「〓」出現数を集計
+- 2026-08-15: 精度比較レポート `ocr-results-003007/additional-preprocess-report-003007.md` を作成
+
+### 主な結果
+
+| パターン | 〓 出現数（total） | 傾向 |
+|---|---|---|
+| baseline_2x | 194 | 現状の基準 |
+| 4x_upscale | 202 | baseline より悪化、ファイルサイズ 279MB と 3倍以上 |
+| 4x_upscale_sharpen | 178 | baseline より改善だが、コストに見合わず |
+| local_binarization | 135 | 〓 数は最少だが文字潰れによる誤認識が多い |
+| local_binarization_sharpen | 135 | local_binarization と同様 |
+| contrast_strong | 160 | 一部ページで認識欠落あり |
+| contrast_strong_4x | 176 | baseline 並み |
+
+### 手動・分割実行の実コマンド
+
+baseline_2x の 10ページ OCR で backend → ocr-worker 間の HTTP リクエストが 1800秒でタイムアウトしたため、以下の対応と手動・分割実行を実施した。
+
+#### タイムアウト対応
+
+```bash
+# backend から ocr-worker への HTTP タイムアウトを 3600秒に延長
+# docker-compose.yml の ocr-worker サービス環境変数を変更
+sed -i 's/OCR_WORKER_REQUEST_TIMEOUT: 1800/OCR_WORKER_REQUEST_TIMEOUT: 3600/' docker-compose.yml
+
+# backend / ocr-worker コンテナを再起動
+docker compose down
+docker compose up -d
+```
+
+#### 単一パターン手動実行（run_003007_ocr_manual.sh）
+
+10ページ処理では polling ループが `COMPLETED` を検出しても break しない事象があったため、後続パターンは以下の手動スクリプトで 1パターンずつ実行した。
+
+```bash
+chmod +x scripts/run_003007_ocr_manual.sh
+
+# 使用例
+./scripts/run_003007_ocr_manual.sh 4x_upscale benchmark-ocr-003007-4x-upscale.zip
+./scripts/run_003007_ocr_manual.sh 4x_upscale_sharpen benchmark-ocr-003007-4x-upscale-sharpen.zip
+./scripts/run_003007_ocr_manual.sh local_binarization benchmark-ocr-003007-local-binarization.zip
+./scripts/run_003007_ocr_manual.sh local_binarization_sharpen benchmark-ocr-003007-local-binarization-sharpen.zip
+./scripts/run_003007_ocr_manual.sh contrast_strong benchmark-ocr-003007-contrast-strong.zip
+./scripts/run_003007_ocr_manual.sh contrast_strong_4x benchmark-ocr-003007-contrast-strong-4x.zip
+```
+
+スクリプト内部では以下の流れで backend API を呼び出している。
+
+1. ジョブ作成
+   ```bash
+   JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id')
+   ```
+2. ZIP アップロード
+   ```bash
+   curl -s -X POST \
+     -F "file=@benchmark-ocr-003007-<pattern>.zip;type=application/zip" \
+     http://localhost:8000/api/jobs/$JOB_ID/upload
+   ```
+3. OCR 実行（タイムアウト 3600秒）
+   ```bash
+   curl -s --max-time 3600 \
+     -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr
+   ```
+4. ジョブ状態ポーリング
+   ```bash
+   for i in {1..360}; do
+     JOB_STATUS=$(curl -s http://localhost:8000/api/jobs/$JOB_ID | jq -r '.status')
+     echo "status: $JOB_STATUS"
+     [[ "$JOB_STATUS" == "COMPLETED" ]] && break
+     [[ "$JOB_STATUS" == "FAILED" ]] && exit 1
+     sleep 10
+   done
+   ```
+5. PDF ダウンロード
+   ```bash
+   curl -s -o ocr-results-003007/<pattern>/pdfs/$JOB_ID.pdf \
+     http://localhost:8000/api/jobs/$JOB_ID/pdf
+   ```
+6. OCR 出力ディレクトリのコピー
+   ```bash
+   OUTPUT_DIR=$(docker compose exec backend sh -c "ls -d /data/extracted/$JOB_ID/output_* 2>/dev/null" | head -n 1 | tr -d '\r')
+   docker compose cp "backend:$OUTPUT_DIR" ocr-results-003007/<pattern>/$(basename "$OUTPUT_DIR")
+   ```
+
+#### 残りパターン一括実行（run_003007_ocr_remaining.sh）
+
+単一パターン実行を安定化させた後、残りパターンを一括実行するスクリプトも作成した。
+
+```bash
+chmod +x scripts/run_003007_ocr_remaining.sh
+./scripts/run_003007_ocr_remaining.sh
+```
+
+このスクリプトは `PATTERN_ZIPS` 配列で定義されたパターンを順次実行し、ジョブ作成・アップロード・OCR・ポーリング・PDF 取得・OCR 出力コピーを自動で実施する。
+
+### 注意事項
+
+- 10ページの OCR 処理には 20〜30分を要し、backend → ocr-worker 間の HTTP タイムアウトを 1800秒から 3600秒に延長する必要があった
+- local_binarization は OpenCV/scipy 非依存で純粋 numpy の畳み込みを使用したが、文字潰れが発生しやすい
+- 4x アップスケール系は PDF ファイルサイズが 279MB と肥大化し、処理時間も長くなる

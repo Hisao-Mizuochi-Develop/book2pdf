@@ -65,11 +65,14 @@
   - PyTorch / mmcv / mmdet（CPU 版）
   - `config.yml`（`device: 'cpu'` に変更済み）
   - KyTea（`ruby_prediction` で使用、ソースからビルド）
-- **CPU 化のための主なパッチ**（ビルド時に Dockerfile 内で `sed` を適用）:
+  - Pillow（自動画像前処理で使用、`python3-pil` として apt-get インストール）
+- **CPU 化のための主なパッチ**（ビルド時に Dockerfile 内で `sed` / `COPY` を適用）:
   - `config.yml` および各 submodule の `device: 'cuda:0'` を `cpu` に変更
   - mmdet 3.x の `init_detector` 引数順序違いに対応（`device=device` を明示）
   - `text_recognition_lightning` から CPU 非対応の `MeasureTimeCallback` を削除
   - `text_recognition_lightning` の trainer の `accelerator: gpu` を `cpu` に変更
+  - `ndlocr_cli_patches/process_textblock.py` で ndl_layout submodule の `process_textblock.py` を上書きし、`config.yml` の `layout_extraction.score_thr` が推論に反映されるように修正
+  - `ndlocr_cli_patches/inference.py` で `cli/core/inference.py` を上書きし、ページごとの OCR 処理時間 DEBUG ログを追加
 
 ### 6.2 backend コンテナとの連携
 
@@ -84,6 +87,24 @@
 - ヘルスチェック用の `GET /health` エンドポイントも提供し、
   `docker-compose.yml` の `depends_on` で backend の起動を待たせる
 
+### 6.3 自動画像前処理機能
+
+- `POST /ocr` リクエストを受け取った際、`app/main.py` は入力画像に対して自動前処理を適用してから OCR を実行する
+- 前処理内容は以下の通り
+  - 2 倍アップスケール：Pillow の `Image.Resampling.LANCZOS` を使用
+  - 軽度シャープニング：`ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)` を使用
+- 前処理は環境変数 `PREPROCESS_ENABLED` で ON/OFF を制御できる
+  - デフォルトは `true`（ON）
+  - `false` / `0` / `no` / `off` のいずれかを指定すると OFF になる
+  - 設定箇所は `docker-compose.yml` の `ocr-worker.environment`
+- 前処理済み画像は `/tmp/ocr_preprocess_<job_id>_*/input/img/` という一時ディレクトリに保存される
+- OCR 処理の成功・失敗に関わらず、`try ... finally` ブロックで一時ディレクトリを削除する
+- 前処理を有効にすると画像サイズが 2 倍になるため、OCR 処理時間が増加する
+  - 参考: 3 ページのサンプルで、OFF 時 120〜130 秒に対し、ON 時 180〜190 秒程度（約 1.5 倍）
+- 前処理は「〓」のような不明文字の出現を減らす効果があるが、表紙や特殊なレイアウトのページでは誤認識が残ることがある
+  - 参考: 3 ページのサンプルで、OFF 時 5 個だった「〓」が ON 時 3 個に減少
+- 前処理済み画像に対して OCR 座標が計算されるため、backend 側で元画像スケールへの座標変換が必要になる場合がある
+
 ## 7. フォルダ・ファイル構成
 
 ### 現時点の構成
@@ -97,6 +118,9 @@ ocr-worker/                       # OCR Worker ルート
 │   ├── caveats.md                # 注意事項
 │   ├── work_log.md               # 作業ログ
 │   └── tasks.md                  # タスク管理表
+├── ndlocr_cli_patches/           # ndlocr_cli ソースへのパッチファイル
+│   ├── inference.py              # cli/core/inference.py 上書き用（ページ処理時間 DEBUG ログ追加）
+│   └── process_textblock.py      # ndl_layout/tools/process_textblock.py 上書き用（score_thr 反映修正）
 ├── Dockerfile                    # ocr-worker Docker イメージ（CPU 実行用）
 └── .dockerignore                 # Docker ビルド除外ファイル（任意）
 ```
@@ -117,3 +141,6 @@ ocr-worker/                       # OCR Worker ルート
   - mmdet 3.x の `init_detector` 引数順序の変更に対応している
   - `text_recognition_lightning` の callbacks / trainer を CPU 実行向けに書き換えている
   - KyTea はソースからビルドしてモデルファイルを配置している
+  - `ndlocr_cli_patches/process_textblock.py` を適用し、`config.yml` の `layout_extraction.score_thr` が ndl_layout 推論に反映されるようにしている
+  - `PREPROCESS_ENABLED` 環境変数で自動画像前処理（2 倍アップスケール＋軽度シャープニング）の ON/OFF を制御できる（デフォルト ON）
+  - 詳細は [caveats.md](./caveats.md) を参照

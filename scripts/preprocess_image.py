@@ -14,6 +14,12 @@ Supported patterns:
     - contrast_gamma: コントラスト強調＋ガンマ補正
     - contrast_gamma_sharpen_light: コントラスト強調＋ガンマ補正＋軽度シャープニング
     - denoise: ノイズ除去
+    - 4x_upscale: 4倍アップスケーリング
+    - 4x_upscale_sharpen: 4倍アップスケーリング＋軽度シャープニング
+    - local_binarization: 局所的二値化（OpenCV adaptiveThreshold）
+    - local_binarization_sharpen: 局所的二値化＋軽度シャープニング
+    - contrast_strong: 強コントラスト（enhance 2.0）
+    - contrast_strong_4x: 強コントラスト＋4倍アップスケーリング
 """
 
 from __future__ import annotations
@@ -34,6 +40,38 @@ def _pil_to_array(img: Image.Image) -> np.ndarray:
 
 def _array_to_pil(arr: np.ndarray, mode: str) -> Image.Image:
     return Image.fromarray(arr, mode=mode)
+
+
+def _convolve2d_valid(arr: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    """純粋な numpy で 2D 畳み込みを行う（scipy 非依存）。
+
+    arr は元画像より十分大きくパディング済みであることを前提とする。
+    出力サイズは arr と同じになるように周囲をトリムする。
+    """
+    k_h, k_w = kernel.shape
+    # 入力をカーネルより大きく取り、畳み込み後に元のサイズに戻せるようにする
+    pad_h = k_h // 2
+    pad_w = k_w // 2
+    # 畳み込み後の有効領域サイズ
+    out_h = arr.shape[0] - k_h + 1
+    out_w = arr.shape[1] - k_w + 1
+    # ストライドを使って展開
+    sub_shape = (out_h, out_w, k_h, k_w)
+    strides = (
+        arr.strides[0],
+        arr.strides[1],
+        arr.strides[0],
+        arr.strides[1],
+    )
+    windows = np.lib.stride_tricks.as_strided(
+        arr, shape=sub_shape, strides=strides, writeable=False
+    )
+    result = np.tensordot(windows, kernel, axes=([2, 3], [0, 1]))
+    # arr と同じサイズに戻すため周囲をゼロパディング
+    full = np.pad(result, ((pad_h, pad_h), (pad_w, pad_w)), mode="constant")
+    # サイズ調整（奇数カーネルでぴったり合うが、偶数カーネルにも対応）
+    full = full[: arr.shape[0], : arr.shape[1]]
+    return full
 
 
 def sharpen_light(img: Image.Image) -> Image.Image:
@@ -71,6 +109,51 @@ def denoise(img: Image.Image) -> Image.Image:
     return img.filter(ImageFilter.MedianFilter(size=3))
 
 
+def upscale_4x(img: Image.Image) -> Image.Image:
+    """4倍の Lanczos 補間でアップスケーリング。"""
+    new_size = (img.width * 4, img.height * 4)
+    return img.resize(new_size, Image.Resampling.LANCZOS)
+
+
+def local_binarization(img: Image.Image) -> Image.Image:
+    """局所的二値化（Pillow / numpy で実装）。
+
+    文字と背景の分離を強め、薄字や陰影の影響を抑制する。
+    OpenCV 非依存で動作する。
+    """
+    # グレースケールに変換
+    gray = img.convert("L")
+    arr = np.array(gray).astype(np.float32)
+
+    # 局所平均を計算（blockSize=11 の移動平均）
+    block_size = 11
+    pad = block_size // 2
+    padded = np.pad(arr, pad, mode="edge")
+
+    # 2D 移動平均を畳み込みで計算
+    kernel = np.ones((block_size, block_size), dtype=np.float32) / (block_size * block_size)
+    local_mean = _convolve2d_valid(padded, kernel)
+
+    # padding 分を元のサイズに戻す
+    local_mean = local_mean[pad:pad + arr.shape[0], pad:pad + arr.shape[1]]
+
+    # 適応的閾値処理（平均から定数 C=2 を引いた値）
+    c = 2.0
+    binary = (arr > (local_mean - c)).astype(np.uint8) * 255
+
+    # 元画像のモードに応じて出力
+    bin_img = Image.fromarray(binary, mode="L")
+    if img.mode == "RGB":
+        return bin_img.convert("RGB")
+    return bin_img
+
+
+def contrast_strong(img: Image.Image) -> Image.Image:
+    """強コントラスト。文字と背景の差をより強調する。"""
+    enhancer = ImageEnhance.Contrast(img)
+    return enhancer.enhance(2.0)
+
+
 PATTERNS: dict[str, Callable[[Image.Image], Image.Image]] = {
     "baseline": lambda img: img,
     "sharpen_light": sharpen_light,
@@ -78,6 +161,12 @@ PATTERNS: dict[str, Callable[[Image.Image], Image.Image]] = {
     "contrast_gamma": contrast_gamma,
     "contrast_gamma_sharpen_light": lambda img: sharpen_light(contrast_gamma(img)),
     "denoise": denoise,
+    "4x_upscale": upscale_4x,
+    "4x_upscale_sharpen": lambda img: sharpen_light(upscale_4x(img)),
+    "local_binarization": local_binarization,
+    "local_binarization_sharpen": lambda img: sharpen_light(local_binarization(img)),
+    "contrast_strong": contrast_strong,
+    "contrast_strong_4x": lambda img: contrast_strong(upscale_4x(img)),
 }
 
 

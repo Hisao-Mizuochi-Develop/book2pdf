@@ -86,6 +86,9 @@ RUN pip install --no-cache-dir -r ${PROJECT_DIR}/submodules/ruby_prediction/requ
 # FastAPI で /ocr エンドポイントを提供し、backend からの HTTP 呼び出しに応答します
 RUN pip install --no-cache-dir fastapi uvicorn httpx
 
+# 003006: 入力画像前処理（sharpen_light_upscale_2x）に Pillow を使用します
+RUN pip install --no-cache-dir Pillow
+
 # ruby_prediction が参照する KyTea のモデルファイルを配置します
 # 公式 Dockerfile と同様に KyTea をソースからビルド・インストールすることで
 # /usr/local/share/kytea/model.bin が生成されます
@@ -130,6 +133,10 @@ RUN sed -i 's/accelerator: gpu/accelerator: cpu/g' ${PROJECT_DIR}/submodules/tex
 # ndlocr_cli にページごとの OCR 処理時間 DEBUG ログを追加します
 # オリジナルの cli/core/inference.py は logging を使用していないため、修正版を上書きします
 COPY ndlocr_cli_patches/inference.py ${PROJECT_DIR}/cli/core/inference.py
+
+# FIX(003005): config.yml の score_thr が無視される問題を修正
+# ndl_layout submodule の process_textblock.py をパッチ版で上書きします
+COPY ndlocr_cli_patches/process_textblock.py ${PROJECT_DIR}/submodules/ndl_layout/tools/process_textblock.py
 
 # ocr-worker アプリケーションのソースコードをコピーします
 COPY app/ ${PROJECT_DIR}/app/

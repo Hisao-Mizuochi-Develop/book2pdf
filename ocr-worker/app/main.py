@@ -28,6 +28,14 @@ import logging
 # 処理時間を計測するための標準ライブラリです
 import time
 
+# 一時ディレクトリ作成のための標準ライブラリです
+# 前処理済み画像の一時保存先として使用します
+import tempfile
+
+# 画像前処理のためのライブラリです
+# sharpen_light_upscale_2x 前処理に使用します
+from PIL import Image, ImageFilter
+
 # FastAPI の機能を読み込みます
 # FastAPI: アプリケーション本体
 # HTTPException: HTTP エラーレスポンスを返す
@@ -60,6 +68,10 @@ logging.basicConfig(
 
 # 本モジュール用のロガーを取得します
 logger = logging.getLogger(__name__)
+
+# 前処理の有無を環境変数で制御します
+# デフォルトは ON（true）です
+PREPROCESS_ENABLED = os.environ.get("PREPROCESS_ENABLED", "true").lower() in ("true", "1", "yes", "on")
 
 # FastAPI アプリケーションを作成します
 app = FastAPI(title="ocr-worker")
@@ -175,6 +187,83 @@ _IMAGE_EXTENSIONS: set[str] = {
 }
 
 
+def _preprocess_image(src_path: Path, dst_path: Path) -> None:
+    """画像に sharpen_light_upscale_2x 前処理を適用して保存します。
+
+    Args:
+        src_path: 元画像のパス
+        dst_path: 前処理済み画像の出力パス
+    """
+    # 元画像を読み込みます
+    with Image.open(src_path) as img:
+        # 必要に応じて RGB 変換します（PNG の透過チャンネル対応）
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # 2 倍アップスケール（LANCZOS 補間）
+        new_size = (img.width * 2, img.height * 2)
+        img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+        # 軽度シャープニング
+        # 003003 で最も効果的だったパラメータです
+        img = img.filter(
+            ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)
+        )
+
+        # 出力ディレクトリがなければ作成します
+        dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 前処理済み画像を保存します
+        img.save(dst_path, format=src_path.suffix.lstrip(".").upper() or "PNG")
+
+
+def _preprocess_input_root(input_root: str, job_id: str | None) -> tuple[str, Path]:
+    """input_root 以下の画像を前処理し、一時ディレクトリに出力します。
+
+    Args:
+        input_root: 元の入力ディレクトリパス
+        job_id: 進捗通知用のジョブ ID（一時ディレクトリ名に使用）
+
+    Returns:
+        (前処理済みの input_root パス, 一時ディレクトリの Path)
+    """
+    src_root = Path(input_root)
+    src_img_dir = src_root / "img"
+
+    # 一時ディレクトリを作成します
+    # job_id があれば識別しやすい名前にします
+    suffix = f"_{job_id}" if job_id else ""
+    tmp_dir = Path(tempfile.mkdtemp(prefix=f"ocr_preprocess{suffix}_"))
+    dst_root = tmp_dir / "input"
+    dst_img_dir = dst_root / "img"
+
+    logger.debug(
+        "前処理を開始します: src=%s, dst=%s",
+        src_img_dir,
+        dst_img_dir,
+    )
+
+    # 対象画像を前処理してコピーします
+    processed_count = 0
+    for src_path in sorted(src_img_dir.iterdir()):
+        if not src_path.is_file():
+            continue
+        if src_path.suffix.lower() not in _IMAGE_EXTENSIONS:
+            continue
+
+        dst_path = dst_img_dir / src_path.name
+        _preprocess_image(src_path, dst_path)
+        processed_count += 1
+
+    logger.debug(
+        "前処理が完了しました: processed_count=%d, dst_root=%s",
+        processed_count,
+        dst_root,
+    )
+
+    return str(dst_root), tmp_dir
+
+
 def _count_images(input_root: str) -> int:
     """入力ディレクトリ内の画像ファイル数を数えます。
 
@@ -270,23 +359,40 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
     # 進捗通知に使用するジョブ ID を取得します
     job_id = request.job_id
 
-    # 処理対象の総ページ数（画像数）を事前に数えます
-    total_pages = _count_images(request.input_root)
+    # 前処理済み一時ディレクトリ（前処理 ON の場合に設定）
+    preprocess_tmp_dir: Path | None = None
 
-    # ndlocr_cli 用の設定辞書を作成します
-    cfg = {
-        "input_root": request.input_root,
-        "output_root": request.output_root,
-        "config_file": request.config_file,
-        "proc_range": request.proc_range,
-        "save_image": request.save_image,
-        "save_xml": request.save_xml,
-        "dump": request.dump,
-        "input_structure": request.input_structure,
-        "ruby_only": request.ruby_only,
-    }
+    # 実際に ndlocr_cli に渡す input_root です
+    # 前処理 ON の場合は一時ディレクトリ、OFF の場合はリクエスト値そのまま
+    input_root_for_ocr = request.input_root
 
     try:
+        # 前処理が有効な場合は画像を前処理します
+        if PREPROCESS_ENABLED:
+            logger.debug("前処理を適用します: job_id=%s", job_id)
+            input_root_for_ocr, preprocess_tmp_dir = _preprocess_input_root(
+                request.input_root,
+                job_id,
+            )
+        else:
+            logger.debug("前処理は無効化されています: job_id=%s", job_id)
+
+        # 処理対象の総ページ数（画像数）を事前に数えます
+        total_pages = _count_images(input_root_for_ocr)
+
+        # ndlocr_cli 用の設定辞書を作成します
+        cfg = {
+            "input_root": input_root_for_ocr,
+            "output_root": request.output_root,
+            "config_file": request.config_file,
+            "proc_range": request.proc_range,
+            "save_image": request.save_image,
+            "save_xml": request.save_xml,
+            "dump": request.dump,
+            "input_structure": request.input_structure,
+            "ruby_only": request.ruby_only,
+        }
+
         # OCR 処理開始を進捗ファイルに記録します
         _write_progress(
             job_id,
@@ -384,3 +490,13 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             status_code=500,
             detail=error_message,
         ) from exc
+    finally:
+        # 前処理済み一時ディレクトリの cleanup を実施します
+        if preprocess_tmp_dir is not None and preprocess_tmp_dir.exists():
+            import shutil
+
+            logger.debug(
+                "前処理済み一時ディレクトリを削除します: %s",
+                preprocess_tmp_dir,
+            )
+            shutil.rmtree(preprocess_tmp_dir)
