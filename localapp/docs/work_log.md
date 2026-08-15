@@ -1,5 +1,58 @@
 # localapp 作業ログ
 
+## 002001 — 画面キャプチャ方式調査・実装
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: Tauri v2 でスクリーンショット取得方式を調査し、単発キャプチャコマンドを実装する
+- 前提:
+  - feature/002001-screenshot-research ブランチを作成済み
+  - reference/localapp (Python版) のキャプチャ機能を参考にする
+- 変更内容:
+  1. `localapp/src-tauri/Cargo.toml` — `screenshots`, `base64` crate を追加
+  2. `localapp/src-tauri/src/commands/capture.rs` — 新規作成、`capture_screen` コマンド実装
+  3. `localapp/src-tauri/src/commands/mod.rs` — 新規作成、モジュール公開
+  4. `localapp/src-tauri/src/lib.rs` — `greet` コマンド削除、`capture_screen` を登録
+  5. `localapp/src/views/CaptureView.tsx` — キャプチャテストボタン＋画像表示を追加
+- 実施コマンド:
+  1. `cargo check`（Rust 側コンパイル確認）
+  2. `npm run build`（フロントエンドビルド確認）
+  3. `npm run tauri dev`（起動確認）
+- 想定される結果や注意点:
+  - `screenshots` crate は Tauri 標準権限外のネイティブ処理なので capabilities は変更不要
+  - `image` crate の `PngEncoder` で PNG エンコード、`base64` crate でエンコードして返却
+  - `invoke` API は Tauri WebView 内でのみ動作する（ブラウザ直接アクセスではエラー）
+
+### 【実施実績】
+
+- `screenshots` crate v0.8.10 と `base64` crate v0.23.1 を `Cargo.toml` に追加
+- `localapp/src-tauri/src/commands/capture.rs` を新規作成
+  - `capture_screen` コマンドを実装
+  - `Screen::all()` でディスプレイ一覧を取得し、最初の画面をキャプチャ
+  - PNG エンコード時、`image::PngEncoder` + `ImageEncoder::write_image()`を使用
+    - `to_png()` メソッドが存在しない → `PngEncoder` + `write_image()` に変更して解決
+    - `write_image()` が見つからない → `use image::ImageEncoder;` トレイトインポートで解決
+  - Base64 エンコードしてフロントエンドに返却する `CaptureResult` struct を定義
+- `localapp/src-tauri/src/commands/mod.rs` を新規作成（`pub mod capture;`）
+- `localapp/src-tauri/src/lib.rs` を更新
+  - `mod commands;` を追加
+  - デフォルトの `greet` コマンドを削除
+  - `invoke_handler` に `commands::capture::capture_screen` を登録
+- `localapp/src/views/CaptureView.tsx` を更新
+  - 「キャプチャテスト」ボタンを追加（shadcn/ui Button + lucide-react Camera アイコン）
+  - `invoke<CaptureResult>("capture_screen")` で Rust コマンドを呼び出し
+  - 取得した画像を `data:image/png;base64,...` で `<img>` に表示
+  - エラーハンドリング（try-catch）、ローディング状態（useState）を実装
+- `cargo check`: コンパイル成功
+- `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- `npm run tauri dev`: 起動成功
+  - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示
+  - 注意: `invoke` は Tauri WebView 内でのみ動作（ブラウザ直接アクセスでは `window.__TAURI__` 未定義エラー）
+- Git コミットを実施
+  - `git add -A && git commit` で 7 files changed, 715 insertions(+), 39 deletions(-)
+  - ブランチ: feature/002001-screenshot-research
+
 ## 006003 — ライトモード対応 + OS 設定連動
 
 ### 【実施予定】
@@ -182,5 +235,79 @@
   - サイドバーに 4 機能（キャプチャ / トリミング / PDF読込 / ZIP出力）が正しく表示される
   - 各タブをクリックするとメインエリアのコンテンツが切り替わる
   - アクティブタブの視覚的表示（背景色 + 左端アクセントライン）が正しく動作
+
+## 002002 — アプリプロファイル管理 UI
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: 002001 の `CaptureView.tsx` にプロファイル選択・編集 UI を追加し、各電子書籍アプリに最適化されたキャプチャ設定を管理できるようにする
+- 前提: 002001（画面キャプチャ方式調査・実装）が完了していること
+- 変更内容:
+  1. `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成
+     - `CaptureProfile` struct: ページ送りキー、待機時間、ウィンドウタイトルなど
+     - `ProfileEntry` struct: フロントエンド向け JSON 表現（`key` フィールド付き）
+     - 6 つのビルトインプロファイル（kindle, google_play, rakuten_kobo, bookwalker, dmm_books, kinoppy）
+  2. `localapp/src-tauri/src/models/mod.rs` — 新規作成
+  3. `localapp/src-tauri/src/commands/capture.rs` — `get_builtin_profiles` コマンド追加
+  4. `localapp/src-tauri/src/lib.rs` — コマンド登録
+  5. `localapp/src-tauri/src/main.rs` / `commands/mod.rs` — 丁寧なコメント追加
+  6. `localapp/src/store/profileStore.ts` — 新規作成（Zustand ストア）
+  7. `localapp/src/components/capture/ProfileSelector.tsx` — 新規作成（shadcn/ui Select）
+  8. `localapp/src/components/capture/ProfileEditor.tsx` — 新規作成（各種設定フォーム）
+  9. `localapp/src/views/CaptureView.tsx` — リファクタ（統合）
+  10. `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx` — 丁寧なコメント追加
+- 実施コマンド:
+  1. `cargo check`（Rust コンパイル確認）
+  2. `npm run build`（フロントエンドビルド確認）
+- 想定される結果や注意点:
+  - shadcn/ui Select の `onValueChange` で `value: string | null` の型エラーが発生する可能性
+  - `main.rs` の `#![cfg_attr(...)]` はファイル先頭に配置する必要がある
+
+### 【実施実績】
+
+- Rust 側モデル・コマンド実装
+  - `localapp/src-tauri/src/models/capture_profile.rs` を新規作成（194 行）
+    - `CaptureProfile` struct: 9 フィールド（name, window_title_keyword, page_turn_key, page_wait, boundary_method, click_position, use_bring_to_top, process_name, timeout_seconds, max_retries）
+    - `ProfileEntry` struct: `key` を含むフロントエンド向け JSON 表現
+    - `builtin_profiles()`: 6 プロファイルを定義
+    - `From<(String, CaptureProfile)> for ProfileEntry` を実装
+  - `localapp/src-tauri/src/models/mod.rs` を新規作成
+  - `localapp/src-tauri/src/commands/capture.rs` に `get_builtin_profiles` コマンド追加
+  - `localapp/src-tauri/src/lib.rs` に `commands::capture::get_builtin_profiles` を登録
+  - `localapp/src-tauri/src/main.rs` / `commands/mod.rs` に詳細コメント追加
+- フロントエンド実装
+  - `localapp/src/store/profileStore.ts` を新規作成
+    - Zustand ストア: builtinProfiles, customProfiles, selectedProfileKey
+    - fetchProfiles(): `invoke<CaptureProfile[]>("get_builtin_profiles")` で Rust 側から取得
+    - 初回取得時に先頭プロファイルを自動選択
+    - updateCustomProfile(): 部分的な上書きでビルトイン値を維持
+    - resetProfile(): カスタム値を破棄してビルトインに戻す
+    - getEffectiveProfile(): ビルトイン + カスタムをマージして返す
+  - `localapp/src/components/capture/ProfileSelector.tsx` を新規作成
+    - shadcn/ui Select を使用したドロップダウン
+    - `builtinProfiles.map()` から選択肢を動的生成
+    - `onValueChange` で null チェック済み
+  - `localapp/src/components/capture/ProfileEditor.tsx` を新規作成
+    - 2 カラムグリッドレイアウト
+    - 編集項目: ページ送りキー（Select）、待機時間（Input number）、ウィンドウタイトルキーワード、プロセス名、クリック位置（Select）、最前面化（Switch）
+    - 「デフォルトに戻す」ボタンで resetProfile() を実行
+    - `hasCustom` でカスタム値適用中かどうかを表示
+  - `localapp/src/views/CaptureView.tsx` をリファクタ
+    - プロファイル設定セクション（ProfileSelector + ProfileEditor）とキャプチャテストセクションを上下に配置
+    - `useEffect` で `fetchProfiles()` を呼び出し
+  - 既存ファイルに丁寧なコメント追加: `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx`
+- ビルド確認
+  - `cargo check`: 成功（`std::collections::HashMap` の unused import warning のみ）
+  - `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- トラブルシューティング
+  - TypeScript 型エラー: Select の `onValueChange` で `string | null` が `Partial<CaptureProfile>` の `string` フィールドに代入できない
+    - 原因: shadcn/ui の Radix Select が `onValueChange` の型を `string | null` にしていた
+    - 対策: `value && updateCustomProfile(...)` で null ガードを追加
+  - Rust コンパイルエラー: `main.rs` の `#![]` inner attribute が doc comment の後に配置されていた
+    - 原因: Rust では inner attribute はアイテムの先頭に配置する必要がある
+    - 対策: `///` の doc comment を `//` の通常コメントに変更して、inner attribute がファイル先頭になるようにした
+- Git コミットは未実施（マージフェーズで実施予定）
+  - ブランチ: `feature/002002-profile-management`
 
 

@@ -2,8 +2,14 @@
 ///
 /// `screenshots` crate を使用して画面スクリーンショットを取得し、
 /// Base64 エンコードした PNG 画像をフロントエンドに返却する。
+///
+/// 【プロファイル管理コマンド】
+/// - `get_builtin_profiles`: ビルトインプロファイル一覧を JSON で返す
+///   フロントエンドの Zustand ストア（profileStore）が起動時に呼び出し、
+///   セレクタ UI の選択肢として利用する。
 use image::ImageEncoder;
 use screenshots::Screen;
+use crate::models::capture_profile::{CaptureProfile, ProfileEntry};
 
 /// スクリーンショット結果をフロントエンドに返す構造体
 #[derive(serde::Serialize)]
@@ -70,4 +76,30 @@ pub fn capture_screen() -> Result<CaptureResult, String> {
         width: image.width(),
         height: image.height(),
     })
+}
+
+/// ビルトインプロファイル一覧をフロントエンドに返す
+///
+/// # 処理フロー
+/// 1. `CaptureProfile::builtin_profiles()` で定義済みプロファイルを取得
+/// 2. `(String, CaptureProfile)` のタプルを `ProfileEntry` に変換
+/// 3. JSON 配列としてフロントエンドに返却
+///
+/// # 戻り値
+/// - `Ok(Vec<ProfileEntry>)`: プロファイル一覧（6件のビルトインプロファイル）
+/// - `Err(String)`: 通常発生しないが、Tauri コマンドの型合わせで定義
+///
+/// # フロントエンドとの連携
+/// フロントエンドの `profileStore.fetchProfiles()` がこのコマンドを呼び出し、
+/// 取得したプロファイルを `builtinProfiles` state に保存する。
+/// 各エントリの `key` フィールドがプロファイルの一意識別子として使用される。
+#[tauri::command]
+pub fn get_builtin_profiles() -> Result<Vec<ProfileEntry>, String> {
+    // ビルトインプロファイル定義を取得して ProfileEntry に変換
+    let entries: Vec<ProfileEntry> = CaptureProfile::builtin_profiles()
+        .into_iter()
+        .map(ProfileEntry::from)
+        .collect();
+
+    Ok(entries)
 }

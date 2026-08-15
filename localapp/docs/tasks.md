@@ -99,7 +99,7 @@
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
 | 002001 | 画面キャプチャ方式調査・実装 | 2026-08-15 | 2026-08-16 | 調査/実装 |
-| 002002 | アプリプロファイル管理 UI | 2026-08-15 |  | 実装 |
+| 002002 | アプリプロファイル管理 UI | 2026-08-15 | 2026-08-16 | 実装 |
 | 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 |  | 実装 |
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 |  | 実装 |
 
@@ -176,6 +176,41 @@
 - プロファイルの保存/複製/リセット
 
 【実施結果】
+- Rust 側（詳細コメント付きで実装）
+  - `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成
+    - `CaptureProfile` struct: ウィンドウタイトル、ページ送りキー、待機時間などのフィールド
+    - `ProfileEntry` struct: フロントエンド向け JSON 表現、`key` フィールド付き
+    - 6 つのビルトインプロファイルを定義（kindle, google_play, rakuten_kobo, bookwalker, dmm_books, kinoppy）
+    - `From<(String, CaptureProfile)> for ProfileEntry` を実装
+  - `localapp/src-tauri/src/models/mod.rs` — 新規作成（`pub mod capture_profile;`）
+  - `localapp/src-tauri/src/commands/capture.rs` — `get_builtin_profiles` コマンド追加
+    - `CaptureProfile::builtin_profiles()` → `ProfileEntry::from()` → JSON 配列を返却
+  - `localapp/src-tauri/src/lib.rs` — `get_builtin_profiles` を `invoke_handler` に登録
+  - `localapp/src-tauri/src/main.rs` — 詳細コメントを追加
+  - `localapp/src-tauri/src/commands/mod.rs` — 詳細コメントを追加
+- フロントエンド側
+  - `localapp/src/store/profileStore.ts` — 新規作成（Zustand ストア）
+    - `builtinProfiles`, `customProfiles`, `selectedProfileKey` を管理
+    - `fetchProfiles()`: Rust `get_builtin_profiles` を呼び出して初期化
+    - `selectProfile()`, `updateCustomProfile()`, `resetProfile()`, `getEffectiveProfile()`
+  - `localapp/src/components/capture/ProfileSelector.tsx` — 新規作成
+    - shadcn/ui Select を使用したドロップダウン型セレクタ
+    - `builtinProfiles` から選択肢を動的生成
+  - `localapp/src/components/capture/ProfileEditor.tsx` — 新規作成
+    - ページ送りキー、待機時間、ウィンドウタイトル、プロセス名、クリック位置、最前面化フラグの編集 UI
+    - 「デフォルトに戻す」ボタンで `resetProfile()` を呼び出し
+    - 2 カラムグリッドレイアウトでフォームを配置
+  - `localapp/src/views/CaptureView.tsx` — リファクタ
+    - `ProfileSelector` + `ProfileEditor` + キャプチャテスト UI を統合
+    - `useEffect` で `fetchProfiles()` を呼び出し、起動時にプロファイルを取得
+    - セクション分割: キャプチャ設定（上段）/ キャプチャテスト（下段）
+  - 既存ファイルへの丁寧なコメント追加
+    - `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx`
+- ビルド確認
+  - `cargo check`: 成功（unused import warning のみ）
+  - `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- マージ日: 2026-08-16
+- ブランチ: `feature/002002-profile-management`
 
 ### 002003 連続キャプチャ実行・進捗表示
 
