@@ -175,13 +175,12 @@
 
 ## 11. Git ブランチ運用ルール
 
-- 各ユースケースの開発は専用ブランチで実施する
-- ブランチ命名規則: `feature/uc<ユースケース番号3桁>-<内容の短縮名>`
-  - 例：ユースケース001の実装 → `feature/uc001-scaffold`
-  - 例：ユースケース006のデザインシステム定義 → `feature/uc006-design-system`
+- 各タスクの開発は専用ブランチで実施する
+- ブランチ命名規則: `feature/<タスクNo>-<内容の短縮名>`
+  - 例：タスク001001の実装 → `feature/001001-scaffold`
+  - 例：タスク002001の画面キャプチャ調査 → `feature/002001-screenshot-research`
 - ブランチ作成とマージの手順：
   1. 作業開始前に `main` ブランチを最新化（`git checkout main && git pull`）
-  2. `main` から専用ブランチを作成（`git checkout -b feature/ucXXX-xxx`）
-  3. ユースケース内のタスク完了後、`main` へマージ（`git checkout main && git merge feature/ucXXX-xxx`）
-  4. マージ後、不要になったブランチは削除してもよい
+  2. `main` から専用ブランチを作成（`git checkout -b feature/XXXXXX-xxx`）
+  3. タスク完了後、`main` へマージ（`git checkout main && git merge feature/XXXXXX-xxx`）
 - テスト・検証・調査系タスク（第10章対象）で backend/ocr-worker コンテナを起動する場合は、可能な限りブランチ内で実施し、検証結果をブランチに含める
