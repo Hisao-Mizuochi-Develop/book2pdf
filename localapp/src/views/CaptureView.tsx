@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Camera, Play, Square } from "lucide-react";
 import { ProfileSelector } from "@/components/capture/ProfileSelector";
 import { ProfileEditor } from "@/components/capture/ProfileEditor";
+import { CaptureProgress } from "@/components/capture/CaptureProgress";
 import { useProfileStore } from "@/store/profileStore";
+import { useCaptureStore } from "@/store/captureStore";
 
 /**
  * CaptureResult: Rust 側 capture_screen コマンドの戻り値型
@@ -43,9 +46,26 @@ export function CaptureView() {
   const [isCapturing, setIsCapturing] = useState(false);
   /** エラーメッセージ */
   const [error, setError] = useState<string | null>(null);
+  /** 連続キャプチャの書籍タイトル */
+  const [bookTitle, setBookTitle] = useState("");
 
   // Zustand ストアからプロファイル取得アクションを取得
   const fetchProfiles = useProfileStore((state) => state.fetchProfiles);
+
+  // 連続キャプチャストアから状態・アクションを取得
+  const {
+    isCapturing: isContinuousCapturing,
+    currentPage,
+    totalPages,
+    status,
+    message: captureMessage,
+    startCapture,
+    stopCapture,
+  } = useCaptureStore();
+
+  // 現在選択中の有効プロファイルを取得
+  const selectedProfileKey = useProfileStore((state) => state.selectedProfileKey);
+  const getEffectiveProfile = useProfileStore((state) => state.getEffectiveProfile);
 
   /**
    * コンポーネントマウント時: ビルトインプロファイルを Rust 側から取得
@@ -81,6 +101,32 @@ export function CaptureView() {
     }
   }
 
+  /**
+   * 連続キャプチャを開始する
+   *
+   * 1. 選択中のプロファイルを取得
+   * 2. プロファイルが未選択の場合はエラーを表示
+   * 3. captureStore の `startCapture` を呼び出し
+   */
+  async function handleStartCapture() {
+    setError(null);
+    const profile = getEffectiveProfile(selectedProfileKey || "");
+    if (!profile) {
+      setError("プロファイルが選択されていません");
+      return;
+    }
+    await startCapture(profile, bookTitle);
+  }
+
+  /**
+   * 連続キャプチャを停止する
+   *
+   * captureStore の `stopCapture` を呼び出し、停止フラグをセットする。
+   */
+  async function handleStopCapture() {
+    await stopCapture();
+  }
+
   return (
     <div className="flex h-full flex-col p-6 gap-5 overflow-auto">
       {/* ── プロファイル管理セクション ───────────────────────── */}
@@ -100,6 +146,70 @@ export function CaptureView() {
         <div className="rounded-lg border bg-card p-5 shadow-sm">
           <ProfileEditor />
         </div>
+      </section>
+
+      {/* ── 連続キャプチャセクション ───────────────────────── */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">連続キャプチャ</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            選択したプロファイルで自動的にページをめくりながら連続キャプチャを実行します。
+          </p>
+        </div>
+
+        {/* 書籍タイトル入力フィールド */}
+        <div className="space-y-2">
+          <label htmlFor="book-title" className="text-sm font-medium">
+            書籍タイトル（保存フォルダ名）
+          </label>
+          <Input
+            id="book-title"
+            placeholder="例: 吾輩は猫である"
+            value={bookTitle}
+            onChange={(e) => setBookTitle(e.target.value)}
+            disabled={isContinuousCapturing}
+            className="max-w-md"
+          />
+        </div>
+
+        {/* 連続キャプチャ開始/停止ボタン */}
+        <div className="flex gap-3">
+          {!isContinuousCapturing ? (
+            <Button
+              onClick={handleStartCapture}
+              disabled={!selectedProfileKey || isCapturing}
+              className="gap-2"
+            >
+              <Play className="h-4 w-4" />
+              連続キャプチャ開始
+            </Button>
+          ) : (
+            <Button
+              onClick={handleStopCapture}
+              variant="destructive"
+              className="gap-2"
+            >
+              <Square className="h-4 w-4" />
+              停止
+            </Button>
+          )}
+        </div>
+
+        {/* 進捗表示 */}
+        <CaptureProgress
+          isCapturing={isContinuousCapturing}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          status={status}
+          message={captureMessage}
+        />
+
+        {/* エラーメッセージ表示 */}
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            エラー: {error}
+          </div>
+        )}
       </section>
 
       {/* ── キャプチャテストセクション ───────────────────────── */}
@@ -122,13 +232,6 @@ export function CaptureView() {
             {isCapturing ? "キャプチャ中..." : "キャプチャテスト"}
           </Button>
         </div>
-
-        {/* エラーメッセージ表示 */}
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            エラー: {error}
-          </div>
-        )}
 
         {/* キャプチャした画像のプレビュー */}
         {capturedImage && (

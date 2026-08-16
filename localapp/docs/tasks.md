@@ -215,13 +215,67 @@
 ### 002003 連続キャプチャ実行・進捗表示
 
 【計画】
-- 002001 で追加した `capture.rs` に `start_continuous_capture` / `stop_continuous_capture` コマンドを追加
-- バックグラウンドスレッドで「キャプチャ→差分検出→ページ送り→待機」のループを実行
-- 進捗は `tauri::Emitter` でフロントエンドに通知（参考: `capture_engine.py` の `_has_meaningful_change` → Rust版に移植）
-- キャプチャ → ページ送り → 画像変化検出 のループ実装
-- バックグラウンド実行（Rust 側で非同期）
-- 進捗バー、ステータステキスト、ログ表示
-- 停止ボタン
+
+1. **Rust 側依存クレート追加**
+   - `localapp/src-tauri/Cargo.toml` に以下を追加：
+     - `tokio` — 非同期ランタイム（バックグラウンドスレッド操作用、特に `tokio::time::sleep` で待機制御）
+     - `enigo` — OS間共通のキー入力シミュレーション（ページ送り用。macOSではAccessibility権限が必要）
+   - `cargo check` で依存解決とコンパイル確認
+
+2. **Rust 側連続キャプチャコマンド実装**
+   - `localapp/src-tauri/src/commands/capture.rs` に以下を追加：
+     - `ProgressPayload` 構造体 — 進捗通知用イベントペイロード
+       - `current: u32` — 現在のキャプチャ枚数
+       - `total: u32` — 予想総ページ数（または設定上限）
+       - `status: String` — "capturing" / "page_turn" / "waiting" / "completed" / "stopped"
+       - `message: String` — ユーザー向けメッセージ（"12 / 200 ページ キャプチャ完了" など）
+     - `start_continuous_capture(app_handle, profile)` コマンド — 連続キャプチャを開始
+       - バックグラウンドスレッド（`std::thread::spawn` または `tauri::async_runtime::spawn`）でループ実行
+       - 「キャプチャ → 画像差分検出（MSE方式）→ ページ送り（enigo）→ 待機」 のループ
+       - `Arc<AtomicBool>` で停止フラグをスレッドセーフに共有
+       - `app_handle.emit()` で `ProgressPayload` をフロントエンドへ送信
+       - 画像変化検出は Mean Squared Error（平均二乗誤差）方式で閾値判定
+         - 前回キャプチャ画像と今回キャプチャ画像のピクセル差を計算
+         - 閾値未満＝変化なし＝ページ送り失敗と判断、リトライ処理
+       - 画像は一時フォルダに PNG 形式で保存（連番: `001.png`, `002.png`, ...）
+         - 保存先: `dirs::picture_dir()` 配下の `BookCapture/<タイトル>/`（タイトルは設定可能にする、未設定なら `untitled`）
+     - `stop_continuous_capture()` コマンド — 連続キャプチャを停止
+       - `Arc<AtomicBool>` の停止フラグを `true` に設定
+       - 実行中スレッドがフラグを検知して安全に終了
+   - `localapp/src-tauri/src/lib.rs` — 新規コマンドを `invoke_handler` に登録
+
+3. **フロントエンド進捗表示 UI 実装**
+   - `localapp/src/store/captureStore.ts`（新規作成）— 連続キャプチャ状態を Zustand で管理
+     - `isCapturing: boolean` — 実行中フラグ
+     - `progress: { current: number; total: number; status: string; message: string } | null` — 進捗情報
+     - `logs: string[]` — キャプチャログ一覧
+     - `captureFolder: string | null` — 結果画像保存先パス
+     - `startCapture() / stopCapture()` — Rust コマンドを呼び出し
+     - `addLog(message)` — ログ追加
+     - `reset()` — 状態リセット
+   - `localapp/src/components/capture/CaptureProgress.tsx`（新規作成）— 進捗表示専用コンポーネント
+     - shadcn/ui `Progress` コンポーネントで進捗バー
+     - ステータステキスト（`message` フィールドを表示）
+     - スクロール可能なログ一覧（`logs` を時系列で表示）
+   - `localapp/src/views/CaptureView.tsx` — 連続キャプチャ UI を統合
+     - 「連続キャプチャ開始」ボタン（実行中は disabled）
+     - 「停止」ボタン（未実行時は disabled）
+     - `CaptureProgress` コンポーネントを配置
+     - `listen("capture-progress")` で Rust 側からの進捗イベントを受信
+     - キャプチャ完了後、保存先フォルダパスを表示
+
+4. **コマンド登録・ビルド確認**
+   - `localapp/src-tauri/src/lib.rs` — `start_continuous_capture`, `stop_continuous_capture` を `invoke_handler` に追加
+   - `cargo check` — Rust 側コンパイル確認
+   - `npm run build` — フロントエンドビルド確認
+   - `npm run tauri dev` — 起動確認（連続キャプチャボタン表示、プログレスバー表示）
+
+5. **想定される注意点**
+   - macOS で `enigo` を使用する場合、初回実行時に「アクセシビリティ」権限の許可が必要になる
+   - 画像差分検出の MSE 閾値は環境（解像度・明るさ）により変動するため、調整可能なパラメータとして実装する
+   - `tauri::Emitter` のイベント名はフロントエンドの `listen()` と一致させる必要がある
+   - 連続キャプチャ中にアプリを閉じた場合のクリーンアップについては、将来のタスク（007001 設定永続化等）で検討
+   - `screenshots` crate + `tokio` の組み合わせでブロッキング処理の扱いに注意（`spawn_blocking` の検討）
 
 【実施結果】
 

@@ -310,4 +310,33 @@
 - Git コミットは未実施（マージフェーズで実施予定）
   - ブランチ: `feature/002002-profile-management`
 
+## 002003 — 連続キャプチャ実行・進捗表示
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: 002001・002002 で実装した単発キャプチャ・プロファイル管理を拡張し、電子書籍のページを自動的にめくりながら連続キャプチャする機能を実装する
+- 前提:
+  - 002001（画面キャプチャ方式調査・実装）が完了していること
+  - 002002（アプリプロファイル管理 UI）が完了していること
+  - feature/002003-continuous-capture ブランチを作成済みであること
+- 変更内容:
+  1. `localapp/src-tauri/Cargo.toml` — `tokio`, `enigo` crate を追加
+  2. `localapp/src-tauri/src/commands/capture.rs` — `start_continuous_capture`, `stop_continuous_capture`, `ProgressPayload` を追加
+  3. `localapp/src-tauri/src/lib.rs` — 新規コマンドを invoke_handler に登録
+  4. `localapp/src/store/captureStore.ts` — 新規作成（連続キャプチャ状態管理の Zustand ストア）
+  5. `localapp/src/components/capture/CaptureProgress.tsx` — 新規作成（進捗バー・ログ表示コンポーネント）
+  6. `localapp/src/views/CaptureView.tsx` — 連続キャプチャ開始/停止ボタン・進捗表示を統合
+- 実施コマンド:
+  1. `cargo check`（Rust 側コンパイル確認）
+  2. `npm run build`（フロントエンドビルド確認）
+  3. `npm run tauri dev`（起動確認）
+- 想定される結果や注意点:
+  - `enigo` crate は macOS で Accessibility 権限を必要とする可能性がある
+  - 画像差分検出の MSE 閾値は環境依存のため、プロファイルのパラメータとして調整可能にする
+  - `tokio` + `screenshots` crate の組み合わせでブロッキング処理の扱いに注意
+  - 連続キャプチャ中にアプリを閉じた場合のクリーンアップは今回のスコープ外（将来対応）
+
+### 【実施実績】
+
 

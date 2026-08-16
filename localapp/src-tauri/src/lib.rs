@@ -40,6 +40,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::capture::capture_screen,
             commands::capture::get_builtin_profiles,
+            commands::capture::start_continuous_capture,
+            commands::capture::stop_continuous_capture,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())
