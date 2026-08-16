@@ -9,6 +9,25 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// コンテンツ領域トリミング設定（ピクセル単位）
+///
+/// ウィンドウ全体のキャプチャから、書籍コンテンツ部分のみを切り出すための
+/// 上下左右の余白（インセット）を定義する。
+/// 例: Kindle for PC の場合、タイトルバー高さ分の `top` を設定することで
+/// 外枠を除いたコンテンツ領域だけを抽出できる。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CropInsets {
+    /// 上端からのトリミング量（ピクセル）
+    pub top: u32,
+    /// 右端からのトリミング量（ピクセル）
+    pub right: u32,
+    /// 下端からのトリミング量（ピクセル）
+    pub bottom: u32,
+    /// 左端からのトリミング量（ピクセル）
+    pub left: u32,
+}
+
 /// キャプチャ設定を保持するプロファイル構造体
 ///
 /// すべてのフィールドは既定値を持ち、部分的な上書きが可能。
@@ -37,6 +56,8 @@ pub struct CaptureProfile {
     pub timeout_seconds: f64,
     /// 失敗時の最大再試行回数
     pub max_retries: u32,
+    /// コンテンツ領域トリミング設定（外枠除去用）
+    pub crop_insets: CropInsets,
 }
 
 impl CaptureProfile {
@@ -62,6 +83,14 @@ impl CaptureProfile {
                     process_name: "Kindle.exe".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets {
+                        // Kindle for PC のタイトルバー高さ（実測値に基づく）
+                        // 外枠・メニューバーを除外し書籍コンテンツ部分だけを抽出する
+                        top: 82,
+                        right: 0,
+                        bottom: 0,
+                        left: 0,
+                    },
                 },
             ),
             (
@@ -77,6 +106,7 @@ impl CaptureProfile {
                     process_name: "".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets::default(),
                 },
             ),
             (
@@ -92,6 +122,7 @@ impl CaptureProfile {
                     process_name: "Kobo.exe".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets::default(),
                 },
             ),
             (
@@ -107,6 +138,7 @@ impl CaptureProfile {
                     process_name: "BWViewer.exe".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets::default(),
                 },
             ),
             (
@@ -122,6 +154,7 @@ impl CaptureProfile {
                     process_name: "DMMBooksViewer.exe".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets::default(),
                 },
             ),
             (
@@ -137,6 +170,7 @@ impl CaptureProfile {
                     process_name: "Kinoppy.exe".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
+                    crop_insets: CropInsets::default(),
                 },
             ),
         ]
@@ -173,6 +207,8 @@ pub struct ProfileEntry {
     pub timeout_seconds: f64,
     /// 最大再試行回数
     pub max_retries: u32,
+    /// コンテンツ領域トリミング設定（外枠除去用）
+    pub crop_insets: CropInsets,
 }
 
 impl From<(String, CaptureProfile)> for ProfileEntry {
@@ -189,6 +225,7 @@ impl From<(String, CaptureProfile)> for ProfileEntry {
             process_name: profile.process_name,
             timeout_seconds: profile.timeout_seconds,
             max_retries: profile.max_retries,
+            crop_insets: profile.crop_insets,
         }
     }
 }

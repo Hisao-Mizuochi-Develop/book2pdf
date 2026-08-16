@@ -85,19 +85,23 @@ export function CaptureView() {
   }, [fetchProfiles]);
 
   /**
-   * スクリーンショットを取得して状態に保存する
+   * スクリーンショットを取得して状態に保存する（ウィンドウ指定 + トリミング対応）
    *
-   * 1. ローディング状態を ON
-   * 2. Rust 側 `capture_screen` コマンドを invoke
-   * 3. 成功: Base64 画像を Data URL 形式で state に保存
-   * 4. 失敗: エラーメッセージを state に保存
-   * 5. ローディング状態を OFF
+   * 1. 選択中のプロファイルを取得
+   * 2. ローディング状態を ON
+   * 3. Rust 側 `capture_screen` コマンドにプロファイルを渡して invoke
+   * 4. 成功: Base64 画像を Data URL 形式で state に保存
+   * 5. 失敗: エラーメッセージを state に保存
+   * 6. ローディング状態を OFF
    */
   async function handleCapture() {
     setIsCapturing(true);
     setError(null);
     try {
-      const result = await invoke<CaptureResult>("capture_screen");
+      const profile = getEffectiveProfile(selectedProfileKey || "");
+      const result = await invoke<CaptureResult>("capture_screen", {
+        profile: profile ?? undefined,
+      });
       // Base64 を Data URL 形式に変換して img タグで表示可能にする
       const dataUrl = `data:image/png;base64,${result.base64}`;
       setCapturedImage(dataUrl);

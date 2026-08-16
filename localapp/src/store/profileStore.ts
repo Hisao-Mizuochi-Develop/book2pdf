@@ -23,6 +23,23 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 
 /**
+ * コンテンツ領域トリミング設定（ピクセル単位）
+ *
+ * Rust 側 `CropInsets` に対応するフロントエンド型。
+ * ウィンドウキャプチャ後に外枠・タイトルバーなどを除去するために使用する。
+ */
+export interface CropInsets {
+  /** 上端からのトリミング量（ピクセル） */
+  top: number;
+  /** 右端からのトリミング量（ピクセル） */
+  right: number;
+  /** 下端からのトリミング量（ピクセル） */
+  bottom: number;
+  /** 左端からのトリミング量（ピクセル） */
+  left: number;
+}
+
+/**
  * Rust 側 `models/capture_profile.rs` の `ProfileEntry` に対応するフロントエンド型
  *
  * serde の camelCase リネームにより、Rust の `page_turn_key` が
@@ -51,6 +68,8 @@ export interface CaptureProfile {
   timeoutSeconds: number;
   /** 失敗時の最大再試行回数 */
   maxRetries: number;
+  /** コンテンツ領域トリミング設定（外枠除去用） */
+  cropInsets: CropInsets;
 }
 
 /**

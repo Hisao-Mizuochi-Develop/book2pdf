@@ -13,7 +13,7 @@
 /// - `stop_continuous_capture`: 実行中の連続キャプチャを停止
 use image::ImageEncoder;
 use screenshots::Screen;
-use crate::models::capture_profile::{CaptureProfile, ProfileEntry};
+use crate::models::capture_profile::{CaptureProfile, ProfileEntry, CropInsets};
 
 // 連続キャプチャ制御用のグローバル状態
 // Rust 1.70+ では std::sync::OnceLock で標準化されているため、外部 crate は不要
@@ -203,7 +203,7 @@ fn run_continuous_capture_loop(
             Some(output_dir.clone()),
         );
 
-        let image_bytes = match capture_screen_raw() {
+        let image_bytes = match capture_screen_raw(&profile) {
             Ok(bytes) => bytes,
             Err(e) => {
                 emit_progress(
@@ -305,14 +305,72 @@ fn run_continuous_capture_loop(
     }
 }
 
-/// 生スクリーンショット画像を PNG バイト列として取得する
+/// PNG バイト列に crop_insets を適用してトリミングする
 ///
-/// `capture_screen()` とは異なり、Base64 エンコードせず生バイト列を返す。
-/// 連続キャプチャ時の差分検出・ファイル保存に使用する。
+/// `image::load_from_memory` で PNG をデコードし、`imageops::crop_imm` で
+/// 指定領域を切り出した後、`to_image()` で `ImageBuffer` に変換し、
+/// 再度 PNG エンコードして返す。
+///
+/// `crop_imm()` の返り値は `SubImage<&RgbaImage>` であり、直接生バイト列を
+/// 取得できないため、`to_image()` で所有権付きの `ImageBuffer` に変換してから
+/// `as_raw()` を使用する。
+///
+/// # 引数
+/// - `image_bytes`: PNG 形式の生バイト列
+/// - `insets`: トリミング量（ピクセル単位）
+///
+/// # 戻り値
+/// - `Ok(Vec<u8>)`: トリミング後の PNG 形式生バイト列
+fn apply_crop_insets(image_bytes: &[u8], insets: &CropInsets) -> Result<Vec<u8>, String> {
+    let img = image::load_from_memory(image_bytes)
+        .map_err(|e| format!("画像デコードエラー: {}", e))?;
+    let (width, height) = (img.width(), img.height());
+
+    // トリミング量が画像サイズを超えていないか検証
+    if insets.left + insets.right >= width || insets.top + insets.bottom >= height {
+        return Err("トリミング量が画像サイズを超えています".to_string());
+    }
+
+    let crop_w = width - insets.left - insets.right;
+    let crop_h = height - insets.top - insets.bottom;
+
+    let rgba = img.to_rgba8();
+    let cropped = image::imageops::crop_imm(&rgba, insets.left, insets.top, crop_w, crop_h);
+    // SubImage を ImageBuffer に変換して生バイト列を取得する
+    let cropped_img = cropped.to_image();
+
+    let mut buf = Vec::new();
+    let encoder = image::codecs::png::PngEncoder::new(&mut buf);
+    encoder
+        .write_image(
+            cropped_img.as_raw(),
+            crop_w,
+            crop_h,
+            image::ExtendedColorType::Rgba8,
+        )
+        .map_err(|e| format!("PNG エンコードエラー: {}", e))?;
+
+    Ok(buf)
+}
+
+/// 生スクリーンショット画像を PNG バイト列として取得する（全画面キャプチャ + トリミング対応）
+///
+/// # 処理フロー
+/// 1. `Screen::all()` で最初のディスプレイを対象に全画面キャプチャ
+/// 2. `crop_insets` が設定されていれば内容領域トリミングを適用
+///
+/// 【002005/002007】ウィンドウ指定キャプチャについて:
+/// screenshots crate v0.8.10 では `Window` struct がエクスポートされていないため、
+/// 現時点では全画面キャプチャを取得して `crop_insets` でトリミングする方式を採用する。
+/// 将来的に macOS AppleScript 等でウィンドウ位置を取得して `Screen::capture_area()`
+/// を使う拡張を検討する。
+///
+/// # 引数
+/// - `profile`: キャプチャプロファイル（トリミング設定を含む）
 ///
 /// # 戻り値
 /// - `Ok(Vec<u8>)`: PNG 形式の生バイト列
-fn capture_screen_raw() -> Result<Vec<u8>, String> {
+fn capture_screen_raw(profile: &CaptureProfile) -> Result<Vec<u8>, String> {
     let screens = Screen::all().map_err(|e| format!("ディスプレイ取得エラー: {}", e))?;
     if screens.is_empty() {
         return Err("ディスプレイが見つかりません".to_string());
@@ -331,7 +389,13 @@ fn capture_screen_raw() -> Result<Vec<u8>, String> {
         )
         .map_err(|e| format!("PNG 変換エラー: {}", e))?;
 
-    Ok(buf)
+    // crop_insets が設定されていればトリミング適用
+    let insets = &profile.crop_insets;
+    if insets.top > 0 || insets.right > 0 || insets.bottom > 0 || insets.left > 0 {
+        apply_crop_insets(&buf, insets)
+    } else {
+        Ok(buf)
+    }
 }
 
 /// 2枚の PNG バイト列間の平均二乗誤差（MSE）を計算する
@@ -437,44 +501,24 @@ pub struct CaptureResult {
 /// # 注意
 /// macOS で実行する場合、初回実行時に「画面収録」権限の許可が必要となる
 #[tauri::command]
-pub fn capture_screen() -> Result<CaptureResult, String> {
-    // 接続されている全ディスプレイを取得
-    let screens = Screen::all().map_err(|e| format!("ディスプレイ取得エラー: {}", e))?;
+pub fn capture_screen(profile: Option<CaptureProfile>) -> Result<CaptureResult, String> {
+    // プロファイルが指定されない場合はデフォルト値（全画面キャプチャ、トリミングなし）
+    let profile = profile.unwrap_or_default();
 
-    if screens.is_empty() {
-        return Err("ディスプレイが見つかりません".to_string());
-    }
-
-    // 最初のディスプレイを対象にキャプチャ（メイン画面）
-    let screen = &screens[0];
-    let image = screen
-        .capture()
-        .map_err(|e| format!("キャプチャエラー: {}", e))?;
-
-    // PNG 形式のバイト列に変換
-    // `screenshots` crate の内部 image バッファから生バイトを取得し、
-    // プロジェクト側の `image` crate (0.25.x) で PNG エンコードする
-    let png_bytes = {
-        let mut buf = Vec::new();
-        let encoder = image::codecs::png::PngEncoder::new(&mut buf);
-        encoder
-            .write_image(
-                image.as_raw(),
-                image.width(),
-                image.height(),
-                image::ExtendedColorType::Rgba8,
-            )
-            .map_err(|e| format!("PNG 変換エラー: {}", e))?;
-        buf
-    };
+    let png_bytes = capture_screen_raw(&profile)?;
 
     // Base64 エンコード
     let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &png_bytes);
 
+    // PNG バイト列から幅・高さを取得（トリミング後の実際のサイズを反映）
+    let (width, height) = image::load_from_memory(&png_bytes)
+        .map(|img| (img.width(), img.height()))
+        .map_err(|e| format!("画像解析エラー: {}", e))?;
+
     Ok(CaptureResult {
         base64,
-        width: image.width(),
-        height: image.height(),
+        width,
+        height,
     })
 }
 
@@ -627,4 +671,3 @@ pub fn open_capture_folder(folder_path: String) -> Result<(), String> {
         .map_err(|e| format!("フォルダを開けません ({}): {}", folder_path, e))?;
     Ok(())
 }
-

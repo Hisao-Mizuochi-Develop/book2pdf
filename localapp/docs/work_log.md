@@ -41,322 +41,137 @@
   - `invoke_handler` に `commands::capture::capture_screen` を登録
 - `localapp/src/views/CaptureView.tsx` を更新
   - 「キャプチャテスト」ボタンを追加（shadcn/ui Button + lucide-react Camera アイコン）
-  - `invoke<CaptureResult>("capture_screen")` で Rust コマンドを呼び出し
+  - `invoke<CaptureResult>("capture_screen")` でRustコマンドを呼び出し
   - 取得した画像を `data:image/png;base64,...` で `<img>` に表示
   - エラーハンドリング（try-catch）、ローディング状態（useState）を実装
 - `cargo check`: コンパイル成功
 - `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 - `npm run tauri dev`: 起動成功
   - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示
-  - 注意: `invoke` は Tauri WebView 内でのみ動作（ブラウザ直接アクセスでは `window.__TAURI__` 未定義エラー）
-- Git コミットを実施
-  - `git add -A && git commit` で 7 files changed, 715 insertions(+), 39 deletions(-)
-  - ブランチ: feature/002001-screenshot-research
+  - 注意: `invoke` API は Tauri WebView 内でのみ動作するため、ブラウザ直接アクセスでのキャプチャ実行は不可（想定内の制限）
 
-## 006003 — ライトモード対応 + OS 設定連動
-
-### 【実施予定】
-
-- 日時: 2026-08-16
-- 目的: ライトモードを基本テーマとしつつ、OS の外観モード変更を検出して自動切り替えできる土台を構築する
-- 前提: 006001（デザインシステム定義）、006002（レイアウト実装）が完了していること
-- 変更内容:
-  1. `localapp/src/index.css` — `@media (prefers-color-scheme: dark)` でダークモード用 CSS 変数を追加
-  2. `localapp/src/main.tsx` — OS 外観モード変更リスナーを実装（`data-theme` 属性設定）
-  3. `localapp/docs/localapp-spec.md` — テーマ仕様の追記
-- 実施コマンド:
-  1. `npm run build`（ビルド確認）
-  2. `npm run tauri dev`（OS 設定連動確認）
-
-### 【実施実績】
-
-- `localapp/src/main.tsx` に `initTheme()` 関数を追加
-  - コード方針: `@custom-variant dark (&:is(.dark *))` に対応するため `.dark` クラス方式を採用
-  - `window.matchMedia("(prefers-color-scheme: dark)")` で OS の外観モードを取得
-  - 初回反映: `applyTheme(darkModeQuery.matches)` で即座にテーマ適用（React レンダリングより先に実行し画面ちらつきを防止）
-  - 継続監視: `addEventListener("change")` で OS 設定変更をリアルタイムで検出
-  - `.dark` クラスを `document.documentElement` に付与/除去してダークモード切り替え
-  - 各処理に「なぜそのように実装したか」の詳細コメントを付加
-- `localapp/src/index.css` の `.dark` ブロックコメントを更新
-  - 「将来のダークモード対応の土台」→「OS の外観モード設定（ダーク）に連動して有効化される」に変更
-- `npm run build` でビルド成功（`tsc && vite build` ともにエラーなし）
-- `npm run tauri dev` で起動確認
-  - ライトモード時：白基調の UI が正しく表示される
-  - ダークモード時：`html.dark` が付与されダークテーマ変数が適用される
-  - システム設定を切り替えるとリアルタイムでテーマが追随することを確認
-
-## 006004 — アプリ名・サイドバー項目変更
-
-### 【実施予定】
-
-- 日時: 2026-08-16
-- 目的: アプリ名とサイドバーの表示順・ラベルを変更する
-- 前提: 006001 が完了していること
-- 変更内容:
-  1. アプリ名 `book2pdf` → `BoockCapture`
-     - `tauri.conf.json`: productName, windows.title
-     - `Sidebar.tsx`: ロゴテキスト
-  2. サイドバー表示順・ラベル変更
-     - 1: `電子書籍`（capture）
-     - 2: `PDF`（pdf）
-     - 3: `トリミング`（trim）
-     - 4: `ZIP作成`（export）
-- 実施コマンド:
-  1. `npm run build`（ビルド確認）
-  2. `npm run tauri dev`（表示確認）
-
-### 【実施実績】
-
-- `localapp/src-tauri/tauri.conf.json` を修正
-  - `productName` を `book2pdf` → `BoockCapture` → `Book Capture` に変更
-  - `windows.title` を `book2pdf` → `BoockCapture` → `Book Capture` に変更
-- `localapp/src/components/layout/Sidebar.tsx` を修正
-  - ロゴテキストを `book2pdf` → `Book Capture` に変更
-  - navItems のラベルを変更
-    - `キャプチャ` → `電子書籍`
-    - `PDF読込` → `PDF`
-    - `ZIP出力` → `ZIP作成`
-  - navItems の並び順を変更
-    - 変更前: キャプチャ → トリミング → PDF読込 → ZIP出力
-    - 変更後: 電子書籍 → PDF → トリミング → ZIP作成
-- `npm run build` でビルド成功
-- `npm run tauri dev` で起動確認
-  - ウィンドウタイトルが「Book Capture」に変更されていることを確認
-  - サイドバーのロゴが「Book Capture」に変更されていることを確認
-  - サイドバー項目が「電子書籍 / PDF / トリミング / ZIP作成」の順で正しく表示されることを確認
-
-## 006001 — デザインシステム定義
-
-### 【実施予定】
-
-- 日時: 2026-08-16
-- 目的: Apple HIG 風のカラーパレット・タイポグラフィ・コンポーネントスタイルを定義し文書化する
-- 前提: 006002（サイドバー＋メインレイアウト実装）が完了していること
-- 実施コマンド:
-  1. `npm run build`（ビルド確認）
-  2. `npm run tauri dev`（スタイル反映確認）
-- 変更対象:
-  - `localapp/src/index.css` — CSS 変数（カラー・角丸）の調整
-  - `localapp/src/components/ui/button.tsx` — バリアント・サイズのコメント追加
-  - `localapp/docs/localapp-spec.md` — カラーパレット表、タイポグラフィ情報の更新
-- 想定される結果や注意点:
-  - Tailwind v4 の oklch カラースケールを Apple HIG に近づける
-  - 各 CSS 変数に「用途 + 理由」のコメントを付加（初学者向け可読性）
-  - shadcn/ui Button コンポーネントの各バリアントに詳細な JSDoc コメント
-
-### 【実施実績】
-
-- `localapp/src/index.css` — Apple HIG 風カラーパレットに変更
-  - `--primary` を oklch(0.588 0.194 257.1)（#007AFF 相当）に変更
-  - `--foreground` を oklch(0.225 0 0)（#1D1D1F 相当）に変更
-  - `--muted-foreground` を oklch(0.53 0 0)（#6E6E73 相当）に変更
-  - `--border` を oklch(0.853 0 0)（#D2D2D7 相当）に変更
-  - `--sidebar` を oklch(0.97 0 0)（#F5F5F7 相当）に変更
-  - `--destructive` を oklch(0.63 0.22 30)（#FF3B30 相当）に変更
-  - `--radius` を 0.5rem に変更（より控えめな角丸）
-  - 各変数に「用途 + Apple HIG 対応色」のコメントを付加
-- `localapp/src/components/ui/button.tsx` — 各 variant・size に JSDoc コメントを付加
-  - variant（default, outline, secondary, ghost, destructive, link）に用途・見た目コメント
-  - size（default, xs, sm, lg, icon, icon-xs, icon-sm, icon-lg）に高さ・適用場面コメント
-  - buttonVariants 関数と Button コンポーネントにも概要コメント
-- `localapp/docs/localapp-spec.md` — デザイン仕様を更新
-  - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
-  - フォントに `Geist Variable` を明記
-- `.clinerules` — 第8章に「初学者向け詳細コメント」ルールを加筆
-  - 「すべてのソースコードには初学者にも可読性がよくなるように、各変数・関数・クラス・複雑なロジックに『用途+デザイン意図』のコメントを付けることを基本とする」を追記
-- `npm run build` でビルド成功（CSS ファイル 24.97 kB）
-- `npm run tauri dev` で起動確認
-  - 白基調・余白多め・控えめな角丸の Apple HIG 風レイアウトが正しく表示されることを確認
-
-## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
-
-### 【実施予定】
-
-- 日時: 2026-08-15
-- 目的: localapp の土台となる Tauri v2 + React + Vite プロジェクトを構築する
-- 前提: Node.js, npm, cargo, rust がインストール済みであること
-- 実施コマンド:
-  1. `cd /Users/hisao/Documents/work4/sakura/book2pdf/localapp`
-  2. `npm create tauri-app@latest . -- --template react-ts --manager npm`
-  3. `npm install`
-  4. `npm run tauri dev`
-- 想定される結果や注意点:
-  - `src/` と `src-tauri/` が生成される
-  - `npm run tauri dev` でデスクトップウィンドウが起動する
-  - 既存の `docs/` ディレクトリは保持する（scaffold 展開時に削除されたため再作成済み）
-
-### 【実施実績】
-
-- scaffold 展開時に `localapp/docs/` が空になったため、3 ファイルを再作成
-- 再作成ファイル:
-  - `localapp/docs/localapp-spec.md`
-  - `localapp/docs/tasks.md`
-  - `localapp/docs/work_log.md`
-- `npm install` を実行し、依存関係を解決（73 packages、vulnerabilities 0）
-- Rust 側クレートを追加：`image`, `zip`, `pdfium-render`, `serde_json`, `dirs`, `thiserror`
-- Tailwind CSS v4 + `@tailwindcss/vite` を導入、`vite.config.ts` にプラグインと path alias 設定を追加
-- `tsconfig.json` に `baseUrl` と `@/*` の path alias を追加
-- `src/index.css` を新規作成し Tailwind v4 用ベーススタイルを設定
-- shadcn/ui 初期化（`components.json`、`src/components/ui/button.tsx`、`src/lib/utils.ts` 生成）
-- フロントエンド依存を追加：`zustand`, `lucide-react`
-- `src/App.css` を削除し、`src/App.tsx` を最小構成に整理
-- `tauri.conf.json` のウィンドウ設定を調整（title: `book2pdf`, size: 1200x800, min: 900x600, center: true）
-- `npm run tauri dev` でビルド成功、デスクトップウィンドウが起動
-
-## 006002 — サイドバー＋メインレイアウト実装
-
-### 【実施予定】
-
-- 日時: 2026-08-15
-- 目的: サイドバーナビゲーションとメインレイアウトを実装し、4 機能タブの切り替えを確認する
-- 前提: 001001〜001004 の環境構築が完了していること
-- 実施コマンド:
-  1. `npm run build`（ビルド確認）
-  2. `npm run tauri dev`（起動確認）
-- 想定される結果や注意点:
-  - サイドバーに 4 機能アイコン＋ラベルが垂直配置される
-  - アクティブタブが視覚的に示される（背景色 + 左端アクセントライン）
-  - メインエリアに各タブのコンテンツが表示される
-
-### 【実施実績】
-
-- `src/store/navigationStore.ts` を新規作成（Zustand store、`currentView`: capture/trim/pdf/export）
-- `src/components/layout/Sidebar.tsx` を新規作成
-  - 幅 200px、白背景、薄い右ボーダー
-  - lucide-react アイコン＋日本語ラベルで 4 機能を垂直配置
-  - アクティブ状態：背景 `#F5F5F7`、左端 3px のアクセントライン（`before` 疑似要素）
-- `src/components/layout/MainLayout.tsx` を新規作成（Sidebar + main の 2 カラムレイアウト）
-- `src/views/CaptureView.tsx`, `TrimView.tsx`, `PdfImportView.tsx`, `ExportView.tsx` を新規作成（各タブのプレースホルダー）
-- `src/App.tsx` を更新し、Zustand の `currentView` に応じて View を切り替える実装を追加
-- `vite.config.ts` の `@/` path alias を `path.resolve(__dirname, "./src")` に修正
-- `@types/node` を追加し、`tsconfig.node.json` に `types: ["node"]` を設定
-- `npm run build` でビルド成功
-- `npm run tauri dev` で起動確認
-  - サイドバーに 4 機能（キャプチャ / トリミング / PDF読込 / ZIP出力）が正しく表示される
-  - 各タブをクリックするとメインエリアのコンテンツが切り替わる
-  - アクティブタブの視覚的表示（背景色 + 左端アクセントライン）が正しく動作
+---
 
 ## 002002 — アプリプロファイル管理 UI
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
-- 目的: 002001 の `CaptureView.tsx` にプロファイル選択・編集 UI を追加し、各電子書籍アプリに最適化されたキャプチャ設定を管理できるようにする
-- 前提: 002001（画面キャプチャ方式調査・実装）が完了していること
+- 目的: 電子書籍アプリごとのプロファイルを Rust 側で定義し、フロントエンドで選択・編集できるようにする
+- 前提:
+  - 002001（画面キャプチャ方式調査・実装）が完了していること
+  - feature/002002-profile-management ブランチを作成済み
 - 変更内容:
-  1. `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成
-     - `CaptureProfile` struct: ページ送りキー、待機時間、ウィンドウタイトルなど
-     - `ProfileEntry` struct: フロントエンド向け JSON 表現（`key` フィールド付き）
-     - 6 つのビルトインプロファイル（kindle, google_play, rakuten_kobo, bookwalker, dmm_books, kinoppy）
-  2. `localapp/src-tauri/src/models/mod.rs` — 新規作成
+  1. `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成、`CaptureProfile` struct + ビルトインプロファイル
+  2. `localapp/src-tauri/src/models/mod.rs` — 新規作成、モジュール公開
   3. `localapp/src-tauri/src/commands/capture.rs` — `get_builtin_profiles` コマンド追加
-  4. `localapp/src-tauri/src/lib.rs` — コマンド登録
-  5. `localapp/src-tauri/src/main.rs` / `commands/mod.rs` — 丁寧なコメント追加
-  6. `localapp/src/store/profileStore.ts` — 新規作成（Zustand ストア）
-  7. `localapp/src/components/capture/ProfileSelector.tsx` — 新規作成（shadcn/ui Select）
-  8. `localapp/src/components/capture/ProfileEditor.tsx` — 新規作成（各種設定フォーム）
-  9. `localapp/src/views/CaptureView.tsx` — リファクタ（統合）
-  10. `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx` — 丁寧なコメント追加
+  4. `localapp/src-tauri/src/lib.rs` — 新規コマンドを invoke_handler に登録
+  5. `localapp/src/store/profileStore.ts` — 新規作成、Zustand ストア
+  6. `localapp/src/components/capture/ProfileSelector.tsx` — 新規作成、セレクタ UI
+  7. `localapp/src/components/capture/ProfileEditor.tsx` — 新規作成、編集 UI
+  8. `localapp/src/views/CaptureView.tsx` — 各種コンポーネントを統合
 - 実施コマンド:
-  1. `cargo check`（Rust コンパイル確認）
-  2. `npm run build`（フロントエンドビルド確認）
+  1. `cargo check`
+  2. `npm run build`
+  3. `npm run tauri dev`
 - 想定される結果や注意点:
-  - shadcn/ui Select の `onValueChange` で `value: string | null` の型エラーが発生する可能性
-  - `main.rs` の `#![cfg_attr(...)]` はファイル先頭に配置する必要がある
+  - `CaptureProfile` の JSON シリアライズは `serde` を使用
+  - `ProfileEntry` はフロントエンド向けに `key` を含む構造にする
+  - プロファイルの変更はメモリ上のみ保持（永続化は将来タスク）
 
 ### 【実施実績】
 
-- Rust 側モデル・コマンド実装
-  - `localapp/src-tauri/src/models/capture_profile.rs` を新規作成（194 行）
-    - `CaptureProfile` struct: 9 フィールド（name, window_title_keyword, page_turn_key, page_wait, boundary_method, click_position, use_bring_to_top, process_name, timeout_seconds, max_retries）
-    - `ProfileEntry` struct: `key` を含むフロントエンド向け JSON 表現
-    - `builtin_profiles()`: 6 プロファイルを定義
+- Rust 側（詳細コメント付きで実装）
+  - `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成
+    - `CaptureProfile` struct: ウィンドウタイトル、ページ送りキー、待機時間などのフィールド
+    - `ProfileEntry` struct: フロントエンド向け JSON 表現、`key` フィールド付き
+    - 6 つのビルトインプロファイルを定義（kindle, google_play, rakuten_kobo, bookwalker, dmm_books, kinoppy）
     - `From<(String, CaptureProfile)> for ProfileEntry` を実装
-  - `localapp/src-tauri/src/models/mod.rs` を新規作成
-  - `localapp/src-tauri/src/commands/capture.rs` に `get_builtin_profiles` コマンド追加
-  - `localapp/src-tauri/src/lib.rs` に `commands::capture::get_builtin_profiles` を登録
-  - `localapp/src-tauri/src/main.rs` / `commands/mod.rs` に詳細コメント追加
-- フロントエンド実装
-  - `localapp/src/store/profileStore.ts` を新規作成
-    - Zustand ストア: builtinProfiles, customProfiles, selectedProfileKey
-    - fetchProfiles(): `invoke<CaptureProfile[]>("get_builtin_profiles")` で Rust 側から取得
-    - 初回取得時に先頭プロファイルを自動選択
-    - updateCustomProfile(): 部分的な上書きでビルトイン値を維持
-    - resetProfile(): カスタム値を破棄してビルトインに戻す
-    - getEffectiveProfile(): ビルトイン + カスタムをマージして返す
-  - `localapp/src/components/capture/ProfileSelector.tsx` を新規作成
-    - shadcn/ui Select を使用したドロップダウン
-    - `builtinProfiles.map()` から選択肢を動的生成
-    - `onValueChange` で null チェック済み
-  - `localapp/src/components/capture/ProfileEditor.tsx` を新規作成
-    - 2 カラムグリッドレイアウト
-    - 編集項目: ページ送りキー（Select）、待機時間（Input number）、ウィンドウタイトルキーワード、プロセス名、クリック位置（Select）、最前面化（Switch）
-    - 「デフォルトに戻す」ボタンで resetProfile() を実行
-    - `hasCustom` でカスタム値適用中かどうかを表示
-  - `localapp/src/views/CaptureView.tsx` をリファクタ
-    - プロファイル設定セクション（ProfileSelector + ProfileEditor）とキャプチャテストセクションを上下に配置
-    - `useEffect` で `fetchProfiles()` を呼び出し
-  - 既存ファイルに丁寧なコメント追加: `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx`
+  - `localapp/src-tauri/src/models/mod.rs` — 新規作成（`pub mod capture_profile;`）
+  - `localapp/src-tauri/src/commands/capture.rs` — `get_builtin_profiles` コマンド追加
+    - `CaptureProfile::builtin_profiles()` → `ProfileEntry::from()` → JSON 配列を返却
+  - `localapp/src-tauri/src/lib.rs` — `get_builtin_profiles` を `invoke_handler` に登録
+  - `localapp/src-tauri/src/main.rs` — 詳細コメントを追加
+  - `localapp/src-tauri/src/commands/mod.rs` — 詳細コメントを追加
+- フロントエンド側
+  - `localapp/src/store/profileStore.ts` — 新規作成（Zustand ストア）
+    - `builtinProfiles`, `customProfiles`, `selectedProfileKey` を管理
+    - `fetchProfiles()`: Rust `get_builtin_profiles` を呼び出して初期化
+    - `selectProfile()`, `updateCustomProfile()`, `resetProfile()`, `getEffectiveProfile()`
+  - `localapp/src/components/capture/ProfileSelector.tsx` — 新規作成
+    - shadcn/ui Select を使用したドロップダウン型セレクタ
+    - `builtinProfiles` から選択肢を動的生成
+  - `localapp/src/components/capture/ProfileEditor.tsx` — 新規作成
+    - ページ送りキー、待機時間、ウィンドウタイトル、プロセス名、クリック位置、最前面化フラグの編集 UI
+    - 「デフォルトに戻す」ボタンで `resetProfile()` を呼び出し
+    - 2 カラムグリッドレイアウトでフォームを配置
+  - `localapp/src/views/CaptureView.tsx` — リファクタ
+    - `ProfileSelector` + `ProfileEditor` + キャプチャテスト UI を統合
+    - `useEffect` で `fetchProfiles()` を呼び出し、起動時にプロファイルを取得
+    - セクション分割: キャプチャ設定（上段）/ キャプチャテスト（下段）
+  - 既存ファイルへの丁寧なコメント追加
+    - `App.tsx`, `navigationStore.ts`, `MainLayout.tsx`, `Sidebar.tsx`
 - ビルド確認
-  - `cargo check`: 成功（`std::collections::HashMap` の unused import warning のみ）
+  - `cargo check`: 成功（unused import warning のみ）
   - `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
-- トラブルシューティング
-  - TypeScript 型エラー: Select の `onValueChange` で `string | null` が `Partial<CaptureProfile>` の `string` フィールドに代入できない
-    - 原因: shadcn/ui の Radix Select が `onValueChange` の型を `string | null` にしていた
-    - 対策: `value && updateCustomProfile(...)` で null ガードを追加
-  - Rust コンパイルエラー: `main.rs` の `#![]` inner attribute が doc comment の後に配置されていた
-    - 原因: Rust では inner attribute はアイテムの先頭に配置する必要がある
-    - 対策: `///` の doc comment を `//` の通常コメントに変更して、inner attribute がファイル先頭になるようにした
-- Git コミットは未実施（マージフェーズで実施予定）
-  - ブランチ: `feature/002002-profile-management`
+- マージ日: 2026-08-16
+- ブランチ: `feature/002002-profile-management`
+
+---
 
 ## 002003 — 連続キャプチャ実行・進捗表示
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
-- 目的: 002001・002002 で実装した単発キャプチャ・プロファイル管理を拡張し、電子書籍のページを自動的にめくりながら連続キャプチャする機能を実装する
+- 目的: プロファイルに基づいて連続キャプチャを自動実行し、進捗を UI に表示する
 - 前提:
-  - 002001（画面キャプチャ方式調査・実装）が完了していること
   - 002002（アプリプロファイル管理 UI）が完了していること
-  - feature/002003-continuous-capture ブランチを作成済みであること
+  - feature/002003-continuous-capture ブランチを作成済み
 - 変更内容:
-  1. `localapp/src-tauri/Cargo.toml` — `tokio`, `enigo` crate を追加
-  2. `localapp/src-tauri/src/commands/capture.rs` — `start_continuous_capture`, `stop_continuous_capture`, `ProgressPayload` を追加
-  3. `localapp/src-tauri/src/lib.rs` — 新規コマンドを invoke_handler に登録
-  4. `localapp/src/store/captureStore.ts` — 新規作成（連続キャプチャ状態管理の Zustand ストア）
-  5. `localapp/src/components/capture/CaptureProgress.tsx` — 新規作成（進捗バー・ログ表示コンポーネント）
-  6. `localapp/src/views/CaptureView.tsx` — 連続キャプチャ開始/停止ボタン・進捗表示を統合
+  1. `localapp/src-tauri/Cargo.toml` — `enigo` crate を追加（ページ送りキー入力用）
+  2. `localapp/src-tauri/src/commands/capture.rs` — 連続キャプチャコマンド群を追加
+  3. `localapp/src/store/captureStore.ts` — 連続キャプチャ状態を管理する Zustand ストア
+  4. `localapp/src/components/capture/CaptureProgress.tsx` — 進捗表示 UI
+  5. `localapp/src/views/CaptureView.tsx` — 連続キャプチャ UI を統合
 - 実施コマンド:
-  1. `cargo check`（Rust 側コンパイル確認）
-  2. `npm run build`（フロントエンドビルド確認）
-  3. `npm run tauri dev`（起動確認）
+  1. `cargo add enigo`
+  2. `cargo check`
+  3. `npm run build`
+  4. `npm run tauri dev`
 - 想定される結果や注意点:
-  - `enigo` crate は macOS で Accessibility 権限を必要とする可能性がある
-  - 画像差分検出の MSE 閾値は環境依存のため、プロファイルのパラメータとして調整可能にする
-  - `tokio` + `screenshots` crate の組み合わせでブロッキング処理の扱いに注意
-  - 連続キャプチャ中にアプリを閉じた場合のクリーンアップは今回のスコープ外（将来対応）
+  - `enigo` crate は macOS で Accessibility 権限が必要
+  - バックグラウンドスレッドでのキャプチャループを実装
+  - MSE（平均二乗誤差）によるページ遷移検出
+  - 画像保存先: `dirs::picture_dir()/BookCapture/<書籍タイトル>/`
 
 ### 【実施実績】
 
-- `cargo add enigo` で enigo v0.6.1 を追加（tokio は std::thread::spawn で代替のため不要）
-- `localapp/src-tauri/src/commands/capture.rs` に連続キャプチャコマンド群を実装
-  - `ProgressPayload`, `start_continuous_capture`, `stop_continuous_capture`, `run_continuous_capture_loop`
-  - `capture_screen_raw`, `calculate_mse`, `turn_page`, `emit_progress`, `create_capture_folder`
-  - 停止フラグ・実行中フラグを `OnceLock<Arc<AtomicBool>>` でグローバル管理
-  - MSE 閾値 1000.0 で画像差分検出（フルHD経験値）
-  - 保存先: `dirs::picture_dir()/BookCapture/<book_title>/`（連番 `001.png`〜）
-- enigo 0.6.1 API 対応で 7 個のコンパイルエラーを修正
+- `cargo add enigo` で enigo v0.6.1 を追加
+- `localapp/src-tauri/src/commands/capture.rs` に以下を実装
+  - `ProgressPayload` — 進捗通知用イベントペイロード（current, total, status, message, capture_folder）
+  - `start_continuous_capture()` — 連続キャプチャ開始コマンド
+  - `stop_continuous_capture()` — 連続キャプチャ停止コマンド
+  - `run_continuous_capture_loop()` — バックグラウンドスレッドでのキャプチャループ
+    - 「キャプチャ → MSE差分検出 → PNG保存 → ページ送り（enigo）→ 待機」のループ
+    - `std::sync::OnceLock<Arc<AtomicBool>>` でグローバル停止フラグ・実行中フラグを管理
+    - MSE 閾値 1000.0 でページ遷移判定
+    - `tauri::Emitter` で `capture-progress` イベントをフロントエンドに送信
+  - `capture_screen_raw()` — 生スクリーンショット取得（PNGバイト列）
+  - `calculate_mse()` — 2枚のPNG間の平均二乗誤差を計算
+  - `turn_page()` — enigo でページ送りキー入力（right/left/space）
+  - `emit_progress()` — 進捗イベント送信ヘルパー
+  - `create_capture_folder()` — 保存先フォルダ作成（BookCapture/<タイトル>/）
+- コンパイルエラー修正（7 errors → 0）
   - `use tauri::Emitter;` を追加
-  - `Enigo::new(&Settings::default()).unwrap()` に変更
-  - `key_click` → `key(key, Direction::Click)` に変更、`Keyboard` trait を use
-- フロントエンド実装
-  - `captureStore.ts` — Zustand ストア + `listen("capture-progress")` イベントリスナー
-  - `CaptureProgress.tsx` — ステータスバッジ + 進捗バー + メッセージ表示
-  - `CaptureView.tsx` — 書籍タイトル入力 + 開始/停止ボタン + 進捗表示統合
-- `cargo check`: エラー0（unused import warning 1個のみ）
+  - `Enigo::new(&Settings::default()).unwrap()`, `key(key, Direction::Click)` に修正
+  - `use enigo::{Enigo, Key, Keyboard, Settings, Direction};` に変更
+- `localapp/src/store/captureStore.ts` — Zustand ストア + `listen("capture-progress")` イベントリスナー
+- `localapp/src/components/capture/CaptureProgress.tsx` — ステータスバッジ + 進捗バー + メッセージ表示
+- `localapp/src/views/CaptureView.tsx` — 書籍タイトル入力 + 連続キャプチャ開始/停止ボタン
+- `cargo check`: エラー0
 - `npm run build`: 成功
-- ブランチ `feature/002003-continuous-capture` を main にマージ（Fast-forward）
+- ブランチ: `feature/002003-continuous-capture` → main マージ
 - コミット: `3bce557`
 
 ---
@@ -366,7 +181,7 @@
 ### 【実施予定】
 
 - 日時: 2026-08-16
-- 目的: 連続キャプチャ完了後、保存された画像フォルダを管理し、トリミングタブへの連携を実現する
+- 目的: キャプチャ結果をフォルダで管理し、画像一覧表示・フォルダを開く・トリミングタブ連携を実現する
 - 前提:
   - 002003（連続キャプチャ実行・進捗表示）が完了していること
   - feature/002004-capture-folder-management ブランチを作成済みであること
@@ -419,5 +234,37 @@
   - `npm run tauri dev`: 起動成功
     - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
     - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
-- Git コミット未実施（マージフェーズで実施予定）
-  - ブランチ: `feature/002004-capture-folder-management`
+- ブランチ: `feature/002004-capture-folder-management` → main にマージ（Fast-forward）
+- コミット: `b7c9946` — 002004: キャプチャ画像のフォルダ管理実装
+
+---
+
+## 002005 — ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: プロファイルで指定されたウィンドウのみをキャプチャし、外枠を除外して書籍コンテンツ部分だけを切り出す
+- 前提:
+  - 002004（キャプチャ画像のフォルダ管理）が完了していること
+  - feature/002005-window-capture ブランチを作成済みであること
+- 変更内容:
+  1. `localapp/src-tauri/src/models/capture_profile.rs` — `crop_insets: Insets { top, right, bottom, left }` を追加
+  2. `localapp/src-tauri/src/commands/capture.rs` — `capture_by_window_title()` を新規実装、`capture_screen()` / `capture_screen_raw()` をプロファイル受け取りに変更
+  3. `localapp/src-tauri/src/lib.rs` — シグネチャ変更確認
+  4. `localapp/src/components/capture/ProfileEditor.tsx` — トリミング値編集 UI を追加
+  5. `localapp/src/views/CaptureView.tsx` — `capture_screen` 呼び出し時にプロファイルを渡すよう変更
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+  3. `npm run tauri dev`
+- 想定される結果や注意点:
+  - `screenshots::Window` API でウィンドウ指定キャプチャ
+  - `crop_insets` は macOS/Windows で異なる可能性があるためプロファイルで設定可能にする
+  - トリミング後の画像が0pxにならないようバリデーション必須
+  - Kindle for Mac のタイトルバー・ツールバー高さは約42px（環境による可能性あり）
+
+### 【実施実績】
+
+（実装後に追記）
+

@@ -3,7 +3,7 @@
  *
  * 【役割】
  * 選択中のプロファイルの詳細設定を表示・編集するパネル。
- * ページ送り待機時間、ウィンドウタイトル、プロセス名などを
+ * ページ送り待機時間、ウィンドウタイトル、プロセス名、トリミング設定などを
  * 入力フォームやトグルで編集できる。
  *
  * 【customProfiles との連携】
@@ -18,6 +18,7 @@
  * - processName: テキスト入力
  * - clickPosition: セレクト（center / top_left）
  * - useBringToTop: トグル（Switch）
+ * - cropInsets: コンテンツ領域トリミング（上/右/下/左 のピクセル入力）
  */
 
 import { useState, useEffect } from "react";
@@ -198,6 +199,94 @@ export function ProfileEditor() {
           <Label htmlFor="bring-to-top" className="text-xs">
             キャプチャ前に最前面へ持ってくる
           </Label>
+        </div>
+      </div>
+
+      {/* コンテンツ領域トリミング設定 */}
+      <div className="space-y-3 pt-2 border-t">
+        <div>
+          <h4 className="text-sm font-semibold">コンテンツ領域トリミング</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            外枠・タイトルバーを除外して書籍コンテンツ部分だけを切り出します（ピクセル単位）
+          </p>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {/* 上 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">上 (px)</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={String(profile.cropInsets?.top ?? 0)}
+              onChange={(e) => {
+                const num = parseInt(e.target.value, 10);
+                updateCustomProfile(selectedProfileKey, {
+                  cropInsets: {
+                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+                    top: isNaN(num) ? 0 : num,
+                  },
+                });
+              }}
+            />
+          </div>
+          {/* 右 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">右 (px)</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={String(profile.cropInsets?.right ?? 0)}
+              onChange={(e) => {
+                const num = parseInt(e.target.value, 10);
+                updateCustomProfile(selectedProfileKey, {
+                  cropInsets: {
+                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+                    right: isNaN(num) ? 0 : num,
+                  },
+                });
+              }}
+            />
+          </div>
+          {/* 下 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">下 (px)</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={String(profile.cropInsets?.bottom ?? 0)}
+              onChange={(e) => {
+                const num = parseInt(e.target.value, 10);
+                updateCustomProfile(selectedProfileKey, {
+                  cropInsets: {
+                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+                    bottom: isNaN(num) ? 0 : num,
+                  },
+                });
+              }}
+            />
+          </div>
+          {/* 左 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">左 (px)</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={String(profile.cropInsets?.left ?? 0)}
+              onChange={(e) => {
+                const num = parseInt(e.target.value, 10);
+                updateCustomProfile(selectedProfileKey, {
+                  cropInsets: {
+                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+                    left: isNaN(num) ? 0 : num,
+                  },
+                });
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

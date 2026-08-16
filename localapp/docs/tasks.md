@@ -102,6 +102,8 @@
 | 002002 | アプリプロファイル管理 UI | 2026-08-15 | 2026-08-16 | 実装 |
 | 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 | 2026-08-16 | 実装 |
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 | 2026-08-16 | 実装 |
+| 002005 | ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング | 2026-08-16 | | 実装 |
+| 002007 | ウィンドウ指定キャプチャ実装のコンパイルエラー修正 | 2026-08-16 | | 不具合修正 |
 
 ### 002001 画面キャプチャ方式調査・実装
 
@@ -376,6 +378,76 @@
     - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
     - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
 - ブランチ: `feature/002004-capture-folder-management`
+
+### 002005 ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
+
+【計画】
+
+1. **プロファイルにトリミングパラメータ追加**
+   - `CaptureProfile` に `crop_insets: Insets { top, right, bottom, left }` を追加
+   - Kindle for Mac 用デフォルト値: top=42, right=0, bottom=0, left=0（メニューバー分）
+   - `ProfileEditor.tsx` にトリミング値編集UIを追加
+   - 他プロファイルは0でデフォルト（既存動作維持）
+
+2. **Rust側: ウィンドウ指定キャプチャ＋トリミング**
+   - `use screenshots::Window;` を追加
+   - `capture_by_window_title(keyword: &str) -> Result<DynamicImage, String>` 新規実装
+   - `Window::all()` でウィンドウ一覧取得 → `title.to_lowercase().contains(keyword)` で部分一致
+   - 一致したウィンドウを `capture()` でキャプチャ
+   - 一致しなければ `Screen::all()[0].capture()` で全画面にフォールバック
+   - `capture_screen()` / `capture_screen_raw()` を `profile: CaptureProfile` を受け取るよう変更
+   - キャプチャ後、`crop_insets` を適用して `image::imageops::crop` で切り出し
+   - トリミング値が画像範囲を超える場合は自動調整（バリデーション）
+
+3. **シグネチャ変更**
+   - `capture_screen(profile: CaptureProfile) -> Result<CaptureResult, String>`
+   - `capture_screen_raw(profile: CaptureProfile) -> Result<Vec<u8>, String>`
+   - `lib.rs` の `invoke_handler` は変更不要（プロファイルはTauriが自動シリアライズ）
+
+4. **フロントエンド連携**
+   - `CaptureView.tsx` の `invoke("capture_screen")` を `invoke("capture_screen", { profile: effectiveProfile })` に変更
+   - `start_continuous_capture` は既に `profile` を渡しているため変更不要
+   - `ProfileEditor.tsx` にトリミングオフセットの数値入力欄を追加
+
+5. **ビルド・動作確認**
+   - `cargo check` → `npm run build` → `npm run tauri dev`
+   - Kindle for Mac を開いた状態でキャプチャテスト
+   - 書籍コンテンツ部分だけがキャプチャされることを確認（外枠なし）
+
+6. **想定される注意点**
+   - `crop_insets` の値は macOS / Windows で異なる可能性がある
+   - ユーザーが Kindle アプリの UI レイアウト変更（フルスクリーン等）した場合、トリミング値の調整が必要
+   - トリミング後の画像が0pxにならないようバリデーション必須
+   - ウィンドウ検索で `to_lowercase()` して大小文字を区別しない
+
+【実施結果】
+- 2026-08-16: 実装途中で2つのコンパイルエラーが発生
+  1. `use screenshots::Window` → `Window` struct が `screenshots` v0.8.10 でエクスポートされていない
+  2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
+- エラー修正は 002007 として別タスクで対応
+
+### 002007 ウィンドウ指定キャプチャ実装のコンパイルエラー修正
+
+【計画】
+1. `use screenshots::Window` を削除（`Window` struct は `screenshots` v0.8.10 で存在しない）
+2. `capture_by_window_title` 関数を削除（ウィンドウ名検索は現時点で `screenshots` crate では不可）
+3. `capture_screen_raw` をシンプル化し、全画面キャプチャ取得後に `crop_insets` でトリミングする方式に統一
+4. `apply_crop_insets` で `cropped.as_flat_samples().samples` → `cropped.to_image().as_raw()` に修正（`SubImage` → `ImageBuffer` 変換）
+5. `cargo check` でエラー0を確認
+6. `npm run build` でフロントエンドビルド確認
+7. 【002005の備考】`screenshots` crate でのウィンドウ指定キャプチャは将来 AppleScript 等で拡張を検討
+
+【実施結果】
+
+### 002006（将来タスク）ウィンドウ最前面化・クリック自動化
+
+【計画】（検討事項）
+- `core-foundation` / `cocoa` crate で macOS ウィンドウ操作
+- プロファイルの `bring_to_front` フラグ対応
+- `click_position` でキャプチャ前に自動クリック
+- ただし macOS の Accessibility/画面収録権限が必要になる可能性
+
+【実施結果】
 
 ---
 
