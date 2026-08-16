@@ -100,7 +100,7 @@
 |---|---|---|---|---|
 | 002001 | 画面キャプチャ方式調査・実装 | 2026-08-15 | 2026-08-16 | 調査/実装 |
 | 002002 | アプリプロファイル管理 UI | 2026-08-15 | 2026-08-16 | 実装 |
-| 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 |  | 実装 |
+| 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 | 2026-08-16 | 実装 |
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 |  | 実装 |
 
 ### 002001 画面キャプチャ方式調査・実装
@@ -278,6 +278,29 @@
    - `screenshots` crate + `tokio` の組み合わせでブロッキング処理の扱いに注意（`spawn_blocking` の検討）
 
 【実施結果】
+- 計画①: enigo crate を追加（tokio は不要だったため追加せず→`std::thread::spawn`で対応）
+  - `cargo add enigo` で enigo v0.6.1 を追加
+- 計画②: Rust 側連続キャプチャコマンド実装完了
+  - `localapp/src-tauri/src/commands/capture.rs` に `ProgressPayload`, `start_continuous_capture`, `stop_continuous_capture`, `run_continuous_capture_loop`, `capture_screen_raw`, `calculate_mse`, `turn_page`, `emit_progress`, `create_capture_folder` を実装
+  - `std::sync::OnceLock<Arc<AtomicBool>>` でグローバル停止フラグ・実行中フラグを管理
+  - バックグラウンドスレッドでキャプチャループを実行（`std::thread::spawn`）
+  - `tauri::Emitter` を use して `app_handle.emit("capture-progress", payload)` で進捗通知
+  - MSE 閾値 1000.0 で画像差分検出（フルHD画面での経験値）
+  - 保存先: `dirs::picture_dir()/BookCapture/<book_title>/`（連番 `001.png` ~）
+- capture.rs コンパイルエラー修正（7 errors → 0）
+  - `use tauri::Emitter;` を追加（emit メソッド用）
+  - `Enigo::new(&Settings::default()).unwrap()` に修正（enigo 0.6.1 API対応）
+  - `turn_page` を `key_click` → `key(key, Direction::Click)` に変更（enigo 0.6.1 API対応）
+  - `use enigo::{Enigo, Key, Keyboard, Settings, Direction};` に変更（Keyboard trait が必要）
+- 計画③: フロントエンド実装完了
+  - `captureStore.ts` — Zustand ストア + `listen("capture-progress")` イベントリスナー
+  - `CaptureProgress.tsx` — ステータスバッジ + 進捗バー + メッセージ表示（Apple HIG 風配色）
+  - `CaptureView.tsx` — 書籍タイトル入力 + 連続キャプチャ開始/停止ボタン + 進捗表示統合
+- 計画④: ビルド確認完了
+  - `cargo check`: エラー0（unused import warning 1個のみ、別ファイル）
+  - `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- ブランチ: `feature/002003-continuous-capture` → main にマージ（Fast-forward）
+- コミット: `3bce557` — 002003: 連続キャプチャ実行・進捗表示 UI 実装
 
 ### 002004 キャプチャ画像のフォルダ管理
 
