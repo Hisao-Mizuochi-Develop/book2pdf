@@ -6,8 +6,10 @@ import { Camera, Play, Square } from "lucide-react";
 import { ProfileSelector } from "@/components/capture/ProfileSelector";
 import { ProfileEditor } from "@/components/capture/ProfileEditor";
 import { CaptureProgress } from "@/components/capture/CaptureProgress";
+import { CaptureResultGallery } from "@/components/capture/CaptureResultGallery";
 import { useProfileStore } from "@/store/profileStore";
 import { useCaptureStore } from "@/store/captureStore";
+import { useNavigationStore } from "@/store/navigationStore";
 
 /**
  * CaptureResult: Rust 側 capture_screen コマンドの戻り値型
@@ -59,9 +61,14 @@ export function CaptureView() {
     totalPages,
     status,
     message: captureMessage,
+    lastCaptureFolder,
+    lastCaptureImageCount,
     startCapture,
     stopCapture,
   } = useCaptureStore();
+
+  // ナビゲーションストアから画面遷移アクションを取得（トリム画面連携用）
+  const setView = useNavigationStore((state) => state.setView);
 
   // 現在選択中の有効プロファイルを取得
   const selectedProfileKey = useProfileStore((state) => state.selectedProfileKey);
@@ -125,6 +132,31 @@ export function CaptureView() {
    */
   async function handleStopCapture() {
     await stopCapture();
+  }
+
+  /**
+   * キャプチャフォルダを OS のファイルマネージャーで開く
+   *
+   * Rust 側 `open_capture_folder` を invoke して、macOS では Finder、
+   * Windows ではエクスプローラーでフォルダを開く。
+   */
+  async function handleOpenFolder() {
+    if (!lastCaptureFolder) return;
+    try {
+      await invoke("open_capture_folder", { folderPath: lastCaptureFolder });
+    } catch (err) {
+      console.error("フォルダを開けません:", err);
+    }
+  }
+
+  /**
+   * トリム画面に遷移する
+   *
+   * navigationStore の `setView("trim")` を呼び出して画面を切り替える。
+   * TrimView 側はストアに保存された lastCaptureFolder を参照して自動読み込みする。
+   */
+  function handleGoTrim() {
+    setView("trim");
   }
 
   return (
@@ -245,6 +277,24 @@ export function CaptureView() {
           </div>
         )}
       </section>
+
+      {/* ── キャプチャ結果セクション（002004）──────────────────────── */}
+      {lastCaptureFolder && !isContinuousCapturing && (
+        <section className="space-y-4 rounded-lg border bg-card p-5 shadow-sm">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">キャプチャ結果</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              キャプチャした画像を確認し、次のステップに進みます。
+            </p>
+          </div>
+          <CaptureResultGallery
+            folderPath={lastCaptureFolder}
+            imageCount={lastCaptureImageCount}
+            onOpenFolder={handleOpenFolder}
+            onGoTrim={handleGoTrim}
+          />
+        </section>
+      )}
     </div>
   );
 }

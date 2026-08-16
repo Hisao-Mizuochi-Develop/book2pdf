@@ -410,30 +410,8 @@ fn emit_progress(
     );
 }
 
-/// キャプチャ画像の保存先フォルダを作成する
-///
-/// `dirs::picture_dir()` で取得した Pictures フォルダ配下に
-/// `BookCapture/<book_title>/` フォルダを作成する。
-///
-/// # 引数
-/// - `book_title`: 書籍タイトル（`""` 時は `"untitled"` を使用）
-///
-/// # 戻り値
-/// - `Ok(String)`: 作成したフォルダの絶対パス
-fn create_capture_folder(book_title: &str) -> Result<String, String> {
-    let pictures_dir = dirs::picture_dir().ok_or("Pictures ディレクトリを取得できません")?;
-    let folder_name = if book_title.trim().is_empty() {
-        "untitled"
-    } else {
-        book_title.trim()
-    };
-    let output_dir = pictures_dir.join("BookCapture").join(folder_name);
-    std::fs::create_dir_all(&output_dir)
-        .map_err(|e| format!("フォルダ作成エラー ({}): {}", output_dir.display(), e))?;
-    Ok(output_dir.to_string_lossy().to_string())
-}
-
 /// スクリーンショット結果をフロントエンドに返す構造体
+
 #[derive(serde::Serialize)]
 pub struct CaptureResult {
     /// Base64 エンコードされた PNG 画像データ（data URL 用）
@@ -525,3 +503,128 @@ pub fn get_builtin_profiles() -> Result<Vec<ProfileEntry>, String> {
 
     Ok(entries)
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 002004: キャプチャ画像のフォルダ管理
+// ═════════════════════════════════════════════════════════════════════════════
+
+/// キャプチャ画像の保存先フォルダを作成する（重複回避付き）
+///
+/// `dirs::picture_dir()` で取得した Pictures フォルダ配下に
+/// `BookCapture/<book_title>/` フォルダを作成する。
+/// 同名フォルダが既存の場合は `_1`, `_2`, ... の連番サフィックスを付与する（上限99）。
+///
+/// # 引数
+/// - `book_title`: 書籍タイトル（`""` 時は `"untitled"` を使用）
+///
+/// # 戻り値
+/// - `Ok(String)`: 作成したフォルダの絶対パス
+fn create_capture_folder(book_title: &str) -> Result<String, String> {
+    let pictures_dir = dirs::picture_dir().ok_or("Pictures ディレクトリを取得できません")?;
+    let folder_name = if book_title.trim().is_empty() {
+        "untitled"
+    } else {
+        book_title.trim()
+    };
+
+    // まず元の名前で試行
+    let mut output_dir = pictures_dir.join("BookCapture").join(folder_name);
+    if !output_dir.exists() {
+        std::fs::create_dir_all(&output_dir)
+            .map_err(|e| format!("フォルダ作成エラー ({}): {}", output_dir.display(), e))?;
+        return Ok(output_dir.to_string_lossy().to_string());
+    }
+
+    // 重複している場合は _1, _2, ... を試行（上限99）
+    for i in 1..=99 {
+        let suffixed_name = format!("{}_{}", folder_name, i);
+        output_dir = pictures_dir.join("BookCapture").join(suffixed_name);
+        if !output_dir.exists() {
+            std::fs::create_dir_all(&output_dir)
+                .map_err(|e| format!("フォルダ作成エラー ({}): {}", output_dir.display(), e))?;
+            return Ok(output_dir.to_string_lossy().to_string());
+        }
+    }
+
+    Err("フォルダ名の重複が多すぎます（上限99）。手動で整理してください。".to_string())
+}
+
+/// 指定フォルダ内の PNG 画像ファイル一覧を取得する
+///
+/// ファイル名順にソートして返却する。非 PNG ファイルは除外する。
+///
+/// # 引数
+/// - `folder_path`: 対象フォルダの絶対パス
+///
+/// # 戻り値
+/// - `Ok(Vec<String>)`: PNG 画像ファイル名の配列（例: `["001.png", "002.png"]`）
+/// - `Err(String)`: フォルダ読み込みエラー時のメッセージ
+#[tauri::command]
+pub fn list_capture_images(folder_path: String) -> Result<Vec<String>, String> {
+    let path = std::path::Path::new(&folder_path);
+    if !path.is_dir() {
+        return Err(format!("指定されたパスはフォルダではありません: {}", folder_path));
+    }
+
+    let mut entries = std::fs::read_dir(path)
+        .map_err(|e| format!("フォルダ読み込みエラー: {}", e))?
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            if path.is_file() {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                if ext.eq_ignore_ascii_case("png") {
+                    return path.file_name().and_then(|n| n.to_str()).map(String::from);
+                }
+            }
+            None
+        })
+        .collect::<Vec<String>>();
+
+    // ファイル名順でソート
+    entries.sort();
+
+    Ok(entries)
+}
+
+/// 指定パスの画像を Base64 エンコードして返却する
+///
+/// フロントエンドでのサムネイル表示に使用する。
+/// ファイルが大きい場合もそのまま読み込む（将来リサイズ対応を検討）。
+///
+/// # 引数
+/// - `filepath`: 画像ファイルの絶対パス
+///
+/// # 戻り値
+/// - `Ok(String)`: Base64 エンコードされた PNG 画像データ
+/// - `Err(String)`: ファイル読み込みエラー時のメッセージ
+#[tauri::command]
+pub fn get_capture_image(filepath: String) -> Result<String, String> {
+    let bytes = std::fs::read(&filepath)
+        .map_err(|e| format!("ファイル読み込みエラー ({}): {}", filepath, e))?;
+    let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
+    Ok(base64)
+}
+
+/// 保存フォルダを OS のファイルマネージャーで開く
+///
+/// `open` crate を使用して、macOS では Finder、Windows ではエクスプローラー、
+/// Linux ではデフォルトのファイルマネージャーでフォルダを開く。
+///
+/// # 引数
+/// - `folder_path`: 開くフォルダの絶対パス
+///
+/// # 戻り値
+/// - `Ok(())`: フォルダを開く指示成功
+/// - `Err(String)`: フォルダが存在しない、または開く際のエラー
+#[tauri::command]
+pub fn open_capture_folder(folder_path: String) -> Result<(), String> {
+    let path = std::path::Path::new(&folder_path);
+    if !path.is_dir() {
+        return Err(format!("指定されたパスはフォルダではありません: {}", folder_path));
+    }
+    open::that(&folder_path)
+        .map_err(|e| format!("フォルダを開けません ({}): {}", folder_path, e))?;
+    Ok(())
+}
+

@@ -63,10 +63,14 @@ export interface CaptureState {
   status: CaptureStatus;
   /** ユーザー向けメッセージ */
   message: string;
-  /** キャプチャ画像の保存先フォルダパス */
+  /** キャプチャ画像の保存先フォルダパス（進捗イベントから受信） */
   captureFolder: string | null;
   /** 進捗イベントのリスナー解除関数（停止時に呼び出す） */
   unlistenFn: UnlistenFn | null;
+  /** 最後にキャプチャが完了したフォルダパス（結果表示・トリム画面連携用） */
+  lastCaptureFolder: string | null;
+  /** 最後にキャプチャした画像枚数 */
+  lastCaptureImageCount: number;
 
   /** 連続キャプチャ開始（リスナー登録 + Rust コマンド呼び出し） */
   startCapture: (profile: unknown, bookTitle: string) => Promise<void>;
@@ -78,6 +82,8 @@ export interface CaptureState {
   setUnlisten: (fn: UnlistenFn | null) => void;
   /** エラー状態を設定する */
   setError: (message: string) => void;
+  /** 最後のキャプチャフォルダと画像枚数を手動設定する */
+  setLastCaptureResult: (folder: string | null, count: number) => void;
 }
 
 /**
@@ -95,6 +101,8 @@ export const useCaptureStore = create<CaptureState>((set, get) => ({
   message: "",
   captureFolder: null,
   unlistenFn: null,
+  lastCaptureFolder: null,
+  lastCaptureImageCount: 0,
 
   /**
    * 連続キャプチャを開始する
@@ -184,6 +192,13 @@ export const useCaptureStore = create<CaptureState>((set, get) => ({
         unlisten();
         set({ unlistenFn: null });
       }
+      // キャプチャ完了・停止時は lastCaptureFolder を保存（トリム画面連携用）
+      if (payload.captureFolder) {
+        set({
+          lastCaptureFolder: payload.captureFolder,
+          lastCaptureImageCount: payload.current,
+        });
+      }
     }
   },
 
@@ -206,5 +221,19 @@ export const useCaptureStore = create<CaptureState>((set, get) => ({
       status: "error",
       message,
       isCapturing: false,
+    }),
+
+  /**
+   * 最後のキャプチャ結果を手動設定する
+   *
+   * トリム画面などから直接呼び出し、lastCaptureFolder と lastCaptureImageCount を更新する。
+   *
+   * @param folder - キャプチャフォルダパス、または null
+   * @param count - キャプチャした画像枚数
+   */
+  setLastCaptureResult: (folder, count) =>
+    set({
+      lastCaptureFolder: folder,
+      lastCaptureImageCount: count,
     }),
 }));

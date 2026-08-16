@@ -101,7 +101,7 @@
 | 002001 | 画面キャプチャ方式調査・実装 | 2026-08-15 | 2026-08-16 | 調査/実装 |
 | 002002 | アプリプロファイル管理 UI | 2026-08-15 | 2026-08-16 | 実装 |
 | 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 | 2026-08-16 | 実装 |
-| 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 |  | 実装 |
+| 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 | 2026-08-16 | 実装 |
 
 ### 002001 画面キャプチャ方式調査・実装
 
@@ -305,14 +305,77 @@
 ### 002004 キャプチャ画像のフォルダ管理
 
 【計画】
-- 002001 で追加した `capture.rs` に保存処理を追加
-- タイトル名でフォルダ作成 → 連番PNG保存（`001.png, 002.png...`）
-- 保存パスはフロントエンド通知時に含め、`navigationStore` でトリミングタブへの連携データとして保持
-- タイトル名で出力フォルダ作成
-- 連番 PNG 保存
-- キャプチャ完了後、トリミングタブに自動引き継ぎ
+
+1. **Rust 側: フォルダ管理強化・画像一覧コマンド**
+   - `create_capture_folder()` に同名フォルダ重複回避を追加
+     - `BookCapture/<book_title>/` が既存の場合 → `BookCapture/<book_title>_1/`, `_2/` ... と連番サフィックスを付与（上限99）
+   - `list_capture_images` コマンドを新規追加
+     - 指定フォルダパス内の PNG 画像ファイル一覧を取得
+     - ファイル名順でソートして返却（`["001.png", "002.png", ...]`）
+   - `get_capture_image` コマンドを新規追加
+     - 指定パスの画像を Base64 エンコードして返却（サムネイル表示用）
+   - `open_capture_folder` コマンドを新規追加
+     - `open` crate で保存フォルダを OS のファイルマネージャーで開く
+
+2. **フロントエンド: キャプチャ結果表示 UI**
+   - `CaptureView.tsx` に「キャプチャ結果」セクションを追加
+     - キャプチャ完了後、保存フォルダパスと画像枚数を表示
+     - 保存フォルダを開くボタン、トリミングタブへ遷移するボタン
+   - `CaptureResultGallery.tsx`（新規作成）
+     - 保存フォルダ内の画像サムネイル一覧をグリッド表示
+     - `list_capture_images` → `get_capture_image` で画像を取得して表示
+
+3. **フロントエンド: トリミングタブ連携**
+   - `captureStore.ts` に完了状態のキャプチャ結果情報を保持（completed/stopped 時）
+     - `lastCaptureFolder: string | null`
+     - `lastCaptureImageCount: number`
+   - `CaptureView.tsx` に「トリミングへ進む」ボタンを追加（完了時のみ表示）
+     - クリックで `navigationStore.setView("trim")` でトリミングタブに遷移
+   - `TrimView.tsx` にキャプチャ結果の自動引き継ぎ対応
+     - `captureStore.lastCaptureFolder` が存在する場合、自動的にフォルダを読み込んでサムネイル一覧を表示
+     - 「キャプチャ結果を読み込む」ボタンで手動読み込みも可能
+
+4. **コマンド登録・ビルド確認**
+   - `lib.rs` に `list_capture_images`, `get_capture_image`, `open_capture_folder` を invoke_handler に追加
+   - `cargo check`
+   - `npm run build`
+   - `npm run tauri dev`
+
+5. **想定される注意点**
+   - フォルダ名の重複回避で無限ループにならないよう上限（99）を設ける
+   - 画像一覧取得時、非画像ファイルを除外する
+   - Base64 エンコードで大きな画像のメモリ消費に注意（必要に応じてリサイズ対応を将来検討）
+   - macOS で `open` crate でフォルダを開く
 
 【実施結果】
+- 計画①: Rust 側フォルダ管理・画像取得コマンド実装完了
+  - `localapp/src-tauri/Cargo.toml` に `open` crate v5.3.0 を追加
+  - `create_capture_folder()`: 同名フォルダ重複回避を実装（`_1` 〜 `_99` サフィックス付与、上限 99）
+  - `list_capture_images(folder_path)`: 指定フォルダ内の PNG 画像一覧をファイル名順で返却
+  - `get_capture_image(filepath)`: 指定画像を読み込み、Base64 エンコードして返却
+  - `open_capture_folder(folder_path)`: `open` crate で OS ファイルマネージャーを起動
+  - `lib.rs` に `list_capture_images`, `get_capture_image`, `open_capture_folder` を `invoke_handler` に登録
+- 計画②: フロントエンド キャプチャ結果表示 UI 実装完了
+  - `captureStore.ts` — `lastCaptureFolder`, `lastCaptureImageCount`, `setLastCaptureResult` を追加
+    - `setProgress` の terminal state（completed / stopped / error）時に自動保存するよう更新
+  - `CaptureResultGallery.tsx` — 新規作成
+    - 先頭 10 枚まで `get_capture_image` でサムネイルを Base64 読み込み
+    - グリッドレイアウトでサムネイル表示（ホバー時にページ番号オーバーレイ）
+    - 「フォルダを開く」「トリミングへ進む」ボタン
+  - `CaptureView.tsx` — 「キャプチャ結果」セクションを追加
+    - `lastCaptureFolder && !isContinuousCapturing` の条件で表示
+    - 「フォルダを開く」→ `open_capture_folder` コマンド呼び出し
+    - 「トリミングへ進む」→ `navigationStore.setView("trim")` でタブ遷移
+- 計画③: トリミングタブ連携実装完了
+  - `TrimView.tsx` — `captureStore.lastCaptureFolder` を監視し、存在時に自動で `CaptureResultGallery` を表示
+  - キャプチャ結果なしの場合はプレースホルダメッセージを表示
+- 計画④: ビルド確認完了
+  - `cargo check`: コンパイル成功（error 0）
+  - `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+  - `npm run tauri dev`: 起動成功
+    - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
+    - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
+- ブランチ: `feature/002004-capture-folder-management`
 
 ---
 

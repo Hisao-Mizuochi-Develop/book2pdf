@@ -30,4 +30,6 @@ thiserror = "2.0.20"
 screenshots = "0.8.10"
 base64 = "0.23.1"
 enigo = "0.6.1"
+open = "5.3.0"
+
 

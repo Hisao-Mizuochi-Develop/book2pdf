@@ -42,6 +42,10 @@ pub fn run() {
             commands::capture::get_builtin_profiles,
             commands::capture::start_continuous_capture,
             commands::capture::stop_continuous_capture,
+            // 002004: キャプチャ画像のフォルダ管理
+            commands::capture::list_capture_images,
+            commands::capture::get_capture_image,
+            commands::capture::open_capture_folder,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

@@ -339,4 +339,85 @@
 
 ### 【実施実績】
 
+- `cargo add enigo` で enigo v0.6.1 を追加（tokio は std::thread::spawn で代替のため不要）
+- `localapp/src-tauri/src/commands/capture.rs` に連続キャプチャコマンド群を実装
+  - `ProgressPayload`, `start_continuous_capture`, `stop_continuous_capture`, `run_continuous_capture_loop`
+  - `capture_screen_raw`, `calculate_mse`, `turn_page`, `emit_progress`, `create_capture_folder`
+  - 停止フラグ・実行中フラグを `OnceLock<Arc<AtomicBool>>` でグローバル管理
+  - MSE 閾値 1000.0 で画像差分検出（フルHD経験値）
+  - 保存先: `dirs::picture_dir()/BookCapture/<book_title>/`（連番 `001.png`〜）
+- enigo 0.6.1 API 対応で 7 個のコンパイルエラーを修正
+  - `use tauri::Emitter;` を追加
+  - `Enigo::new(&Settings::default()).unwrap()` に変更
+  - `key_click` → `key(key, Direction::Click)` に変更、`Keyboard` trait を use
+- フロントエンド実装
+  - `captureStore.ts` — Zustand ストア + `listen("capture-progress")` イベントリスナー
+  - `CaptureProgress.tsx` — ステータスバッジ + 進捗バー + メッセージ表示
+  - `CaptureView.tsx` — 書籍タイトル入力 + 開始/停止ボタン + 進捗表示統合
+- `cargo check`: エラー0（unused import warning 1個のみ）
+- `npm run build`: 成功
+- ブランチ `feature/002003-continuous-capture` を main にマージ（Fast-forward）
+- コミット: `3bce557`
 
+---
+
+## 002004 — キャプチャ画像のフォルダ管理
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: 連続キャプチャ完了後、保存された画像フォルダを管理し、トリミングタブへの連携を実現する
+- 前提:
+  - 002003（連続キャプチャ実行・進捗表示）が完了していること
+  - feature/002004-capture-folder-management ブランチを作成済みであること
+- 変更内容:
+  1. `localapp/src-tauri/Cargo.toml` — `open` crate を追加（フォルダを OS で開くため）
+  2. `localapp/src-tauri/src/commands/capture.rs` — `create_capture_folder()` に重複回避を追加、`list_capture_images`, `get_capture_image`, `open_capture_folder` コマンドを新規追加
+  3. `localapp/src-tauri/src/lib.rs` — 新規コマンドを invoke_handler に登録
+  4. `localapp/src/store/captureStore.ts` — `lastCaptureFolder`, `lastCaptureImageCount` を追加
+  5. `localapp/src/views/CaptureView.tsx` — キャプチャ結果セクション（フォルダ表示・サムネイル・トリミング遷移ボタン）を追加
+  6. `localapp/src/components/capture/CaptureResultGallery.tsx` — 新規作成（画像サムネイルグリッド）
+  7. `localapp/src/views/TrimView.tsx` — キャプチャ結果の自動引き継ぎ対応
+- 実施コマンド:
+  1. `cargo check`（Rust 側コンパイル確認）
+  2. `npm run build`（フロントエンドビルド確認）
+  3. `npm run tauri dev`（起動確認）
+- 想定される結果や注意点:
+  - `open` crate でフォルダを開く際、OS ごとのコマンド差異を吸収する
+  - Base64 エンコードのメモリ消費に注意（大きな画像の場合）
+  - フォルダ名重複回避で無限ループにならないよう上限（99）を設ける
+
+### 【実施実績】
+
+- `localapp/src-tauri/Cargo.toml` — `open` crate v5.3.0 を追加
+  - フォルダを OS のファイルマネージャーで開くために使用
+- `localapp/src-tauri/src/commands/capture.rs` — フォルダ管理・画像取得コマンドを追加
+  - `create_capture_folder()`: 同名フォルダ重複回避を実装（`_1` 〜 `_99` サフィックス付与、上限 99）
+  - `list_capture_images(folder_path)`: 指定フォルダ内の PNG 画像一覧をファイル名順で返却
+  - `get_capture_image(filepath)`: 指定画像を読み込み、Base64 エンコードして返却（サムネイル表示用）
+  - `open_capture_folder(folder_path)`: `open` crate で OS ファイルマネージャーを起動
+- `localapp/src-tauri/src/lib.rs` — 新規コマンド `list_capture_images`, `get_capture_image`, `open_capture_folder` を `invoke_handler` に登録
+- `localapp/src/store/captureStore.ts` — キャプチャ結果状態を追加
+  - `lastCaptureFolder: string | null` — 最後のキャプチャ保存フォルダパス
+  - `lastCaptureImageCount: number` — 最後のキャプチャ画像枚数
+  - `setLastCaptureResult(folder, count)` — 完了時に状態を保存するアクション
+  - `setProgress` の terminal state（completed / stopped / error）時に `lastCaptureFolder` / `lastCaptureImageCount` を自動保存するよう更新
+- `localapp/src/components/capture/CaptureResultGallery.tsx` — 新規作成
+  - マウント時に `list_capture_images` で画像一覧を取得し、先頭 10 枚まで `get_capture_image` でサムネイルを Base64 読み込み
+  - グリッドレイアウトでサムネイル表示（ホバー時にページ番号オーバーレイ）
+  - 「フォルダを開く」「トリミングへ進む」ボタンを配置
+- `localapp/src/views/CaptureView.tsx` — キャプチャ結果セクションを追加
+  - `lastCaptureFolder && !isContinuousCapturing` の条件で `CaptureResultGallery` を表示
+  - 「フォルダを開く」→ `open_capture_folder` コマンド呼び出し
+  - 「トリミングへ進む」→ `navigationStore.setView("trim")` でタブ遷移
+- `localapp/src/views/TrimView.tsx` — キャプチャ結果自動引き継ぎ対応
+  - `captureStore.lastCaptureFolder` を監視し、存在時に自動で `CaptureResultGallery` を表示
+  - キャプチャ結果なしの場合はプレースホルダメッセージを表示
+- ビルド確認
+  - `cargo check`: コンパイル成功（error 0）
+  - `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+  - `npm run tauri dev`: 起動成功
+    - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
+    - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
+- Git コミット未実施（マージフェーズで実施予定）
+  - ブランチ: `feature/002004-capture-folder-management`
