@@ -103,7 +103,7 @@
 | 002003 | 連続キャプチャ実行・進捗表示 | 2026-08-15 | 2026-08-16 | 実装 |
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 | 2026-08-16 | 実装 |
 | 002005 | ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング | 2026-08-16 | | 実装 |
-| 002007 | ウィンドウ指定キャプチャ実装のコンパイルエラー修正 | 2026-08-16 | | 不具合修正 |
+| 002007 | ウィンドウ指定キャプチャ実装のコンパイルエラー修正 | 2026-08-16 | 2026-08-16 | 不具合修正 |
 
 ### 002001 画面キャプチャ方式調査・実装
 
@@ -438,6 +438,18 @@
 7. 【002005の備考】`screenshots` crate でのウィンドウ指定キャプチャは将来 AppleScript 等で拡張を検討
 
 【実施結果】
+- `localapp/src-tauri/src/commands/capture.rs`
+  - `use screenshots::{Screen, Window};` → `use screenshots::Screen;` に修正
+  - `capture_by_window_title` 関数を削除（308〜346行）
+  - `capture_screen_raw` をシンプル化：全画面キャプチャ + 任意 crop_insets トリミングに統一
+  - `apply_crop_insets` の修正：`cropped.as_flat_samples().samples` → `cropped.to_image().as_raw()`
+    - `SubImage<&RgbaImage>` は `as_flat_samples()` を持たない
+    - `to_image()` で `ImageBuffer<Rgba<u8>, Vec<u8>>` に変換 → `as_raw()` で `&Vec<u8>` を取得
+  - 【002005/002007】ウィンドウ指定キャプチャについて：将来 AppleScript / xcap crate 等で拡張を検討する旨をコメントで明記
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- ブランチ: `feature/002007-window-capture-compile-fix` → main にマージ（Fast-forward）
+- コミット: `ddd048b`
 
 ### 002006（将来タスク）ウィンドウ最前面化・クリック自動化
 

@@ -268,3 +268,49 @@
 
 （実装後に追記）
 
+---
+
+## 002007 — ウィンドウ指定キャプチャ実装のコンパイルエラー修正
+
+### 【実施予定】
+
+- 日時: 2026-08-16
+- 目的: 002005 の実装中に発生した 2 つのコンパイルエラーを修正する
+- 前提:
+  - feature/002005-window-capture ブランチ上で 002005 の変更がステージングされていない状態
+  - 002005 の実装途上で `cargo check` にて 2 エラーが発生済み
+- 変更内容:
+  1. `localapp/src-tauri/src/commands/capture.rs`
+     - `use screenshots::Window` を削除
+     - `capture_by_window_title` 関数を削除
+     - `capture_screen_raw` をシンプル化（全画面キャプチャ + crop_insets トリミング方式に統一）
+     - `apply_crop_insets` で `SubImage::to_image().as_raw()` を使用
+  2. `localapp/docs/tasks.md` — 002007 タスク追加
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+- 想定される結果や注意点:
+  - `screenshots` v0.8.10 には `Window` struct がエクスポートされていない（`Screen` のみ）
+  - `SubImage<&RgbaImage>` は `as_flat_samples()` を持たない → `to_image()` で `ImageBuffer` に変換が必要
+  - ウィンドウ指定キャプチャは将来 xcap / AppleScript 等で拡張を検討
+
+### 【実施実績】
+
+- feature/002007-window-capture-compile-fix ブランチを作成（002005 ブランチから派生）
+- `localapp/src-tauri/src/commands/capture.rs` を修正
+  - `use screenshots::{Screen, Window};` → `use screenshots::Screen;`
+  - `capture_by_window_title` 関数を削除（308〜346行、ウィンドウ名検索は `screenshots` crate では不可）
+  - `capture_screen_raw` をシンプル化：引数 `profile: Option<CaptureProfile>` → `profile: &CaptureProfile`
+    - 全画面キャプチャ取得後、`crop_insets` があればトリミング、なければそのまま返却
+  - `apply_crop_insets` の `SubImage` 処理を修正
+    - `cropped.as_flat_samples().samples` → `cropped.to_image().as_raw()`
+    - `SubImage<&RgbaImage>` は `as_flat_samples()` メソッドを持たない
+    - `to_image()` で所有権を持つ `ImageBuffer<Rgba<u8>, Vec<u8>>` に変換 → `as_raw()` で `&Vec<u8>` を取得
+  - 【002005/002007】ウィンドウ指定キャプチャについてのコメントを追加
+    - `screenshots` crate v0.8.10 では `Window` struct がエクスポートされていない
+    - 将来の拡張として AppleScript、`core-foundation`、`xcap` crate 等を検討する旨を記載
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- ブランチ: `feature/002007-window-capture-compile-fix` → main にマージ（Fast-forward）
+- コミット: `ddd048b`
+
