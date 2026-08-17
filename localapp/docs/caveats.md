@@ -110,3 +110,50 @@ use tauri::Emitter; // 明示的にインポートする必要がある
 
 ### 関連タスク
 - 002002: アプリプロファイル管理 UI（`capture_profile.rs` にて `HashMap` の unused import warning が検出された）
+
+---
+
+## Tauri `invoke` の引数名完全一致（重要）
+
+### 事象
+JS 側で `invoke("start_continuous_capture", { startFromBeginning: true })` と camelCase で渡しても、Rust 側では `start_from_beginning` (snake_case) を受け取れない。
+
+### 原因
+Tauri v2 の `invoke` API は、JS 側オブジェクトの**キー名**と Rust 側コマンドの**引数名**が**完全一致**する必要がある。自動的な snake_case ↔ camelCase 変換は行われない。
+
+### 対応策
+```typescript
+// ❌ 誤り: camelCase で渡すと Rust 側では undefined 扱いになる
+await invoke("start_continuous_capture", { profile, startFromBeginning: true });
+
+// ✅ 正解: Rust 側の引数名と完全に一致させる
+await invoke("start_continuous_capture", {
+  profile,
+  start_from_beginning: startFromBeginning,
+});
+```
+
+### 関連タスク
+- 002008-2: プロファイルUI改善（`startFromBeginning` → `start_from_beginning` の修正）
+
+---
+
+## base-ui/react-select の `<SelectValue>` と非同期データ
+
+### 事象
+`ProfileSelector.tsx` で `<SelectValue />`（auto-render 方式）を使用した場合、`builtinProfiles` の非同期読み込み完了前は初期表示が placeholder のままになる。
+
+### 原因
+`<SelectValue />` は `builtinProfiles` 内の対応する `<SelectItem>` の children を自動で探して表示する。しかし `fetchProfiles()` が非同期のため、初期レンダリング時は `builtinProfiles` が空配列で `<SelectItem>` が存在せず、表示テキストが解決できない。
+
+### 対応策
+```tsx
+const selectedProfile = builtinProfiles.find((p) => p.key === selectedProfileKey);
+const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロファイルを選択";
+
+<SelectValue placeholder="プロファイルを選択">{displayLabel}</SelectValue>
+```
+手動で `displayLabel` を計算して children として渡す。読み込み前は `selectedProfileKey`（"kindle"）が表示され、読み込み後は正しい日本語名に切り替わる。
+
+### 関連タスク
+- 002008-2: プロファイルUI改善（ProfileSelector 初期表示対応）

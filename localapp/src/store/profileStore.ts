@@ -40,37 +40,33 @@ export interface CropInsets {
 }
 
 /**
- * Rust 側 `models/capture_profile.rs` の `ProfileEntry` に対応するフロントエンド型
- *
- * serde の camelCase リネームにより、Rust の `page_turn_key` が
- * JavaScript 側では `pageTurnKey` として扱われる。
- */
-export interface CaptureProfile {
-  /** プロファイルの一意キー（例: "kindle"） */
-  key: string;
-  /** プロファイルの表示名（UI の選択肢として表示される） */
-  name: string;
-  /** ウィンドウタイトルに含まれるキーワード（大文字小文字区別なしで検索） */
-  windowTitleKeyword: string;
-  /** ページ送りに使うキー（"right" / "left" / "space" / "arrow" など） */
-  pageTurnKey: string;
-  /** ページ送り後の待ち時間（秒） */
-  pageWait: number;
-  /** 境界検出方式（"full"=全画面 / "manual"=手動クロップ） */
-  boundaryMethod: string;
-  /** クリック位置（"center"=中央 / "top_left"=左上） */
-  clickPosition: string;
-  /** キャプチャ前に対象ウィンドウを最前面へ持ってくるか */
-  useBringToTop: boolean;
-  /** プロセス名フィルタ（例: "Kindle.exe"）。空欄なら無効 */
-  processName: string;
-  /** ウィンドウ検索などのタイムアウト時間（秒） */
-  timeoutSeconds: number;
-  /** 失敗時の最大再試行回数 */
-  maxRetries: number;
-  /** コンテンツ領域トリミング設定（外枠除去用） */
-  cropInsets: CropInsets;
-}
+   * Rust 側 `models/capture_profile.rs` の `ProfileEntry` に対応するフロントエンド型
+   *
+   * serde の camelCase リネームにより、Rust の `page_turn_key` が
+   * JavaScript 側では `pageTurnKey` として扱われる。
+   */
+  export interface CaptureProfile {
+    /** プロファイルの一意キー（例: "kindle"） */
+    key: string;
+    /** プロファイルの表示名（UI の選択肢として表示される） */
+    name: string;
+    /** ウィンドウタイトルに含まれるキーワード（大文字小文字区別なしで検索） */
+    windowTitleKeyword: string;
+    /** ページ送りに使うキー（"right" / "left" / "space" / "arrow" など） */
+    pageTurnKey: string;
+    /** ページ送り後の待ち時間（秒） */
+    pageWait: number;
+    /** 境界検出方式（"full"=全画面 / "manual"=手動クロップ） */
+    boundaryMethod: string;
+    /** プロセス名フィルタ（例: "Kindle"）。空欄なら無効 */
+    processName: string;
+    /** ウィンドウ検索などのタイムアウト時間（秒） */
+    timeoutSeconds: number;
+    /** 失敗時の最大再試行回数 */
+    maxRetries: number;
+    /** コンテンツ領域トリミング設定（外枠除去用） */
+    cropInsets: CropInsets;
+  }
 
 /**
  * プロファイルストアの状態インターフェース
@@ -106,29 +102,47 @@ export interface ProfileState {
  * getEffectiveProfile() で、builtinProfiles から該当プロファイルを探し、
  * customProfiles に上書き値があれば Object.assign でマージして返す。
  */
-export const useProfileStore = create<ProfileState>((set, get) => ({
-  builtinProfiles: [],
-  customProfiles: {},
-  selectedProfileKey: null,
+  export const useProfileStore = create<ProfileState>((set, get) => ({
+    builtinProfiles: [
+      {
+        key: "kindle",
+        name: "Kindle for PC",
+        windowTitleKeyword: "Kindle",
+        pageTurnKey: "right",
+        pageWait: 0.15,
+        boundaryMethod: "full",
+        processName: "Kindle",
+        timeoutSeconds: 5,
+        maxRetries: 3,
+        cropInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+      },
+    ],
+    customProfiles: {},
+    selectedProfileKey: "kindle",
 
-  /**
-   * Rust 側の `get_builtin_profiles` コマンドを呼び出してプロファイル一覧を取得する
-   *
-   * アプリ起動時や、プロファイル一覧が必要なタイミングで呼び出す。
-   * エラー時はコンソールにログ出力し、空配列のままにする。
-   */
-  fetchProfiles: async () => {
-    try {
-      const profiles = await invoke<CaptureProfile[]>("get_builtin_profiles");
-      set({ builtinProfiles: profiles });
-      // 初回取得時、最初のプロファイルを自動選択しておく
-      if (profiles.length > 0 && !get().selectedProfileKey) {
-        set({ selectedProfileKey: profiles[0].key });
+    /**
+     * Rust 側の `get_builtin_profiles` コマンドを呼び出してプロファイル一覧を取得する
+     *
+     * アプリ起動時や、プロファイル一覧が必要なタイミングで呼び出す。
+     * エラー時はコンソールにログ出力し、空配列のままにする。
+     */
+    fetchProfiles: async () => {
+      try {
+        const profiles = await invoke<CaptureProfile[]>("get_builtin_profiles");
+        set({ builtinProfiles: profiles });
+        // 初回取得時、kindle プロファイルを自動選択する（未設定の場合のみ）
+        if (!get().selectedProfileKey) {
+          const kindle = profiles.find((p) => p.key === "kindle");
+          if (kindle) {
+            set({ selectedProfileKey: kindle.key });
+          } else if (profiles.length > 0) {
+            set({ selectedProfileKey: profiles[0].key });
+          }
+        }
+      } catch (err) {
+        console.error("プロファイル取得エラー:", err);
       }
-    } catch (err) {
-      console.error("プロファイル取得エラー:", err);
-    }
-  },
+    },
 
   /**
    * プロファイルを選択する

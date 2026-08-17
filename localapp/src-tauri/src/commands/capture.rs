@@ -1,6 +1,6 @@
 /// 画面キャプチャ関連の Tauri コマンド
 ///
-/// `screenshots` crate を使用して画面スクリーンショットを取得し、
+/// `xcap` crate を使用してウィンドウ単位のスクリーンショットを取得し、
 /// Base64 エンコードした PNG 画像をフロントエンドに返却する。
 ///
 /// 【プロファイル管理コマンド】
@@ -12,8 +12,8 @@
 /// - `start_continuous_capture`: バックグラウンドスレッドで連続キャプチャを開始
 /// - `stop_continuous_capture`: 実行中の連続キャプチャを停止
 use image::ImageEncoder;
-use screenshots::Screen;
 use crate::models::capture_profile::{CaptureProfile, ProfileEntry, CropInsets};
+use xcap::Window;
 
 // 連続キャプチャ制御用のグローバル状態
 // Rust 1.70+ では std::sync::OnceLock で標準化されているため、外部 crate は不要
@@ -94,7 +94,8 @@ fn get_is_capturing() -> Arc<AtomicBool> {
 pub fn start_continuous_capture(
     app_handle: tauri::AppHandle,
     profile: CaptureProfile,
-    book_title: String,
+    bookTitle: String,
+    startFromBeginning: bool,
 ) -> Result<String, String> {
     // 既に実行中かチェック（重複開始を防止）
     let is_capturing = get_is_capturing();
@@ -108,14 +109,22 @@ pub fn start_continuous_capture(
     stop_flag.store(false, Ordering::SeqCst);
 
     // 保存先フォルダを作成
-    let output_dir = create_capture_folder(&book_title)?;
+    let output_dir = create_capture_folder(&bookTitle)?;
 
     // バックグラウンドスレッドで連続キャプチャループを開始
     // `thread::spawn` を使用して WebView スレッドをブロックしない
     let output_dir_clone = output_dir.clone();
     let app_handle_clone = app_handle.clone();
+    let profile_clone = profile.clone();
     thread::spawn(move || {
-        run_continuous_capture_loop(app_handle_clone, profile, output_dir_clone, stop_flag, is_capturing);
+        run_continuous_capture_loop(
+            app_handle_clone,
+            profile_clone,
+            output_dir_clone,
+            stop_flag,
+            is_capturing,
+            startFromBeginning,
+        );
     });
 
     // 開始完了をフロントエンドに通知
@@ -166,6 +175,7 @@ fn run_continuous_capture_loop(
     output_dir: String,
     stop_flag: Arc<AtomicBool>,
     is_capturing: Arc<AtomicBool>,
+    start_from_beginning: bool,
 ) {
     // enigo 初期化（キー入力シミュレーション用）
     // macOS では初回実行時に Accessibility 権限が必要
@@ -173,10 +183,97 @@ fn run_continuous_capture_loop(
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
 
     let mut page_num: u32 = 1;
-    let mut prev_image: Option<Vec<u8>> = None;
+    let mut prev_image: Option<image::RgbaImage> = None;
     // MSE（平均二乗誤差）閾値。環境により調整が必要なため、将来的にプロファイルパラメータ化を検討
     // この値はフルHD画面でアルファチャンネルを含むピクセル差の経験値に基づく
     const MSE_THRESHOLD: f64 = 1000.0;
+
+    // 【002008-1 デバッグ】リトライ回数と待機時間のログ出力用
+    eprintln!("[002008-1 DEBUG] 連続キャプチャループ開始: profile={:?}", profile);
+
+    // --- 先頭ページ復帰処理 ---
+    // 「先頭ページから」が選択された場合、逆方向ページ送りを連続実行して先頭に戻る。
+    // 先頭到達の判定は「スクリーンショットを撮りながらMSE差分を検出」することで行う。
+    // 前回画像とほぼ同じ＝「これ以上逆方向にページを変更できない（先頭到達）」と判定。
+    if start_from_beginning {
+        emit_progress(
+            &app_handle,
+            0,
+            0,
+            "page_turn",
+            "先頭ページに戻っています...",
+            Some(output_dir.clone()),
+        );
+
+        // 先頭復帰前に最前面化（キー入力が確実に届くようフォーカスを当てる）
+        if !profile.window_title_keyword.is_empty() {
+            if let Err(e) = bring_window_to_front(&profile) {
+                eprintln!("[002008-2] 先頭復帰: 最前面化失敗 {}", e);
+            } else {
+                // AppleScript 実行後、ウィンドウが前面に来るまで待機
+                thread::sleep(Duration::from_millis(1500));
+            }
+        }
+
+        let mut prev_reverse_image: Option<image::RgbaImage> = None;
+        const MAX_REVERSE_PAGES: u32 = 200;
+        // 先頭復帰時のMSE閾値。通常キャプチャより低く設定し、わずかな変化も検出する
+        const REVERSE_MSE_THRESHOLD: f64 = 50.0;
+
+        for i in 1..=MAX_REVERSE_PAGES {
+            if stop_flag.load(Ordering::SeqCst) {
+                break;
+            }
+
+            // 逆方向ページ送り
+            if let Err(e) = turn_page_reverse(&mut enigo, &profile.page_turn_key) {
+                eprintln!("[002008-2] 先頭復帰: ページ送りエラー {}", e);
+                break;
+            }
+            // 画面遷移が安定するまで待機
+            thread::sleep(Duration::from_millis(150));
+
+            // 現在画面をキャプチャして変化を確認
+            let current_image = match capture_window_image(&profile) {
+                Ok(img) => img,
+                Err(e) => {
+                    eprintln!("[002008-2] 先頭復帰: キャプチャ失敗 {}", e);
+                    break;
+                }
+            };
+
+            // 前回画像と比較。変化がほぼなければ先頭到達と判定
+            if let Some(ref prev) = prev_reverse_image {
+                let mse = calculate_mse(prev, &current_image);
+                if mse < REVERSE_MSE_THRESHOLD {
+                    emit_progress(
+                        &app_handle,
+                        0,
+                        0,
+                        "page_turn",
+                        "先頭ページに到達しました",
+                        Some(output_dir.clone()),
+                    );
+                    break;
+                }
+            }
+            prev_reverse_image = Some(current_image);
+
+            if i % 20 == 0 {
+                emit_progress(
+                    &app_handle,
+                    0,
+                    0,
+                    "page_turn",
+                    &format!("先頭ページに戻っています... ({}ページ戻り)", i),
+                    Some(output_dir.clone()),
+                );
+            }
+        }
+
+        // 先頭復帰後、アプリがレンダリングを安定させるため待機
+        thread::sleep(Duration::from_millis(500));
+    }
 
     loop {
         // --- 停止フラグチェック ---
@@ -193,6 +290,24 @@ fn run_continuous_capture_loop(
             break;
         }
 
+        // --- 最前面化（002008-1: xcap では非最前面ウィンドウがキャプチャ不可のため常に実行）---
+        if !profile.window_title_keyword.is_empty() {
+            if let Err(e) = bring_window_to_front(&profile) {
+                emit_progress(
+                    &app_handle,
+                    page_num.saturating_sub(1),
+                    page_num,
+                    "error",
+                    &format!("最前面化エラー: {}", e),
+                    Some(output_dir.clone()),
+                );
+            } else {
+                // ウィンドウが前面に来るまで1500ms待機
+                // AppleScript 実行後、ウィンドウのレンダリングが完了するまでの時間を確保
+                thread::sleep(Duration::from_millis(1500));
+            }
+        }
+
         // --- キャプチャ実行 ---
         emit_progress(
             &app_handle,
@@ -203,8 +318,9 @@ fn run_continuous_capture_loop(
             Some(output_dir.clone()),
         );
 
-        let image_bytes = match capture_screen_raw(&profile) {
-            Ok(bytes) => bytes,
+        // RgbaImage を直接取得（PNG エンコードせずに MSE 比較で使用）
+        let mut current_image = match capture_window_image(&profile) {
+            Ok(img) => img,
             Err(e) => {
                 emit_progress(
                     &app_handle,
@@ -219,9 +335,29 @@ fn run_continuous_capture_loop(
             }
         };
 
+        // crop_insets を適用（設定されている場合）
+        let insets = &profile.crop_insets;
+        if insets.top > 0 || insets.right > 0 || insets.bottom > 0 || insets.left > 0 {
+            match apply_crop_insets_to_rgba(&current_image, insets) {
+                Ok(cropped) => current_image = cropped,
+                Err(e) => {
+                    emit_progress(
+                        &app_handle,
+                        page_num.saturating_sub(1),
+                        page_num,
+                        "error",
+                        &format!("トリミングエラー: {}", e),
+                        Some(output_dir.clone()),
+                    );
+                    is_capturing.store(false, Ordering::SeqCst);
+                    break;
+                }
+            }
+        }
+
         // --- 前回画像との差分検出（MSE方式）---
         if let Some(ref prev) = prev_image {
-            let mse = calculate_mse(prev, &image_bytes);
+            let mse = calculate_mse(prev, &current_image);
             if mse < MSE_THRESHOLD {
                 // 変化が少ない＝ページ遷移が発生しなかった＝最終ページ到達と判断
                 emit_progress(
@@ -237,7 +373,23 @@ fn run_continuous_capture_loop(
             }
         }
 
-        // --- 画像保存 ---
+        // --- PNG エンコード & 画像保存 ---
+        let image_bytes = match rgba_to_png(&current_image) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                emit_progress(
+                    &app_handle,
+                    page_num.saturating_sub(1),
+                    page_num,
+                    "error",
+                    &format!("PNG エンコードエラー: {}", e),
+                    Some(output_dir.clone()),
+                );
+                is_capturing.store(false, Ordering::SeqCst);
+                break;
+            }
+        };
+
         let filename = format!("{:03}.png", page_num);
         let filepath = std::path::Path::new(&output_dir).join(&filename);
         if let Err(e) = std::fs::write(&filepath, &image_bytes) {
@@ -263,7 +415,7 @@ fn run_continuous_capture_loop(
             Some(output_dir.clone()),
         );
 
-        prev_image = Some(image_bytes);
+        prev_image = Some(current_image);
         page_num += 1;
 
         // --- ページ送り ---
@@ -297,7 +449,7 @@ fn run_continuous_capture_loop(
             page_num.saturating_sub(1),
             page_num,
             "waiting",
-            &format!("{:.1} 秒待機中...", profile.page_wait),
+            &format!("{:.2} 秒待機中...", profile.page_wait),
             Some(output_dir.clone()),
         );
 
@@ -353,30 +505,145 @@ fn apply_crop_insets(image_bytes: &[u8], insets: &CropInsets) -> Result<Vec<u8>,
     Ok(buf)
 }
 
-/// 生スクリーンショット画像を PNG バイト列として取得する（全画面キャプチャ + トリミング対応）
+/// プロファイル設定に基づいて対象ウィンドウを検索する
 ///
-/// # 処理フロー
-/// 1. `Screen::all()` で最初のディスプレイを対象に全画面キャプチャ
-/// 2. `crop_insets` が設定されていれば内容領域トリミングを適用
-///
-/// 【002005/002007】ウィンドウ指定キャプチャについて:
-/// screenshots crate v0.8.10 では `Window` struct がエクスポートされていないため、
-/// 現時点では全画面キャプチャを取得して `crop_insets` でトリミングする方式を採用する。
-/// 将来的に macOS AppleScript 等でウィンドウ位置を取得して `Screen::capture_area()`
-/// を使う拡張を検討する。
+/// `window_title_keyword` が設定されている場合、部分一致でウィンドウを検索する。
+/// `process_name` も設定されている場合は、プロセス名でもフィルタリングする。
+/// プロセス名比較時は `.exe` 拡張子を無視し、部分一致（contains）で判定する。
+/// これにより Windows（"Kindle.exe"）と macOS（"Kindle"）の両方に対応する。
 ///
 /// # 引数
-/// - `profile`: キャプチャプロファイル（トリミング設定を含む）
+/// - `profile`: キャプチャプロファイル（ウィンドウ検索設定を含む）
+///
+/// # 戻り値
+/// - `Ok(RgbaImage)`: キャプチャした画像データ（image::RgbaImage）
+/// - `Err(String)`: ウィンドウが見つからない場合やキャプチャ失敗時のエラーメッセージ
+fn capture_window_image(profile: &CaptureProfile) -> Result<image::RgbaImage, String> {
+    // window_title_keyword が設定されていない場合はスクリーンキャプチャにフォールバック
+    if profile.window_title_keyword.is_empty() {
+        let windows = Window::all()
+            .map_err(|e| format!("ウィンドウ一覧取得エラー: {}", e))?;
+        let screen = windows.into_iter().next()
+            .ok_or("スクリーンが見つかりません".to_string())?;
+        return screen.capture_image()
+            .map_err(|e| format!("キャプチャエラー: {}", e));
+    }
+
+    let keyword_lower = profile.window_title_keyword.to_lowercase();
+    const MAX_RETRIES: u32 = 3;
+
+    for attempt in 1..=MAX_RETRIES {
+        eprintln!("[002008-1 DEBUG] capture_window_image 試行 {}/{}", attempt, MAX_RETRIES);
+
+        let windows = Window::all()
+            .map_err(|e| format!("ウィンドウ一覧取得エラー: {}", e))?;
+
+        if windows.is_empty() {
+            eprintln!("[002008-1 DEBUG] 試行 {}/{}: ウィンドウ一覧が空", attempt, MAX_RETRIES);
+            if attempt < MAX_RETRIES {
+                thread::sleep(Duration::from_millis(500));
+                continue;
+            }
+            return Err("ウィンドウが見つかりません".to_string());
+        }
+
+        let target = windows.into_iter().find(|w| {
+            let title_matches = w.title().to_lowercase().contains(&keyword_lower);
+            if !title_matches {
+                return false;
+            }
+            if !profile.process_name.is_empty() {
+                let app_name_lower = w.app_name().to_lowercase();
+                let process_query = profile.process_name.to_lowercase()
+                    .trim_end_matches(".exe")
+                    .to_string();
+                app_name_lower.contains(&process_query)
+            } else {
+                true
+            }
+        });
+
+        match target {
+            Some(window) => {
+                let title = window.title();
+                let app = window.app_name();
+                eprintln!(
+                    "[002008-1 DEBUG] 試行 {}/{}: ウィンドウ発見 '{}' (app: {}, {}x{})",
+                    attempt, MAX_RETRIES, title, app, window.width(), window.height()
+                );
+                match window.capture_image() {
+                    Ok(img) => {
+                        eprintln!(
+                            "[002008-1 DEBUG] 試行 {}/{}: キャプチャ成功 ({}x{})",
+                            attempt, MAX_RETRIES, img.width(), img.height()
+                        );
+                        return Ok(img);
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "[002008-1 DEBUG] 試行 {}/{}: キャプチャ失敗 '{}' ({}x{}) : {}",
+                            attempt, MAX_RETRIES, title, window.width(), window.height(), e
+                        );
+                        if attempt < MAX_RETRIES {
+                            eprintln!("[002008-1 DEBUG] 500ms 待機後にリトライ");
+                            thread::sleep(Duration::from_millis(500));
+                            continue;
+                        }
+                        return Err(format!(
+                            "ウィンドウキャプチャエラー: {} (ウィンドウ: '{}', {}x{})",
+                            e, title, window.width(), window.height()
+                        ));
+                    }
+                }
+            }
+            None => {
+                eprintln!(
+                    "[002008-1 DEBUG] 試行 {}/{}: ウィンドウ '{}' が見つからない",
+                    attempt, MAX_RETRIES, keyword_lower
+                );
+                if attempt < MAX_RETRIES {
+                    thread::sleep(Duration::from_millis(500));
+                    continue;
+                }
+                let available_windows: Vec<String> = Window::all()
+                    .map_err(|e| format!("ウィンドウ一覧取得エラー: {}", e))?
+                    .iter()
+                    .map(|w| format!("{} (app: {})", w.title(), w.app_name()))
+                    .collect();
+                return Err(format!(
+                    "'{}' に一致するウィンドウが見つかりません\n見つかったウィンドウ一覧:\n{}",
+                    keyword_lower,
+                    available_windows.join("\n")
+                ));
+            }
+        }
+    }
+
+    // ループを抜けた場合（通常は到達しない）
+    Err("ウィンドウキャプチャに失敗しました（リトライ上限に達しました）".to_string())
+}
+
+/// 生スクリーンショット画像を PNG バイト列として取得する（ウィンドウ指定キャプチャ + トリミング対応）
+///
+/// # 処理フロー
+/// 1. `xcap::Window::all()` で全ウィンドウを取得
+/// 2. `window_title_keyword` が設定されていれば部分一致で対象ウィンドウを検索
+/// 3. `process_name` も設定されていればプロセス名でフィルタリング
+/// 4. 対象ウィンドウの `capture_image()` でスクリーンショット取得
+/// 5. `crop_insets` が設定されていれば内容領域トリミングを適用
+///
+/// 【002008】xcap crate を使用したウィンドウ指定キャプチャ。
+/// `Window::all()` でウィンドウ一覧を取得し、タイトルの部分一致で対象ウィンドウを
+/// 特定してから `capture_image()` でキャプチャする。
+/// `window_title_keyword` が未設定の場合は全画面キャプチャにフォールバックする。
+///
+/// # 引数
+/// - `profile`: キャプチャプロファイル（ウィンドウ検索・トリミング設定を含む）
 ///
 /// # 戻り値
 /// - `Ok(Vec<u8>)`: PNG 形式の生バイト列
 fn capture_screen_raw(profile: &CaptureProfile) -> Result<Vec<u8>, String> {
-    let screens = Screen::all().map_err(|e| format!("ディスプレイ取得エラー: {}", e))?;
-    if screens.is_empty() {
-        return Err("ディスプレイが見つかりません".to_string());
-    }
-    let screen = &screens[0];
-    let image = screen.capture().map_err(|e| format!("キャプチャエラー: {}", e))?;
+    let image = capture_window_image(profile)?;
 
     let mut buf = Vec::new();
     let encoder = image::codecs::png::PngEncoder::new(&mut buf);
@@ -398,31 +665,133 @@ fn capture_screen_raw(profile: &CaptureProfile) -> Result<Vec<u8>, String> {
     }
 }
 
-/// 2枚の PNG バイト列間の平均二乗誤差（MSE）を計算する
+/// 2枚の RgbaImage 間の平均二乗誤差（MSE）を計算する
 ///
-/// ピクセルごとの差分の二乗の平均値を計算する。
-/// 画像サイズが異なる場合は無限大（`f64::MAX`）を返す。
+/// ピクセルごとに RGBA 各チャネルの差分の二乗和を計算し、
+/// 総ピクセル数で平均した値を返す。
+/// 画像サイズ（幅・高さ）が異なる場合は無限大（`f64::MAX`）を返す。
 ///
 /// # 引数
-/// - `prev`: 前回の PNG バイト列
-/// - `curr`: 現在の PNG バイト列
+/// - `prev`: 前回のキャプチャ画像（`image::RgbaImage`）
+/// - `curr`: 現在のキャプチャ画像（`image::RgbaImage`）
 ///
 /// # 戻り値
 /// - MSE 値（小さいほど画像が類似している）
-fn calculate_mse(prev: &[u8], curr: &[u8]) -> f64 {
-    if prev.len() != curr.len() {
+fn calculate_mse(prev: &image::RgbaImage, curr: &image::RgbaImage) -> f64 {
+    if prev.width() != curr.width() || prev.height() != curr.height() {
         // サイズが異なる場合は完全に異なる画像とみなす
         return f64::MAX;
     }
-    let sum_sq_diff: f64 = prev
+    let prev_pixels = prev.as_raw();
+    let curr_pixels = curr.as_raw();
+    let sum_sq_diff: f64 = prev_pixels
         .iter()
-        .zip(curr.iter())
+        .zip(curr_pixels.iter())
         .map(|(a, b)| {
             let diff = (*a as i32) - (*b as i32);
             (diff * diff) as f64
         })
         .sum();
-    sum_sq_diff / prev.len() as f64
+    let pixel_count = (prev.width() * prev.height()) as f64;
+    sum_sq_diff / pixel_count
+}
+
+/// 指定されたウィンドウを最前面に持ってくる
+///
+/// ` CaptureProfile#use_bring_to_top` が true の場合に、
+/// 連続キャプチャのキャプチャ前に呼び出される。
+///
+/// # 引数
+/// - `profile`: キャプチャプロファイル（`process_name` を使用）
+///
+/// # 戻り値
+/// - `Ok(())`: 最前面化成功
+/// - `Err(String)`: 最前面化失敗時のエラーメッセージ
+fn bring_window_to_front(profile: &CaptureProfile) -> Result<(), String> {
+    if profile.process_name.is_empty() {
+        return Err("プロセス名が設定されていません".to_string());
+    }
+    let process_name = profile.process_name
+        .trim_end_matches(".exe")
+        .to_string();
+
+    #[cfg(target_os = "macos")]
+    {
+        let script = format!(
+            "tell application \"System Events\" to set frontmost of process \"{}\" to true",
+            process_name
+        );
+        let output = std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .output()
+            .map_err(|e| format!("osascript 実行エラー: {}", e))?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("最前面化に失敗: {}", stderr));
+        }
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        // Windows / Linux では未実装（TODO: SetForegroundWindow API 等を検討）
+        Ok(())
+    }
+}
+
+/// RgbaImage に crop_insets を適用してトリミング後の RgbaImage を返す
+///
+/// `image::imageops::crop_imm` で指定領域を切り出し、`to_image()` で
+/// 所有権付きの `ImageBuffer` に変換して返す。
+///
+/// # 引数
+/// - `image`: トリミング前の `RgbaImage`
+/// - `insets`: トリミング量（ピクセル単位）
+///
+/// # 戻り値
+/// - `Ok(RgbaImage)`: トリミング後の `RgbaImage`
+/// - `Err(String)`: トリミング量が画像サイズを超えている場合のエラー
+fn apply_crop_insets_to_rgba(
+    image: &image::RgbaImage,
+    insets: &CropInsets,
+) -> Result<image::RgbaImage, String> {
+    let (width, height) = (image.width(), image.height());
+
+    if insets.left + insets.right >= width || insets.top + insets.bottom >= height {
+        return Err("トリミング量が画像サイズを超えています".to_string());
+    }
+
+    let crop_w = width - insets.left - insets.right;
+    let crop_h = height - insets.top - insets.bottom;
+
+    let cropped = image::imageops::crop_imm(image, insets.left, insets.top, crop_w, crop_h);
+    Ok(cropped.to_image())
+}
+
+/// RgbaImage を PNG バイト列にエンコードする
+///
+/// `image::codecs::png::PngEncoder` を使用して `RgbaImage` を
+/// PNG 形式の `Vec<u8>` に変換する。
+///
+/// # 引数
+/// - `image`: エンコード対象の `RgbaImage`
+///
+/// # 戻り値
+/// - `Ok(Vec<u8>)`: PNG 形式の生バイト列
+/// - `Err(String)`: PNG エンコードエラー時のメッセージ
+fn rgba_to_png(image: &image::RgbaImage) -> Result<Vec<u8>, String> {
+    let mut buf = Vec::new();
+    let encoder = image::codecs::png::PngEncoder::new(&mut buf);
+    encoder
+        .write_image(
+            image.as_raw(),
+            image.width(),
+            image.height(),
+            image::ExtendedColorType::Rgba8,
+        )
+        .map_err(|e| format!("PNG エンコードエラー: {}", e))?;
+    Ok(buf)
 }
 
 /// enigo を使用してページ送りキーを入力する
@@ -440,13 +809,40 @@ fn calculate_mse(prev: &[u8], curr: &[u8]) -> f64 {
 ///
 /// enigo 0.6.1 では `key_click` の代わりに `key(key, Direction::Click)` を使用する。
 fn turn_page(enigo: &mut Enigo, key: &str) -> Result<(), String> {
-    let result = match key {
-        "right" => enigo.key(Key::RightArrow, Direction::Click),
-        "left" => enigo.key(Key::LeftArrow, Direction::Click),
-        "space" => enigo.key(Key::Space, Direction::Click),
+    let page_key = match key {
+        "right" => Key::RightArrow,
+        "left" => Key::LeftArrow,
+        "space" => Key::Space,
         other => return Err(format!("未対応のページ送りキー: {}", other)),
     };
-    result.map_err(|e| format!("キー入力エラー: {:?}", e))
+    enigo
+        .key(page_key, Direction::Press)
+        .map_err(|e| format!("キー入力エラー(press): {:?}", e))?;
+    thread::sleep(Duration::from_millis(50));
+    enigo
+        .key(page_key, Direction::Release)
+        .map_err(|e| format!("キー入力エラー(release): {:?}", e))
+}
+
+/// enigo を使用して逆方向のページ送りキーを入力する（先頭ページ復帰用）
+///
+/// `turn_page` の逆方向キーを入力する。先頭ページに戻る際に使用する。
+/// "right" → LeftArrow, "left" → RightArrow
+///
+/// # 引数
+/// - `enigo`: enigo インスタンス
+/// - `key`: ページ送りキー文字列（プロファイルから取得）
+fn turn_page_reverse(enigo: &mut Enigo, key: &str) -> Result<(), String> {
+    let reverse_key = match key {
+        "right" => Key::LeftArrow,
+        "left" => Key::RightArrow,
+        other => return Err(format!("未対応のページ送りキー: {}", other)),
+    };
+    enigo.key(reverse_key, Direction::Press)
+        .map_err(|e| format!("逆方向キー入力エラー(press): {:?}", e))?;
+    thread::sleep(Duration::from_millis(50));
+    enigo.key(reverse_key, Direction::Release)
+        .map_err(|e| format!("逆方向キー入力エラー(release): {:?}", e))
 }
 
 /// 進捗イベントをフロントエンドに送信する
@@ -486,13 +882,14 @@ pub struct CaptureResult {
     height: u32,
 }
 
-/// 全画面のスクリーンショットを取得して Base64 PNG として返却する
+/// スクリーンショットを取得して Base64 PNG として返却する
 ///
 /// # 処理フロー
-/// 1. `screenshots::Screen::all()` で全ディスプレイ情報を取得
-/// 2. 最初のディスプレイを対象に `capture()` でスクリーンショット取得
-/// 3. `to_png()` で PNG 形式のバイト列に変換
-/// 4. Base64 エンコードして JSON で返却
+/// 1. `capture_screen_raw()` でウィンドウ指定キャプチャを実行
+///    - `xcap::Window::all()` で全ウィンドウを取得
+///    - `window_title_keyword` が設定されていれば部分一致で対象ウィンドウを検索
+/// 2. PNG 形式にエンコード
+/// 3. Base64 エンコードして JSON で返却
 ///
 /// # 戻り値
 /// - `Ok(CaptureResult)`: キャプチャ成功時（base64, width, height を含む）

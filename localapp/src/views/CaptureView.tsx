@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Camera, Play, Square } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Play, Square } from "lucide-react";
 import { ProfileSelector } from "@/components/capture/ProfileSelector";
 import { ProfileEditor } from "@/components/capture/ProfileEditor";
 import { CaptureProgress } from "@/components/capture/CaptureProgress";
@@ -12,22 +14,10 @@ import { useCaptureStore } from "@/store/captureStore";
 import { useNavigationStore } from "@/store/navigationStore";
 
 /**
- * CaptureResult: Rust 側 capture_screen コマンドの戻り値型
- */
-interface CaptureResult {
-  /** Base64 エンコードされた PNG 画像データ */
-  base64: string;
-  /** 画像幅（ピクセル） */
-  width: number;
-  /** 画像高さ（ピクセル） */
-  height: number;
-}
-
-/**
  * 画面キャプチャ機能のメインビュー
  *
  * 【002002: プロファイル管理統合版】
- * 画面上段にプロファイル選択・編集パネル、下段にキャプチャテストUIを配置。
+ * 画面上段にプロファイル選択・編集パネル、下段に連続キャプチャUIを配置。
  * 起動時に Rust 側からビルトインプロファイル一覧を取得し、
  * Zustand ストアに保存してセレクタとエディタで利用する。
  *
@@ -37,19 +27,16 @@ interface CaptureResult {
  * ├──────────────────────────────┤
  * │ プロファイル設定（編集フォーム）│
  * ├──────────────────────────────┤
- * │ キャプチャテストボタン        │
- * │ [画像プレビュー]             │
+ * │ 連続キャプチャ                │
  * └──────────────────────────────┘
  */
 export function CaptureView() {
-  /** キャプチャした画像の Data URL */
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  /** キャプチャ実行中のローディング状態 */
-  const [isCapturing, setIsCapturing] = useState(false);
   /** エラーメッセージ */
   const [error, setError] = useState<string | null>(null);
   /** 連続キャプチャの書籍タイトル */
   const [bookTitle, setBookTitle] = useState("");
+  /** 先頭ページから開始するかどうか */
+  const [startFromBeginning, setStartFromBeginning] = useState(true);
 
   // Zustand ストアからプロファイル取得アクションを取得
   const fetchProfiles = useProfileStore((state) => state.fetchProfiles);
@@ -85,34 +72,6 @@ export function CaptureView() {
   }, [fetchProfiles]);
 
   /**
-   * スクリーンショットを取得して状態に保存する（ウィンドウ指定 + トリミング対応）
-   *
-   * 1. 選択中のプロファイルを取得
-   * 2. ローディング状態を ON
-   * 3. Rust 側 `capture_screen` コマンドにプロファイルを渡して invoke
-   * 4. 成功: Base64 画像を Data URL 形式で state に保存
-   * 5. 失敗: エラーメッセージを state に保存
-   * 6. ローディング状態を OFF
-   */
-  async function handleCapture() {
-    setIsCapturing(true);
-    setError(null);
-    try {
-      const profile = getEffectiveProfile(selectedProfileKey || "");
-      const result = await invoke<CaptureResult>("capture_screen", {
-        profile: profile ?? undefined,
-      });
-      // Base64 を Data URL 形式に変換して img タグで表示可能にする
-      const dataUrl = `data:image/png;base64,${result.base64}`;
-      setCapturedImage(dataUrl);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsCapturing(false);
-    }
-  }
-
-  /**
    * 連続キャプチャを開始する
    *
    * 1. 選択中のプロファイルを取得
@@ -126,7 +85,11 @@ export function CaptureView() {
       setError("プロファイルが選択されていません");
       return;
     }
-    await startCapture(profile, bookTitle);
+    if (bookTitle.trim() === "") {
+      setError("書籍タイトルを入力してください");
+      return;
+    }
+    await startCapture(profile, bookTitle, startFromBeginning);
   }
 
   /**
@@ -147,7 +110,7 @@ export function CaptureView() {
   async function handleOpenFolder() {
     if (!lastCaptureFolder) return;
     try {
-      await invoke("open_capture_folder", { folderPath: lastCaptureFolder });
+      await invoke("open_capture_folder", { folder_path: lastCaptureFolder });
     } catch (err) {
       console.error("フォルダを開けません:", err);
     }
@@ -208,12 +171,12 @@ export function CaptureView() {
           />
         </div>
 
-        {/* 連続キャプチャ開始/停止ボタン */}
-        <div className="flex gap-3">
+        {/* 連続キャプチャ開始/停止ボタン + 開始位置選択スイッチ */}
+        <div className="flex items-center gap-4">
           {!isContinuousCapturing ? (
             <Button
               onClick={handleStartCapture}
-              disabled={!selectedProfileKey || isCapturing}
+              disabled={!selectedProfileKey || isContinuousCapturing}
               className="gap-2"
             >
               <Play className="h-4 w-4" />
@@ -229,6 +192,25 @@ export function CaptureView() {
               停止
             </Button>
           )}
+
+          <div className="flex items-center gap-2">
+            <Switch
+              id="start-from-beginning"
+              checked={startFromBeginning}
+              onCheckedChange={setStartFromBeginning}
+              disabled={isContinuousCapturing}
+            />
+            <Label htmlFor="start-from-beginning" className="text-sm">
+              {startFromBeginning ? "先頭ページから" : "現在ページから"}
+            </Label>
+          </div>
+
+          {/* エラーメッセージ — ボタンの右に表示 */}
+          {error && (
+            <span className="text-sm text-destructive">
+              {error}
+            </span>
+          )}
         </div>
 
         {/* 進捗表示 */}
@@ -240,46 +222,6 @@ export function CaptureView() {
           message={captureMessage}
         />
 
-        {/* エラーメッセージ表示 */}
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            エラー: {error}
-          </div>
-        )}
-      </section>
-
-      {/* ── キャプチャテストセクション ───────────────────────── */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">キャプチャテスト</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            選択した設定でスクリーンショットを取得して確認します。
-          </p>
-        </div>
-
-        {/* キャプチャテストボタン */}
-        <div>
-          <Button
-            onClick={handleCapture}
-            disabled={isCapturing}
-            className="gap-2"
-          >
-            <Camera className="h-4 w-4" />
-            {isCapturing ? "キャプチャ中..." : "キャプチャテスト"}
-          </Button>
-        </div>
-
-        {/* キャプチャした画像のプレビュー */}
-        {capturedImage && (
-          <div className="flex flex-col items-start gap-2">
-            <p className="text-sm text-muted-foreground">キャプチャ結果:</p>
-            <img
-              src={capturedImage}
-              alt="キャプチャ画像"
-              className="max-h-[400px] max-w-full rounded-md border shadow-sm"
-            />
-          </div>
-        )}
       </section>
 
       {/* ── キャプチャ結果セクション（002004）──────────────────────── */}

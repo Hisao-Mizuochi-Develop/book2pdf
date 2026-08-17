@@ -73,7 +73,7 @@ export interface CaptureState {
   lastCaptureImageCount: number;
 
   /** 連続キャプチャ開始（リスナー登録 + Rust コマンド呼び出し） */
-  startCapture: (profile: unknown, bookTitle: string) => Promise<void>;
+  startCapture: (profile: unknown, bookTitle: string, startFromBeginning?: boolean) => Promise<void>;
   /** 連続キャプチャ停止 */
   stopCapture: () => Promise<void>;
   /** 進捗イベントを受信して状態を更新する */
@@ -115,7 +115,7 @@ export const useCaptureStore = create<CaptureState>((set, get) => ({
    * @param profile - 選択中のキャプチャプロファイル（profileStore から取得）
    * @param bookTitle - 保存フォルダ名に使用する書籍タイトル
    */
-  startCapture: async (profile, bookTitle) => {
+  startCapture: async (profile, bookTitle, startFromBeginning = true) => {
     // 既存リスナーがあれば解除（重複防止）
     const prevUnlisten = get().unlistenFn;
     if (prevUnlisten) {
@@ -134,6 +134,7 @@ export const useCaptureStore = create<CaptureState>((set, get) => ({
       await invoke("start_continuous_capture", {
         profile,
         bookTitle,
+        startFromBeginning,
       });
     } catch (err) {
       // 開始失敗時はリスナーを解除してエラー状態にする

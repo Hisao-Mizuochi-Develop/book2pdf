@@ -104,6 +104,9 @@
 | 002004 | キャプチャ画像のフォルダ管理 | 2026-08-15 | 2026-08-16 | 実装 |
 | 002005 | ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング | 2026-08-16 | | 実装 |
 | 002007 | ウィンドウ指定キャプチャ実装のコンパイルエラー修正 | 2026-08-16 | 2026-08-16 | 不具合修正 |
+| 002008 | ウィンドウ指定キャプチャ実装（xcap crate 版） | 2026-08-16 | | 実装 |
+| 002008-1 | 連続キャプチャバグ修正（MSE計算 & 最前面化） | 2026-08-16 | 2026-08-16 | 不具合修正 |
+| 002008-2 | プロファイルUI改善（デフォルト選択・表示・バリデーション） | 2026-08-16 | | 改善 |
 
 ### 002001 画面キャプチャ方式調査・実装
 
@@ -425,6 +428,8 @@
   1. `use screenshots::Window` → `Window` struct が `screenshots` v0.8.10 でエクスポートされていない
   2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
 - エラー修正は 002007 として別タスクで対応
+- 002005 の実装内容（ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング）は 002008（xcap crate 版）に引き継がれた
+- 002005 と 002008 の重複解消: 002005 は 002007 で全画面キャプチャ + `crop_insets` トリミングに後退し、ウィンドウ指定キャプチャの機能は 002008 で完全実装された。`crop_insets` 機能自体は 002007/002008 双方で使用されており、002005 の計画は実質的に 002008 に統合されたと判断する
 
 ### 002007 ウィンドウ指定キャプチャ実装のコンパイルエラー修正
 
@@ -450,6 +455,242 @@
 - `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 - ブランチ: `feature/002007-window-capture-compile-fix` → main にマージ（Fast-forward）
 - コミット: `ddd048b`
+
+### 002008 ウィンドウ指定キャプチャ実装（xcap crate 版）
+
+【計画】
+1. `localapp/src-tauri/Cargo.toml` — `screenshots` を削除、`xcap = "0.3"` を追加
+2. `localapp/src-tauri/src/commands/capture.rs` — xcap 版に完全書き換え
+   - `use xcap::Window;` に変更
+   - `capture_window_image(profile)` — 新規関数：ウィンドウタイトル部分一致 → プロセス名フィルタ → `window.capture_image()`
+   - ウィンドウが見つからない場合はエラー返却（利用可能ウィンドウ一覧を含む）
+   - `window_title_keyword` が空の場合は全画面キャプチャにフォールバック
+   - `capture_screen_raw()` — `capture_window_image()` を呼び出し、PNG エンコード + crop_insets 適用
+3. `localapp/src-tauri/src/lib.rs` — シグニチャ変更確認（変更なし）
+4. フロントエンド — 変更なし（プロファイル渡しは既存のまま）
+5. `cargo check` → `npm run build` → `npm run tauri dev` で動作確認
+
+【実施結果】
+- `localapp/src-tauri/Cargo.toml`
+  - `cargo remove screenshots` で `screenshots` crate を削除
+  - `cargo add xcap` で `xcap = "0.3.3"` を追加
+- `localapp/src-tauri/src/commands/capture.rs`
+  - `use xcap::Window;` に変更（`screenshots::Screen` を削除）
+  - `capture_window_image(profile)` を新規実装
+    - `Window::all()` で全ウィンドウ列挙 → タイトル部分一致（`to_lowercase().contains(keyword_lower)`）
+    - プロセス名フィルタ：`.exe` 拡張子を除去、`contains()` で部分一致（macOS/Windows 互換）
+    - マッチしたウィンドウを `.capture_image()` でキャプチャ（返り値: `image::RgbaImage`）
+    - マッチしない場合：エラーメッセージに利用可能ウィンドウ一覧を付与して返却
+    - `window_title_keyword` が空の場合：全画面キャプチャにフォールバック（既存動作維持）
+  - `capture_screen_raw()` を更新：PNG エンコード前に `capture_window_image()` を呼び出す
+  - `apply_crop_insets()` を更新：`crop_imm().to_image().as_raw()` の形式に変更
+- 初回テストで Kindle プロファイルの `process_name: "Kindle.exe"` が macOS の `"Kindle"` とマッチしない問題を発見
+  - `.trim_end_matches(".exe")` で `.exe` 拡張子を除去する対処を実装
+  - `==` から `contains()` に変更して部分一致に対応
+- 単発キャプチャテスト（「キャプチャテスト」ボタン）で Kindle ウィンドウのキャプチャに成功
+  - Kindle ウィンドウのみがキャプチャされ、外枠が除外されることを確認
+- **バグ発見（後続対応予定）**：
+  1. 連続キャプチャで1ページしかキャプチャできない（`calculate_mse()` が PNG 圧縮バイト列を比較しているため、ウィンドウキャプチャ後の画像サイズ縮小で MSE < 閾値と誤判定）
+  2. 「キャプチャ前に最前面へ持ってくる」が機能しない（`use_bring_to_top: true` フラグがあるが `run_continuous_capture_loop()` に実装がない）
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功
+- ブランチ: `feature/002008-window-capture-xcap`
+
+### 002008-1 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
+
+【計画】
+1. **Bug 1: MSE計算修正**
+   - **原因**: `calculate_mse(prev: &[u8], curr: &[u8])` は PNG 圧縮後のバイト列を比較。ウィンドウキャプチャに切り替えたことで画像サイズが縮小し、PNG バイト列の差分が閾値 1000.0 を下回るようになった。これにより「ページ変更なし」と誤判定され連続キャプチャが 1 ページで停止する。
+   - **修正案**:
+     - `calculate_mse()` のシグネチャを変更: `calculate_mse(prev: &RgbaImage, curr: &RgbaImage) -> f64`
+     - ピクセルレベルで RGBA 各チャネルの差分を計算: `(r1−r2)² + (g1−g2)² + (b1−b2)² + (a1−a2)²` の画素数での平均
+     - 呼び出し元（`run_continuous_capture_loop`）で `capture_window_image()` の返り値（`RgbaImage`）をそのまま渡すよう変更。これにより PNG エンコード→デコードの無駄も削減できる。
+     - MSE 閾値は 1000.0 を維持（フルHD画面での経験値。ウィンドウサイズ変更後の実測で調整が必要なら追記する）。
+
+2. **Bug 2: 最前面化実装**
+   - **原因**: `CaptureProfile` に `use_bring_to_top: bool` フィールドはあるが、`run_continuous_capture_loop()` 内で参照・実行されていない。
+   - **修正案**:
+     - `bring_window_to_front(profile: &CaptureProfile) -> Result<(), String>` 関数を新規作成
+     - macOS 実装: `std::process::Command` で `osascript` を実行
+       ```applescript
+       tell application "System Events" to set frontmost of process "Kindle" to true
+       ```
+       プロセス名は `profile.process_name` から `.exe` を除去した値を使用する。
+     - Windows 実装: `SetForegroundWindow` API または `enigo` の代替機能を検討。当面は `#[cfg(target_os = "macos")]` と `#[cfg(target_os = "windows")]` で分岐し、Windows は TODO コメントを残す。
+     - `run_continuous_capture_loop()` のキャプチャ前に、`profile.use_bring_to_top && !profile.window_title_keyword.is_empty()` の場合のみ呼び出し
+     - 最前面化後、500ms の待機を入れる（ウィンドウが前面に来るまでの猶予）
+
+3. **ビルド・動作確認**
+   - `cargo check` → `npm run build` → `npm run tauri dev`
+   - Kindle for Mac を開いた状態で連続キャプチャテスト（10ページ程度）
+   - 最前面化フラグ ON/OFF の両方で動作確認
+
+4. **想定される注意点**
+   - macOS で `osascript` の実行に Accessibility 権限が必要になる場合がある
+   - ウィンドウタイトルがない（`window_title_keyword` が空）の場合は最前面化をスキップ（全画面キャプチャ時に他のアプリを最前面に持ってくる意味がないため）
+   - `enigo` crate が既に依存にあり、`SetForegroundWindow` の代替機能があればそちらを利用してもよい
+
+【実施結果】
+- 2026-08-16: Bug 1 を修正
+  - `calculate_mse()` のシグネチャを変更：`fn calculate_mse(prev: &RgbaImage, curr: &RgbaImage) -> f64`
+  - ピクセルレベルで RGBA 各チャネルの差分を計算：`(r1−r2)² + (g1−g2)² + (b1−b2)² + (a1−a2)²` の画素数での平均
+  - `run_continuous_capture_loop` で `capture_window_image()` の返り値（`RgbaImage`）をそのまま渡すよう変更。PNG エンコード→デコードの無駄を削減
+  - MSE 閾値は 1000.0 を維持
+- 2026-08-16: Bug 2 を修正
+  - `bring_window_to_front(profile: &CaptureProfile) -> Result<(), String>` 関数を新規作成
+  - macOS: `osascript` で `System Events` 経由にプロセスの `frontmost` を設定
+    ```applescript
+    tell application "System Events" to set frontmost of process "Kindle" to true
+    ```
+  - `run_continuous_capture_loop()` のキャプチャ前に常に実行（xcap では非最前面ウィンドウがキャプチャ不可のため `use_bring_to_top` フラグは削除）
+  - 最前面化後の待機時間を 500ms → 1500ms に延長
+- `capture_window_image()` にリトライ機構（最大3回、500ms間隔）を追加
+  - 「Failed to copy data」エラー時に自動リトライし成功するケースあり
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功
+- **手動テスト結果（2026-08-16）**: 連続キャプチャで Kindle for Mac が最前面に来て、複数ページ取得に成功
+  - 以下の追加修正点が発見された（未対応）：
+    1. 「クリック位置」は未実装機能なので廃止すべき
+    2. プロファイルのデフォルト値を "kindle" に固定すべき
+    3. 「ページ送りキー」が変更できない（デフォルト値表示も "right" ではなく "右矢印（→）" のように選択リストと同じ文言にすべき）
+    4. 「ウィンドウタイトルキーワード」はビルトインプロファイルでは変更不可なので表示不要
+    5. 「プロセス名」はビルトインプロファイルでは変更不可なので表示不要、デフォルト値を "Kindle.exe" → "Kindle" に変更すべき
+- `.clinerules` に「コミット前にユーザーのテストと合格判定が必須」を追記
+- ブランチ: `feature/002008-1-bug-fix`
+- 2026-08-17: ユーザーテストで発見された追加バグの修正（第2回修正）
+  - **先頭ページ復帰処理の書き換え（MSE差分検出方式）**
+    - 原因: 固定200回逆方向ページ送りでは「先頭到達」を検出できない。ユーザー指摘: 「200回の根拠はなんですか？本来は先頭ページに到達するまでが正解です」
+    - 修正: capture.rs の先頭復帰処理を完全書き換え
+      - `bring_window_to_front` を先頭復帰の「前」に実行（キー入力が確実に届くようフォーカスを当てる）
+      - スクリーンショットを撮りながら逆方向ページ送りを繰り返すループ
+      - `calculate_mse(prev, curr)` で前回画像と比較。MSE < 50.0 で「これ以上逆方向にページを変更できない（＝先頭到達）」と判定
+      - 最大200回の安全上限、20ページごとに進捗イベントをemit
+  - **profileStore.ts: builtinProfiles.processName の修正**
+    - 原因: `processName: ""`（空文字）で `bring_window_to_front` の osascript が機能しない
+    - 修正: `processName: "Kindle"` に変更（Kindle for Mac のプロセス名）
+  - **ProfileEditor.tsx / select.tsx: SelectItem textValue 対応 → 不要と判断**
+    - Base UI の `SelectPrimitive.Item` が `textValue` prop を受け付けない型定義だった
+    - `SelectItem` コンポーネントの型拡張 → JSX 側渡しを試みたが依然 TypeScript エラー
+    - 結論: Base UI の `SelectValue` は `SelectItemText` の children を自動認識するため、明示的な `textValue` は不要。呼び出し側に `textValue` を追加せずとも日本語ラベルが正しく表示される
+    - 実際: `select.tsx` は元の `...props` 方式に戻し、`ProfileEditor.tsx` は変更なしで正常動作
+- `cargo check`: コンパイル成功（error 0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- **Git コミットは未実施（ユーザーの合格確認待ち）**
+
+### 002008-2 プロファイルUI改善（デフォルト選択・表示・バリデーション）
+
+【計画】
+1. **デフォルトプロファイル選択を "kindle" に固定**
+   - `localapp/src/store/profileStore.ts` — `selectedProfileKey` の初期値を `null` → `"kindle"` に変更
+   - これにより起動時に「プロファイルを選択」placeholder の代わりに「Kindle」が即座に選択される
+2. **ページ送りキーの SelectValue を日本語表示に変更（base-ui auto-render方式）**
+   - `localapp/src/components/capture/ProfileEditor.tsx` — `pageTurnKeyLabelMap` 定数を削除
+   - `<SelectValue>{...}</SelectValue>` を `<SelectValue />` に変更（base-ui の自動レンダリングに任せる）
+   - SelectItem から `space` / `arrow` を削除し、「右矢印（→）」「左矢印（←）」のみに絞り込み
+3. **ページ送り待機時間を数値入力から Select に変更**
+   - `localapp/src/components/capture/ProfileEditor.tsx` — `<Input type="number">` を `<Select>` に変更
+   - 選択肢は固定値：0.15 / 0.20 / 0.25 / 0.30（秒）
+   - `pageWait` の型は float のまま維持（parseFloat で変換）
+4. **書籍タイトルバリデーションを追加**
+   - `localapp/src/views/CaptureView.tsx` — `handleStartCapture()` に `bookTitle.trim() === ""` チェックを追加
+   - 未入力または空白のみの場合は `setError("書籍タイトルを入力してください")` を表示して早期 return
+5. **エラーメッセージをボタンの右に移動**
+   - `localapp/src/views/CaptureView.tsx` — エラーメッセージの表示位置を変更
+   - 連続キャプチャ開始/停止ボタンと同じ flex コンテナ内に配置し、ボタンの右横に表示
+6. **「先頭ページから」「現在ページから」スイッチを追加**
+   - `localapp/src/views/CaptureView.tsx` — 書籍タイトル入力欄の右にラジオボタンまたは Select スイッチを配置
+   - 状態 `startFromBeginning: boolean` を `useState` で管理
+   - 「先頭ページから」選択時：連続キャプチャ開始前に先頭ページまでページ送りキーの逆方向を連続入力して復帰
+   - 先頭復帰処理: `capture.rs` の `run_continuous_capture_loop` 内で `page_turn_reverse()` を実装し、開始前に一定回数（例: 200回）の逆方向ページ送りを実行
+7. **プロファイルエディタのレイアウト変更**
+   - `localapp/src/components/capture/ProfileEditor.tsx` — 「ページ送りキー」「ページ待機時間」「コンテンツ領域トリミング」を横一列に配置
+   - トリミングの順序を「上・右・下・左」→「右・左・上・下」に変更
+   - 各トリミング入力欄の横幅を数字4桁が入る程度（`max-w-[80px]` 等）に縮小
+8. **ビルド確認**
+   - `cargo check`（Rust コンパイル確認）
+   - `npm run build`（フロントエンドビルド確認）
+   - `npx tauri build`（リリースビルド + バンドル確認）
+
+【実施結果】
+- `profileStore.ts` の修正
+  - `selectedProfileKey` の初期値を `null` → `"kindle"` に変更
+  - これにより起動時に「プロファイルを選択」ではなく「Kindle」が即座に選択される
+- `ProfileEditor.tsx` の修正（第1回実装）
+  - `pageTurnKeyLabelMap` 定数を新規追加（right→右矢印（→）, left→左矢印（←）, space→スペース, arrow→矢印キー（左右））
+  - `<SelectValue />` を `<SelectValue>{pageTurnKeyLabelMap[...]}</SelectValue>` に変更
+  - ページ送り待機時間を `<Input type="number">` から `<Select>` に変更。選択肢は 0.15 / 0.20 / 0.25 / 0.30
+  - 不要になった `localPageWait` useState / useEffect を削除
+  - `useState`, `useEffect` の import も同時に削除
+- `CaptureView.tsx` の修正（第1回実装）
+  - `handleStartCapture()` に `bookTitle.trim() === ""` チェックを追加
+  - 未入力時は `setError("書籍タイトルを入力してください")` を表示して早期 return
+- 第2回実装（2026-08-17）
+  1. SelectValue 表示バグ修正
+     - `pageTurnKeyLabelMap` を完全に削除
+     - `<SelectValue />`（auto-render方式）に変更。base-ui の自動レンダリングで SelectItem の children テキストが正しく表示される
+  2. ページ送りキー選択肢を2項目に絞り込み
+     - SelectItem から `space` / `arrow` を削除
+     - 「右矢印（→）」「左矢印（←）」のみに変更
+  3. エラーメッセージをボタンの右に移動
+     - `CaptureView.tsx` で連続キャプチャ開始/停止ボタンと同じ flex コンテナ内に `{error && <span>...>}` を配置
+     - ボタン群の下にあった独立したエラーブロックを削除
+  4. 「先頭ページから」「現在ページから」スイッチ追加
+     - `CaptureView.tsx` に `startFromBeginning` state を追加
+     - `Switch` + `Label` で「先頭ページから」「現在ページから」を表示
+     - `startCapture` に第3引数 `startFromBeginning` を追加
+  5. トリミング項目を横一列に配置
+     - `ProfileEditor.tsx` のレイアウトを `grid-cols-6` に変更
+     - 順序を「右・左・上・下」に変更
+     - 各 `<Input>` に `className="max-w-[80px]"` を追加
+  6. `capture.rs` で先頭ページ復帰処理実装
+     - `run_continuous_capture_loop` に `start_from_beginning: bool` 引数を追加
+     - ループ開始前に `turn_page_reverse()` を200回連続実行
+     - 20ページごとに進捗イベントを emit
+     - 完了後 500ms 待機
+  7. `turn_page_reverse()` 関数を新規追加
+     - `turn_page()` の逆方向キーを入力（RightArrow ↔ LeftArrow）
+- ビルド確認
+- `cargo check`: コンパイル成功（`>>>>+++ REPLACE` 混入によるエラーを修正後、エラー0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- 2026-08-17: ユーザーテスト結果とバグ修正（3点）
+  - テスト結果: ユーザーにテストしてもらい、3点の指摘が発見された
+    1. 「先頭ページから」を選択しても、一旦先頭まで戻ってからキャプチャ開始しない
+       - 原因: `captureStore.ts` の `invoke("start_continuous_capture", { ... })` でキー名が camelCase (`startFromBeginning`) になっていた
+       - Tauri の `invoke` は JS 側のオブジェクトキー名と Rust 側の引数名が**完全一致**する必要がある（自動変換は行われない）
+       - Rust 側の引数名は snake_case (`start_from_beginning`) のため、マッピングに失敗して常にデフォルト値（false 相当）として処理されていた
+       - 修正: `start_from_beginning: startFromBeginning` に変更
+    2. 「Kindle for PC」と書いてあるエリア（ProfileSelector の初期表示）が初期表示で表示されなくなった
+       - 原因: `<SelectValue />`（base-ui の auto-render 方式）は `builtinProfiles` 内の対応する `<SelectItem>` の children を自動で探す
+       - `fetchProfiles()` が非同期のため初期レンダリング時は `builtinProfiles` が空配列で `SelectItem` が存在せず、placeholder のままになっていた
+       - 修正: `selectedProfile = builtinProfiles.find((p) => p.key === selectedProfileKey)` で該当プロファイルを探し、`selectedProfile?.name ?? selectedProfileKey` を `<SelectValue>` の children として手動で渡す
+         - 読み込み前は `selectedProfileKey` の値（"kindle"）が表示され、読み込み後は正しい日本語名に切り替わる
+    3. 「先頭ページから」スイッチの配置位置が「連続キャプチャ開始」ボタンの左になっている
+       - ユーザー要求: スイッチは「連続キャプチャ」の右に配置すること
+       - 修正: `CaptureView.tsx` の flex コンテナ内で [スイッチ] → [ボタン] の順を [ボタン] → [スイッチ] に入れ替え
+  - 修正後のビルド確認
+    - `cargo check`: コンパイル成功（エラー0）
+    - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+  - 2026-08-17: ProfileEditor.tsx レイアウト再構成（追加修正）
+    - 「ページ送りキー」「ページ送り待機時間（秒）」を2列グリッド（`grid-cols-2`）に配置
+    - トリミング設定を「取り込み画像トリミング」見出し付きの独立セクションに分離
+    - トリミング入力を十字レイアウト（3列グリッド）に再配置
+      - Row 1: 空 | 「上 (px)」入力欄 | 空
+      - Row 2: 「左 (px)」入力欄 | 中央に「枠」表示 | 「右 (px)」入力欄
+      - Row 3: 空 | 「下 (px)」入力欄 | 空
+    - 各トリミング入力に `text-center` を追加（中央揃え）
+    - トリミング説明文を `text-center` に変更
+    - `cargo check`: コンパイル成功（エラー0）
+    - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+  - 2026-08-17: bookTitle / startFromBeginning 引数名の camelCase 統一修正
+    - 原因: `invalid args \`bookTitle\` for command \`start_continuous_capture\`` エラーが発生
+    - Tauri の `invoke()` は JS オブジェクトのキー名と Rust コマンドの引数名が完全一致する必要がある
+    - フロントエンド（`captureStore.ts`）が `bookTitle` / `startFromBeginning` を送信し、Rust 側（`capture.rs`）が `book_title` / `start_from_beginning` を期待していたためマッチング失敗
+    - 修正案: 両方を camelCase に統一（`bookTitle`, `startFromBeginning`）
+      - `localapp/src/store/captureStore.ts`: `book_title` → `bookTitle`, `start_from_beginning` → `startFromBeginning`
+      - `localapp/src-tauri/src/commands/capture.rs`: 関数シグネチャ・コメント・変数参照を全て camelCase に変更
+    - `cargo check`: コンパイル成功（エラー0、non_snake_case 警告2つは想定内）
+    - `npm run tauri dev`: 起動成功
+    - ユーザーテスト: 「連続キャプチャ開始」ボタンクリックで `bookTitle` エラーが解消されたことを確認
 
 ### 002006（将来タスク）ウィンドウ最前面化・クリック自動化
 

@@ -29,6 +29,13 @@ export function ProfileSelector() {
   const selectedProfileKey = useProfileStore((state) => state.selectedProfileKey);
   const selectProfile = useProfileStore((state) => state.selectProfile);
 
+  // 選択中のプロファイル名を取得
+  // builtinProfiles が未読み込み（空配列）でも selectedProfileKey は "kindle" 等の初期値を持つため、
+  // SelectValue に手動で表示テキストを渡して初期表示時にplaceholderにならないようにする。
+  // builtinProfiles 読み込み後は .find() で name が解決される。
+  const selectedProfile = builtinProfiles.find((p) => p.key === selectedProfileKey);
+  const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロファイルを選択";
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground shrink-0">プロファイル</span>
@@ -37,7 +44,7 @@ export function ProfileSelector() {
         onValueChange={(key) => key && selectProfile(key)}
       >
         <SelectTrigger className="w-[240px]">
-          <SelectValue placeholder="プロファイルを選択" />
+          <SelectValue placeholder="プロファイルを選択">{displayLabel}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {builtinProfiles.map((profile) => (

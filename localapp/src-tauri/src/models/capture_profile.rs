@@ -7,7 +7,6 @@
 ///
 /// 参考: reference/localapp/core/capture_profiles.py の CaptureProfile dataclass
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// コンテンツ領域トリミング設定（ピクセル単位）
 ///
@@ -45,12 +44,7 @@ pub struct CaptureProfile {
     pub page_wait: f64,
     /// 境界検出方式。"full"=全画面（既定） / "manual"=手動クロップ
     pub boundary_method: String,
-    /// クリック位置。"center"=中央 / "top_left"=左上
-    /// Kindle では左上クリックでメニューが出にくい位置となるため "top_left" を推奨
-    pub click_position: String,
-    /// キャプチャ前に対象ウィンドウを最前面へ持ってくるか
-    pub use_bring_to_top: bool,
-    /// プロセス名フィルタ（例: "Kindle.exe"）。空欄ならフィルタ無効
+    /// プロセス名フィルタ（例: "Kindle"）。空欄ならフィルタ無効
     pub process_name: String,
     /// ウィンドウ検索などのタイムアウト時間（秒）
     pub timeout_seconds: f64,
@@ -78,9 +72,7 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 0.15,
                     boundary_method: "full".to_string(),
-                    click_position: "top_left".to_string(),
-                    use_bring_to_top: false,
-                    process_name: "Kindle.exe".to_string(),
+                    process_name: "Kindle".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
                     crop_insets: CropInsets {
@@ -101,8 +93,6 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 5.0,
                     boundary_method: "full".to_string(),
-                    click_position: "center".to_string(),
-                    use_bring_to_top: true,
                     process_name: "".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
@@ -117,9 +107,7 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 0.5,
                     boundary_method: "full".to_string(),
-                    click_position: "center".to_string(),
-                    use_bring_to_top: false,
-                    process_name: "Kobo.exe".to_string(),
+                    process_name: "Kobo".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
                     crop_insets: CropInsets::default(),
@@ -133,9 +121,7 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 1.0,
                     boundary_method: "full".to_string(),
-                    click_position: "center".to_string(),
-                    use_bring_to_top: false,
-                    process_name: "BWViewer.exe".to_string(),
+                    process_name: "BWViewer".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
                     crop_insets: CropInsets::default(),
@@ -149,9 +135,7 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 0.5,
                     boundary_method: "full".to_string(),
-                    click_position: "center".to_string(),
-                    use_bring_to_top: false,
-                    process_name: "DMMBooksViewer.exe".to_string(),
+                    process_name: "DMMBooksViewer".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
                     crop_insets: CropInsets::default(),
@@ -165,9 +149,7 @@ impl CaptureProfile {
                     page_turn_key: "right".to_string(),
                     page_wait: 0.5,
                     boundary_method: "full".to_string(),
-                    click_position: "center".to_string(),
-                    use_bring_to_top: false,
-                    process_name: "Kinoppy.exe".to_string(),
+                    process_name: "Kinoppy".to_string(),
                     timeout_seconds: 5.0,
                     max_retries: 3,
                     crop_insets: CropInsets::default(),
@@ -197,10 +179,6 @@ pub struct ProfileEntry {
     pub page_wait: f64,
     /// 境界検出方式
     pub boundary_method: String,
-    /// クリック位置
-    pub click_position: String,
-    /// 最前面化フラグ
-    pub use_bring_to_top: bool,
     /// プロセス名フィルタ
     pub process_name: String,
     /// タイムアウト時間（秒）
@@ -220,8 +198,6 @@ impl From<(String, CaptureProfile)> for ProfileEntry {
             page_turn_key: profile.page_turn_key,
             page_wait: profile.page_wait,
             boundary_method: profile.boundary_method,
-            click_position: profile.click_position,
-            use_bring_to_top: profile.use_bring_to_top,
             process_name: profile.process_name,
             timeout_seconds: profile.timeout_seconds,
             max_retries: profile.max_retries,
