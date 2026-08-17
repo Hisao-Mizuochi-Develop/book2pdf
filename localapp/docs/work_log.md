@@ -454,17 +454,20 @@
      - 修正: `select.tsx` は元の `...props` 方式に戻し、`ProfileEditor.tsx` は変更なしのままで正常動作
 - `cargo check`: コンパイル成功（エラー0）
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
-- **Git コミットは未実施（ユーザーの合格確認待ち）**
 - 2026-08-17: bookTitle / startFromBeginning 引数名の camelCase 統一修正
-  - 原因: `invalid args \`bookTitle\` for command \`start_continuous_capture\`` エラーが発生
-  - Tauri の `invoke()` は JS オブジェクトのキー名と Rust コマンドの引数名が完全一致する必要がある（自動変換は行われない）
-  - フロントエンド（`captureStore.ts`）が `bookTitle` / `startFromBeginning` を送信し、Rust 側（`capture.rs`）が `book_title` / `start_from_beginning` を期待していたためマッチング失敗
-  - 修正案: 両方を camelCase に統一（`bookTitle`, `startFromBeginning`）
-    - `localapp/src/store/captureStore.ts`: `book_title` → `bookTitle`, `start_from_beginning` → `startFromBeginning`
-    - `localapp/src-tauri/src/commands/capture.rs`: 関数シグネチャ・コメント・変数参照を全て camelCase に変更
-  - `cargo check`: コンパイル成功（エラー0、non_snake_case 警告2つは想定内）
-  - `npm run tauri dev`: 起動成功
-  - ユーザーテスト: 「連続キャプチャ開始」ボタンクリックで `bookTitle` エラーが解消されたことを確認
+    - 原因: `invalid args \`bookTitle\` for command \`start_continuous_capture\`` エラーが発生
+    - Tauri の `invoke()` は JS オブジェクトのキー名と Rust コマンドの引数名が完全一致する必要がある
+    - フロントエンド（`captureStore.ts`）が `bookTitle` / `startFromBeginning` を送信し、Rust 側（`capture.rs`）が `book_title` / `start_from_beginning` を期待していたためマッチング失敗
+    - 修正案: 両方を camelCase に統一（`bookTitle`, `startFromBeginning`）
+      - `localapp/src/store/captureStore.ts`: `book_title` → `bookTitle`, `start_from_beginning` → `startFromBeginning`
+      - `localapp/src-tauri/src/commands/capture.rs`: 関数シグニチャ・コメント・変数参照を全て camelCase に変更
+    - `cargo check`: コンパイル成功（エラー0、non_snake_case 警告2つは想定内）
+    - `npm run tauri dev`: 起動成功
+    - ユーザーテスト: 「連続キャプチャ開始」ボタンクリックで `bookTitle` エラーが解消されたことを確認
+- Git コミット・マージ完了
+  - ブランチ: `feature/002008-window-capture-xcap`
+  - コミット: `34723f6`
+  - main ブランチへ Fast-forward マージ済み
 
 ---
 
@@ -545,4 +548,4 @@
     - 下段中央: 「下 (px)」
   - トリミング入力欄に `text-center` を追加し、数字を中央揃えに
   - トリミング説明文を `text-center` に変更
-- **Git コミットは未実施（ユーザーの合格確認待ち）**
+- Git コミット完了（002008-1/002008-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
