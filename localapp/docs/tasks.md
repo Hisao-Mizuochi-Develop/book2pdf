@@ -805,36 +805,109 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 005001 | ZIP アーカイブ化（Rust バックエンド） | 2026-08-15 |  | 実装 |
-| 005002 | 出力設定・ファイル名設定 UI | 2026-08-15 |  | 実装 |
-| 005003 | タブ間自動連携 | 2026-08-15 |  | 実装 |
+| 005001 | ZIP アーカイブ化（Rust バックエンド） | 2026-08-15 | 2026-08-18 | 実装 |
+| 005002 | 出力設定・ファイル名設定 UI | 2026-08-15 | 2026-08-18 | 実装 |
+| 005003 | タブ間自動連携 | 2026-08-15 | 2026-08-18 | 実装 |
 
 ### 005001 ZIP アーカイブ化（Rust バックエンド）
 
 【計画】
-- `zip` crate を用いて画像フォルダを ZIP 化
-- ファイル名順で格納
-- 保存ダイアログ連携
+1. `localapp/src-tauri/src/commands/capture.rs` に `create_zip_archive` コマンドを新規追加
+    - `zip` crate の `ZipWriter` を使用して画像フォルダを ZIP 化
+    - 対象ファイル: `.png` / `.jpg` / `.jpeg`（小文字で判定、jpeg は jpg として扱う）
+    - ファイル名順に `sort()` でソートしてから ZIP エントリに追加（`pdf_builder.py: images_to_pdf` を参考）
+    - 圧縮方式は `zip::CompressionMethod::Deflated`（標準的な圧縮）
+    - 20ファイルごとに `zip-progress` 進捗イベントを emit（進捗コールバック方式は `pdf_extractor.py` を参考）
+    - 完了後、出力ファイルパスを返却
+2. `localapp/src-tauri/src/lib.rs` に `commands::capture::create_zip_archive` を `invoke_handler` に追加
+3. `cargo check` でコンパイル確認
+4. `npm run build` でフロントエンドビルド確認
+5. 想定される注意点
+    - 大規模フォルダでの非同期処理は将来検討（今回は同期的実装でシンプルに保つ）
+    - 画像ファイル以外はZIPに含めない
+    - 出力パスに拡張子がない場合は `.zip` を自動付与
 
 【実施結果】
+- `localapp/src-tauri/src/commands/capture.rs` に `create_zip_archive` コマンドを追加
+  - `ZipWriter::new(File::create(output_path)?)` で ZIP ファイルを作成
+  - `walkdir` の代わりに `std::fs::read_dir()` を使用（依存最小化）
+  - `.png` / `.jpg` / `.jpeg` を小文字でフィルタ、ファイル名順に `sort()`
+  - `CompressionMethod::Deflated` でエントリ追加
+  - 20ファイルごとに `app_handle.emit("zip-progress", ZipProgressPayload { current, total, message })` で進捗通知
+  - 出力パスに `.zip` 拡張子がない場合は自動付与
+- `localapp/src-tauri/src/lib.rs` に `commands::capture::create_zip_archive` を `invoke_handler` に登録
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功
+- ブランチ: `feature/005001-zip-archiver`
 
 ### 005002 出力設定・ファイル名設定 UI
 
 【計画】
-- 出力先選択、ファイル名入力
-- 保存前に上書き確認
-- 前工程からの自動入力対応
+1. `tauri-plugin-dialog` を追加
+    - `localapp/src-tauri/Cargo.toml`: `tauri-plugin-dialog = "2"` を追加
+    - `localapp/package.json`: `@tauri-apps/plugin-dialog` を追加
+    - `localapp/src-tauri/src/lib.rs`: `.plugin(tauri_plugin_dialog::init())` を追加
+    - `localapp/src-tauri/capabilities/default.json`: `dialog:allow-open` / `dialog:allow-save` 権限を追加
+2. `localapp/src/store/exportStore.ts` を新規作成（Zustand ストア）
+    - `sourceFolder`: 入力画像フォルダパス
+    - `outputName`: 出力 ZIP ファイル名（拡張子除く、デフォルト "images"）
+    - `outputFolder`: 出力先フォルダパス
+    - `isCreating`: ZIP 作成実行中フラグ
+    - `progressMessage`: 進捗メッセージ
+    - `setSourceFolder()`, `setOutputName()`, `setOutputFolder()`: セッター
+3. `localapp/src/views/ExportView.tsx` を完全書き換え
+    - 入力フォルダ表示（captureStore.lastCaptureFolder から自動引継ぎ）
+    - 出力ファイル名 `<Input>`
+    - 「出力先を選択」ボタン → `tauri-plugin-dialog` のフォルダ選択ダイアログ
+    - 「ZIP 作成」ボタン → `invoke("create_zip_archive", { folderPath, outputPath })`
+    - `listen("zip-progress")` で進捗を受信して表示
+    - 完了後、出力ファイルパス表示 + 「フォルダを開く」ボタン
+4. `cargo check` / `npm run build` / `npm run tauri dev`
+5. 想定される注意点
+    - Tauri v2 の dialog plugin はフォルダ選択とファイル保存の両方をサポート
+    - UI レイアウトは Apple HIG 風（白基調・余白多め・控えめな角丸）を維持
 
 【実施結果】
+- `tauri-plugin-dialog` を追加
+  - `Cargo.toml`: `tauri-plugin-dialog = "2.7.2"` を追加（`cargo add tauri-plugin-dialog@2`）
+  - `package.json`: `@tauri-apps/plugin-dialog` を追加（`npm install @tauri-apps/plugin-dialog`）
+  - `lib.rs`: `.plugin(tauri_plugin_dialog::init())` を追加
+  - `capabilities/default.json`: `dialog:allow-open` 権限を追加
+- `localapp/src/store/exportStore.ts` を新規作成
+  - Zustand ストア: `sourceFolder`, `outputName`, `outputFolder`, `isCreating`, `progressMessage`, `resultPath`
+  - `createZip()`: `invoke("create_zip_archive")` + `listen("zip-progress")` で進捗受信
+  - 完了後 `resultPath` に出力ファイルパスを保存
+- `localapp/src/views/ExportView.tsx` を完全書き換え
+  - 入力設定セクション（sourceFolder 表示、画像枚数）
+  - 出力設定セクション（outputName Input、outputFolder 選択ボタン）
+  - ZIP 作成ボタン + 進捗メッセージ + 完了後結果表示 + 「フォルダを開く」ボタン
+- `cargo check`: 成功（既存の non_snake_case warning のみ）
+- `npm run build`: 成功
+- 005002 と 005003 は連続して実施（同一ブランチで実装）
 
 ### 005003 タブ間自動連携
 
 【計画】
-- キャプチャ完了 → トリミング入力に自動設定
-- トリミング完了 → ZIP 出力に自動設定
-- 状態管理（Zustand）で連携
+1. `ExportView.tsx` の mount 時に `captureStore.lastCaptureFolder` を監視し、存在すれば `sourceFolder` に自動設定
+2. TrimView からの `lastTrimmedFolder` 連携（将来 UC004 完了後に対応するため、exportStore は state で受け渡し可能な構造にしておく）
+3. フォルダ設定時に `list_capture_images` で画像枚数を確認して表示
+4. 想定される注意点
+    - captureStore.lastCaptureFolder は連続キャプチャ完了後に保存されるため、エクスポートタブを開く前にキャプチャが完了している必要がある
 
 【実施結果】
+- `ExportView.tsx` に `useEffect` で `captureStore.lastCaptureFolder` の変更を監視
+  - `lastCaptureFolder` が変更されると自動的に `exportStore.setSourceFolder()` に反映
+  - ユーザーがキャプチャタブで連続キャプチャ完了後、ZIP 作成タブを開くと入力フォルダが自動設定される
+- `list_capture_images` コマンドで画像枚数を取得して表示
+  - `sourceFolder` 変更時に `invoke("list_capture_images", { folderPath: sourceFolder })` を実行
+  - 取得したファイル数を「画像ファイル: X 枚」として表示
+- 追加修正（ユーザー要望）: 入力設定セクションに任意フォルダ選択ボタンを追加
+  - `ExportView.tsx` の「入力設定」セクションに「変更」/「選択」ボタンを追加
+  - `tauri-plugin-dialog` の `open({ directory: true })` でフォルダを選択し `setSourceFolder` に設定
+  - sourceFolder が未設定時は「選択」ボタン、設定済み時は「変更」ボタンを表示
+  - これにより、キャプチャタブを経由せずに既存の画像フォルダから ZIP 作成が可能になった
+- `cargo check`: 成功
+- `npm run build`: 成功
 
 ---
 

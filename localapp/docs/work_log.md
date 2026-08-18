@@ -471,6 +471,150 @@
 
 ---
 
+## 005001 — ZIP アーカイブ化（Rust バックエンド）
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: トリミング済み画像フォルダを ZIP アーカイブにまとめる Rust コマンドを実装する
+- 前提:
+  - feature/005001-zip-archiver ブランチを作成済み
+  - reference/localapp/core/pdf_builder.py の画像→ファイル化ロジックを参考にする
+  - `zip` crate は既に Cargo.toml に追加済み（002002 で追加）
+- 変更内容:
+  1. `localapp/src-tauri/src/commands/capture.rs` — `create_zip_archive` コマンド新規追加
+     - `zip` crate の `ZipWriter` を使用して画像フォルダを ZIP 化
+     - `.png` / `.jpg` / `.jpeg` をファイル名順にソートして格納（`pdf_builder.py` のパターンを踏襲）
+     - `Deflate` 圧縮方式で ZIP エントリを追加
+     - 20ファイルごとに `zip-progress` 進捗イベントを emit（`pdf_extractor.py` のコールバック方式を参考）
+     - 完了後、出力ファイルパスを返却
+  2. `localapp/src-tauri/src/lib.rs` — `invoke_handler` に `create_zip_archive` を登録
+  3. `cargo check` / `npm run build` でビルド確認
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+- 想定される結果や注意点:
+  - zip crate は既に Cargo.toml に追加済み（002002 scaffold 時に追加）
+  - 画像ファイル以外は ZIP に含めない
+  - 出力パスに拡張子がない場合は `.zip` を自動付与
+  - 大規模フォルダでの非同期処理は将来検討（今回は同期的実装でシンプルに保つ）
+
+### 【実施実績】
+
+- `create_zip_archive` コマンドを `capture.rs` に追加
+  - `ZipProgressPayload` struct を定義（`#[derive(Serialize, Clone)]`）
+    - `current: usize`, `total: usize`, `message: String`
+  - `create_zip_archive(app_handle, folderPath, outputPath)` コマンド
+    - `folderPath` の存在確認、存在しなければエラー返却
+    - 出力パスに `.zip` 拡張子がない場合は自動付与
+    - `std::fs::read_dir()` でフォルダ内ファイルを列挙
+    - `.png` / `.jpg` / `.jpeg` を小文字でフィルタ（`file_name.to_lowercase().ends_with(...)`）
+    - `files.sort()` でファイル名順にソート
+    - `ZipWriter::new(File::create(&output_path)?)` で ZIP ファイル作成
+    - 各ファイルを `CompressionMethod::Deflated` でエントリ追加
+    - 20ファイルごとに `app_handle.emit("zip-progress", payload)` で進捗通知
+    - 完了後、出力ファイルパスを `String` で返却
+- `lib.rs` に `commands::capture::create_zip_archive` を `invoke_handler` に登録
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- ブランチ: `feature/005001-zip-archiver`
+
+---
+
+## 005002 — 出力設定・ファイル名設定 UI
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: ZIP 出力画面の UI を実装し、フォルダ選択ダイアログと ZIP 作成ボタンを追加する
+- 前提:
+  - 005001（ZIP アーカイブ化 Rust コマンド）が完了していること
+  - feature/005002-export-ui ブランチを作成済み（005001 と連続して同一ブランチで実施）
+- 変更内容:
+  1. `tauri-plugin-dialog` を追加
+     - `Cargo.toml`: `tauri-plugin-dialog = "2"`
+     - `package.json`: `@tauri-apps/plugin-dialog`
+     - `lib.rs`: `.plugin(tauri_plugin_dialog::init())`
+     - `capabilities/default.json`: `dialog:allow-open` 権限
+  2. `localapp/src/store/exportStore.ts` — Zustand ストア新規作成
+  3. `localapp/src/views/ExportView.tsx` — ZIP 出力画面を完全書き換え
+- 実施コマンド:
+  1. `cargo add tauri-plugin-dialog@2`
+  2. `npm install @tauri-apps/plugin-dialog`
+  3. `cargo check`
+  4. `npm run build`
+- 想定される結果や注意点:
+  - Tauri v2 の dialog plugin はフォルダ選択とファイル保存の両方をサポート
+  - UI レイアウトは Apple HIG 風（白基調・余白多め・控えめな角丸）を維持
+
+### 【実施実績】
+
+- `tauri-plugin-dialog` を追加
+  - `cd localapp/src-tauri && cargo add tauri-plugin-dialog@2` で `tauri-plugin-dialog = "2.7.2"` を追加
+  - `cd localapp && npm install @tauri-apps/plugin-dialog` でフロントエンド依存を追加
+  - `lib.rs` に `.plugin(tauri_plugin_dialog::init())` を追加
+  - `capabilities/default.json` に `dialog:allow-open` 権限を追加
+- `localapp/src/store/exportStore.ts` を新規作成
+  - Zustand ストア: `sourceFolder`, `outputName`（デフォルト "images"）, `outputFolder`, `isCreating`, `progressMessage`, `resultPath`
+  - `createZip()`: `invoke("create_zip_archive")` を呼び出し、`listen("zip-progress")` で進捗イベントを受信して `progressMessage` を更新
+  - 完了後 `resultPath` に出力ファイルパスを保存
+  - `reset()`: 出力設定を初期値に戻す（`sourceFolder` はリセットしない）
+- `localapp/src/views/ExportView.tsx` を完全書き換え
+  - ヘッダー: ZIP アイコン + 「ZIP 作成」タイトル + 説明文
+  - 入力設定セクション: sourceFolder 表示、画像枚数表示
+  - 出力設定セクション: 出力ファイル名 `<Input>`、出力先フォルダ選択ボタン（`tauri-plugin-dialog` の `open({ directory: true })`）
+  - アクションエリア: ZIP 作成ボタン（disabled 条件: `!sourceFolder || !outputFolder || isCreating || imageCount === 0`）
+  - 進捗メッセージ表示（`progressMessage`）
+  - 完了後: 出力ファイルパス表示 + 「フォルダを開く」ボタン + リセットボタン
+- `cargo check`: 成功（既存の non_snake_case warning 4 つのみ、今回の変更とは無関係）
+- `npm run build`: 成功（tsc && vite build ともにエラーなし）
+- 005002 と 005003 は同一ブランチ `feature/005001-zip-archiver` で連続実施
+
+---
+
+## 005003 — タブ間自動連携 + 入力フォルダ任意選択
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: キャプチャタブと ZIP 出力タブの間でフォルダ情報を自動連携し、入力フォルダを任意に選択できるようにする
+- 前提:
+  - 005002（出力設定 UI）が完了していること
+  - feature/005001-zip-archiver ブランチ上で実施（005002 と同一ブランチ）
+- 変更内容:
+  1. `ExportView.tsx` に `useEffect` で `captureStore.lastCaptureFolder` を監視し、自動的に `sourceFolder` に反映
+  2. `sourceFolder` 変更時に `list_capture_images` で画像枚数を取得して表示
+  3. 入力設定セクションにフォルダ選択ボタンを追加（ユーザー追加要望）
+     - 未設定時は「選択」ボタン、設定済み時は「変更」ボタン
+     - `tauri-plugin-dialog` の `open({ directory: true })` を使用
+- 実施コマンド:
+  1. `npm run build`
+  2. `cargo check`
+- 想定される結果や注意点:
+  - `captureStore.lastCaptureFolder` は連続キャプチャ完了後に保存される
+  - ユーザーがキャプチャタブを経由せずに ZIP 作成タブを開いた場合、手動でフォルダを選択できるようにする
+
+### 【実施実績】
+
+- タブ間自動連携を実装
+  - `ExportView.tsx` に `useEffect` を追加: `captureStore.lastCaptureFolder` を監視し、変更時に `exportStore.setSourceFolder(lastCaptureFolder)` を実行
+  - 連続キャプチャ完了後に ZIP 作成タブを開くと、入力フォルダが自動的に設定される
+- 画像枚数取得
+  - `sourceFolder` 変更時に `invoke("list_capture_images", { folderPath: sourceFolder })` を実行
+  - 取得したファイル配列の `length` を `imageCount` state に保存
+  - エラー時は `imageCount = 0`
+- 入力フォルダ任意選択ボタンを追加（ユーザー要望）
+  - `handleSelectSourceFolder()` 関数を新規追加
+    - `open({ directory: true })` でフォルダ選択ダイアログを開く
+    - 選択されたフォルダパスを `setSourceFolder(selected)` に設定
+    - 画像枚数も即座に取得して表示される（`sourceFolder` useEffect がトリガーされる）
+  - sourceFolder 未設定時: 「選択」ボタンを表示（フォルダパス表示エリアの横）
+  - sourceFolder 設定済み時: 「変更」ボタンを表示（フォルダパス表示エリアの横）
+  - これにより、キャプチャタブを経由せずに既存の画像フォルダから ZIP 作成が可能になった
+- `npm run build`: 成功
+- `cargo check`: 成功（non_snake_case warning は既存のもの）
+- ブランチ: `feature/005001-zip-archiver`（005001〜005003 を同一ブランチで実施）
+
 ## 002008-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
 ### 【実施予定】

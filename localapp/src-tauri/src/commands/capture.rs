@@ -1068,3 +1068,138 @@ pub fn open_capture_folder(folder_path: String) -> Result<(), String> {
         .map_err(|e| format!("フォルダを開けません ({}): {}", folder_path, e))?;
     Ok(())
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 005001: ZIP アーカイブ化
+// ═════════════════════════════════════════════════════════════════════════════
+
+/// ZIP 作成進捗通知用イベントペイロード
+///
+/// `app_handle.emit("zip-progress", ZipProgressPayload)` でフロントエンドに送信される。
+/// フロントエンド側は `listen("zip-progress")` でこのイベントを受信する。
+#[derive(Clone, serde::Serialize)]
+pub struct ZipProgressPayload {
+    /// 現在処理済みのファイル数
+    pub current: u32,
+    /// 処理対象の総ファイル数
+    pub total: u32,
+    /// ユーザー向けメッセージ
+    pub message: String,
+}
+
+/// 指定フォルダ内の画像ファイルを ZIP アーカイブにまとめる
+///
+/// # 処理フロー
+/// 1. フォルダ内の `.png`/`.jpg`/`.jpeg` ファイルを拡張子フィルタで抽出
+/// 2. ファイル名順に `sort()` でソート（`pdf_builder.py: images_to_pdf` と同じパターン）
+/// 3. `zip::ZipWriter` で順次 ZIP エントリに追加（`CompressionMethod::Deflated`）
+/// 4. 20ファイルごとに `zip-progress` イベントを emit（進捗コールバック方式）
+/// 5. 完了後、出力ファイルパスを返却
+///
+/// # 引数
+/// - `app_handle`: Tauri AppHandle（イベント送信に使用）
+/// - `folderPath`: 入力画像フォルダの絶対パス
+/// - `outputPath`: 出力 ZIP ファイルの絶対パス（`.zip` 拡張子がなければ自動付与）
+///
+/// # 戻り値
+/// - `Ok(String)`: 作成した ZIP ファイルの絶対パス
+/// - `Err(String)`: 入力フォルダが存在しない、画像がない、または書き込みエラー時のメッセージ
+#[tauri::command]
+pub fn create_zip_archive(
+    app_handle: tauri::AppHandle,
+    folderPath: String,
+    outputPath: String,
+) -> Result<String, String> {
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+
+    let folder = std::path::Path::new(&folderPath);
+    if !folder.is_dir() {
+        return Err(format!("指定されたパスはフォルダではありません: {}", folderPath));
+    }
+
+    // 対象画像ファイルを抽出（拡張子フィルタ）
+    let image_extensions = ["png", "jpg", "jpeg"];
+    let mut image_files: Vec<std::path::PathBuf> = std::fs::read_dir(folder)
+        .map_err(|e| format!("フォルダ読み込みエラー: {}", e))?
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            if path.is_file() {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+                if image_extensions.contains(&ext.as_str()) {
+                    return Some(path);
+                }
+            }
+            None
+        })
+        .collect();
+
+    // ファイル名順でソート（連番画像の順序を維持するため）
+    image_files.sort();
+
+    if image_files.is_empty() {
+        return Err("指定されたフォルダに画像ファイル（.png/.jpg/.jpeg）が見つかりません".to_string());
+    }
+
+    // 出力パスに .zip 拡張子がなければ追加
+    let mut output_path = outputPath;
+    if !output_path.to_lowercase().ends_with(".zip") {
+        output_path.push_str(".zip");
+    }
+
+    // 出力先の親フォルダが存在しなければ作成
+    if let Some(parent) = std::path::Path::new(&output_path).parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("出力フォルダ作成エラー: {}", e))?;
+        }
+    }
+
+    let total_files = image_files.len() as u32;
+
+    // ZIP ファイル作成
+    let zip_file = std::fs::File::create(&output_path)
+        .map_err(|e| format!("ZIP ファイル作成エラー ({}): {}", output_path, e))?;
+    let mut zip_writer = zip::ZipWriter::new(zip_file);
+    let options = SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+
+    for (i, img_path) in image_files.iter().enumerate() {
+        let i_u32 = i as u32;
+        let filename = img_path.file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| format!("不正なファイル名: {}", img_path.display()))?;
+
+        // ファイル読み込み
+        let bytes = std::fs::read(img_path)
+            .map_err(|e| format!("ファイル読み込みエラー ({}): {}", filename, e))?;
+
+        // ZIP エントリに追加
+        zip_writer.start_file(filename, options)
+            .map_err(|e| format!("ZIP エントリ追加エラー ({}): {}", filename, e))?;
+        zip_writer.write_all(&bytes)
+            .map_err(|e| format!("ZIP 書き込みエラー ({}): {}", filename, e))?;
+
+        // 20ファイルごとに進捗イベントを emit（pdf_extractor.py の進捗コールバックパターンを踏襲）
+        if (i + 1) % 20 == 0 || i + 1 == image_files.len() {
+            let _ = app_handle.emit("zip-progress", ZipProgressPayload {
+                current: i_u32 + 1,
+                total: total_files,
+                message: format!("{}/{} ファイルを圧縮中...", i_u32 + 1, total_files),
+            });
+        }
+    }
+
+    zip_writer.finish()
+        .map_err(|e| format!("ZIP ファイルの finalize エラー: {}", e))?;
+
+    // 完了イベントを emit
+    let _ = app_handle.emit("zip-progress", ZipProgressPayload {
+        current: total_files,
+        total: total_files,
+        message: format!("ZIP ファイルを作成しました（{} ファイル）", total_files),
+    });
+
+    Ok(output_path)
+}

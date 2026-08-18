@@ -35,6 +35,8 @@ pub fn run() {
     tauri::Builder::default()
         // 外部リンクをデフォルトブラウザで開くための公式プラグイン
         .plugin(tauri_plugin_opener::init())
+        // フォルダ選択・保存ダイアログ用プラグイン（005002: 出力設定 UIで使用）
+        .plugin(tauri_plugin_dialog::init())
         // フロントエンドから呼び出せるコマンドを登録
         // ここに列挙した関数が `invoke("関数名")` で呼び出される
         .invoke_handler(tauri::generate_handler![
@@ -46,6 +48,8 @@ pub fn run() {
             commands::capture::list_capture_images,
             commands::capture::get_capture_image,
             commands::capture::open_capture_folder,
+            // 005001: ZIP アーカイブ化
+            commands::capture::create_zip_archive,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

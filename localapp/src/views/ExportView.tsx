@@ -1,10 +1,298 @@
+/**
+ * ZIP 出力画面（エクスポートタブ）
+ *
+ * 【機能概要】
+ * - キャプチャ完了後の画像フォルダを自動的に入力として引き継ぐ（タブ間連携）
+ * - 出力ファイル名・出力先フォルダを設定
+ * - ZIP アーカイブを作成し、進捗を表示
+ * - 完了後、出力ファイルパスを表示 + フォルダを開く
+ *
+ * 【技術仕様】
+ * - `tauri-plugin-dialog` の `open()` で出力先フォルダを選択
+ * - `invoke("create_zip_archive")` で Rust 側コマンドを呼び出し
+ * - `listen("zip-progress")` で進捗イベントを受信（exportStore 内で処理）
+ * - `captureStore.lastCaptureFolder` の変更を監視して自動連携（005003）
+ */
+
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useExportStore } from "@/store/exportStore";
+import { useCaptureStore } from "@/store/captureStore";
+import { FileArchive, FolderOpen, Folder, Package, RotateCcw } from "lucide-react";
+
+/**
+ * ZIP 出力画面コンポーネント
+ *
+ * Apple HIG 風のデザイン（白基調・余白多め・控えめな角丸）で構築する。
+ */
 export function ExportView() {
+  // ─── exportStore から状態を取得 ───
+  const {
+    sourceFolder,
+    outputName,
+    outputFolder,
+    isCreating,
+    progressMessage,
+    resultPath,
+    setSourceFolder,
+    setOutputName,
+    setOutputFolder,
+    createZip,
+    reset,
+  } = useExportStore();
+
+  // ─── captureStore からタブ間連携情報を取得（005003） ───
+  const lastCaptureFolder = useCaptureStore((state) => state.lastCaptureFolder);
+
+  // ─── 入力フォルダ内の画像枚数を管理 ───
+  const [imageCount, setImageCount] = useState(0);
+
+  /**
+   * captureStore.lastCaptureFolder の変更を監視し、
+   * 自動的に exportStore.sourceFolder に反映する（タブ間連携）
+   */
+  useEffect(() => {
+    if (lastCaptureFolder) {
+      setSourceFolder(lastCaptureFolder);
+    }
+  }, [lastCaptureFolder, setSourceFolder]);
+
+  /**
+   * sourceFolder が変更されたら画像枚数を取得する
+   */
+  useEffect(() => {
+    if (sourceFolder) {
+      invoke<string[]>("list_capture_images", { folderPath: sourceFolder })
+        .then((files) => setImageCount(files.length))
+        .catch(() => setImageCount(0));
+    } else {
+      setImageCount(0);
+    }
+  }, [sourceFolder]);
+
+  /**
+   * 入力フォルダ選択ダイアログを開く
+   *
+   * `tauri-plugin-dialog` の `open()` を使用して、
+   * ユーザーに入力画像フォルダを選択するダイアログを表示する。
+   */
+  const handleSelectSourceFolder = async () => {
+    try {
+      const selected = await open({ directory: true });
+      if (selected && typeof selected === "string") {
+        setSourceFolder(selected);
+      }
+    } catch (err) {
+      console.error("フォルダ選択エラー:", err);
+    }
+  };
+
+  /**
+   * 出力先フォルダ選択ダイアログを開く
+   *
+   * `tauri-plugin-dialog` の `open()` を使用して、
+   * ユーザーにフォルダ選択ダイアログを表示する。
+   */
+  const handleSelectOutputFolder = async () => {
+    try {
+      const selected = await open({ directory: true });
+      if (selected && typeof selected === "string") {
+        setOutputFolder(selected);
+      }
+    } catch (err) {
+      console.error("フォルダ選択エラー:", err);
+    }
+  };
+
+  /**
+   * ZIP 作成ボタンクリックハンドラ
+   *
+   * exportStore.createZip() を呼び出し、エラー時は progressMessage に反映する。
+   */
+  const handleCreateZip = async () => {
+    try {
+      await createZip();
+    } catch {
+      // エラーは exportStore 内で progressMessage に設定されている
+    }
+  };
+
+  /**
+   * ZIP ファイルの親フォルダを OS のファイルマネージャーで開く
+   */
+  const handleOpenResultFolder = async () => {
+    if (!resultPath) return;
+    // パス区切りは OS に応じて / または \ となるため、両方に対応
+    const lastSep = resultPath.lastIndexOf("/");
+    const lastSepWin = resultPath.lastIndexOf("\\");
+    const sepIndex = Math.max(lastSep, lastSepWin);
+    const folder = sepIndex > 0 ? resultPath.substring(0, sepIndex) : resultPath;
+    try {
+      await invoke("open_capture_folder", { folderPath: folder });
+    } catch (err) {
+      console.error("フォルダを開けません:", err);
+    }
+  };
+
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <h2 className="text-2xl font-semibold tracking-tight">ZIP出力</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        トリミング済み画像を ZIP アーカイブにまとめます。
-      </p>
+    <div className="flex h-full flex-col gap-6 overflow-auto p-6">
+      {/* ─── ヘッダー ─── */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F5F5F7]">
+          <FileArchive className="h-5 w-5 text-[#007AFF]" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">ZIP 作成</h2>
+          <p className="text-sm text-muted-foreground">
+            画像フォルダを ZIP アーカイブにまとめます
+          </p>
+        </div>
+      </div>
+
+      {/* ─── 入力設定セクション ─── */}
+      <section className="rounded-lg border border-border bg-white p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Package className="h-4 w-4 text-muted-foreground" />
+          入力設定
+        </div>
+        <div className="mt-3 space-y-2">
+          {sourceFolder ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-md bg-[#F5F5F7] px-3 py-2 text-sm text-foreground">
+                  <span className="text-muted-foreground">フォルダ:</span>{" "}
+                  <span className="font-mono">{sourceFolder}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectSourceFolder}
+                  disabled={isCreating}
+                >
+                  <Folder className="mr-1.5 h-4 w-4" />
+                  変更
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                画像ファイル: <span className="font-medium text-foreground">{imageCount}</span> 枚
+              </p>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="flex-1 text-sm text-muted-foreground">
+                入力フォルダが設定されていません。
+                「電子書籍」タブでキャプチャを完了すると、自動的に反映されます。
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectSourceFolder}
+                disabled={isCreating}
+              >
+                <Folder className="mr-1.5 h-4 w-4" />
+                選択
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ─── 出力設定セクション ─── */}
+      <section className="rounded-lg border border-border bg-white p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <FileArchive className="h-4 w-4 text-muted-foreground" />
+          出力設定
+        </div>
+        <div className="mt-3 space-y-4">
+          {/* 出力ファイル名 */}
+          <div className="space-y-1.5">
+            <Label htmlFor="output-name" className="text-sm font-medium">
+              出力ファイル名
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="output-name"
+                value={outputName}
+                onChange={(e) => setOutputName(e.target.value)}
+                placeholder="images"
+                disabled={isCreating}
+                className="max-w-[240px]"
+              />
+              <span className="text-sm text-muted-foreground">.zip</span>
+            </div>
+          </div>
+
+          {/* 出力先フォルダ */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">出力先フォルダ</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-md border border-border bg-[#F5F5F7] px-3 py-2 text-sm text-foreground">
+                {outputFolder ? (
+                  <span className="font-mono">{outputFolder}</span>
+                ) : (
+                  <span className="text-muted-foreground">フォルダが未選択です</span>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectOutputFolder}
+                disabled={isCreating}
+              >
+                <Folder className="mr-1.5 h-4 w-4" />
+                選択
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── アクションエリア ─── */}
+      <div className="flex flex-col gap-3">
+        <Button
+          className="w-full"
+          onClick={handleCreateZip}
+          disabled={!sourceFolder || !outputFolder || isCreating || imageCount === 0}
+          size="lg"
+        >
+          <FileArchive className="mr-2 h-4 w-4" />
+          {isCreating ? "ZIP 作成中..." : "ZIP 作成"}
+        </Button>
+
+        {/* 進捗メッセージ */}
+        {progressMessage && (
+          <div className="rounded-md bg-[#F5F5F7] px-3 py-2 text-center text-sm text-muted-foreground">
+            {progressMessage}
+          </div>
+        )}
+
+        {/* 完了後の結果表示 */}
+        {resultPath && !isCreating && (
+          <div className="space-y-2">
+            <div className="rounded-md border border-border bg-white px-3 py-2 text-sm">
+              <span className="text-muted-foreground">作成先:</span>{" "}
+              <span className="font-mono">{resultPath}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleOpenResultFolder}
+              >
+                <FolderOpen className="mr-1.5 h-4 w-4" />
+                フォルダを開く
+              </Button>
+              <Button variant="ghost" size="icon" onClick={reset}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
