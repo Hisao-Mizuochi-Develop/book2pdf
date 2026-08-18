@@ -742,7 +742,7 @@
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
 | 004001 | 画像フォルダ読み込み・サムネイル一覧 UI | 2026-08-15 |  | 実装 |
-| 004002 | Before/After プレビュー表示 | 2026-08-15 |  | 実装 |
+| 004002 | Before/After プレビュー表示 | 2026-08-15 | 2026-08-18 | 実装 |
 | 004003 | 余白自動検出（Rust バックエンド） | 2026-08-15 |  | 実装 |
 | 004004 | 手動余白調整 UI | 2026-08-15 |  | 実装 |
 | 004005 | トリミング一括実行・進捗表示 | 2026-08-15 |  | 実装 |
@@ -776,6 +776,23 @@
 - 前へ/次へ ナビゲーション
 
 【実施結果】
+- `localapp/src/store/trimStore.ts`
+  - `originalPreviewImage: string | null` state を追加（元画像用）
+  - `loadPreview()`: `Promise.all` で `get_capture_image`（元画像）と `apply_crop_preview`（トリミング後）を並列取得
+  - `prevPage`, `nextPage`, `goToPage` でページ切り替え時に両方のプレビューをリセット
+- `localapp/src/views/TrimView.tsx`
+  - 左右2列グリッドレイアウト（`grid-cols-1 md:grid-cols-2`）に変更
+  - 左側: Before（元画像）`originalPreviewImage` を表示
+  - 右側: After（トリミング後）`previewImage` を表示
+  - 両方のプレビュー領域に1pxの純粋な青枠線（`border border-[#0000FF]`）を追加し、背景と区別しやすくした
+  - ナビゲーションボタン（前ページ / 次ページ）で両方の画像が同期して切り替わる
+- `localapp/src-tauri/src/commands/capture.rs`
+  - `apply_crop_preview` コマンドを新規追加：画像ファイルを読み込み `DynamicImage::crop` でトリミング → PNGエンコード → Base64 返却
+- `localapp/src-tauri/src/lib.rs`
+  - `commands::capture::apply_crop_preview` を `invoke_handler` に登録
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- ブランチ: `feature/004001-trim-thumbnails`
 
 ### 004003 余白自動検出（Rust バックエンド）
 

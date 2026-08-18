@@ -197,7 +197,7 @@ export function TrimView() {
               <div className="text-center text-sm font-medium text-muted-foreground">
                 Before（元画像）
               </div>
-              <div className="flex items-center justify-center w-full min-h-[260px] rounded border bg-muted/30">
+              <div className="flex items-center justify-center w-full min-h-[260px] rounded border border-[#0000FF] bg-muted/30">
                 {isPreviewLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -225,7 +225,7 @@ export function TrimView() {
               <div className="text-center text-sm font-medium text-muted-foreground">
                 After（トリミング後）
               </div>
-              <div className="flex items-center justify-center w-full min-h-[260px] rounded border bg-muted/30">
+              <div className="flex items-center justify-center w-full min-h-[260px] rounded border border-[#0000FF] bg-muted/30">
                 {isPreviewLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />

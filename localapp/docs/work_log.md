@@ -806,3 +806,72 @@
 
 ### 【実施実績】
 
+- `localapp/src/store/trimStore.ts` を新規作成
+  - Zustand ストア: `folderPath`, `imageFiles[]`, `selectedImage`, `currentImageIndex`, `cropInsets`
+  - `loadFolder(folderPath)`: `list_capture_images` コマンドで画像一覧を取得
+  - `prevPage()` / `nextPage()`: ページナビゲーション
+- `localapp/src/views/TrimView.tsx` を改修
+  - 「フォルダを選択」ボタンを有効化（`open({ directory: true })` でフォルダ選択ダイアログを開く）
+  - `captureStore.lastCaptureFolder` の自動引継ぎを維持
+  - `CaptureResultGallery` を流用してサムネイルグリッドを表示
+  - 選択中画像のハイライト表示は未実装（004002 で Before/After プレビューに移行）
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- ブランチ: `feature/004001-trim-thumbnails`
+
+---
+
+## 004002 — Before/After プレビュー表示
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: オリジナル画像とトリミング後画像を左右に並列表示する
+- 前提:
+  - feature/004001-trim-thumbnails ブランチ上で実施
+  - 004001（画像フォルダ読み込み・サムネイル一覧 UI）が完了していること
+- 変更内容:
+  1. `localapp/src/store/trimStore.ts` — `originalPreviewImage` state を追加
+     - `loadPreview()`: `Promise.all` で `get_capture_image`（元画像）と `apply_crop_preview`（トリミング後）を並列取得
+     - ページ切り替え時に両方のプレビューをリセット
+  2. `localapp/src/views/TrimView.tsx` — 左右2列グリッドレイアウトに変更
+     - 左側: Before（元画像）
+     - 右側: After（トリミング後）
+     - ナビゲーションボタンで両方の画像が同期して切り替わる
+  3. `localapp/src-tauri/src/commands/capture.rs` — `apply_crop_preview` コマンドを新規追加
+     - 画像ファイルを読み込み `DynamicImage::crop` でトリミング → PNG エンコード → Base64 返却
+  4. `localapp/src-tauri/src/lib.rs` — `apply_crop_preview` を `invoke_handler` に登録
+  5. 左右のプレビュー領域に1pxの純粋な青枠線（`border border-[#0000FF]`）を追加し、背景と区別しやすくする
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+- 想定される結果や注意点:
+  - `apply_crop_preview` は `crop_imm` → `to_image` → PNG エンコード → Base64 の流れ
+  - `invoke` の返り値型は Rust 側が `String`（Base64 直接返却）のため、`invoke<{ base64: string }>` ではなく `invoke<string>` とする
+  - 青枠線はプレビュー背景とページ背景が同色の場合の境界認識を助けるため
+
+### 【実施実績】
+
+- `localapp/src/store/trimStore.ts`
+  - `originalPreviewImage: string | null` state を追加（元画像表示用）
+  - `loadPreview()`: `Promise.all` で `get_capture_image`（元画像）と `apply_crop_preview`（トリミング後）を並列取得
+    - 型修正: `invoke<{ base64: string }>` → `invoke<string>`（Rust 側が `String` を直接返却）
+  - `prevPage`, `nextPage`, `goToPage`, `loadFolder` でページ切り替え時に両方のプレビューを `null` にリセット
+- `localapp/src/views/TrimView.tsx`
+  - 左右2列グリッドレイアウト（`grid-cols-1 md:grid-cols-2`）に変更
+  - 左側: Before（元画像）`originalPreviewImage` を表示
+  - 右側: After（トリミング後）`previewImage` を表示
+  - ナビゲーションボタン（前ページ / 次ページ）で両方の画像が同期して切り替わる
+  - 両方のプレビュー領域に1pxの純粋な青枠線（`border border-[#0000FF]`）を追加
+    - 理由: プレビューの背景色（`bg-muted/30`）とページ背景が同色の場合、画像の境界が判別しにくいため
+- `localapp/src-tauri/src/commands/capture.rs`
+  - `apply_crop_preview` コマンドを新規追加
+    - 画像ファイルを `image::open()` で読み込み
+    - `DynamicImage::crop()` でトリミング適用（`mut img` が必要）
+    - PNG エンコード → Base64 返却
+- `localapp/src-tauri/src/lib.rs`
+  - `commands::capture::apply_crop_preview` を `invoke_handler` に登録
+- `cargo check`: コンパイル成功（エラー0）
+- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- ブランチ: `feature/004001-trim-thumbnails`
+
