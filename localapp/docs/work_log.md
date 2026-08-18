@@ -693,3 +693,81 @@
   - トリミング入力欄に `text-center` を追加し、数字を中央揃えに
   - トリミング説明文を `text-center` に変更
 - Git コミット完了（002008-1/002008-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
+
+---
+
+## 005001〜005003 — ZIP アーカイブ化・出力設定 UI・タブ間連携
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: トリミング済み画像フォルダを ZIP アーカイブにまとめる機能を実装する
+- 前提:
+  - feature/005001-zip-archiver ブランチを作成済み
+  - `zip` crate は既に Cargo.toml に追加済み（002002 scaffold 時）
+- 変更内容:
+  1. `localapp/src-tauri/src/commands/capture.rs` — `create_zip_archive` コマンド新規追加
+  2. `localapp/src-tauri/src/lib.rs` — invoke_handler に登録
+  3. `tauri-plugin-dialog` 追加（Cargo.toml, package.json, lib.rs, capabilities/default.json）
+  4. `localapp/src/store/exportStore.ts` — Zustand ストア新規作成
+  5. `localapp/src/views/ExportView.tsx` — ZIP 出力画面を完全書き換え
+  6. タブ間連携: `captureStore.lastCaptureFolder` → `exportStore.sourceFolder` 自動反映
+  7. ユーザー追加要望: 入力設定セクションに任意フォルダ選択ボタンを追加
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+  3. `npm run tauri dev`
+- 想定される結果や注意点:
+  - 画像ファイル以外は ZIP に含めない
+  - 出力パスに拡張子がない場合は `.zip` を自動付与
+  - `tauri-plugin-dialog` はフォルダ選択とファイル保存の両方をサポート
+
+### 【実施実績】
+
+- 005001: ZIP アーカイブ化（Rust バックエンド）
+  - `capture.rs` に `create_zip_archive` コマンドを追加
+    - `ZipWriter::new(File::create(output_path)?)` で ZIP ファイルを作成
+    - `.png` / `.jpg` / `.jpeg` を小文字でフィルタ、ファイル名順に `sort()`
+    - `CompressionMethod::Deflated` でエントリ追加
+    - 20ファイルごとに `zip-progress` 進捗イベントを emit
+    - 出力パスに `.zip` 拡張子がない場合は自動付与
+  - `lib.rs` に `create_zip_archive` を `invoke_handler` に登録
+  - `cargo check`: コンパイル成功（エラー0）
+  - `npm run build`: ビルド成功
+
+- 005002: 出力設定・ファイル名設定 UI
+  - `tauri-plugin-dialog` を追加
+    - `Cargo.toml`: `tauri-plugin-dialog = "2.7.2"`
+    - `package.json`: `@tauri-apps/plugin-dialog`
+    - `lib.rs`: `.plugin(tauri_plugin_dialog::init())`
+    - `capabilities/default.json`: `dialog:allow-open` 権限
+  - `localapp/src/store/exportStore.ts` を新規作成
+    - Zustand ストア: `sourceFolder`, `outputName`, `outputFolder`, `isCreating`, `progressMessage`, `resultPath`
+    - `createZip()`: `invoke("create_zip_archive")` + `listen("zip-progress")` で進捗受信
+  - `localapp/src/views/ExportView.tsx` を完全書き換え
+    - 入力設定セクション（sourceFolder 表示、画像枚数）
+    - 出力設定セクション（outputName Input、outputFolder 選択ボタン）
+    - ZIP 作成ボタン + 進捗メッセージ + 完了後結果表示 + 「フォルダを開く」ボタン
+  - `cargo check`: 成功
+  - `npm run build`: 成功
+
+- 005003: タブ間自動連携 + 入力フォルダ任意選択
+  - `ExportView.tsx` に `useEffect` で `captureStore.lastCaptureFolder` を監視
+    - 連続キャプチャ完了後に ZIP 作成タブを開くと入力フォルダが自動設定される
+  - `sourceFolder` 変更時に `list_capture_images` で画像枚数を取得して表示
+  - 入力フォルダ任意選択ボタンを追加（ユーザー要望対応）
+    - `handleSelectSourceFolder()` で `open({ directory: true })` を使用
+    - sourceFolder 未設定時は「選択」ボタン、設定済み時は「変更」ボタン
+  - `npm run build`: 成功
+  - `cargo check`: 成功
+
+- node_modules 破損修復
+  - `npm run tauri dev` 起動時に Babel エラー `yield* (intermediate value) is not iterable` が発生
+  - `rm -rf localapp/node_modules localapp/package-lock.json && cd localapp && npm install` で修復
+  - `cd localapp/src-tauri && cargo clean` で Rust ビルドキャッシュをクリア
+  - 修復後、`cargo check` / `npm run build` ともに成功
+
+- Git コミット・マージ
+  - ブランチ: `feature/005001-zip-archiver`
+  - コミット: `715ec37` — 005001-005003: ZIP archive command, export UI, tab linkage, tauri-plugin-dialog folder selection
+  - main ブランチへ Fast-forward マージ済み
