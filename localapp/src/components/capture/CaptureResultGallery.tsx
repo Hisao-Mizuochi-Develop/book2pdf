@@ -28,6 +28,19 @@ interface CaptureResultGalleryProps {
   onOpenFolder: () => void;
   /** 「トリミングへ進む」ボタンクリック時のコールバック */
   onGoTrim: () => void;
+  /**
+   * 選択中の画像ファイル名（004001 トリミング画面用）
+   *
+   * 指定された場合、該当サムネイルにハイライト枠を表示する。
+   * 選択状態の制御は親コンポーネント（TrimView）で行う。
+   */
+  selectedFilename?: string | null;
+  /**
+   * サムネイルクリック時のコールバック（004001 トリミング画面用）
+   *
+   * クリックされた画像のファイル名を親コンポーネントに通知する。
+   */
+  onSelectImage?: (filename: string) => void;
 }
 
 /**
@@ -43,6 +56,8 @@ export function CaptureResultGallery({
   imageCount,
   onOpenFolder,
   onGoTrim,
+  selectedFilename,
+  onSelectImage,
 }: CaptureResultGalleryProps) {
   /** PNG 画像ファイル名一覧 */
   const [images, setImages] = useState<string[]>([]);
@@ -149,30 +164,52 @@ export function CaptureResultGallery({
       {/* --- サムネイルグリッド --- */}
       {images.length > 0 ? (
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
-          {images.map((filename, index) => (
-            <div
-              key={filename}
-              className="group relative aspect-[3/4] overflow-hidden rounded-md border bg-muted"
-            >
-              {thumbnails.has(index) ? (
-                <img
-                  src={thumbnails.get(index)}
-                  alt={`ページ ${index + 1}`}
-                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <span className="font-mono">{filename}</span>
-                  <span className="text-[10px]">未読み込み</span>
+          {images.map((filename, index) => {
+            const isSelected = selectedFilename === filename;
+            return (
+              <div
+                key={filename}
+                role={onSelectImage ? "button" : undefined}
+                tabIndex={onSelectImage ? 0 : undefined}
+                onClick={() => onSelectImage?.(filename)}
+                onKeyDown={(e) => {
+                  if (onSelectImage && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    onSelectImage(filename);
+                  }
+                }}
+                className={[
+                  "group relative aspect-[3/4] overflow-hidden rounded-md border bg-muted",
+                  onSelectImage ? "cursor-pointer" : "",
+                  isSelected
+                    ? "ring-2 ring-primary ring-offset-2"
+                    : "",
+                ].join(" ")}
+              >
+                {thumbnails.has(index) ? (
+                  <img
+                    src={thumbnails.get(index)}
+                    alt={`ページ ${index + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <span className="font-mono">{filename}</span>
+                    <span className="text-[10px]">未読み込み</span>
+                  </div>
+                )}
+                {/* ホバー時のページ番号オーバーレイ */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  {index + 1} / {images.length}
                 </div>
-              )}
-              {/* ホバー時のページ番号オーバーレイ */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                {index + 1} / {images.length}
+                {/* 選択中インジケータ（004001） */}
+                {isSelected && (
+                  <div className="absolute inset-0 bg-primary/10" />
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="py-4 text-center text-sm text-muted-foreground">

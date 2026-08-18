@@ -771,3 +771,38 @@
   - ブランチ: `feature/005001-zip-archiver`
   - コミット: `715ec37` — 005001-005003: ZIP archive command, export UI, tab linkage, tauri-plugin-dialog folder selection
   - main ブランチへ Fast-forward マージ済み
+
+---
+
+## 004001 — 画像フォルダ読み込み・サムネイル一覧 UI
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: トリミングタブで任意の画像フォルダを読み込み、サムネイル一覧を表示する
+- 前提:
+  - feature/004001-trim-thumbnails ブランチを作成済み
+  - tauri-plugin-dialog は 005002 で追加済み
+  - list_capture_images / get_capture_image コマンドは 002004 で実装済み
+- 変更内容:
+  1. `localapp/src/store/trimStore.ts` — 新規作成（Zustand ストア）
+     - folderPath, imageFiles[], selectedImage を管理
+     - loadFolder(): list_capture_images で画像一覧を取得
+     - selectImage(): プレビュー対象画像を選択
+  2. `localapp/src/views/TrimView.tsx` — 改修
+     - 「フォルダを選択」ボタンを有効化（disabled 解除）
+     - open({ directory: true }) でフォルダ選択ダイアログを開く
+     - captureStore.lastCaptureFolder の自動引継ぎを維持
+     - CaptureResultGallery を流用してサムネイルグリッド表示
+       - 選択中画像のハイライト表示を追加
+- 実施コマンド:
+  1. `cargo check`
+  2. `npm run build`
+  3. `npm run tauri dev`
+- 想定される結果や注意点:
+  - フォルダ選択後に画像一覧が即座に表示されること
+  - キャプチャタブからの引継ぎと手動選択の両方が正しく動作すること
+  - CaptureResultGallery の選択状態は props で制御する
+
+### 【実施実績】
+

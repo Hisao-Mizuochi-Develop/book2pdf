@@ -750,10 +750,20 @@
 ### 004001 画像フォルダ読み込み・サムネイル一覧 UI
 
 【計画】
-- 入力フォルダ選択ダイアログ
-- 画像ファイル一覧をサムネイルグリッドで表示
-- 並び替え（ファイル名順）
-- 前工程からの自動入力対応
+- `tauri-plugin-dialog` で任意の画像フォルダを選択（005002で追加済みのプラグインを流用）
+- `trimStore.ts`（新規）を作成し、Zustandで以下を管理
+  - `folderPath`: 入力フォルダパス
+  - `imageFiles: string[]`: フォルダ内の画像ファイル名一覧
+  - `selectedImage: string | null`: プレビュー対象の選択画像ファイル名
+  - `loadFolder(folderPath)`: `list_capture_images` コマンドで画像リストを取得
+  - `selectImage(filename)`: 選択画像を切り替え
+- `TrimView.tsx`（改修）
+  - 「フォルダを選択」ボタンを有効化（現状は disabled）
+  - `tauri-plugin-dialog` の `open({ directory: true })` でフォルダ選択
+  - キャプチャ結果（`captureStore.lastCaptureFolder`）の自動引継ぎを維持
+  - `CaptureResultGallery` を流用してサムネイルグリッドを表示
+    - トリミング画面用に拡張：選択中画像のハイライト表示
+- Rust側：既存の `list_capture_images`, `get_capture_image` で対応（追加コマンド不要）
 
 【実施結果】
 
