@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/select";
 import { useProfileStore } from "@/store/profileStore";
 import { invoke } from "@tauri-apps/api/core";
-import { RotateCcw, Camera, ZoomIn, ZoomOut } from "lucide-react";
-import { useState, useMemo } from "react";
+import { RotateCcw, Camera, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 
 
 /**
@@ -77,6 +77,90 @@ export function ProfileEditor() {
 
   function handleZoomIn() {
     setZoom((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 10) / 10));
+  }
+
+  // ── トリミング入力用ローカル state ─────────────────────────
+  /** ローカル入力値（文字列）— 入力中の一時的な値を保持 */
+  const [cropInputs, setCropInputs] = useState({
+    top: String(profile?.cropInsets?.top ?? 0),
+    right: String(profile?.cropInsets?.right ?? 0),
+    bottom: String(profile?.cropInsets?.bottom ?? 0),
+    left: String(profile?.cropInsets?.left ?? 0),
+  });
+
+  /**
+   * profile.cropInsets が外部から変更された場合、ローカル入力値も同期する。
+   *（リセットボタン等でストア値が変わった時の反映用）
+   */
+  useEffect(() => {
+    if (!profile) return;
+    setCropInputs({
+      top: String(profile.cropInsets?.top ?? 0),
+      right: String(profile.cropInsets?.right ?? 0),
+      bottom: String(profile.cropInsets?.bottom ?? 0),
+      left: String(profile.cropInsets?.left ?? 0),
+    });
+  }, [profile?.cropInsets?.top, profile?.cropInsets?.right, profile?.cropInsets?.bottom, profile?.cropInsets?.left]);
+
+  /**
+   * トリミング値の入力変更ハンドラ
+   *
+   * 入力中はローカルの文字列として保持し、onBlur で確定する。
+   *
+   * @param side - 変更する辺
+   * @param value - 入力文字列
+   */
+  function handleCropInputChange(
+    side: "top" | "right" | "bottom" | "left",
+    value: string
+  ) {
+    setCropInputs((prev) => ({ ...prev, [side]: value }));
+  }
+
+  /**
+   * トリミング値の入力確定ハンドラ
+   *
+   * 入力値を数値に変換し、空文字や負数の場合は 0 に戻す。
+   * 確定時に Zustand ストアを更新する。
+   *
+   * @param side - 確定する辺
+   */
+  function handleCropInputBlur(
+    side: "top" | "right" | "bottom" | "left"
+  ) {
+    if (!profile || !selectedProfileKey) return;
+    const value = cropInputs[side];
+    const num = parseInt(value, 10);
+    updateCustomProfile(selectedProfileKey, {
+      cropInsets: {
+        ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+        [side]: isNaN(num) || num < 0 ? 0 : num,
+      },
+    });
+  }
+
+  /**
+   * トリミング値を増減する
+   *
+   * +/- ボタンから呼び出され、現在のストア値に delta を加算/減算する。
+   * 結果が負数にならないようにクランプする。
+   *
+   * @param side - 変更する辺
+   * @param delta - 増減値（+1 または -1）
+   */
+  function handleCropAdjust(
+    side: "top" | "right" | "bottom" | "left",
+    delta: number
+  ) {
+    if (!profile || !selectedProfileKey) return;
+    const current = profile.cropInsets?.[side] ?? 0;
+    const newValue = Math.max(0, current + delta);
+    updateCustomProfile(selectedProfileKey, {
+      cropInsets: {
+        ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
+        [side]: newValue,
+      },
+    });
   }
 
   // プロファイル未ロード時は何も表示しない（デフォルトは kindle であり未選択状態は起こらない）
@@ -197,44 +281,66 @@ export function ProfileEditor() {
           <div />
           <div className="flex flex-col items-center space-y-1">
             <Label className="text-xs">上 (px)</Label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              className="max-w-[80px] text-center"
-              value={String(profile.cropInsets?.top ?? 0)}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                updateCustomProfile(selectedProfileKey, {
-                  cropInsets: {
-                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
-                    top: isNaN(num) ? 0 : num,
-                  },
-                });
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("top", -1)}
+                disabled={(profile.cropInsets?.top ?? 0) <= 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                className="max-w-[56px] text-center"
+                value={cropInputs.top}
+                onChange={(e) => handleCropInputChange("top", e.target.value)}
+                onBlur={() => handleCropInputBlur("top")}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("top", +1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           <div />
 
           {/* Row 2: 左 | empty | 右 */}
           <div className="flex flex-col items-center space-y-1">
             <Label className="text-xs">左 (px)</Label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              className="max-w-[80px] text-center"
-              value={String(profile.cropInsets?.left ?? 0)}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                updateCustomProfile(selectedProfileKey, {
-                  cropInsets: {
-                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
-                    left: isNaN(num) ? 0 : num,
-                  },
-                });
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("left", -1)}
+                disabled={(profile.cropInsets?.left ?? 0) <= 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                className="max-w-[56px] text-center"
+                value={cropInputs.left}
+                onChange={(e) => handleCropInputChange("left", e.target.value)}
+                onBlur={() => handleCropInputBlur("left")}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("left", +1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           <div className="flex flex-col items-center justify-center space-y-1.5 w-full h-full">
             <Button
@@ -289,44 +395,66 @@ export function ProfileEditor() {
           </div>
           <div className="flex flex-col items-center space-y-1">
             <Label className="text-xs">右 (px)</Label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              className="max-w-[80px] text-center"
-              value={String(profile.cropInsets?.right ?? 0)}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                updateCustomProfile(selectedProfileKey, {
-                  cropInsets: {
-                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
-                    right: isNaN(num) ? 0 : num,
-                  },
-                });
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("right", -1)}
+                disabled={(profile.cropInsets?.right ?? 0) <= 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                className="max-w-[56px] text-center"
+                value={cropInputs.right}
+                onChange={(e) => handleCropInputChange("right", e.target.value)}
+                onBlur={() => handleCropInputBlur("right")}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("right", +1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
 
           {/* Row 3: empty | 下 | empty */}
           <div />
           <div className="flex flex-col items-center space-y-1">
             <Label className="text-xs">下 (px)</Label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              className="max-w-[80px] text-center"
-              value={String(profile.cropInsets?.bottom ?? 0)}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                updateCustomProfile(selectedProfileKey, {
-                  cropInsets: {
-                    ...(profile.cropInsets ?? { top: 0, right: 0, bottom: 0, left: 0 }),
-                    bottom: isNaN(num) ? 0 : num,
-                  },
-                });
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("bottom", -1)}
+                disabled={(profile.cropInsets?.bottom ?? 0) <= 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                className="max-w-[56px] text-center"
+                value={cropInputs.bottom}
+                onChange={(e) => handleCropInputChange("bottom", e.target.value)}
+                onBlur={() => handleCropInputBlur("bottom")}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleCropAdjust("bottom", +1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           <div />
         </div>
