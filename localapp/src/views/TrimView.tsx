@@ -204,7 +204,7 @@ export function TrimView() {
                     読み込み中...
                   </div>
                 ) : originalPreviewImage ? (
-                  <div className="overflow-auto max-w-full max-h-[360px] rounded">
+                  <div className="overflow-auto max-w-full max-h-[360px] rounded border border-[#0000FF]">
                     <img
                       src={originalPreviewImage}
                       alt={`ページ ${currentImageIndex + 1} - 元画像`}
@@ -232,7 +232,7 @@ export function TrimView() {
                     読み込み中...
                   </div>
                 ) : previewImage ? (
-                  <div className="overflow-auto max-w-full max-h-[360px] rounded">
+                  <div className="overflow-auto max-w-full max-h-[360px] rounded border border-[#0000FF]">
                     <img
                       src={previewImage}
                       alt={`ページ ${currentImageIndex + 1} - トリミング後`}
