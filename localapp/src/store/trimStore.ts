@@ -180,17 +180,16 @@ export const useTrimStore = create<TrimState>((set, get) => ({
    *
    * 処理フロー：
    * 1. 現在のページインデックスからファイル名を特定
-   * 2. `get_capture_image` で画像を Base64 取得
-   * 3. TODO: 004002〜004004 でトリミング適用後の画像を返却
-   *    現時点ではオリジナル画像をそのまま表示する。
+   * 2. 現在の cropInsets を取得
+   * 3. Rust 側の `apply_crop_preview` にパスとトリミング値を渡す
+   * 4. トリミング後の画像（Base64 PNG）をプレビューとして表示
    *
-   * 理由: トリミングの適用は Rust 側で画像処理を行う必要がある。
-   * 004001 ではまだ Rust 側にトリミングコマンドがないため、
-   * オリジナル画像をそのままプレビュー表示する。
+   * cropInsets がすべて 0 の場合でも同じコマンドを呼び出すことで、
+   * 処理の一貫性を保つ。Rust 側で元画像をそのまま返す。
    */
   loadPreview: async () => {
     const state = get();
-    const { folderPath, imageFiles, currentImageIndex } = state;
+    const { folderPath, imageFiles, currentImageIndex, cropInsets } = state;
     if (!folderPath || imageFiles.length === 0) return;
 
     const filename = imageFiles[currentImageIndex];
@@ -198,9 +197,13 @@ export const useTrimStore = create<TrimState>((set, get) => ({
 
     set({ isPreviewLoading: true, error: null });
     try {
-      const filepath = `${folderPath}/${filename}`;
-      const base64 = await invoke<string>("get_capture_image", {
-        filepath,
+      const base64 = await invoke<string>("apply_crop_preview", {
+        folderPath,
+        filename,
+        top: cropInsets.top,
+        right: cropInsets.right,
+        bottom: cropInsets.bottom,
+        left: cropInsets.left,
       });
       set({
         previewImage: `data:image/png;base64,${base64}`,

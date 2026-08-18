@@ -1203,3 +1203,73 @@ pub fn create_zip_archive(
 
     Ok(output_path)
 }
+
+/// トリミングを適用したプレビュー画像を生成する
+///
+/// 指定された画像ファイルを読み込み、上下左右のトリミング値に従って
+/// クロップ処理を行った結果を Base64 エンコードされた PNG として返す。
+///
+/// 処理フロー：
+/// 1. 指定パスの画像ファイルを `image::open` で読み込む
+/// 2. トリミング後のサイズを計算（元サイズ - トリミング値）
+/// 3. `DynamicImage::crop` で切り抜き処理を実行
+/// 4. 切り抜いた画像を PNG 形式でメモリバッファに書き込み
+/// 5. Base64 エンコードして文字列として返す
+///
+/// # 引数
+/// - `folder_path`: 画像ファイルがあるフォルダの絶対パス
+/// - `filename`: 対象画像ファイル名
+/// - `top`: 上側トリミング値（ピクセル）
+/// - `right`: 右側トリミング値（ピクセル）
+/// - `bottom`: 下側トリミング値（ピクセル）
+/// - `left`: 左側トリミング値（ピクセル）
+///
+/// # 戻り値
+/// - `Ok(String)`: Base64 エンコードされたトリミング後の PNG 画像データ
+/// - `Err(String)`: ファイル読み込みエラーまたは画像処理エラー時のメッセージ
+#[tauri::command]
+pub fn apply_crop_preview(
+    folder_path: String,
+    filename: String,
+    top: u32,
+    right: u32,
+    bottom: u32,
+    left: u32,
+) -> Result<String, String> {
+    let filepath = format!("{}/{}", folder_path, filename);
+
+    // 画像ファイルを読み込む
+    let mut img = image::open(&filepath)
+        .map_err(|e| format!("画像読み込みエラー ({}): {}", filepath, e))?;
+
+    let (orig_width, orig_height) = (img.width(), img.height());
+
+    // トリミング後のサイズを計算
+    // 切り取り後の幅 = 元幅 - 左トリミング - 右トリミング
+    // 切り取り後の高さ = 元高さ - 上トリミング - 下トリミング
+    let x = left;
+    let y = top;
+    let width = orig_width.saturating_sub(left + right);
+    let height = orig_height.saturating_sub(top + bottom);
+
+    // トリミング後のサイズが 0 以下になる場合はエラー
+    if width == 0 || height == 0 {
+        return Err("トリミング後の画像サイズが0以下になります".to_string());
+    }
+
+    // 画像をクロップ（切り抜き）
+    let cropped = img.crop(x, y, width, height);
+
+    // クロップ後の画像を PNG 形式でメモリバッファに書き込み
+    let mut buffer = Vec::new();
+    {
+        let mut cursor = std::io::Cursor::new(&mut buffer);
+        cropped
+            .write_to(&mut cursor, image::ImageFormat::Png)
+            .map_err(|e| format!("PNG エンコードエラー: {}", e))?;
+    }
+
+    // Base64 エンコードして返す
+    let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &buffer);
+    Ok(base64)
+}

@@ -178,11 +178,19 @@ export function TrimView() {
       {effectiveFolderPath && !isLoading && imageFiles.length > 0 && (
         <section className="flex flex-col gap-5 rounded-lg border bg-card p-5 shadow-sm">
           {/* セクションヘッダー */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Scissors className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-medium">
               {folderPath ? "選択したフォルダ" : "キャプチャ結果を読み込みました"}
             </h3>
+            {effectiveFolderPath && (
+              <code
+                className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate max-w-full"
+                title={effectiveFolderPath}
+              >
+                {effectiveFolderPath}
+              </code>
+            )}
           </div>
 
           {/* ── 十字レイアウト：トリミング入力 + プレビュー ── */}

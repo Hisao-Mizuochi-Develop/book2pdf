@@ -48,6 +48,8 @@ pub fn run() {
             commands::capture::list_capture_images,
             commands::capture::get_capture_image,
             commands::capture::open_capture_folder,
+            // 004001: トリミングプレビュー
+            commands::capture::apply_crop_preview,
             // 005001: ZIP アーカイブ化
             commands::capture::create_zip_archive,
         ])
