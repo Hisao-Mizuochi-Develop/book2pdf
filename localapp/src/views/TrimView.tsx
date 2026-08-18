@@ -1,28 +1,24 @@
 /**
  * トリミング機能のメインビュー
  *
- * 【004001改修版】
- * 1ページプレビュー + 前次ページナビゲーション + トリミング調整UI を提供する。
+ * 【大幅修正版】
+ * Before/After 横並びレイアウト + トリミング調整UI + 前次ページナビゲーション を提供する。
  *
  * 【レイアウト】
- * ┌──────────────────────────────────────┐
- * │ ヘッダー（タイトル + フォルダパス）   │
- * ├──────────────────────────────────────┤
- * │ [フォルダ選択]  3 / 25 ページ        │
- * ├──────────────────────────────────────┤
- * │                                      │
- * │     [上]                            │
- * │                                      │
- * │  [左]  [プレビュー画像]  [右]        │
- * │                                      │
- * │     [下]                            │
- * │                                      │
- * ├──────────────────────────────────────┤
- * │ [< 前ページ] [プレビューに反映] [次ページ >]│
- * └──────────────────────────────────────┘
- *
- * 完全なトリミング機能（余白検出・BeforeAfter プレビュー・一括実行）は
- * UC004（004002〜004005）で実装予定。
+ * ┌─────────────────────────────────────────────────────┐
+ * │ ヘッダー（タイトル + フォルダパス）                    │
+ * ├─────────────────────────────────────────────────────┤
+ * │ [フォルダ選択]  3 / 25 ページ                        │
+ * ├─────────────────────────────────────────────────────┤
+ * │  ┌──────────────────┐  ┌──────────────────┐        │
+ * │  │   Before（元画像） │  │ After（トリミング後）│        │
+ * │  │  [originalPreview] │  │  [previewImage]   │        │
+ * │  └──────────────────┘  └──────────────────┘        │
+ * ├─────────────────────────────────────────────────────┤
+ * │  [上] [下] [左] [右] トリミング入力                  │
+ * ├─────────────────────────────────────────────────────┤
+ * │ [< 前ページ] [プレビューに反映] [次ページ >]         │
+ * └─────────────────────────────────────────────────────┘
  */
 
 import { useEffect } from "react";
@@ -55,6 +51,7 @@ export function TrimView() {
   const imageFiles = useTrimStore((state) => state.imageFiles);
   const currentImageIndex = useTrimStore((state) => state.currentImageIndex);
   const cropInsets = useTrimStore((state) => state.cropInsets);
+  const originalPreviewImage = useTrimStore((state) => state.originalPreviewImage);
   const previewImage = useTrimStore((state) => state.previewImage);
   const isPreviewLoading = useTrimStore((state) => state.isPreviewLoading);
   const isLoading = useTrimStore((state) => state.isLoading);
@@ -174,7 +171,7 @@ export function TrimView() {
         </div>
       )}
 
-      {/* ── メインコンテンツ：プレビュー + トリミング入力 ─────── */}
+      {/* ── メインコンテンツ：Before/After プレビュー + トリミング入力 + ナビゲーション ─────── */}
       {effectiveFolderPath && !isLoading && imageFiles.length > 0 && (
         <section className="flex flex-col gap-5 rounded-lg border bg-card p-5 shadow-sm">
           {/* セクションヘッダー */}
@@ -193,85 +190,111 @@ export function TrimView() {
             )}
           </div>
 
-          {/* ── 十字レイアウト：トリミング入力 + プレビュー ── */}
-          <div className="grid grid-cols-3 gap-x-6 gap-y-3 justify-items-center">
-            {/* Row 1: empty | 上 | empty */}
-            <div />
-            <div className="flex flex-col items-center space-y-1">
+          {/* ── Before / After 横並びプレビュー ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Before：オリジナル画像 */}
+            <div className="flex flex-col gap-2">
+              <div className="text-center text-sm font-medium text-muted-foreground">
+                Before（元画像）
+              </div>
+              <div className="flex items-center justify-center w-full min-h-[260px] rounded border bg-muted/30">
+                {isPreviewLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    読み込み中...
+                  </div>
+                ) : originalPreviewImage ? (
+                  <div className="overflow-auto max-w-full max-h-[360px] rounded">
+                    <img
+                      src={originalPreviewImage}
+                      alt={`ページ ${currentImageIndex + 1} - 元画像`}
+                      className="object-contain"
+                      style={{ maxHeight: "360px", maxWidth: "100%" }}
+                    />
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    プレビューを読み込んでください
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* After：トリミング適用後画像 */}
+            <div className="flex flex-col gap-2">
+              <div className="text-center text-sm font-medium text-muted-foreground">
+                After（トリミング後）
+              </div>
+              <div className="flex items-center justify-center w-full min-h-[260px] rounded border bg-muted/30">
+                {isPreviewLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    読み込み中...
+                  </div>
+                ) : previewImage ? (
+                  <div className="overflow-auto max-w-full max-h-[360px] rounded">
+                    <img
+                      src={previewImage}
+                      alt={`ページ ${currentImageIndex + 1} - トリミング後`}
+                      className="object-contain"
+                      style={{ maxHeight: "360px", maxWidth: "100%" }}
+                    />
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    プレビューを読み込んでください
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── トリミング入力UI（画像エリアの下） ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-items-center">
+            <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">上 (px)</Label>
               <Input
                 type="number"
                 min="0"
                 step="1"
-                className="max-w-[80px] text-center"
+                className="text-center"
                 value={String(cropInsets.top)}
                 onChange={(e) => handleCropChange("top", e.target.value)}
               />
             </div>
-            <div />
-
-            {/* Row 2: 左 | プレビュー | 右 */}
-            <div className="flex flex-col items-center space-y-1">
-              <Label className="text-xs">左 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="max-w-[80px] text-center"
-                value={String(cropInsets.left)}
-                onChange={(e) => handleCropChange("left", e.target.value)}
-              />
-            </div>
-
-            {/* 中央：プレビュー画像 */}
-            <div className="flex flex-col items-center justify-center space-y-2 w-full h-full min-h-[240px]">
-              {isPreviewLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  読み込み中...
-                </div>
-              ) : previewImage ? (
-                <div className="overflow-auto max-w-full max-h-[360px] rounded border">
-                  <img
-                    src={previewImage}
-                    alt={`ページ ${currentImageIndex + 1}`}
-                    className="object-contain"
-                    style={{ maxHeight: "360px", maxWidth: "100%" }}
-                  />
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  プレビューを読み込んでください
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col items-center space-y-1">
-              <Label className="text-xs">右 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="max-w-[80px] text-center"
-                value={String(cropInsets.right)}
-                onChange={(e) => handleCropChange("right", e.target.value)}
-              />
-            </div>
-
-            {/* Row 3: empty | 下 | empty */}
-            <div />
-            <div className="flex flex-col items-center space-y-1">
+            <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">下 (px)</Label>
               <Input
                 type="number"
                 min="0"
                 step="1"
-                className="max-w-[80px] text-center"
+                className="text-center"
                 value={String(cropInsets.bottom)}
                 onChange={(e) => handleCropChange("bottom", e.target.value)}
               />
             </div>
-            <div />
+            <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
+              <Label className="text-xs">左 (px)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                className="text-center"
+                value={String(cropInsets.left)}
+                onChange={(e) => handleCropChange("left", e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
+              <Label className="text-xs">右 (px)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                className="text-center"
+                value={String(cropInsets.right)}
+                onChange={(e) => handleCropChange("right", e.target.value)}
+              />
+            </div>
           </div>
 
           {/* ── 説明文 + リセットボタン ── */}

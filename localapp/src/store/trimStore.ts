@@ -52,6 +52,8 @@ interface TrimState {
   cropInsets: CropInsets;
   /** トリミング適用後のプレビュー画像（Base64 data URL） */
   previewImage: string | null;
+  /** オリジナル画像（トリミングなし）のプレビュー（Base64 data URL） */
+  originalPreviewImage: string | null;
   /** プレビュー読み込み中フラグ */
   isPreviewLoading: boolean;
   /** 画像一覧読み込み中フラグ */
@@ -90,6 +92,7 @@ const defaultState = {
   currentImageIndex: 0,
   cropInsets: { top: 0, right: 0, bottom: 0, left: 0 } as CropInsets,
   previewImage: null,
+  originalPreviewImage: null,
   isPreviewLoading: false,
   isLoading: false,
   error: null,
@@ -142,7 +145,7 @@ export const useTrimStore = create<TrimState>((set, get) => ({
     set((state) => {
       if (state.imageFiles.length === 0) return state;
       const newIndex = Math.max(0, state.currentImageIndex - 1);
-      return { currentImageIndex: newIndex, previewImage: null };
+      return { currentImageIndex: newIndex, previewImage: null, originalPreviewImage: null };
     });
   },
 
@@ -158,7 +161,7 @@ export const useTrimStore = create<TrimState>((set, get) => ({
         state.imageFiles.length - 1,
         state.currentImageIndex + 1
       );
-      return { currentImageIndex: newIndex, previewImage: null };
+      return { currentImageIndex: newIndex, previewImage: null, originalPreviewImage: null };
     });
   },
 
@@ -171,7 +174,7 @@ export const useTrimStore = create<TrimState>((set, get) => ({
     set((state) => {
       if (state.imageFiles.length === 0) return state;
       const clamped = Math.max(0, Math.min(state.imageFiles.length - 1, index));
-      return { currentImageIndex: clamped, previewImage: null };
+      return { currentImageIndex: clamped, previewImage: null, originalPreviewImage: null };
     });
   },
 
@@ -181,11 +184,9 @@ export const useTrimStore = create<TrimState>((set, get) => ({
    * 処理フロー：
    * 1. 現在のページインデックスからファイル名を特定
    * 2. 現在の cropInsets を取得
-   * 3. Rust 側の `apply_crop_preview` にパスとトリミング値を渡す
-   * 4. トリミング後の画像（Base64 PNG）をプレビューとして表示
-   *
-   * cropInsets がすべて 0 の場合でも同じコマンドを呼び出すことで、
-   * 処理の一貫性を保つ。Rust 側で元画像をそのまま返す。
+   * 3. Rust 側の `get_capture_image` でオリジナル画像を取得
+   * 4. Rust 側の `apply_crop_preview` でトリミング後の画像を取得
+   * 5. 両方を Promise.all で並列に実行し、Base64 PNG をプレビューとして表示
    */
   loadPreview: async () => {
     const state = get();
@@ -197,16 +198,22 @@ export const useTrimStore = create<TrimState>((set, get) => ({
 
     set({ isPreviewLoading: true, error: null });
     try {
-      const base64 = await invoke<string>("apply_crop_preview", {
-        folderPath,
-        filename,
-        top: cropInsets.top,
-        right: cropInsets.right,
-        bottom: cropInsets.bottom,
-        left: cropInsets.left,
-      });
+      const [originalBase64, croppedBase64] = await Promise.all([
+        invoke<string>("get_capture_image", {
+          filepath: `${folderPath}/${filename}`,
+        }),
+        invoke<string>("apply_crop_preview", {
+          folderPath,
+          filename,
+          top: cropInsets.top,
+          right: cropInsets.right,
+          bottom: cropInsets.bottom,
+          left: cropInsets.left,
+        }),
+      ]);
       set({
-        previewImage: `data:image/png;base64,${base64}`,
+        originalPreviewImage: `data:image/png;base64,${originalBase64}`,
+        previewImage: `data:image/png;base64,${croppedBase64}`,
         isPreviewLoading: false,
       });
     } catch (err) {
@@ -234,7 +241,7 @@ export const useTrimStore = create<TrimState>((set, get) => ({
    * @param folderPath - 読み込むフォルダの絶対パス
    */
   loadFolder: async (folderPath: string) => {
-    set({ isLoading: true, error: null, previewImage: null });
+    set({ isLoading: true, error: null, previewImage: null, originalPreviewImage: null });
     try {
       const filenames = await invoke<string[]>("list_capture_images", {
         folderPath,
