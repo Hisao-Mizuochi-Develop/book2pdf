@@ -21,7 +21,7 @@
  * └─────────────────────────────────────────────────────┘
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCaptureStore } from "@/store/captureStore";
 import { useTrimStore } from "@/store/trimStore";
@@ -35,6 +35,8 @@ import {
   ChevronRight,
   RotateCcw,
   Eye,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 /**
@@ -112,16 +114,72 @@ export function TrimView() {
   /**
    * トリミング値の入力変更ハンドラ
    *
+   * 入力中はローカルの文字列として保持し、onBlur で確定する。
+   * これにより 0 を削除して空欄にできるようになる。
+   *
    * @param side - 変更する辺（top / right / bottom / left）
    * @param value - 入力文字列
    */
-  function handleCropChange(
+  function handleCropInputChange(
     side: "top" | "right" | "bottom" | "left",
     value: string
   ) {
-    const num = parseInt(value, 10);
-    setCropInsets({ [side]: isNaN(num) ? 0 : Math.max(0, num) });
+    setCropInputs((prev) => ({ ...prev, [side]: value }));
   }
+
+  /**
+   * トリミング値の入力確定ハンドラ
+   *
+   * 入力値を数値に変換し、空文字や負数の場合は 0 に戻す。
+   *
+   * @param side - 確定する辺（top / right / bottom / left）
+   */
+  function handleCropInputBlur(
+    side: "top" | "right" | "bottom" | "left"
+  ) {
+    const value = cropInputs[side];
+    const num = parseInt(value, 10);
+    setCropInsets({ [side]: isNaN(num) || num < 0 ? 0 : num });
+  }
+
+  /**
+   * トリミング値を増減する
+   *
+   * +/- ボタンから呼び出され、現在値に delta を加算/減算する。
+   * 結果が負数にならないようにクランプする。
+   *
+   * @param side - 変更する辺（top / right / bottom / left）
+   * @param delta - 増減値（+1 または -1）
+   */
+  function handleCropAdjust(
+    side: "top" | "right" | "bottom" | "left",
+    delta: number
+  ) {
+    const current = cropInsets[side];
+    const newValue = Math.max(0, current + delta);
+    setCropInsets({ [side]: newValue });
+  }
+
+  /** ローカル入力値（文字列）— 入力中の一時的な値を保持 */
+  const [cropInputs, setCropInputs] = useState({
+    top: String(cropInsets.top),
+    right: String(cropInsets.right),
+    bottom: String(cropInsets.bottom),
+    left: String(cropInsets.left),
+  });
+
+  /**
+   * cropInsets が外部から変更された場合、ローカル入力値も同期する。
+   *（リセットボタン等でストア値が変わった時の反映用）
+   */
+  useEffect(() => {
+    setCropInputs({
+      top: String(cropInsets.top),
+      right: String(cropInsets.right),
+      bottom: String(cropInsets.bottom),
+      left: String(cropInsets.left),
+    });
+  }, [cropInsets.top, cropInsets.right, cropInsets.bottom, cropInsets.left]);
 
   // 画像枚数が 0 の場合は「未選択」と表示
   const pageCounter =
@@ -251,49 +309,137 @@ export function TrimView() {
 
           {/* ── トリミング入力UI（画像エリアの下） ── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-items-center">
+            {/* 上 */}
             <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">上 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="text-center"
-                value={String(cropInsets.top)}
-                onChange={(e) => handleCropChange("top", e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("top", -1)}
+                  disabled={cropInsets.top <= 0}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  className="text-center w-[56px]"
+                  value={cropInputs.top}
+                  onChange={(e) => {
+                    handleCropInputChange("top", e.target.value);
+                  }}
+                  onBlur={() => handleCropInputBlur("top")}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("top", +1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
+            {/* 下 */}
             <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">下 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="text-center"
-                value={String(cropInsets.bottom)}
-                onChange={(e) => handleCropChange("bottom", e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("bottom", -1)}
+                  disabled={cropInsets.bottom <= 0}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  className="text-center w-[56px]"
+                  value={cropInputs.bottom}
+                  onChange={(e) => {
+                    handleCropInputChange("bottom", e.target.value);
+                  }}
+                  onBlur={() => handleCropInputBlur("bottom")}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("bottom", +1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
+            {/* 左 */}
             <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">左 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="text-center"
-                value={String(cropInsets.left)}
-                onChange={(e) => handleCropChange("left", e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("left", -1)}
+                  disabled={cropInsets.left <= 0}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  className="text-center w-[56px]"
+                  value={cropInputs.left}
+                  onChange={(e) => {
+                    handleCropInputChange("left", e.target.value);
+                  }}
+                  onBlur={() => handleCropInputBlur("left")}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("left", +1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
+            {/* 右 */}
             <div className="flex flex-col items-center space-y-1 w-full max-w-[120px]">
               <Label className="text-xs">右 (px)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="1"
-                className="text-center"
-                value={String(cropInsets.right)}
-                onChange={(e) => handleCropChange("right", e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("right", -1)}
+                  disabled={cropInsets.right <= 0}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  className="text-center w-[56px]"
+                  value={cropInputs.right}
+                  onChange={(e) => {
+                    handleCropInputChange("right", e.target.value);
+                  }}
+                  onBlur={() => handleCropInputBlur("right")}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => handleCropAdjust("right", +1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
 
