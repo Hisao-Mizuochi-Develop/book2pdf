@@ -741,7 +741,7 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 004001 | 画像フォルダ読み込み・サムネイル一覧 UI | 2026-08-15 |  | 実装 |
+| 004001 | 画像フォルダ読み込み・サムネイル一覧 UI | 2026-08-15 | 2026-08-18 | 実装 |
 | 004002 | Before/After プレビュー表示 | 2026-08-15 | 2026-08-18 | 実装 |
 | 004003 | 余白自動検出（Rust バックエンド） | 2026-08-15 |  | 実装 |
 | 004004 | 手動余白調整 UI | 2026-08-15 |  | 実装 |
@@ -766,6 +766,20 @@
 - Rust側：既存の `list_capture_images`, `get_capture_image` で対応（追加コマンド不要）
 
 【実施結果】
+- `localapp/src/views/TrimView.tsx`
+  - トリミング4辺（上/下/左/右）の入力欄を変更
+  - `type="text" inputMode="numeric"` に変更し、自由入力（0削除含む）を可能に
+  - onBlur で数値に確定し、`setCropInsets` でストアに反映
+  - 各辺に `-` / `+` カスタムボタンを追加し、`handleCropAdjust` で数値を増減（`Math.max(0, ...)` でクランプ）
+- `localapp/src/components/capture/ProfileEditor.tsx`
+  - 「電子書籍」タブのトリミング4辺も同様に変更
+  - `type="text" inputMode="numeric"` + onBlur 確定 + カスタム +/- ボタン
+  - `handleCropInputBlur` で `updateCustomProfile` を呼び出してストア更新
+  - ローカル state `cropInputs` と `useEffect` で profile.cropInsets 変更時に同期
+- 0 削除問題：ブラウザの `type="number"` では onChange で parseInt すると空文字が NaN→0 に戻るため 0 を削除できなかったが、ローカル state + `inputMode="numeric"` + onBlur 確定方式で解消
+- `cargo check`：コンパイル成功（エラー0）
+- `npm run build`：ビルド成功（エラーなし）
+- コミット: `a964a87`, `dea345f`
 
 ### 004002 Before/After プレビュー表示
 

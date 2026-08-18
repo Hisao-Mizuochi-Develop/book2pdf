@@ -819,6 +819,50 @@
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 - ブランチ: `feature/004001-trim-thumbnails`
 
+## 004001 (追加) — トリミング入力欄の自由入力＋+/-ボタン実装
+
+### 【実施予定】
+
+- 日時: 2026-08-18
+- 目的: 「トリミング」タブと「電子書籍」タブ双方のトリミング値入力欄で、0 削除問題を解消しつつ +/- ボタンも使えるようにする
+- 前提:
+  - feature/004001-trim-thumbnails ブランチにて実装
+  - 前回の TrimView.tsx 改修では、0 削除ができるが +/- ボタンがない状態だった
+- 変更内容:
+  1. `localapp/src/views/TrimView.tsx` — `type="text" inputMode="numeric"` + onBlur 確定 + カスタム +/- ボタンを追加
+  2. `localapp/src/components/capture/ProfileEditor.tsx` — 同様に変更。useState でローカル値を保持し、onBlur で Zustand ストアに確定。カスタム +/- ボタンを追加。
+- 実施コマンド:
+  1. `npm run build`
+  2. `cargo check`
+  3. `git add && git commit`
+  4. `git merge feature/004001-trim-thumbnails`
+- 想定される結果や注意点:
+  - 0 削除問題: `type="number"` の実装では、onChange で parseInt → 0 に戻る問題があった。対策として `type="text" inputMode="numeric"` + ローカル state + onBlur で確定する方式を採用。
+  - ProfileEditor.tsx では profile 自体が null の可能性があるため、guard clause でチェック
+  - +/- ボタンの disabled は `(profile.cropInsets?.side ?? 0) <= 0` で判定
+
+### 【実施実績】
+
+- `localapp/src/views/TrimView.tsx`
+  - `import { Minus, Plus }` を追加
+  - `handleCropAdjust` 関数を新規追加（delta を加算/減算し、0 未満にクランプ）
+  - 4 辺の Input 欄を `type="text" inputMode="numeric"` に変更し、横並びに `-` [入力] `+` ボタンを配置
+  - Input 欄: `w-[56px]` に調整し、デザインを統一
+- `localapp/src/components/capture/ProfileEditor.tsx`
+  - `import { Minus, Plus }` と `useEffect` を追加
+  - `cropInputs` ローカル state と `useEffect` 同期ロジックを追加
+  - `handleCropInputChange`, `handleCropInputBlur`, `handleCropAdjust` 関数を新規追加
+  - トリミング十字レイアウトの 4 辺すべてを `type="text" inputMode="numeric"` + `-` [入力] `+` ボタンに変更
+  - `updateCustomProfile` を経由し、Zustand ストアに確定値を保存
+- ビルド結果:
+  - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+  - `cargo check`: コンパイル成功（既存の snake_case 警告 4 件のみ）
+- Git:
+  - コミット `a964a87`: 「004001: トリミング入力欄に自由入力＋+/-ボタンを実装」（TrimView.tsx）
+  - コミット `dea345f`: 「004001: 電子書籍タブのトリミング入力欄に自由入力＋+/-ボタンを実装」（ProfileEditor.tsx）
+  - main ブランチに fast-forward マージ完了
+- ブランチ: `feature/004001-trim-thumbnails` → `main`
+
 ---
 
 ## 004002 — Before/After プレビュー表示
