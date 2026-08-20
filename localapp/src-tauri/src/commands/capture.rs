@@ -187,6 +187,11 @@ fn run_continuous_capture_loop(
     // MSE（平均二乗誤差）閾値。環境により調整が必要なため、将来的にプロファイルパラメータ化を検討
     // この値はフルHD画面でアルファチャンネルを含むピクセル差の経験値に基づく
     const MSE_THRESHOLD: f64 = 1000.0;
+    // 【002008-3】同一ページと判定された連続回数。
+    // 1回目は「ページ遷移が追いついていない可能性」として再度ページ送りを試み、
+    // 2回連続で MSE < threshold となった場合のみ最終ページ到達と判断する。
+    // これにより、page_wait が短くてページ遷移完了前にキャプチャされた場合の誤完了を防ぐ
+    let mut same_page_count: u32 = 0;
 
     // 【002008-1 デバッグ】リトライ回数と待機時間のログ出力用
     eprintln!("[002008-1 DEBUG] 連続キャプチャループ開始: profile={:?}", profile);
@@ -358,18 +363,56 @@ fn run_continuous_capture_loop(
         // --- 前回画像との差分検出（MSE方式）---
         if let Some(ref prev) = prev_image {
             let mse = calculate_mse(prev, &current_image);
+            eprintln!(
+                "[002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
+                page_num, mse, MSE_THRESHOLD, same_page_count
+            );
             if mse < MSE_THRESHOLD {
-                // 変化が少ない＝ページ遷移が発生しなかった＝最終ページ到達と判断
+                same_page_count += 1;
+                if same_page_count >= 2 {
+                    // 2回連続で変化が少ない＝最終ページ到達と判断
+                    emit_progress(
+                        &app_handle,
+                        page_num.saturating_sub(1),
+                        page_num.saturating_sub(1),
+                        "completed",
+                        &format!("全 {} ページのキャプチャが完了しました", page_num.saturating_sub(1)),
+                        Some(output_dir.clone()),
+                    );
+                    is_capturing.store(false, Ordering::SeqCst);
+                    break;
+                }
+                // 1回目の同一ページ判定は「ページ遷移が追いついていない可能性」として、
+                // もう一度ページ送りを試みる。キャプチャ画像は保存せずに破棄。
+                eprintln!(
+                    "[002008-3 DEBUG] page={} は同一ページと判定（{}回目）のため、再ページ送りを試みます",
+                    page_num, same_page_count
+                );
                 emit_progress(
                     &app_handle,
                     page_num.saturating_sub(1),
-                    page_num.saturating_sub(1),
-                    "completed",
-                    &format!("全 {} ページのキャプチャが完了しました", page_num.saturating_sub(1)),
+                    page_num,
+                    "page_turn",
+                    "ページ遷移を確認中...",
                     Some(output_dir.clone()),
                 );
-                is_capturing.store(false, Ordering::SeqCst);
-                break;
+                if let Err(e) = turn_page(&mut enigo, &profile.page_turn_key) {
+                    emit_progress(
+                        &app_handle,
+                        page_num.saturating_sub(1),
+                        page_num,
+                        "error",
+                        &format!("ページ送りエラー: {}", e),
+                        Some(output_dir.clone()),
+                    );
+                    is_capturing.store(false, Ordering::SeqCst);
+                    break;
+                }
+                thread::sleep(Duration::from_secs_f64(profile.page_wait));
+                continue;
+            } else {
+                // 変化が大きい場合は同一ページカウンタをリセット
+                same_page_count = 0;
             }
         }
 

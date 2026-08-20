@@ -945,6 +945,42 @@
 
 ---
 
+## 002008-3 — 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+
+### 【実施予定】
+
+- 日時: 2026-08-20
+- 目的: 「電子書籍」画面の「連続キャプチャ開始」ボタンを押下しても途中で完了してしまう不具合を調査・修正する
+- 前提:
+  - feature/002008-3-continuous-capture-mse-grace ブランチを作成済み
+- 変更内容:
+  1. `localapp/src-tauri/src/commands/capture.rs` — MSE 同一ページ判定を「連続2回閾値未満」方式に変更
+  2. MSE 値・判定結果をログ出力してデバッグを強化
+  3. `cargo check` / `npm run build` でビルド確認
+  4. `npm run tauri dev` でユーザーテスト実施
+- 想定される結果や注意点:
+  - Kindle プロファイルの `page_wait`（0.15秒）が短すぎて、ページ遷移完了前に次のキャプチャが実行される可能性がある
+  - 同一ページと判定されるのは1回目は「ページ遷移が追いついていない可能性」として扱い、2回連続で MSE < threshold となった場合のみ completed とする
+
+### 【実施実績】
+
+- `localapp/src-tauri/src/commands/capture.rs` を修正
+  - MSE 同一ページ判定を「連続2回閾値未満」方式に変更
+  - `same_page_count: u32` カウンタを導入
+    - 1回目の同一ページ判定：キャプチャ画像を保存せず、再度ページ送りを試みる
+    - 2回連続で同一ページ判定：最終ページ到達として `completed` を発行
+    - 変化が大きい場合（MSE >= threshold）はカウンタをリセット
+  - デバッグログ強化：`page_num`, `mse`, `threshold`, `same_page_count` を毎回 `eprintln!` で出力
+  - 再ページ送り試行時は `page_turn` ステータスで「ページ遷移を確認中...」を通知
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告のみ）
+  - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- ブランチ: `feature/002008-3-continuous-capture-mse-grace`
+
+---
+
+---
+
 ## 004002 — Before/After プレビュー表示
 
 ### 【実施予定】
