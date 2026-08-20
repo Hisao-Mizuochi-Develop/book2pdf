@@ -54,6 +54,8 @@ pub fn run() {
             commands::capture::create_zip_archive,
             // 003002: PDF → 画像展開
             commands::pdf::extract_pdf_to_images,
+            // 003003: PDF 出力フォルダ自動設定
+            commands::pdf::get_pdf_default_output_folder,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

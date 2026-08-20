@@ -23,7 +23,16 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useTrimStore } from "@/store/trimStore";
+import { useExportStore } from "@/store/exportStore";
 import { useNavigationStore } from "@/store/navigationStore";
+
+/** PDF 読込完了後の結果状態 */
+export interface PdfImportResult {
+  /** 画像化されたフォルダパス */
+  folderPath: string;
+  /** 画像枚数 */
+  imageCount: number;
+}
 
 /** PDF → 画像変換の進捗イベントペイロード（Rust 側 `PdfProgressPayload` に対応） */
 export interface PdfProgressPayload {
@@ -57,6 +66,8 @@ export interface PdfImportState {
   progressMessage: string;
   /** 進捗イベントのリスナー解除関数 */
   unlistenFn: UnlistenFn | null;
+  /** 変換完了後の結果（完了表示用） */
+  result: PdfImportResult | null;
 
   /** DPI を設定する */
   setDpi: (dpi: number) => void;
@@ -68,6 +79,10 @@ export interface PdfImportState {
   extractPdf: () => Promise<void>;
   /** 進捗イベントを受信して状態を更新する */
   setProgress: (payload: PdfProgressPayload) => void;
+  /** 出力フォルダを開く（完了後アクション） */
+  openOutputFolder: () => Promise<void>;
+  /** トリミングタブに手動で進む（完了後アクション） */
+  goToTrim: () => Promise<void>;
   /** 状態をリセットする */
   reset: () => void;
 }
@@ -87,6 +102,7 @@ const defaultState = {
   outputImageCount: 0,
   progressMessage: "",
   unlistenFn: null,
+  result: null,
 };
 
 /**
@@ -110,6 +126,8 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
    * PDF ファイル選択ダイアログを開く
    *
    * フィルタは PDF のみとし、複数選択は不可。
+   * 選択後、ファイル名から拡張子を除いた名前で Pictures/BookCapture/<basename>/
+   * をデフォルトの出力先として自動設定する。
    */
   selectPdf: async () => {
     try {
@@ -125,7 +143,28 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
       });
 
       if (selected && typeof selected === "string") {
-        set({ pdfPath: selected, error: null });
+        // 003003: PDF ファイル名からデフォルト出力フォルダを自動設定
+        let defaultOutputFolder: string | null = null;
+        try {
+          defaultOutputFolder = await invoke<string>(
+            "get_pdf_default_output_folder",
+            { pdfPath: selected }
+          );
+        } catch (folderErr) {
+          // フォルダ自動設定に失敗しても、PDF 選択自体は成功させる
+          // ユーザーは手動で出力先を選択可能
+          console.warn(
+            "デフォルト出力フォルダの取得に失敗しました:",
+            folderErr
+          );
+        }
+
+        set({
+          pdfPath: selected,
+          outputFolder: defaultOutputFolder,
+          error: null,
+          result: null,
+        });
       }
     } catch (err) {
       set({
@@ -162,8 +201,10 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
    * 2. `pdf-progress` イベントのリスナーを登録
    * 3. 入力値のバリデーション
    * 4. Rust 側 `extract_pdf_to_images` を invoke
-   * 5. 完了後、`useTrimStore.loadFolder()` でトリミングタブに自動引き継ぎ
-   * 6. `useNavigationStore.setView("trim")` でタブを切り替え
+   * 5. 完了後、result 状態を設定し完了表示を行う
+   *
+   * 003003 改修により、完了後の自動遷移は廃止。
+   * ユーザーは「フォルダを開く」「トリミングに進む」ボタンで次のアクションを選択する。
    */
   extractPdf: async () => {
     const { pdfPath, outputFolder, dpi } = get();
@@ -199,6 +240,7 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
         progressCurrent: 0,
         progressTotal: 0,
         progressMessage: "PDFを読み込んでいます...",
+        result: null,
       });
     } catch (err) {
       set({
@@ -225,16 +267,20 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
       );
 
       // 完了状態を更新
+      // 003003: 自動遷移せず、result 状態に完了情報を保持して完了表示を行う
+      const completedImageCount = get().progressTotal;
       set({
         isLoading: false,
-        outputImageCount: get().progressTotal,
+        outputImageCount: completedImageCount,
+        result: {
+          folderPath: resultFolder,
+          imageCount: completedImageCount,
+        },
       });
 
-      // トリミングタブに自動引き継ぎ
+      // 003003: 取り込み完了後は出力フォルダをトリミング・ZIP 出力の入力フォルダに反映
       await useTrimStore.getState().loadFolder(resultFolder);
-
-      // トリミングタブへ自動遷移
-      useNavigationStore.getState().setView("trim");
+      useExportStore.getState().setSourceFolder(resultFolder);
     } catch (err) {
       if (unlisten) {
         unlisten();
@@ -243,6 +289,51 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
         isLoading: false,
         error: err instanceof Error ? err.message : String(err),
         unlistenFn: null,
+      });
+    }
+  },
+
+  /**
+   * 出力フォルダを開く
+   *
+   * 完了後の「フォルダを開く」ボタンから呼ばれる。
+   * Rust 側 `open_capture_folder` を利用して Finder/Explorer を開く。
+   */
+  openOutputFolder: async () => {
+    const { result } = get();
+    if (!result) {
+      set({ error: "フォルダを開く前に変換を完了してください" });
+      return;
+    }
+
+    try {
+      await invoke("open_capture_folder", { folderPath: result.folderPath });
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  },
+
+  /**
+   * トリミングタブに手動で進む
+   *
+   * 完了後の「トリミングに進む」ボタンから呼ばれる。
+   * 変換結果フォルダを trimStore に読み込み、ナビゲーションを切り替える。
+   */
+  goToTrim: async () => {
+    const { result } = get();
+    if (!result) {
+      set({ error: "トリミングに進む前に変換を完了してください" });
+      return;
+    }
+
+    try {
+      await useTrimStore.getState().loadFolder(result.folderPath);
+      useNavigationStore.getState().setView("trim");
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : String(err),
       });
     }
   },

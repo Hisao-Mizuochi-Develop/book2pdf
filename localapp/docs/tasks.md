@@ -823,6 +823,7 @@
 | 003001 | PDF 選択・設定 UI | 2026-08-15 | 2026-08-19 | 実装 |
 | 003002 | PDF → 画像展開（Rust バックエンド） | 2026-08-15 | 2026-08-19 | 実装 |
 | 003002-2 | PDF 読込 Pdfium 二重初期化エラー修正 | 2026-08-20 | 2026-08-20 | 不具合修正 |
+| 003003 | PDF 画面の出力フォルダ自動設定と完了後表示改善 | 2026-08-21 | 2026-08-21 | 実装 |
 
 ### 003001 PDF 選択・設定 UI
 
@@ -933,6 +934,59 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
   - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+
+---
+
+### 003003 PDF 画面の出力フォルダ自動設定と完了後表示改善
+
+【計画】
+1. 機能要件
+   - 「PDF」画面で PDF ファイル選択時、出力フォルダを自動設定する
+   - デフォルト値は `Pictures/BookCapture/<PDFファイル名（拡張子除く）>/`
+   - 取り込み完了後、自動的に「トリミング」画面へ遷移しない
+   - 完了結果を「電子書籍」と同様に表示し、「フォルダを開く」「トリミングに進む」ボタンを配置
+2. 変更対象ファイル
+   - `localapp/src-tauri/src/commands/pdf.rs`: `get_pdf_default_output_folder` コマンドを新規追加
+   - `localapp/src-tauri/src/lib.rs`: 新規コマンドを `invoke_handler` に登録
+   - `localapp/src/store/pdfImportStore.ts`: PDF 選択後のデフォルトフォルダ自動設定、完了後自動遷移の削除、完了結果状態・開く・進むアクションを追加
+   - `localapp/src/views/PdfImportView.tsx`: 完了時に `CaptureResultGallery` を表示しボタンを配置
+3. ビルド確認
+   - `cd localapp/src-tauri && cargo check`
+   - `cd localapp && npm run build`
+4. 想定される注意点
+   - Tauri `invoke` の引数名はフロントエンド・Rust 両方で一致させる（過去に camelCase / snake_case 不整合でバグ発生）
+   - 既存の `dirs` crate / `open_capture_folder` / `CaptureResultGallery` を再利用する
+   - 「トリミングに進む」ボタンクリック時に `trimStore.loadFolder()` を実行する
+
+【実施結果】
+- 2026-08-21: 基本実装完了
+  - `localapp/src-tauri/src/commands/pdf.rs` に `get_pdf_default_output_folder` コマンドを新規追加
+    - 入力 PDF パスから拡張子除くファイル名を取得
+    - `dirs::picture_dir()` 配下の `BookCapture/<stem>/` を返却
+  - `localapp/src-tauri/src/lib.rs` に `get_pdf_default_output_folder` を `invoke_handler` に登録
+  - `localapp/src/store/pdfImportStore.ts` を改修
+    - `selectPdf()` で PDF 選択後、`get_pdf_default_output_folder` を呼び出して `outputFolder` を自動設定
+    - `extractPdf()` 完了後の自動遷移を削除
+    - 完了結果を `result` 状態に保持（`folderPath`, `imageCount`）
+    - 「フォルダを開く」アクション `openOutputFolder()` を追加（`open_capture_folder` 再利用）
+    - 「トリミングに進む」アクション `goToTrim()` を追加（`trimStore.loadFolder` + `setView("trim")`）
+  - `localapp/src/views/PdfImportView.tsx` を改修
+    - 完了後に `CaptureResultGallery` を表示
+    - 「フォルダを開く」「トリミングに進む」ボタンを配置
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功（既存の non_snake_case 警告のみ）
+    - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+  - ユーザーテスト: 合格判定を取得
+- 2026-08-21: 追加要件対応（ユーザー指摘）
+  - PDF 取り込み完了後、出力フォルダを「トリミング」画面と「ZIP 出力」の入力フォルダに自動反映
+  - `pdfImportStore.ts` の `extractPdf()` 完了処理に以下を追加
+    - `await useTrimStore.getState().loadFolder(resultFolder);`
+    - `useExportStore.getState().setSourceFolder(resultFolder);`
+  - これにより、PDF 画像化後に「トリミング」タブ / 「ZIP 出力」タブを開くと、各画面に画像・フォルダ情報が既に反映されている
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功
+    - `cd localapp && npm run build`: ビルド成功
+  - ユーザーテスト: 合格判定を取得
 
 ---
 

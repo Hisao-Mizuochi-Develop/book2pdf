@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CaptureResultGallery } from "@/components/capture/CaptureResultGallery";
 import {
   usePdfImportStore,
   PDF_DPI_OPTIONS,
@@ -51,12 +52,17 @@ export function PdfImportView() {
   const progressTotal = usePdfImportStore((state) => state.progressTotal);
   const progressMessage = usePdfImportStore((state) => state.progressMessage);
   const error = usePdfImportStore((state) => state.error);
+  const result = usePdfImportStore((state) => state.result);
   const selectPdf = usePdfImportStore((state) => state.selectPdf);
   const selectOutputFolder = usePdfImportStore(
     (state) => state.selectOutputFolder
   );
   const setDpi = usePdfImportStore((state) => state.setDpi);
   const extractPdf = usePdfImportStore((state) => state.extractPdf);
+  const openOutputFolder = usePdfImportStore(
+    (state) => state.openOutputFolder
+  );
+  const goToTrim = usePdfImportStore((state) => state.goToTrim);
 
   // ファイルサイズ目安の計算
   // ページ数はまだ不明なため、1 ページあたりの目安を表示する。
@@ -240,11 +246,23 @@ export function PdfImportView() {
             )}
 
             <p className="text-xs text-muted-foreground">
-              完了後、自動的にトリミングタブに切り替わります。
+              完了後、下に結果が表示されます。
             </p>
           </div>
         )}
       </section>
+
+      {/* ── 完了結果表示 ───────────────────────── */}
+      {result && !isLoading && (
+        <section className="flex flex-col gap-4 rounded-lg border bg-card p-5 shadow-sm">
+          <CaptureResultGallery
+            folderPath={result.folderPath}
+            imageCount={result.imageCount}
+            onOpenFolder={openOutputFolder}
+            onGoTrim={goToTrim}
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -15,6 +15,46 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::Emitter;
 
+/// PDF ファイルパスからデフォルトの出力フォルダパスを計算する
+///
+/// # 処理概要
+/// 選択された PDF ファイル名から拡張子を除いた名前をフォルダ名とし、
+/// ユーザーの Pictures ディレクトリ配下の `BookCapture/<basename>/` を
+/// デフォルトの出力先として返却する。
+///
+/// 例: `/Users/xxx/Downloads/sample.pdf` → `/Users/xxx/Pictures/BookCapture/sample`
+///
+/// # 引数
+/// - `pdf_path`: 入力 PDF ファイルの絶対パス
+///
+/// # 戻り値
+/// 成功時: デフォルト出力フォルダの絶対パス
+/// 失敗時: エラーメッセージ（String）
+#[tauri::command]
+pub fn get_pdf_default_output_folder(pdf_path: String) -> Result<String, String> {
+    // PDF ファイルパスからファイル名（拡張子除く）を取得
+    let path = Path::new(&pdf_path);
+    let stem = path
+        .file_stem()
+        .ok_or_else(|| "PDF ファイル名が取得できません".to_string())?
+        .to_string_lossy()
+        .to_string();
+
+    if stem.is_empty() {
+        return Err("PDF ファイル名が空です".to_string());
+    }
+
+    // ユーザーの Pictures ディレクトリを取得
+    let pictures_dir = dirs::picture_dir()
+        .ok_or_else(|| "Pictures フォルダが取得できません".to_string())?;
+
+    // BookCapture/<stem> を構築
+    let output_folder = pictures_dir.join("BookCapture").join(stem);
+
+    Ok(output_folder.to_string_lossy().to_string())
+}
+
+
 /// PDF → 画像変換の進捗通知用イベントペイロード
 ///
 /// `app_handle.emit("pdf-progress", PdfProgressPayload)` でフロントエンドに送信される。

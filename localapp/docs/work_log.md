@@ -1411,3 +1411,61 @@
   - `localapp/docs/tasks.md`
   - `localapp/docs/caveats.md`
   - `localapp/docs/work_log.md`（本エントリ）
+
+
+---
+
+## 003003 — PDF 画面の出力フォルダ自動設定と完了後表示改善
+
+### 【実施予定】
+
+- 日時: 2026-08-21
+- 目的: 「PDF」画面の出力フォルダを「電子書籍」と同様に自動設定し、取り込み完了後も「フォルダを開く」「トリミングに進む」ボタンを表示する
+- 前提:
+  - feature/003003-pdf-output-default ブランチを作成済み
+  - `dirs` crate / `open_capture_folder` コマンド / `CaptureResultGallery` コンポーネントは既存で利用可能
+- 変更内容:
+  1. `localapp/src-tauri/src/commands/pdf.rs`: `get_pdf_default_output_folder` コマンドを新規追加
+  2. `localapp/src-tauri/src/lib.rs`: 新規コマンドを `invoke_handler` に登録
+  3. `localapp/src/store/pdfImportStore.ts`: PDF 選択後のデフォルトフォルダ自動設定、完了後自動遷移の削除、完了結果状態・アクションを追加
+  4. `localapp/src/views/PdfImportView.tsx`: 完了時に `CaptureResultGallery` を表示し「フォルダを開く」「トリミングに進む」ボタンを配置
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - Tauri `invoke` の引数名はフロントエンド・Rust 両方で一致させる
+  - 既存コンポーネント・コマンドを最大限再利用する
+  - 「トリミングに進む」ボタンクリック時に `trimStore.loadFolder()` を実行する
+
+### 【実施実績】
+
+- 2026-08-21: 基本実装完了
+  - `localapp/src-tauri/src/commands/pdf.rs` に `get_pdf_default_output_folder` コマンドを新規追加
+    - 入力 PDF パスから拡張子除くファイル名を取得
+    - `dirs::picture_dir()` 配下の `BookCapture/<stem>/` を返却
+  - `localapp/src-tauri/src/lib.rs` に `get_pdf_default_output_folder` を `invoke_handler` に登録
+  - `localapp/src/store/pdfImportStore.ts` を改修
+    - `selectPdf()` で PDF 選択後、`get_pdf_default_output_folder` を呼び出して `outputFolder` を自動設定
+    - `extractPdf()` 完了後の自動遷移を削除
+    - 完了結果を `result` 状態に保持（`folderPath`, `imageCount`）
+    - 「フォルダを開く」アクション `openOutputFolder()` を追加（`open_capture_folder` 再利用）
+    - 「トリミングに進む」アクション `goToTrim()` を追加（`trimStore.loadFolder` + `setView("trim")`）
+  - `localapp/src/views/PdfImportView.tsx` を改修
+    - 完了後に `CaptureResultGallery` を表示
+    - 「フォルダを開く」「トリミングに進む」ボタンを配置
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功（既存の non_snake_case 警告のみ）
+    - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+  - ユーザーテスト: 合格判定を取得
+- 2026-08-21: 追加要件対応（ユーザー指摘）
+  - PDF 取り込み完了後、出力フォルダを「トリミング」画面と「ZIP 出力」の入力フォルダに自動反映
+  - `pdfImportStore.ts` の `extractPdf()` 完了処理に以下を追加
+    - `await useTrimStore.getState().loadFolder(resultFolder);`
+    - `useExportStore.getState().setSourceFolder(resultFolder);`
+  - これにより、PDF 画像化後に「トリミング」タブ / 「ZIP 出力」タブを開くと、各画面に画像・フォルダ情報が既に反映されている
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功
+    - `cd localapp && npm run build`: ビルド成功
+  - ユーザーテスト: 合格判定を取得
+
