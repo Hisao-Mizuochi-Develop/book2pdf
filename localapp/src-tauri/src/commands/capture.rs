@@ -86,6 +86,7 @@ fn get_is_capturing() -> Arc<AtomicBool> {
 /// - `app_handle`: Tauri AppHandle（イベント送信に使用）
 /// - `profile`: 選択中のキャプチャプロファイル（ページ送りキー・待機時間を含む）
 /// - `book_title`: 出力フォルダ名に使用する書籍タイトル（空欄時は `"untitled"`）
+/// - `output_folder`: ユーザー指定の出力先フォルダパス（空文字時はデフォルト動作）
 ///
 /// # 戻り値
 /// - `Ok(String)`: キャプチャ画像の保存先フォルダパス
@@ -96,6 +97,7 @@ pub fn start_continuous_capture(
     profile: CaptureProfile,
     bookTitle: String,
     startFromBeginning: bool,
+    outputFolder: String,
 ) -> Result<String, String> {
     // 既に実行中かチェック（重複開始を防止）
     let is_capturing = get_is_capturing();
@@ -108,8 +110,10 @@ pub fn start_continuous_capture(
     let stop_flag = get_stop_flag();
     stop_flag.store(false, Ordering::SeqCst);
 
-    // 保存先フォルダを作成
-    let output_dir = create_capture_folder(&bookTitle)?;
+    // 保存先フォルダを決定
+    // outputFolder が指定されていればその配下に bookTitle サブフォルダを作成し、
+    // 未指定（空文字）の場合は従来通り Pictures/BookCapture/<book_title>/ を使用する
+    let output_dir = resolve_output_folder(&bookTitle, &outputFolder)?;
 
     // バックグラウンドスレッドで連続キャプチャループを開始
     // `thread::spawn` を使用して WebView スレッドをブロックしない
@@ -992,27 +996,40 @@ pub fn get_builtin_profiles() -> Result<Vec<ProfileEntry>, String> {
 // 002004: キャプチャ画像のフォルダ管理
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// キャプチャ画像の保存先フォルダを作成する（重複回避付き）
+/// 最終的なキャプチャ画像保存先フォルダを決定する
 ///
-/// `dirs::picture_dir()` で取得した Pictures フォルダ配下に
-/// `BookCapture/<book_title>/` フォルダを作成する。
-/// 同名フォルダが既存の場合は `_1`, `_2`, ... の連番サフィックスを付与する（上限99）。
+/// ユーザー指定フォルダ `output_folder` が空でなければその配下に
+/// `book_title` 名のサブフォルダを作成する。空の場合はデフォルトの
+/// `Pictures/BookCapture/<book_title>/` を使用する。
+/// サブフォルダ名が既存の場合は `_1`, `_2`, ... の連番サフィックスを付与する（上限99）。
 ///
 /// # 引数
 /// - `book_title`: 書籍タイトル（`""` 時は `"untitled"` を使用）
+/// - `output_folder`: ユーザー指定の親フォルダパス（空文字でデフォルト動作）
 ///
 /// # 戻り値
 /// - `Ok(String)`: 作成したフォルダの絶対パス
-fn create_capture_folder(book_title: &str) -> Result<String, String> {
-    let pictures_dir = dirs::picture_dir().ok_or("Pictures ディレクトリを取得できません")?;
+fn resolve_output_folder(book_title: &str, output_folder: &str) -> Result<String, String> {
     let folder_name = if book_title.trim().is_empty() {
         "untitled"
     } else {
         book_title.trim()
     };
 
+    let parent_dir = if output_folder.trim().is_empty() {
+        let pictures_dir = dirs::picture_dir().ok_or("Pictures ディレクトリを取得できません")?;
+        pictures_dir.join("BookCapture")
+    } else {
+        std::path::PathBuf::from(output_folder.trim())
+    };
+
+    if !parent_dir.exists() {
+        std::fs::create_dir_all(&parent_dir)
+            .map_err(|e| format!("親フォルダ作成エラー ({}): {}", parent_dir.display(), e))?;
+    }
+
     // まず元の名前で試行
-    let mut output_dir = pictures_dir.join("BookCapture").join(folder_name);
+    let mut output_dir = parent_dir.join(folder_name);
     if !output_dir.exists() {
         std::fs::create_dir_all(&output_dir)
             .map_err(|e| format!("フォルダ作成エラー ({}): {}", output_dir.display(), e))?;
@@ -1022,7 +1039,7 @@ fn create_capture_folder(book_title: &str) -> Result<String, String> {
     // 重複している場合は _1, _2, ... を試行（上限99）
     for i in 1..=99 {
         let suffixed_name = format!("{}_{}", folder_name, i);
-        output_dir = pictures_dir.join("BookCapture").join(suffixed_name);
+        output_dir = parent_dir.join(suffixed_name);
         if !output_dir.exists() {
             std::fs::create_dir_all(&output_dir)
                 .map_err(|e| format!("フォルダ作成エラー ({}): {}", output_dir.display(), e))?;
@@ -1032,6 +1049,7 @@ fn create_capture_folder(book_title: &str) -> Result<String, String> {
 
     Err("フォルダ名の重複が多すぎます（上限99）。手動で整理してください。".to_string())
 }
+
 
 /// 指定フォルダ内の PNG 画像ファイル一覧を取得する
 ///

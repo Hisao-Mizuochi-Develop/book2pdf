@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Play, Square } from "lucide-react";
+import { Play, Square, FolderOpen } from "lucide-react";
 import { ProfileSelector } from "@/components/capture/ProfileSelector";
 import { ProfileEditor } from "@/components/capture/ProfileEditor";
 import { CaptureProgress } from "@/components/capture/CaptureProgress";
@@ -37,6 +38,8 @@ export function CaptureView() {
   const [bookTitle, setBookTitle] = useState("");
   /** 先頭ページから開始するかどうか */
   const [startFromBeginning, setStartFromBeginning] = useState(true);
+  /** ユーザー指定の出力先フォルダパス（空文字でデフォルト） */
+  const [outputFolder, setOutputFolder] = useState("");
 
   // Zustand ストアからプロファイル取得アクションを取得
   const fetchProfiles = useProfileStore((state) => state.fetchProfiles);
@@ -89,7 +92,7 @@ export function CaptureView() {
       setError("書籍タイトルを入力してください");
       return;
     }
-    await startCapture(profile, bookTitle, startFromBeginning);
+    await startCapture(profile, bookTitle, startFromBeginning, outputFolder);
   }
 
   /**
@@ -99,6 +102,28 @@ export function CaptureView() {
    */
   async function handleStopCapture() {
     await stopCapture();
+  }
+
+  /**
+   * 出力先フォルダ選択ダイアログを開く
+   *
+   * tauri-plugin-dialog の `open({ directory: true })` を使用し、
+   * ユーザーが選択したフォルダパスを outputFolder state に保存する。
+   * キャンセル時は何もしない。
+   */
+  async function handleSelectOutputFolder() {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: "キャプチャ画像の保存先フォルダを選択",
+      });
+      if (selected && typeof selected === "string") {
+        setOutputFolder(selected);
+      }
+    } catch (err) {
+      console.error("フォルダ選択エラー:", err);
+    }
   }
 
   /**
@@ -169,6 +194,36 @@ export function CaptureView() {
             disabled={isContinuousCapturing}
             className="max-w-md"
           />
+        </div>
+
+        {/* 出力先フォルダ選択フィールド（002009） */}
+        <div className="space-y-2">
+          <label htmlFor="output-folder" className="text-sm font-medium">
+            出力先フォルダ
+          </label>
+          <div className="flex items-center gap-2 max-w-md">
+            <Input
+              id="output-folder"
+              placeholder="未指定時は Pictures/BookCapture/<書籍タイトル>/"
+              value={outputFolder}
+              onChange={(e) => setOutputFolder(e.target.value)}
+              disabled={isContinuousCapturing}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleSelectOutputFolder}
+              disabled={isContinuousCapturing}
+              title="フォルダを選択"
+            >
+              <FolderOpen className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            空欄の場合はデフォルトの Pictures/BookCapture 配下に保存されます。
+          </p>
         </div>
 
         {/* 連続キャプチャ開始/停止ボタン + 開始位置選択スイッチ */}

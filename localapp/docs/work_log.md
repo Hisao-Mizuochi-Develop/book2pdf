@@ -986,6 +986,72 @@
 
 ---
 
+## 002009 — 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+
+### 【実施予定】
+
+- 日時: 2026-08-20
+- 目的: 「電子書籍」画面で連続キャプチャの出力フォルダをユーザーが指定可能とし、キャプチャ完了後に「トリミング」画面に自動引き継ぐ
+- 前提:
+  - feature/002009-custom-output-folder ブランチを作成済み
+  - 002008-3（連続キャプチャ途中完了バグ修正）が完了していること
+  - tauri-plugin-dialog は 005002 で追加済み
+- 変更内容:
+  1. `localapp/src/views/CaptureView.tsx`
+     - 出力フォルダ選択ボタンを追加（`tauri-plugin-dialog` の `open({ directory: true })`）
+     - 選択したフォルダパスをローカル state で保持
+     - `startCapture()` 呼び出し時に `outputFolder` を渡す
+  2. `localapp/src/store/captureStore.ts`
+     - `startCapture` のシグネチャを `(profile, bookTitle, startFromBeginning, outputFolder?)` に変更
+     - `invoke("start_continuous_capture")` に `outputFolder` を追加
+  3. `localapp/src-tauri/src/commands/capture.rs`
+     - `start_continuous_capture` に `outputFolder: Option<String>` 引数を追加
+     - 指定があればそのパスを、なければ `create_capture_folder(&bookTitle)` を使用
+     - 指定フォルダが存在しない場合は `create_dir_all` で作成
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - Tauri の `invoke` は JS 側のキー名と Rust 側の引数名が完全一致する必要がある
+  - フォルダ選択は既存の `tauri-plugin-dialog` を流用する
+  - トリミング画面への引継ぎは既存の `lastCaptureFolder` 機構を利用する
+
+### 【実施実績】
+
+- 2026-08-20: 実装着手
+  - `localapp/src/views/CaptureView.tsx`
+    - `outputFolder` 用のローカル state (`useState("")`) を追加
+    - `tauri-plugin-dialog` の `open({ directory: true })` を使用した `handleSelectOutputFolder()` を追加
+    - 選択済みフォルダパスを表示する Input とフォルダ選択ボタンを「書籍タイトル」入力の下に配置
+    - `handleStartCapture()` で `startCapture(profile, bookTitle, startFromBeginning, outputFolder)` を呼び出すように変更
+  - `localapp/src/store/captureStore.ts`
+    - `startCapture` のシグネチャを `(profile, bookTitle, startFromBeginning = true, outputFolder = "")` に変更
+    - `invoke("start_continuous_capture", { profile, bookTitle, startFromBeginning, outputFolder })` に `outputFolder` を追加
+  - `localapp/src-tauri/src/commands/capture.rs`
+    - `start_continuous_capture` に `outputFolder: String` 引数を追加（空文字を未指定として扱う）
+    - 新規 `resolve_output_folder(book_title, output_folder)` 関数を実装
+      - `output_folder` が空の場合は従来通り `Pictures/BookCapture/<book_title>/` を使用
+      - 指定がある場合はその配下に `<book_title>` サブフォルダを作成
+      - 親フォルダが存在しない場合は `create_dir_all` で作成
+      - サブフォルダ名が重複する場合は `_1`, `_2`, ... の連番サフィックスを付与（上限99）
+    - 既存 `create_capture_folder` 関数は `resolve_output_folder` に統合され、削除した
+- トリミング画面への引継ぎ
+  - キャプチャ完了時に `capture-progress` イベントの `captureFolder` が `lastCaptureFolder` に保存される既存機構を利用
+  - 追加の連携処理は不要（`TrimView` が `lastCaptureFolder` を自動読み込む）
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: 成功（Tauri コマンド引数の camelCase 命名に関する non_snake_case 警告のみ）
+  - `cd localapp && npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- 2026-08-20: ユーザーによる動作テストを実施し、合格判定を取得
+  - 「電子書籍」画面で出力フォルダを選択できることを確認
+  - 指定したフォルダ配下に `<book_title>` サブフォルダが作成され、キャプチャ画像が保存されることを確認
+  - キャプチャ完了後、「トリミング」画面を開くと `lastCaptureFolder` 経由で自動的に同じフォルダが読み込まれることを確認
+- 2026-08-21: ドキュメント更新
+  - `localapp/docs/tasks.md` に【実施結果】を追記
+  - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
+
+---
+
 ## 004002 — Before/After プレビュー表示
 
 ### 【実施予定】

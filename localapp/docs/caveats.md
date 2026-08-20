@@ -573,3 +573,38 @@ eprintln!(
 
 ### 関連タスク
 - 002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+
+---
+
+## 連続キャプチャ — 出力フォルダ指定とタブ間引継ぎ（002009）
+
+### 事象
+「電子書籍」画面で連続キャプチャを実行する際、出力先フォルダをユーザーが任意に指定したい。
+また、キャプチャ完了後に「トリミング」画面に同じフォルダを自動的に引き継ぎたい。
+
+### 対応策
+1. **出力フォルダ選択 UI を追加**
+   - `localapp/src/views/CaptureView.tsx` に `tauri-plugin-dialog` の `open({ directory: true })` を使用したフォルダ選択ボタンを配置
+   - 選択したパスをローカル state で保持し、`startCapture()` 呼び出し時に渡す
+
+2. **Rust 側で出力フォルダを解決**
+   - `localapp/src-tauri/src/commands/capture.rs` の `start_continuous_capture` に `outputFolder: String` 引数を追加（空文字を未指定として扱う）
+   - 新規 `resolve_output_folder(book_title, output_folder)` 関数を実装
+     - `output_folder` が空の場合：従来通り `Pictures/BookCapture/<book_title>/` を使用
+     - `output_folder` が指定されている場合：その配下に `<book_title>` サブフォルダを作成
+     - 親フォルダが存在しない場合は `create_dir_all` で作成
+     - サブフォルダ名が重複する場合は `_1`, `_2`, ... の連番サフィックスを付与（上限99）
+
+3. **タブ間引継ぎは既存機構を再利用**
+   - キャプチャ完了時に `capture-progress` イベントの `captureFolder` が `lastCaptureFolder` に保存される
+   - `TrimView` は `lastCaptureFolder` を監視し、自動的に同じフォルダを読み込む
+   - 新規の state 連携は不要
+
+### 注意点
+- Tauri の `invoke()` は JS 側のキー名と Rust 側の引数名が完全一致する必要がある
+  - 本タスクでは `outputFolder` を camelCase で統一している
+- ユーザーが選択したフォルダの**配下**に `<book_title>` サブフォルダが作成されるため、ユーザーは「親フォルダ」を選択するイメージになる
+- 既存 `create_capture_folder` 関数は `resolve_output_folder` に統合され、削除された
+
+### 関連タスク
+- 002009: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
