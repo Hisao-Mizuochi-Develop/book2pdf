@@ -29,6 +29,7 @@ use enigo::{Enigo, Key, Keyboard, Settings, Direction};
 /// `app_handle.emit("capture-progress", ProgressPayload)` でフロントエンドに送信される。
 /// フロントエンド側は `listen("capture-progress")` でこのイベントを受信する。
 #[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProgressPayload {
     /// 現在キャプチャ済みのページ数
     pub current: u32,

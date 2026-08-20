@@ -1049,6 +1049,22 @@
 - 2026-08-21: ドキュメント更新
   - `localapp/docs/tasks.md` に【実施結果】を追記
   - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
+- 2026-08-21: バグ修正（002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
+  - **事象**: キャプチャ完了後、「トリミング」画面を開いてもキャプチャした画像が自動的に読み込まれない。手動でフォルダを選び直す必要がある。
+  - **調査**:
+    - フロントエンド側のデータフロー（`CaptureView` → `captureStore` → `TrimView`）に問題はないことを確認
+    - `captureStore.setProgress()` で terminal state 時に `lastCaptureFolder` を保存していることを確認
+    - `TrimView` で `lastCaptureFolder` の変更を監視して自動読み込みしていることを確認
+    - Rust 側 `ProgressPayload` のシリアライズに `#[serde(rename_all = "camelCase")]` が欠落していることを発見
+  - **原因**:
+    - Rust 側で `capture_folder: Option<String>` を snake_case のまま送信していた
+    - フロントエンドは `captureFolder`（camelCase）を期待していたため、`payload.captureFolder` が `undefined` になり、`lastCaptureFolder` に値が設定されなかった
+  - **修正**:
+    - `localapp/src-tauri/src/commands/capture.rs` の `ProgressPayload` に `#[serde(rename_all = "camelCase")]` を追加
+    - これにより `capture_folder` が `captureFolder` としてフロントエンドに送信され、タブ間引継ぎが正常に動作するようになった
+  - **ビルド確認**:
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告のみ）
+    - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 
 ---
 

@@ -783,6 +783,24 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: 成功（Tauri コマンド引数の camelCase 命名に関する警告のみ）
   - `cd localapp && npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- 2026-08-21: バグ修正（002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
+  - **事象**: キャプチャ完了後、「トリミング」画面を開いてもキャプチャした画像が自動的に読み込まれない。手動でフォルダを選び直す必要がある。
+  - **原因**: Rust 側 `ProgressPayload` に `#[serde(rename_all = "camelCase")]` が欠落していたため、イベントペイロードのフィールド名が snake_case (`capture_folder`) のまま送信されていた。一方、フロントエンドでは `captureFolder` (camelCase) を期待しており、`payload.captureFolder` が `undefined` になっていた結果、`lastCaptureFolder` に値が設定されなかった。
+  - **修正**: `localapp/src-tauri/src/commands/capture.rs` の `ProgressPayload` 構造体に `#[serde(rename_all = "camelCase")]` を追加。
+    ```rust
+    #[derive(Clone, serde::Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ProgressPayload {
+        pub current: u32,
+        pub total: u32,
+        pub status: String,
+        pub message: String,
+        pub capture_folder: Option<String>,
+    }
+    ```
+  - **ビルド確認**
+    - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
+    - `cd localapp && npm run build`: 成功（`tsc && vite build` ともにエラーなし）
 
 ### 002006（将来タスク）ウィンドウ最前面化・クリック自動化
 

@@ -608,3 +608,53 @@ eprintln!(
 
 ### 関連タスク
 - 002009: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+
+---
+
+## serde — Tauri イベントペイロードのフィールド名変換（002009-1）
+
+### 事象
+連続キャプチャ完了後、Rust 側から `capture-progress` イベントで送信した `capture_folder` がフロントエンドで受信できず、`lastCaptureFolder` に値が設定されない。
+
+### 原因
+Rust 側の `ProgressPayload` struct に `#[serde(rename_all = "camelCase")]` を指定していなかったため、フィールド名が snake_case のまま JSON シリアライズされていた。
+
+```rust
+// ❌ 誤り: snake_case のまま送信される
+#[derive(Clone, serde::Serialize)]
+pub struct ProgressPayload {
+    pub capture_folder: Option<String>,
+}
+
+// ✅ 正解: camelCase に変換して送信される
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProgressPayload {
+    pub capture_folder: Option<String>,
+}
+```
+
+フロントエンド側では `payload.captureFolder`（camelCase）でアクセスしていたため、snake_case の `capture_folder` は `undefined` として扱われ、結果として `lastCaptureFolder` が更新されなかった。
+
+### 対応策
+Tauri のイベントペイロードを Rust 側で定義する際は、フロントエンド側が期待する JSON キー名と一致するよう、`#[serde(rename_all = "camelCase")]` などの属性を必ず付与する。
+
+```rust
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProgressPayload {
+    pub current: u32,
+    pub total: u32,
+    pub status: String,
+    pub message: String,
+    pub capture_folder: Option<String>,
+}
+```
+
+### 注意点
+- Tauri の `invoke` 引数名とは別に、イベントペイロードの JSON キー名も個別に確認が必要
+- Rust 側ではフィールド名を snake_case で定義しつつ、JSON 出力を camelCase に変換するのが一般的
+- フロントエンド側の型定義（`capture-progress` イベントのペイロード型）と Rust 側の `serde` 属性が一致しているか、両ファイルを横並びで確認する
+
+### 関連タスク
+- 002009-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
