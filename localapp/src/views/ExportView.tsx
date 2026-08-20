@@ -37,6 +37,8 @@ export function ExportView() {
     outputFolder,
     isCreating,
     progressMessage,
+    progressCurrent,
+    progressTotal,
     resultPath,
     setSourceFolder,
     setOutputName,
@@ -44,6 +46,12 @@ export function ExportView() {
     createZip,
     reset,
   } = useExportStore();
+
+  // 進捗率（0〜100）
+  const progressPercent =
+    progressTotal > 0
+      ? Math.round((progressCurrent / progressTotal) * 100)
+      : 0;
 
   // ─── captureStore からタブ間連携情報を取得（005003） ───
   const lastCaptureFolder = useCaptureStore((state) => state.lastCaptureFolder);
@@ -263,10 +271,42 @@ export function ExportView() {
           {isCreating ? "ZIP 作成中..." : "ZIP 作成"}
         </Button>
 
-        {/* 進捗メッセージ */}
-        {progressMessage && (
-          <div className="rounded-md bg-[#F5F5F7] px-3 py-2 text-center text-sm text-muted-foreground">
-            {progressMessage}
+        {/* 進捗表示 */}
+        {isCreating && (
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">ZIP を作成しています</span>
+                {progressMessage && (
+                  <span className="text-xs text-muted-foreground">
+                    {progressMessage}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {progressTotal > 0 ? (
+              <>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-out"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    {progressCurrent} / {progressTotal} ファイル
+                  </span>
+                  <span>{progressPercent}%</span>
+                </div>
+              </>
+            ) : (
+              // 総ファイル数が判明する前の不定形プログレス
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-full w-1/3 animate-[shimmer_1.5s_infinite] rounded-full bg-primary" />
+              </div>
+            )}
           </div>
         )}
 

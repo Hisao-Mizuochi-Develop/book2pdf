@@ -45,6 +45,10 @@ export interface ExportState {
   isCreating: boolean;
   /** 進捗メッセージ */
   progressMessage: string;
+  /** 現在処理済みのファイル数 */
+  progressCurrent: number;
+  /** 処理対象の総ファイル数 */
+  progressTotal: number;
   /** 作成された ZIP ファイルパス */
   resultPath: string | null;
 
@@ -76,6 +80,8 @@ export const useExportStore = create<ExportState>((set, get) => ({
   outputFolder: null,
   isCreating: false,
   progressMessage: "",
+  progressCurrent: 0,
+  progressTotal: 0,
   resultPath: null,
 
   /**
@@ -120,7 +126,13 @@ export const useExportStore = create<ExportState>((set, get) => ({
       throw new Error("出力先フォルダが設定されていません");
     }
 
-    set({ isCreating: true, progressMessage: "ZIP 作成を開始しています...", resultPath: null });
+    set({
+      isCreating: true,
+      progressMessage: "ZIP 作成を開始しています...",
+      progressCurrent: 0,
+      progressTotal: 0,
+      resultPath: null,
+    });
 
     // 出力パスを組み立て
     const outputPath = `${outputFolder}/${outputName}`;
@@ -130,7 +142,11 @@ export const useExportStore = create<ExportState>((set, get) => ({
     try {
       // 進捗イベントリスナーを登録
       unlisten = await listen<ZipProgressPayload>("zip-progress", (event) => {
-        set({ progressMessage: event.payload.message });
+        set({
+          progressMessage: event.payload.message,
+          progressCurrent: event.payload.current,
+          progressTotal: event.payload.total,
+        });
       });
 
       // Rust 側で ZIP アーカイブ作成
@@ -177,6 +193,8 @@ export const useExportStore = create<ExportState>((set, get) => ({
       outputFolder: null,
       isCreating: false,
       progressMessage: "",
+      progressCurrent: 0,
+      progressTotal: 0,
       resultPath: null,
     }),
 }));

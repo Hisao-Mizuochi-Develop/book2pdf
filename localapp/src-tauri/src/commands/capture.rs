@@ -1105,14 +1105,12 @@ pub struct ZipProgressPayload {
 /// - `Ok(String)`: 作成した ZIP ファイルの絶対パス
 /// - `Err(String)`: 入力フォルダが存在しない、画像がない、または書き込みエラー時のメッセージ
 #[tauri::command]
-pub fn create_zip_archive(
+pub async fn create_zip_archive(
     app_handle: tauri::AppHandle,
     folderPath: String,
     outputPath: String,
 ) -> Result<String, String> {
-    use std::io::Write;
-    use zip::write::SimpleFileOptions;
-
+    // 入力フォルダの事前チェックは async 部で実施
     let folder = std::path::Path::new(&folderPath);
     if !folder.is_dir() {
         return Err(format!("指定されたパスはフォルダではありません: {}", folderPath));
@@ -1158,12 +1156,70 @@ pub fn create_zip_archive(
 
     let total_files = image_files.len() as u32;
 
+    // AppHandle は !Send + !Sync なため、spawn_blocking 内で直接 emit できない。
+    // そこで進捗情報をチャネルで送受信し、async 部で emit を行う。
+    let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel::<ZipProgressPayload>(32);
+    let output_path_clone = output_path.clone();
+
+    // ZIP 作成の実処理をバックグラウンドスレッドで実行
+    // これによりフロントエンドのメインスレッドをブロックせず、
+    // zip-progress イベントをリアルタイムに受信できる。
+    let zip_task = tokio::task::spawn_blocking(move || {
+        create_zip_archive_blocking(
+            folderPath,
+            output_path_clone,
+            image_files,
+            total_files,
+            progress_tx,
+        )
+    });
+
+    // バックグラウンドスレッドからの進捗イベントを非同期に受信して emit
+    let progress_forward = async {
+        while let Some(payload) = progress_rx.recv().await {
+            let _ = app_handle.emit("zip-progress", payload);
+        }
+    };
+
+    // ZIP 作成と進捗イベント転送を並行実行
+    let (zip_result, _) = tokio::join!(zip_task, progress_forward);
+
+    zip_result.map_err(|e| format!("ZIP 作成スレッドでpanicが発生しました: {}", e))?
+}
+
+/// ZIP アーカイブ作成の実処理（ブロッキング）
+///
+/// `create_zip_archive` から `spawn_blocking` 内で呼び出される。
+/// 進捗通知はチャネル `progress_tx` を通じて async 部に転送される。
+fn create_zip_archive_blocking(
+    folderPath: String,
+    output_path: String,
+    image_files: Vec<std::path::PathBuf>,
+    total_files: u32,
+    progress_tx: tokio::sync::mpsc::Sender<ZipProgressPayload>,
+) -> Result<String, String> {
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+
+    // フォルダが存在することを再度確認
+    let folder = std::path::Path::new(&folderPath);
+    if !folder.is_dir() {
+        return Err(format!("指定されたパスはフォルダではありません: {}", folderPath));
+    }
+
     // ZIP ファイル作成
     let zip_file = std::fs::File::create(&output_path)
         .map_err(|e| format!("ZIP ファイル作成エラー ({}): {}", output_path, e))?;
     let mut zip_writer = zip::ZipWriter::new(zip_file);
     let options = SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
+
+    // 処理開始を通知
+    let _ = progress_tx.try_send(ZipProgressPayload {
+        current: 0,
+        total: total_files,
+        message: format!("ZIP 作成を開始します（{} ファイル）", total_files),
+    });
 
     for (i, img_path) in image_files.iter().enumerate() {
         let i_u32 = i as u32;
@@ -1181,21 +1237,19 @@ pub fn create_zip_archive(
         zip_writer.write_all(&bytes)
             .map_err(|e| format!("ZIP 書き込みエラー ({}): {}", filename, e))?;
 
-        // 20ファイルごとに進捗イベントを emit（pdf_extractor.py の進捗コールバックパターンを踏襲）
-        if (i + 1) % 20 == 0 || i + 1 == image_files.len() {
-            let _ = app_handle.emit("zip-progress", ZipProgressPayload {
-                current: i_u32 + 1,
-                total: total_files,
-                message: format!("{}/{} ファイルを圧縮中...", i_u32 + 1, total_files),
-            });
-        }
+        // 進捗イベントを emit（毎ファイル送信し、UI をリアルタイムに更新）
+        let _ = progress_tx.try_send(ZipProgressPayload {
+            current: i_u32 + 1,
+            total: total_files,
+            message: format!("{}/{} ファイルを圧縮中...", i_u32 + 1, total_files),
+        });
     }
 
     zip_writer.finish()
         .map_err(|e| format!("ZIP ファイルの finalize エラー: {}", e))?;
 
     // 完了イベントを emit
-    let _ = app_handle.emit("zip-progress", ZipProgressPayload {
+    let _ = progress_tx.try_send(ZipProgressPayload {
         current: total_files,
         total: total_files,
         message: format!("ZIP ファイルを作成しました（{} ファイル）", total_files),

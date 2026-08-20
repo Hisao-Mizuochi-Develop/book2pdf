@@ -940,6 +940,7 @@
 | 005001 | ZIP アーカイブ化（Rust バックエンド） | 2026-08-15 | 2026-08-18 | 実装 |
 | 005002 | 出力設定・ファイル名設定 UI | 2026-08-15 | 2026-08-18 | 実装 |
 | 005003 | タブ間自動連携 | 2026-08-15 | 2026-08-18 | 実装 |
+| 005004 | ZIP 作成進捗インジケーター追加 | 2026-08-20 | | 改善 |
 
 ### 005001 ZIP アーカイブ化（Rust バックエンド）
 
@@ -1040,6 +1041,54 @@
   - これにより、キャプチャタブを経由せずに既存の画像フォルダから ZIP 作成が可能になった
 - `cargo check`: 成功
 - `npm run build`: 成功
+
+### 005004 ZIP 作成進捗インジケーター追加
+
+【計画】
+1. **ユーザー要望**
+   - 「ZIP作成」タブで、PDF読込画面（PdfImportView）と同じような実行時の進捗インジケーターを表示したい
+   - スピナー、プログレスバー、現在/総数のインデックス表示、パーセンテージ、進捗メッセージを表示する
+
+2. **変更対象ファイル**
+   - `localapp/src/store/exportStore.ts`
+     - `progressCurrent: number` / `progressTotal: number` の state を追加
+     - `ZipProgressPayload` の `current` / `total` も受信して state に反映
+     - ZIP 作成開始時に progress 値をリセット
+   - `localapp/src/views/ExportView.tsx`
+     - `progressCurrent` / `progressTotal` / `progressMessage` を取得
+     - PDF読込画面と同様の進捗 UI（スピナー + プログレスバー + カウンタ + パーセント）を追加
+     - `isCreating` 中に表示、完了後は既存の `resultPath` 表示に移行
+
+3. **確認事項**
+   - Rust 側は既に `zip-progress` イベントで `current` / `total` / `message` を emit しているため、原則としてフロントエンドのみの変更で対応可能
+   - `cargo check` / `npm run build` でビルド確認
+
+4. **想定される注意点**
+   - `current` や `total` が 0 の場合は不定形プログレスバーを表示（PdfImportView と同じ挙動）
+   - パーセンテージは `Math.round((current / total) * 100)` で計算
+   - ZIP 作成完了後も一瞬進捗 UI が残る可能性があるため、`isCreating` フラグで制御
+
+【実施結果】
+- 2026-08-20: 初回実装
+  - `localapp/src/store/exportStore.ts` に `progressCurrent` / `progressTotal` を追加
+  - `localapp/src/views/ExportView.tsx` にスピナー・プログレスバー・カウンタ・パーセント表示を追加
+  - `cargo check` / `npm run build` に成功
+- 2026-08-20: ユーザー動作テストで不合格
+  - 症状: 「進捗表示はなく、カーソルがクルクルするだけ」
+  - 原因: `create_zip_archive` が同期コマンドで、ZIP 作成中にフロントエンドのメインスレッドがブロックされ、`zip-progress` イベントをリアルタイムで受信できていなかった
+  - 修正方針: PDF 読込機能（003002）と同様に `async` コマンド + `tokio::task::spawn_blocking` でバックグラウンド実行
+- 2026-08-20: Rust 側非同期化対応
+  - `localapp/src-tauri/src/commands/capture.rs`
+    - `create_zip_archive` を `pub async fn` に変更
+    - 実処理を `create_zip_archive_blocking` として分離し、`tokio::task::spawn_blocking` で実行
+    - `tokio::sync::mpsc` チャネルで進捗情報を async 部に転送し、`AppHandle::emit("zip-progress", ...)` でフロントエンドに送信
+    - 進捗イベントの送信頻度を「20ファイルごと」から「毎ファイル」に変更し、より滑らかな進捗表示を実現
+  - `localapp/src-tauri/Cargo.toml`
+    - tokio features に `macros` / `sync` を追加
+- 2026-08-20: 再テストで合格
+  - ZIP 作成時に進捗バー・カウンタ・パーセンテージが正しく表示されることを確認
+  - `cargo check`: 成功（non_snake_case 警告のみ）
+  - `npm run build`: 成功
 
 ---
 
