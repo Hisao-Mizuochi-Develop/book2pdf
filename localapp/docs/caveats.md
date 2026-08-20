@@ -4,6 +4,79 @@
 
 ---
 
+## xcap crate — "Failed to copy data" エラーとリトライ機構
+
+### 事象
+`xcap` crate を使用した連続キャプチャ中、`.capture_image()` を呼び出すと以下のエラーが断続的に発生する。
+
+```
+Failed to copy data
+```
+
+エラー発生時、キャプチャ画像が取得できず、連続キャプチャが中断する。
+
+### 原因
+`xcap` crate は OS のネイティブ API を使用してウィンドウ画像を取得しているが、macOS 等で最前面化処理とキャプチャ処理のタイミングが合わない場合、フレームバッファのコピーに失敗することがある。これは xcap 内部の一過性のエラーであり、同一ウィンドウに対して数100ms 後に再試行すると成功するケースがある。
+
+### 対応策
+`capture_window_image()` 内で `.capture_image()` を最大3回、500ms 間隔でリトライする機構を追加する。
+
+```rust
+for attempt in 0..3 {
+    match window.capture_image() {
+        Ok(image) => return Ok(image),
+        Err(e) => {
+            if attempt < 2 {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            } else {
+                return Err(format!("ウィンドウキャプチャに失敗しました（3回試行）: {}", e));
+            }
+        }
+    }
+}
+```
+
+- 1回目で成功する場合がほとんど
+- 2回目以降のリトライは最前面化直後の一過性エラーを吸収する
+- 3回連続で失敗した場合のみエラーを返す
+
+### 関連タスク
+- 002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+
+---
+
+## xcap crate — macOS/Windows プロセス名互換性
+
+### 事象
+ビルトインプロファイルで `process_name: "Kindle.exe"` を設定している状態で、macOS 上でウィンドウ指定キャプチャを実行しても、該当ウィンドウが見つからない。
+
+### 原因
+`xcap::Window` が返す `app_name` は OS によって異なる。
+- Windows: 実行ファイル名（例: `Kindle.exe`）
+- macOS: アプリケーションバンドル名（例: `Kindle`）
+
+そのため、プロファイルの `process_name` に `"Kindle.exe"` をそのまま指定すると、macOS では `app_name.contains("Kindle.exe")` が false になりマッチしない。
+
+### 対応策
+1. プロファイルの `process_name` から `.exe` 拡張子を除去する
+   ```rust
+   let target_process = profile
+       .process_name
+       .trim_end_matches(".exe")
+       .to_lowercase();
+   ```
+2. 完全一致ではなく部分一致（`contains()`）を使用する
+   ```rust
+   if window.app_name().to_lowercase().contains(&target_process) { ... }
+   ```
+3. ビルトインプロファイルの `process_name` を `"Kindle.exe"` ではなく `"Kindle"` に変更する
+
+### 関連タスク
+- 002008: ウィンドウ指定キャプチャ実装（xcap crate 版）
+- 002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+
+---
+
 ## screenshots crate v0.8.10 — Window struct の非エクスポート
 
 ### 事象
@@ -160,6 +233,52 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 
 ---
 
+## replace_in_file ツール — SEPARATOR 文字列の混入事故
+
+### 事象
+`replace_in_file` で複数の SEARCH/REPLACE ブロックを記述した際、ファイル内に `>>>>+++ REPLACE` などの SEPARATOR 文字列が混入し、ソースコードが壊れて `cargo check` / `npm run build` が失敗する。
+
+### 原因
+`replace_in_file` の複数ブロック形式では、各ブロックを専用の SEPARATOR で区切る必要がある。SEPARATOR の組み合わせを間違えると、意図しない文字列がファイルに残ってしまう。混入例 `>>>>+++ REPLACE` は、終了マーカーの先頭文字を誤って重ねて記述した結果である。
+
+### 対応策
+1. **SEPARATOR は正確に記述する**
+2. **複数ブロックを使う場合は、各ブロックを上から順に正しい形式で記述する**
+3. **置換後は必ず該当ファイルを開いて、SEPARATOR 文字列が残っていないか目視確認する**
+4. **ビルド確認を必ず実施する**（`cargo check` / `npm run build`）
+
+### 教訓
+AI 側の入力ミスであっても、最終的にファイルに書き込まれる内容は人間が確認する必要がある。特に diff 形式の入力では、SEPARATOR の正否を必ずチェックすること。
+
+### 関連タスク
+- 002008-2: プロファイルUI改善（デフォルト選択・表示・バリデーション）
+
+---
+
+## Node.js v26 + Tailwind CSS v4 / PostCSS — ビルドエラー
+
+### 事象
+`npm run build` 実行時に以下のようなエラーが発生する。
+- `LazyResult.registerPostcss is not a function`
+- `yield* (intermediate value) is not iterable`
+- PostCSS 周りの TypeError
+
+### 原因
+Node.js v26.0.0 と Tailwind CSS v4 / `@tailwindcss/vite` / PostCSS 系の互換性問題、または `node_modules` の破損・依存解決の不整合が考えられる。
+
+### 対応策
+```bash
+rm -rf localapp/node_modules localapp/package-lock.json
+cd localapp && npm install
+```
+上記で `node_modules` と `package-lock.json` を削除して再インストールすることで解消した。同様の症状が再発した場合、まず本対策を試す。
+
+### 関連タスク
+- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+- 005001〜005003: ZIP アーカイブ化・出力設定 UI・タブ間連携（node_modules 破損発生）
+
+---
+
 ## pdfium-render crate — PDFium 動的ライブラリのバンドル
 
 ### 事象
@@ -185,30 +304,6 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 
 ### 関連タスク
 - 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
-
----
-
-## Node.js v26 + Tailwind CSS v4 / PostCSS — ビルドエラー
-
-### 事象
-`npm run build` 実行時に以下のようなエラーが発生する。
-- `LazyResult.registerPostcss is not a function`
-- `yield* (intermediate value) is not iterable`
-- PostCSS 周りの TypeError
-
-### 原因
-Node.js v26.0.0 と Tailwind CSS v4 / `@tailwindcss/vite` / PostCSS 系の互換性問題、または `node_modules` の破損・依存解決の不整合が考えられる。
-
-### 対応策
-```bash
-rm -rf localapp/node_modules localapp/package-lock.json
-cd localapp && npm install
-```
-上記で `node_modules` と `package-lock.json` を削除して再インストールすることで解消した。同様の症状が再発した場合、まず本対策を試す。
-
-### 関連タスク
-- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
-- 005001〜005003: ZIP アーカイブ化・出力設定 UI・タブ間連携（node_modules 破損発生）
 
 ---
 
@@ -362,6 +457,32 @@ if let Some(e) = save_error {
 
 ### 関連タスク
 - 003002-2: PDF 読込 Pdfium 二重初期化エラー修正（本現象は動作テスト中に発見された副次的な問題）
+
+---
+
+## write_to_file ツール — 既存ドキュメントの誤上書き事故
+
+### 事象
+作業ログ（`localapp/docs/work_log.md`）や注意事項（`localapp/docs/caveats.md`）といった既存ドキュメントを `write_to_file` で更新したところ、ファイルの既存内容がすべて失われ、新規作成時のような状態になってしまった。
+
+### 原因
+`write_to_file` はファイルが存在する場合、内容を完全に上書きする。追記や部分更新を意図していたが、既存内容を保持せずに新しい内容だけを書き込んでしまったため、過去の作業履歴・注意事項が消失した。
+
+### 対応策
+1. **既存ドキュメントの更新は `replace_in_file` を使用する**
+   - `docs/`、`backend/docs/`、`frontend/docs/`、`localapp/docs/`、`ocr-worker/docs/` 配下の既存ファイルはすべて `replace_in_file` で更新する
+2. **`write_to_file` は新規ファイル作成時のみ使用する**
+3. **末尾に追記する場合も `replace_in_file` を使用する**
+   - 既存の末尾マーカー（`---`、`##` 見出し、セクション終端）を SEARCH に指定して追記する
+4. **誤上書きした場合は Git から復旧する**
+   - `git checkout -- <file>` または `git show <commit>:<file>` で復旧
+   - 復旧後、正しい方法（`replace_in_file`）で再適用する
+
+### 教訓
+`write_to_file` は強力なツールであるが、既存ファイルに対しては非常に危険である。ドキュメント類の更新では、必ず `replace_in_file` を使う習慣を徹底する。
+
+### 関連タスク
+- 005004: ZIP 作成進捗インジケーター追加
 
 ---
 

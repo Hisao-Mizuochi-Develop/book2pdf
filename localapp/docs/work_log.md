@@ -2,71 +2,256 @@
 
 ---
 
-## 005004 — ZIP 作成進捗インジケーター追加
+## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
 
 ### 【実施予定】
 
-- 日時: 2026-08-20
-- 目的: 「ZIP作成」タブで、PDF読込画面（PdfImportView）と同じような実行時の進捗インジケーターを追加する
-- 前提:
-  - feature/005004-zip-progress-ui ブランチを作成済み
-  - Rust 側は既に `zip-progress` イベントで `current` / `total` / `message` を emit している
-- 変更内容:
-  1. `localapp/src/store/exportStore.ts`
-     - `progressCurrent: number` / `progressTotal: number` の state を追加
-     - `zip-progress` イベント受信時に `current` / `total` / `message` を反映
-     - ZIP 作成開始時に progress 値をリセット
-  2. `localapp/src/views/ExportView.tsx`
-     - `progressCurrent` / `progressTotal` / `progressMessage` を取得
-     - PDF読込画面と同様の進捗 UI（スピナー + プログレスバー + カウンタ + パーセント）を追加
-     - `isCreating` 中に表示、完了後は既存の `resultPath` 表示に移行
-- 実施コマンド:
-  1. `cd localapp/src-tauri && cargo check`
-  2. `cd localapp && npm run build`
-  3. `cd localapp && npm run tauri dev`
-- 想定される結果や注意点:
-  - Rust 側の変更は不要（フロントエンドのみの対応）
-  - `current` や `total` が 0 の場合は不定形プログレスバーを表示（PdfImportView と同じ挙動）
-  - ZIP 作成完了後も一瞬進捗 UI が残る可能性があるため、`isCreating` フラグで制御
+- 日時: 2026-08-15
+- 目的: Tauri v2 + React + Vite プロジェクト scaffold 作成
+- 計画:
+- `cargo create-tauri-app` または手動で `localapp/` 配下に Tauri v2 プロジェクトを構築する
+- ディレクトリ構成: `src/`（React + Vite）, `src-tauri/`（Rust）
+- TypeScript 設定、`index.html`、`main.tsx` の整備
+- 初回起動確認
 
 ### 【実施実績】
 
-- 2026-08-20: 初回実装
-  - `localapp/src/store/exportStore.ts` に `progressCurrent` / `progressTotal` を追加
-  - `localapp/src/views/ExportView.tsx` にスピナー・プログレスバー・カウンタ・パーセント表示を追加
-  - `cargo check` / `npm run build` に成功
-- 2026-08-20: ユーザー動作テストで不合格
-  - 症状: 「進捗表示はなく、カーソルがクルクルするだけ」
-  - 原因: `create_zip_archive` が同期コマンドで、ZIP 作成中にフロントエンドのメインスレッドがブロックされていた
-  - 修正方針: PDF 読込機能（003002）と同様に `async` コマンド + `tokio::task::spawn_blocking` でバックグラウンド実行
-- 2026-08-20: Rust 側非同期化対応
-  - `localapp/src-tauri/src/commands/capture.rs`
-    - `create_zip_archive` を `pub async fn` に変更
-    - 実処理を `create_zip_archive_blocking` として分離し、`tokio::task::spawn_blocking` で実行
-    - `tokio::sync::mpsc` チャネルで進捗情報を async 部に転送し、`AppHandle::emit("zip-progress", ...)` でフロントエンドに送信
-    - 進捗イベントの送信頻度を「毎ファイル」に変更
-  - `localapp/src-tauri/Cargo.toml` に tokio features `macros` / `sync` を追加
-- 2026-08-20: 再テストで合格
-  - ZIP 作成時に進捗バー・カウンタ・パーセンテージが正しく表示されることを確認
-  - `cargo check`: 成功（non_snake_case 警告のみ）
-  - `npm run build`: 成功
-- 2026-08-20: ドキュメント更新
-  - `localapp/docs/tasks.md` に 005004 を追加し、完了日付を 2026-08-20 に記録
-  - `localapp/docs/caveats.md` に「Tauri 同期コマンドのイベント配信制限（005004）」を追記
-  - 注意: 作業ログを更新する際、`write_to_file` で誤って既存内容を上書きしてしまった。Git 履歴のコミット `6732fc1` から復元し、`replace_in_file` で追記する方式で修正した
-- 実施コマンド:
-  1. `cd localapp/src-tauri && cargo check`
-  2. `cd localapp && npm run build`
-  3. `cd localapp && npm run tauri dev`
-- 変更ファイル:
-  - `localapp/src/store/exportStore.ts`
-  - `localapp/src/views/ExportView.tsx`
-  - `localapp/src-tauri/src/commands/capture.rs`
-  - `localapp/src-tauri/Cargo.toml`
-  - `localapp/docs/tasks.md`
-  - `localapp/docs/caveats.md`
-  - `localapp/docs/work_log.md`（本エントリ）
+- `npm create tauri-app@latest . -- --template react-ts --manager npm` で scaffold 展開
+- 展開時に既存の `localapp/docs/` が空になったため、3 ファイルを再作成
+- `src/` と `src-tauri/` が生成された
+- `npm install` 実行済み（vulnerabilities 0）
+- `npm run tauri dev` で起動確認済み
 
+
+---
+
+## 001002 — Rust 側依存クレートの選定・追加
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: Rust 側依存クレートの選定・追加
+- 計画:
+- 画像処理: `image`
+- ZIP 圧縮: `zip`
+- PDF 展開: `pdfium-render` または同等の crate
+- 設定・パス: `serde_json`, `dirs`
+- エラーハンドリング: `thiserror`
+- `Cargo.toml` に追加し、ビルドが通ることを確認
+
+### 【実施実績】
+
+- `cargo add image zip pdfium-render serde_json dirs thiserror` を実行
+- 全クレートが `Cargo.toml` / `Cargo.lock` に追加された
+- `npm run tauri dev` のビルドで問題なくコンパイルされた
+
+
+---
+
+## 001003 — frontend 側依存の選定・追加
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: frontend 側依存の選定・追加
+- 計画:
+- Tailwind CSS v4
+- shadcn/ui
+- lucide-react（アイコン）
+- Zustand（状態管理）
+- `package.json` に追加し、開発サーバ起動確認
+
+### 【実施実績】
+
+- `npm install -D tailwindcss @tailwindcss/vite` を実行
+- `src/index.css` を新規作成し、`@import "tailwindcss"` で Tailwind v4 有効化
+- `vite.config.ts` に `@tailwindcss/vite` プラグインと `@/` path alias を追加
+- `tsconfig.json` に `baseUrl` と `@/*` の path alias を追加
+- `npx shadcn@latest init` を実行し shadcn/ui 初期化完了
+- `npm install zustand lucide-react` を実行
+- `src/App.css` を削除し、`src/App.tsx` を最小構成に整理
+- `npm run tauri dev` でフロントエンドが正常に表示された
+
+
+---
+
+## 001004 — 開発・ビルド環境整備（tauri.conf.json / scripts 等）
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: 開発・ビルド環境整備（tauri.conf.json / scripts 等）
+- 計画:
+- `tauri.conf.json` のウィンドウサイズ・タイトル・権限を調整
+- `package.json` scripts（`dev`, `build`, `tauri dev`, `tauri build`）を整備
+- Tauri v2 capabilities の設定
+- 開発時のホットリロード確認
+
+### 【実施実績】
+
+- `tauri.conf.json` の `app.windows` を調整
+  - title: `book2pdf`
+  - size: 1200x800
+  - minWidth/minHeight: 900x600
+  - center: true
+- `package.json` の `scripts` は scaffold 既定のままで問題なし（`dev`, `build`, `preview`, `tauri`）
+- 開発時ホットリロードは Vite 既定のままで動作
+- `npm run tauri dev` でウィンドウが中央に表示され、タイトルが `book2pdf` となった
+
+---
+
+
+---
+
+## 006001 — デザインシステム定義
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: デザインシステム定義
+- 計画:
+1. `localapp/src/index.css` の CSS 変数調整
+   - `--primary` を `#007AFF` 相当の oklch に変更（暗いモノクロ → Apple HIG 風鮮やかな青）
+   - `--foreground` を `#1D1D1F` 相当の oklch に変更（黒 → ソフトブラック）
+   - `--muted-foreground` を `#6E6E73` 相当の oklch に変更（中間灰 → セカンダリテキスト色）
+   - `--border` を `#D2D2D7` 相当の oklch に変更（ライト灰 → 区切り線色）
+   - `--sidebar` を `#F5F5F7` 相当の oklch に変更（白 → サイドバー背景色）
+   - `--destructive` を `#FF3B30` 相当の oklch に変更（赤 → エラー/警告色）
+   - `--radius` を 0.5rem に変更（0.625rem → より控えめな角丸）
+   - 各変数に「用途 + Apple HIG 対応色」の `/* コメント */` を付加
+2. `localapp/src/components/ui/button.tsx` のコメント強化
+   - 各 variant（default, outline, secondary, ghost, destructive, link）に JSDoc コメント
+   - 各 size（default, xs, sm, lg, icon...）に JSDoc コメント
+   - `buttonVariants` 関数と `Button` コンポーネントにも概要コメント
+3. `localapp/docs/localapp-spec.md` のデザイン仕様更新
+   - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
+   - フォントに `Geist Variable` を明記
+   - タイポグラフィのサイズ指定を rem で明記
+4. ビルド確認・起動確認
+   - `npm run build`
+   - `npm run tauri dev`
+
+### 【実施実績】
+
+- `localapp/src/index.css` を Apple HIG 風カラーパレットに変更し、各変数に「用途 + 理由」のコメントを付加
+- `localapp/src/components/ui/button.tsx` の各 variant・size に詳細な JSDoc コメントを付加
+- `localapp/docs/localapp-spec.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
+- `.clinerules` 第8章に「初学者向け詳細コメント」ルールを加筆
+- `npm run build` でビルド成功
+- `npm run tauri dev` で起動確認完了
+  - 白基調・余白多め・控えめな角丸のレイアウトが正しく表示されることを確認
+
+
+---
+
+## 006002 — サイドバー＋メインレイアウト実装
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: サイドバー＋メインレイアウト実装
+- 計画:
+- 左サイドバーに 4 機能のアイコン+ラベル配置
+- アクティブ状態の視覚表現
+- 右メインエリアの可変レイアウト
+- レスポンシブ対応（最低ウィンドウサイズ 960x700 想定）
+- Zustand で現在のビュー状態を管理
+
+### 【実施実績】
+
+- `src/store/navigationStore.ts` を新規作成（`currentView`: capture/trim/pdf/export）
+- `src/components/layout/Sidebar.tsx` を新規作成
+  - 幅 200px、白背景・薄いボーダー右線
+  - 4 機能を lucide-react アイコン＋日本語ラベルで垂直配置
+  - アクティブ状態：背景 `#F5F5F7`、左端 3px アクセントライン
+- `src/components/layout/MainLayout.tsx` を新規作成（Sidebar + main の 2 カラム）
+- `src/views/CaptureView.tsx`, `TrimView.tsx`, `PdfImportView.tsx`, `ExportView.tsx` を新規作成
+- `src/App.tsx` を更新し、Zustand の `currentView` に応じて View を切り替え
+- `vite.config.ts` の `@/` path alias を `path.resolve(__dirname, "./src")` に修正
+- `@types/node` を追加し、`tsconfig.node.json` に `types: ["node"]` を設定
+- `npm run build` でビルド成功
+- `npm run tauri dev` でサイドバー＋メインエリアのレイアウトを確認
+
+
+---
+
+## 006003 — ライトモード対応 + OS 設定連動
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: ライトモード対応 + OS 設定連動
+- 計画:
+- ライトモードを基本テーマとする
+- OS の外観モード変更を検出して自動切り替え（将来のダークモード対応の土台）
+- テーマ切り替え用のユーティリティ実装
+
+具体的内容:
+1. `localapp/src/index.css` にダークモード用 CSS 変数を追加
+   - `@media (prefers-color-scheme: dark)` でダークモード時の色変数を定義
+   - ダークモードは Apple HIG 風のダークテーマを想定（控えめな暗色）
+2. `localapp/src/main.tsx` に OS 外観モード変更リスナーを実装
+   - `window.matchMedia('(prefers-color-scheme: dark)')` を監視
+   - 変更時に `document.documentElement.setAttribute('data-theme', ...)` を設定
+   - 将来的に手動切り替えを入れる際の土台とする
+3. `localapp/docs/localapp-spec.md` にテーマ仕様を追記
+   - ライト/ダークモードのカラーパレット表
+4. ビルド・起動確認
+
+### 【実施実績】
+
+- `localapp/src/index.css` の `.dark` ブロックコメントを更新
+  - 「将来のダークモード対応の土台」→「OS の外観モード設定に連動して有効化される」に変更
+  - `main.tsx` の `initTheme()` との連携を明記
+- `localapp/src/main.tsx` に `initTheme()` 関数を追加
+  - `window.matchMedia("(prefers-color-scheme: dark)")` で OS 外観モードを取得
+  - 初回反映：`applyTheme(darkModeQuery.matches)` でページ読み込み時に即座にテーマ適用
+  - 継続監視：`addEventListener("change")` で OS 設定変更をリアルタイムで検出
+  - `.dark` クラスを `document.documentElement` に付与/除去してダークモード切り替え
+  - React レンダリングより先に実行し、画面ちらつきを防止
+  - 各処理に「なぜそのように実装したか」の詳細コメントを付加
+- 当初の計画では `data-theme` 属性方式を検討していたが、`@custom-variant dark (&:is(.dark *))` と `.dark` クラスの組み合わせに変更
+  - Tailwind CSS v4 のカスタムバリアント構文に最適な方式
+  - 理由を追記
+- `npm run build` でビルド成功（`tsc && vite build` ともにエラーなし）
+- `npm run tauri dev` で起動確認
+  - macOS ライトモード時：白基調の UI が正しく表示される
+  - macOS ダークモード時：`html.dark` が付与されダークテーマ変数が適用される
+  - システム設定を切り替えるとリアルタイムでテーマが追随することを確認
+
+---
+
+
+---
+
+## 006004 — アプリ名・サイドバー変更
+
+### 【実施予定】
+
+- 日時: 2026-08-15
+- 目的: アプリ名・サイドバー変更
+- 計画:
+- アプリ名 `book2pdf` → `Book Capture`
+- サイドバー項目変更
+  1. `電子書籍`（capture）
+  2. `PDF`（pdf）
+  3. `トリミング`（trim）
+  4. `ZIP作成`（export）
+
+### 【実施実績】
+
+- `tauri.conf.json`: productName、windows.title を `Book Capture` に変更
+- `Sidebar.tsx`: ロゴテキストを `Book Capture` に変更
+- `Sidebar.tsx`: navItems のラベルと並び順を変更
+  - `キャプチャ` → `電子書籍`
+  - `PDF読込` → `PDF`
+  - `ZIP出力` → `ZIP作成`
+  - 順序: 電子書籍 → PDF → トリミング → ZIP作成
+- `npm run build` でビルド成功
+- `npm run tauri dev` で起動確認完了
+
+
+---
 
 ## 002001 — 画面キャプチャ方式調査・実装
 
@@ -117,6 +302,8 @@
 - `npm run tauri dev`: 起動成功
   - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示される
   - 注意: `invoke` API は Tauri WebView 内でのみ動作するため、ブラウザ直接アクセスでのキャプチャ実行は不可（想定内の制限）
+
+---
 
 ---
 
@@ -187,6 +374,8 @@
 
 ---
 
+---
+
 ## 002003 — 連続キャプチャ実行・進捗表示
 
 ### 【実施予定】
@@ -241,6 +430,8 @@
 - `npm run build`: 成功
 - ブランチ: `feature/002003-continuous-capture` → main にマージ（Fast-forward）
 - コミット: `3bce557`
+
+---
 
 ---
 
@@ -306,6 +497,8 @@
 
 ---
 
+---
+
 ## 002005 — ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
 
 ### 【実施予定】
@@ -339,50 +532,6 @@
 - エラー修正は 002007 として別タスクで対応
 
 ---
-
-## 002008 — ウィンドウ指定キャプチャ実装（xcap crate 版）
-
-### 【実施予定】
-
-- 日時: 2026-08-16
-- 目的: 002005 の実装中に発生した 2 つのコンパイルエラーを修正する
-- 前提:
-  - feature/002005-window-capture ブランチ上で 002005 の変更がステージングされていない状態
-  - 002005 の実装途上で `cargo check` にて 2 エラーが発生済み
-- 変更内容:
-  1. `localapp/src-tauri/src/commands/capture.rs`
-     - `use screenshots::Window` を削除
-     - `capture_by_window_title` 関数を削除
-     - `capture_screen_raw` をシンプル化（全画面キャプチャ + crop_insets トリミング方式に統一）
-     - `apply_crop_insets` で `SubImage::to_image().as_raw()` を使用
-  2. `localapp/docs/tasks.md` — 002007 タスク追加
-- 実施コマンド:
-  1. `cargo check`
-  2. `npm run build`
-- 想定される結果や注意点:
-  - `screenshots` v0.8.10 には `Window` struct がエクスポートされていない（`Screen` のみ）
-  - `SubImage<&RgbaImage>` は `as_flat_samples()` を持たない → `to_image()` で `ImageBuffer` に変換が必要
-  - ウィンドウ指定キャプチャは将来 xcap / AppleScript 等で拡張を検討
-
-### 【実施実績】
-
-- feature/002007-window-capture-compile-fix ブランチを作成（002005 ブランチから派生）
-- `localapp/src-tauri/src/commands/capture.rs` を修正
-  - `use screenshots::{Screen, Window};` → `use screenshots::Screen;`
-  - `capture_by_window_title` 関数を削除（308〜346行、ウィンドウ名検索は `screenshots` crate では不可）
-  - `capture_screen_raw` をシンプル化：引数 `profile: Option<CaptureProfile>` → `profile: &CaptureProfile`
-    - 全画面キャプチャ取得後、`crop_insets` があればトリミング、なければそのまま返却
-  - `apply_crop_insets` の `SubImage` 処理を修正
-    - `cropped.as_flat_samples().samples` → `cropped.to_image().as_raw()`
-    - `SubImage<&RgbaImage>` は `as_flat_samples()` メソッドを持たない
-    - `to_image()` で所有権を持つ `ImageBuffer<Rgba<u8>, Vec<u8>>` に変換 → `as_raw()` で `&Vec<u8>` を取得
-  - 【002005/002007】ウィンドウ指定キャプチャについてのコメントを追加
-    - `screenshots` crate v0.8.10 では `Window` struct がエクスポートされていない
-    - 将来の拡張として AppleScript、`core-foundation`、`xcap` crate 等を検討する旨を記載
-- `cargo check`: コンパイル成功（エラー0）
-- `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
-- ブランチ: `feature/002007-window-capture-compile-fix` → main にマージ（Fast-forward）
-- コミット: `ddd048b`
 
 ---
 
@@ -453,6 +602,8 @@
 - ブランチ: `feature/002008-window-capture-xcap`
 
 > **注意**: Git コミットはユーザーの合格確認後に実施すること（ユーザー指示）
+
+---
 
 ---
 
@@ -538,149 +689,7 @@
 
 ---
 
-## 005001 — ZIP アーカイブ化（Rust バックエンド）
-
-### 【実施予定】
-
-- 日時: 2026-08-18
-- 目的: トリミング済み画像フォルダを ZIP アーカイブにまとめる Rust コマンドを実装する
-- 前提:
-  - feature/005001-zip-archiver ブランチを作成済み
-  - reference/localapp/core/pdf_builder.py の画像→ファイル化ロジックを参考にする
-  - `zip` crate は既に Cargo.toml に追加済み（002002 で追加）
-- 変更内容:
-  1. `localapp/src-tauri/src/commands/capture.rs` — `create_zip_archive` コマンド新規追加
-     - `zip` crate の `ZipWriter` を使用して画像フォルダを ZIP 化
-     - `.png` / `.jpg` / `.jpeg` をファイル名順にソートして格納（`pdf_builder.py` のパターンを踏襲）
-     - `Deflate` 圧縮方式で ZIP エントリを追加
-     - 20ファイルごとに `zip-progress` 進捗イベントを emit（`pdf_extractor.py` のコールバック方式を参考）
-     - 完了後、出力ファイルパスを返却
-  2. `localapp/src-tauri/src/lib.rs` — `invoke_handler` に `create_zip_archive` を登録
-  3. `cargo check` / `npm run build` でビルド確認
-- 実施コマンド:
-  1. `cargo check`
-  2. `npm run build`
-- 想定される結果や注意点:
-  - zip crate は既に Cargo.toml に追加済み（002002 scaffold 時に追加）
-  - 画像ファイル以外は ZIP に含めない
-  - 出力パスに拡張子がない場合は `.zip` を自動付与
-  - 大規模フォルダでの非同期処理は将来検討（今回は同期的実装でシンプルに保つ）
-
-### 【実施実績】
-
-- `create_zip_archive` コマンドを `capture.rs` に追加
-  - `ZipProgressPayload` struct を定義（`#[derive(Serialize, Clone)]`）
-    - `current: usize`, `total: usize`, `message: String`
-  - `create_zip_archive(app_handle, folderPath, outputPath)` コマンド
-    - `folderPath` の存在確認、存在しなければエラー返却
-    - 出力パスに `.zip` 拡張子がない場合は自動付与
-    - `std::fs::read_dir()` でフォルダ内ファイルを列挙
-    - `.png` / `.jpg` / `.jpeg` を小文字でフィルタ（`file_name.to_lowercase().ends_with(...)`）
-    - `files.sort()` でファイル名順にソート
-    - `ZipWriter::new(File::create(&output_path)?)` で ZIP ファイル作成
-    - 各ファイルを `CompressionMethod::Deflated` でエントリ追加
-    - 20ファイルごとに `app_handle.emit("zip-progress", payload)` で進捗通知
-    - 完了後、出力ファイルパスを `String` で返却
-- `lib.rs` に `commands::capture::create_zip_archive` を `invoke_handler` に登録
-- `cargo check`: コンパイル成功（エラー0）
-- `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
-- ブランチ: `feature/005001-zip-archiver`
-
 ---
-
-## 005002 — 出力設定・ファイル名設定 UI
-
-### 【実施予定】
-
-- 日時: 2026-08-18
-- 目的: ZIP 出力画面の UI を実装し、フォルダ選択ダイアログと ZIP 作成ボタンを追加する
-- 前提:
-  - 005001（ZIP アーカイブ化 Rust コマンド）が完了していること
-  - feature/005002-export-ui ブランチを作成済み（005001 と連続して同一ブランチで実施）
-- 変更内容:
-  1. `tauri-plugin-dialog` を追加
-     - `Cargo.toml`: `tauri-plugin-dialog = "2"`
-     - `package.json`: `@tauri-apps/plugin-dialog`
-     - `lib.rs`: `.plugin(tauri_plugin_dialog::init())`
-     - `capabilities/default.json`: `dialog:allow-open` 権限
-  2. `localapp/src/store/exportStore.ts` — Zustand ストア新規作成
-  3. `localapp/src/views/ExportView.tsx` — ZIP 出力画面を完全書き換え
-- 実施コマンド:
-  1. `cargo add tauri-plugin-dialog@2`
-  2. `npm install @tauri-apps/plugin-dialog`
-  3. `cargo check`
-  4. `npm run build`
-- 想定される結果や注意点:
-  - Tauri v2 の dialog plugin はフォルダ選択とファイル保存の両方をサポート
-  - UI レイアウトは Apple HIG 風（白基調・余白多め・控えめな角丸）を維持
-
-### 【実施実績】
-
-- `tauri-plugin-dialog` を追加
-  - `cd localapp/src-tauri && cargo add tauri-plugin-dialog@2` で `tauri-plugin-dialog = "2.7.2"` を追加
-  - `cd localapp && npm install @tauri-apps/plugin-dialog` でフロントエンド依存を追加
-  - `lib.rs` に `.plugin(tauri_plugin_dialog::init())` を追加
-  - `capabilities/default.json` に `dialog:allow-open` 権限を追加
-- `localapp/src/store/exportStore.ts` を新規作成
-  - Zustand ストア: `sourceFolder`, `outputName`（デフォルト "images"）, `outputFolder`, `isCreating`, `progressMessage`, `resultPath`
-  - `createZip()`: `invoke("create_zip_archive")` を呼び出し、`listen("zip-progress")` で進捗イベントを受信して `progressMessage` を更新
-  - 完了後 `resultPath` に出力ファイルパスを保存
-  - `reset()`: 出力設定を初期値に戻す（`sourceFolder` はリセットしない）
-- `localapp/src/views/ExportView.tsx` を完全書き換え
-  - ヘッダー: ZIP アイコン + 「ZIP 作成」タイトル + 説明文
-  - 入力設定セクション: sourceFolder 表示、画像枚数表示
-  - 出力設定セクション: 出力ファイル名 `<Input>`、出力先フォルダ選択ボタン（`tauri-plugin-dialog` の `open({ directory: true })`）
-  - アクションエリア: ZIP 作成ボタン（disabled 条件: `!sourceFolder || !outputFolder || isCreating || imageCount === 0`）
-  - 進捗メッセージ表示（`progressMessage`）
-  - 完了後: 出力ファイルパス表示 + 「フォルダを開く」ボタン + リセットボタン
-- `cargo check`: 成功（既存の non_snake_case warning 4 つのみ、今回の変更とは無関係）
-- `npm run build`: 成功（tsc && vite build ともにエラーなし）
-- 005002 と 005003 は同一ブランチ `feature/005001-zip-archiver` で連続実施
-
----
-
-## 005003 — タブ間自動連携 + 入力フォルダ任意選択
-
-### 【実施予定】
-
-- 日時: 2026-08-18
-- 目的: キャプチャタブと ZIP 出力タブの間でフォルダ情報を自動連携し、入力フォルダを任意に選択できるようにする
-- 前提:
-  - 005002（出力設定 UI）が完了していること
-  - feature/005001-zip-archiver ブランチ上で実施（005002 と同一ブランチ）
-- 変更内容:
-  1. `ExportView.tsx` に `useEffect` で `captureStore.lastCaptureFolder` を監視し、自動的に `sourceFolder` に反映
-  2. `sourceFolder` 変更時に `list_capture_images` で画像枚数を取得して表示
-  3. 入力設定セクションにフォルダ選択ボタンを追加（ユーザー追加要望）
-     - 未設定時は「選択」ボタン、設定済み時は「変更」ボタン
-     - `tauri-plugin-dialog` の `open({ directory: true })` を使用
-- 実施コマンド:
-  1. `npm run build`
-  2. `cargo check`
-- 想定される結果や注意点:
-  - `captureStore.lastCaptureFolder` は連続キャプチャ完了後に保存される
-  - ユーザーがキャプチャタブを経由せずに ZIP 作成タブを開いた場合、手動でフォルダを選択できるようにする
-
-### 【実施実績】
-
-- タブ間自動連携を実装
-  - `ExportView.tsx` に `useEffect` を追加: `captureStore.lastCaptureFolder` を監視し、変更時に `exportStore.setSourceFolder(lastCaptureFolder)` を実行
-  - 連続キャプチャ完了後に ZIP 作成タブを開くと、入力フォルダが自動的に設定される
-- 画像枚数取得
-  - `sourceFolder` 変更時に `invoke("list_capture_images", { folderPath: sourceFolder })` を実行
-  - 取得したファイル配列の `length` を `imageCount` state に保存
-  - エラー時は `imageCount = 0`
-- 入力フォルダ任意選択ボタンを追加（ユーザー要望）
-  - `handleSelectSourceFolder()` 関数を新規追加
-    - `open({ directory: true })` でフォルダ選択ダイアログを開く
-    - 選択されたフォルダパスを `setSourceFolder(selected)` に設定
-    - 画像枚数も即座に取得して表示される（`sourceFolder` useEffect がトリガーされる）
-  - sourceFolder 未設定時: 「選択」ボタンを表示（フォルダパス表示エリアの横）
-  - sourceFolder 設定済み時: 「変更」ボタンを表示（フォルダパス表示エリアの横）
-  - これにより、キャプチャタブを経由せずに既存の画像フォルダから ZIP 作成が可能になった
-- `npm run build`: 成功
-- `cargo check`: 成功（non_snake_case warning は既存のもの）
-- ブランチ: `feature/005001-zip-archiver`（005001〜005003 を同一ブランチで実施）
 
 ## 002008-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
@@ -841,6 +850,8 @@
 
 ---
 
+---
+
 ## 004001 — 画像フォルダ読み込み・サムネイル一覧 UI
 
 ### 【実施予定】
@@ -929,6 +940,8 @@
   - コミット `dea345f`: 「004001: 電子書籍タブのトリミング入力欄に自由入力＋+/-ボタンを実装」（ProfileEditor.tsx）
   - main ブランチに fast-forward マージ完了
 - ブランチ: `feature/004001-trim-thumbnails` → `main`
+
+---
 
 ---
 
@@ -1105,6 +1118,8 @@
 
 ---
 
+---
+
 ## 003002-1 — PDF 読込 進捗インジケーター表示不具合調査・修正
 
 ### 【実施予定】
@@ -1144,6 +1159,8 @@
   - フロントエンド側: `extractPdf()` 内で `invoke` をマイクロタスクに入れて呼び出し、メインスレッドを解放
 - 関連タスク
   - 003002: PDF → 画像展開（Rust バックエンド）
+
+---
 
 ---
 
@@ -1205,3 +1222,69 @@
   - ユーザーによる動作テストを実施し、合格判定を得る
   - 合格後、Git コミット・main ブランチマージ・タスク完了記録を実施
 
+---
+
+## 005004 — ZIP 作成進捗インジケーター追加
+
+### 【実施予定】
+
+- 日時: 2026-08-20
+- 目的: 「ZIP作成」タブで、PDF読込画面（PdfImportView）と同じような実行時の進捗インジケーターを追加する
+- 前提:
+  - feature/005004-zip-progress-ui ブランチを作成済み
+  - Rust 側は既に `zip-progress` イベントで `current` / `total` / `message` を emit している
+- 変更内容:
+  1. `localapp/src/store/exportStore.ts`
+     - `progressCurrent: number` / `progressTotal: number` の state を追加
+     - `zip-progress` イベント受信時に `current` / `total` / `message` を反映
+     - ZIP 作成開始時に progress 値をリセット
+  2. `localapp/src/views/ExportView.tsx`
+     - `progressCurrent` / `progressTotal` / `progressMessage` を取得
+     - PDF読込画面と同様の進捗 UI（スピナー + プログレスバー + カウンタ + パーセント）を追加
+     - `isCreating` 中に表示、完了後は既存の `resultPath` 表示に移行
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - Rust 側の変更は不要（フロントエンドのみの対応）
+  - `current` や `total` が 0 の場合は不定形プログレスバーを表示（PdfImportView と同じ挙動）
+  - ZIP 作成完了後も一瞬進捗 UI が残る可能性があるため、`isCreating` フラグで制御
+
+### 【実施実績】
+
+- 2026-08-20: 初回実装
+  - `localapp/src/store/exportStore.ts` に `progressCurrent` / `progressTotal` を追加
+  - `localapp/src/views/ExportView.tsx` にスピナー・プログレスバー・カウンタ・パーセント表示を追加
+  - `cargo check` / `npm run build` に成功
+- 2026-08-20: ユーザー動作テストで不合格
+  - 症状: 「進捗表示はなく、カーソルがクルクルするだけ」
+  - 原因: `create_zip_archive` が同期コマンドで、ZIP 作成中にフロントエンドのメインスレッドがブロックされていた
+  - 修正方針: PDF 読込機能（003002）と同様に `async` コマンド + `tokio::task::spawn_blocking` でバックグラウンド実行
+- 2026-08-20: Rust 側非同期化対応
+  - `localapp/src-tauri/src/commands/capture.rs`
+    - `create_zip_archive` を `pub async fn` に変更
+    - 実処理を `create_zip_archive_blocking` として分離し、`tokio::task::spawn_blocking` で実行
+    - `tokio::sync::mpsc` チャネルで進捗情報を async 部に転送し、`AppHandle::emit("zip-progress", ...)` でフロントエンドに送信
+    - 進捗イベントの送信頻度を「毎ファイル」に変更
+  - `localapp/src-tauri/Cargo.toml` に tokio features `macros` / `sync` を追加
+- 2026-08-20: 再テストで合格
+  - ZIP 作成時に進捗バー・カウンタ・パーセンテージが正しく表示されることを確認
+  - `cargo check`: 成功（non_snake_case 警告のみ）
+  - `npm run build`: 成功
+- 2026-08-20: ドキュメント更新
+  - `localapp/docs/tasks.md` に 005004 を追加し、完了日付を 2026-08-20 に記録
+  - `localapp/docs/caveats.md` に「Tauri 同期コマンドのイベント配信制限（005004）」を追記
+  - 注意: 作業ログを更新する際、`write_to_file` で誤って既存内容を上書きしてしまった。Git 履歴のコミット `6732fc1` から復元し、`replace_in_file` で追記する方式で修正した
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 変更ファイル:
+  - `localapp/src/store/exportStore.ts`
+  - `localapp/src/views/ExportView.tsx`
+  - `localapp/src-tauri/src/commands/capture.rs`
+  - `localapp/src-tauri/Cargo.toml`
+  - `localapp/docs/tasks.md`
+  - `localapp/docs/caveats.md`
+  - `localapp/docs/work_log.md`（本エントリ）
