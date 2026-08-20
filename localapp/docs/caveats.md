@@ -514,3 +514,62 @@ if let Some(e) = save_error {
 ### 関連タスク
 - 005004: ZIP 作成進捗インジケーター追加
 - 003002: PDF 読込（同様の同期コマンドブロッキング問題を事前に対応済み）
+
+---
+
+## 連続キャプチャ — MSE 同一ページ判定の猶予（002008-3）
+
+### 事象
+Kindle プロファイル等で `page_wait` が短い（0.15秒）場合、ページ送り直後に次のキャプチャが実行され、ページ遷移が完了する前に前回と同じ画像が取得されることがある。この状態で MSE（平均二乗誤差）が閾値未満となり、「最終ページ到達」と誤判定して連続キャプチャが途中で完了してしまう。
+
+### 原因
+`run_continuous_capture_loop()` 内で、前回画像との MSE が `MSE_THRESHOLD`（1000.0）未満の場合、即座に `completed` を発行していた。ページ遷移アニメーション中や `page_wait` が短くて遷移が追いついていない場合、1回だけ MSE が低くなることがあり、これを誤って最終ページと判断していた。
+
+### 対応策
+MSE 同一ページ判定を「連続2回閾値未満」方式に変更する。
+
+```rust
+// run_continuous_capture_loop() 内
+let mut same_page_count: u32 = 0;
+const MSE_THRESHOLD: f64 = 1000.0;
+
+// ...
+
+if mse < MSE_THRESHOLD {
+    same_page_count += 1;
+    if same_page_count >= 2 {
+        // 2回連続で変化が少ない＝最終ページ到達と判断
+        emit_progress(..., "completed", ...);
+        break;
+    }
+    // 1回目はページ遷移が追いついていない可能性があるため、
+    // もう一度ページ送りを試みる（キャプチャ画像は保存しない）
+    turn_page(&mut enigo, &profile.page_turn_key)?;
+    thread::sleep(Duration::from_secs_f64(profile.page_wait));
+    continue;
+} else {
+    same_page_count = 0;
+}
+```
+
+- 1回目の同一ページ判定：キャプチャ画像を破棄し、再度ページ送りして待機する
+- 2回連続で同一ページ判定：実際の最終ページ到達として `completed` を発行する
+- MSE が閾値以上の場合は `same_page_count` をリセットする
+
+### デバッグ
+毎回の MSE 値と判定結果を `eprintln!` で出力し、誤判定の確認ができるようにする。
+
+```rust
+eprintln!(
+    "[002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
+    page_num, mse, MSE_THRESHOLD, same_page_count
+);
+```
+
+### 注意点
+- 本対応により、実際の最終ページは確実に検出できるように維持しつつ、一時的なページ遷移遅延による誤完了を防ぐ
+- `page_wait` が極端に短いプロファイルでは、同一ページ判定→再ページ送りが頻発し、キャプチャ速度が低下する可能性がある
+- 必要に応じて `page_wait` の調整も検討する（Kindle プロファイルのデフォルト 0.15秒は現状維持）
+
+### 関連タスク
+- 002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
