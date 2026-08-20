@@ -52,6 +52,8 @@ pub fn run() {
             commands::capture::apply_crop_preview,
             // 005001: ZIP アーカイブ化
             commands::capture::create_zip_archive,
+            // 003002: PDF → 画像展開
+            commands::pdf::extract_pdf_to_images,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

@@ -157,3 +157,208 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 
 ### 関連タスク
 - 002008-2: プロファイルUI改善（ProfileSelector 初期表示対応）
+
+---
+
+## pdfium-render crate — PDFium 動的ライブラリのバンドル
+
+### 事象
+`pdfium-render` crate を使用して PDF をレンダリングする際、実行時に `libpdfium.dylib` が見つからないエラーが発生する。
+
+### 原因
+`pdfium-render` は PDFium を動的ライブラリとして読み込む必要がある。開発時は `Pdfium::bind_to_library()` に絶対パスを渡せば動作するが、Tauri アプリとしてビルド・配布する場合は `.dylib` をバンドルに含める必要がある。
+
+### 対応策
+1. `localapp/src-tauri/pdfium/libpdfium.dylib` を配置する（macOS arm64 用は `bblanchon/pdfium-binaries` 等から取得）
+2. `localapp/src-tauri/tauri.conf.json` の `bundle.resources` に以下を追加：
+   ```json
+   "bundle": {
+     "resources": {
+       "pdfium/libpdfium.dylib": "pdfium/libpdfium.dylib"
+     }
+   }
+   ```
+3. Rust コマンド内で `Pdfium::bind_to_library()` にバンドルされたパスを解決して渡す
+   - 開発時: リポジトリ内の `pdfium/libpdfium.dylib`
+   - 本番時: Tauri の `app.path().resource_dir()` 等で解決
+4. Windows/Linux への移植時はそれぞれ `pdfium.dll` / `libpdfium.so` を同様に配置する
+
+### 関連タスク
+- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+
+---
+
+## Node.js v26 + Tailwind CSS v4 / PostCSS — ビルドエラー
+
+### 事象
+`npm run build` 実行時に以下のようなエラーが発生する。
+- `LazyResult.registerPostcss is not a function`
+- `yield* (intermediate value) is not iterable`
+- PostCSS 周りの TypeError
+
+### 原因
+Node.js v26.0.0 と Tailwind CSS v4 / `@tailwindcss/vite` / PostCSS 系の互換性問題、または `node_modules` の破損・依存解決の不整合が考えられる。
+
+### 対応策
+```bash
+rm -rf localapp/node_modules localapp/package-lock.json
+cd localapp && npm install
+```
+上記で `node_modules` と `package-lock.json` を削除して再インストールすることで解消した。同様の症状が再発した場合、まず本対策を試す。
+
+### 関連タスク
+- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+- 005001〜005003: ZIP アーカイブ化・出力設定 UI・タブ間連携（node_modules 破損発生）
+
+---
+
+## Tauri 同期コマンドのイベント配信制限
+
+### 事象
+`#[tauri::command]` で定義された同期コマンドを呼び出している間、Rust 側から `app_handle.emit()` で送信した進捗イベントがフロントエンドでリアルタイムに受信できない。コマンド完了後にまとめて受信される、または全く受信されないように見える。
+
+### 原因
+Tauri の同期コマンドを `invoke` で呼び出すと、コマンドが完了するまで JavaScript 側のメインスレッドがブロッキングされる。WebView のイベントループも同じスレッドで動作しているため、Rust 側から `pdf-progress` 等のイベントが emit されても、コマンド完了まで UI 側の `listen` コールバックが実行されない。
+
+加えて、React 18 の自動バッチングにより、イベント受信後の `setState` 呼び出しがコマンド完了までまとめられる可能性もある。これにより「ボタンを押しても何も表示されない」という症状が強調される。
+
+### 対応策
+1. **Rust 側を async コマンド + バックグラウンド処理に変更**
+   ```rust
+   #[tauri::command]
+   async fn extract_pdf_to_images(
+       app_handle: AppHandle,
+       pdf_path: String,
+       output_folder: String,
+       dpi: f32,
+   ) -> Result<String, String> {
+       let app_handle_for_emit = app_handle.clone();
+       tokio::task::spawn_blocking(move || {
+           // 重い処理
+           app_handle_for_emit.emit("pdf-progress", payload).ok();
+       })
+       .await
+       .map_err(|e| e.to_string())?
+   }
+   ```
+2. **フロントエンド側で `invoke` をマイクロタスクに入れる**
+   ```typescript
+   Promise.resolve().then(async () => {
+     await invoke("extract_pdf_to_images", { ... });
+   });
+   ```
+   これによりメインスレッドを一度解放し、イベントリスナーが動作する余地を作る。
+
+3. **コマンド呼び出し前にローディング state を先に設定**
+   ボタン押下時に即座に `setProgressMessage("PDFを読み込んでいます...")` 等を呼び出してから `invoke` を実行する。ただし、同期コマンドの場合はこの state 更新もコマンド完了までバッチングされることがあるため、根本解決には async 化が必要。
+
+### 関連タスク
+- 003002-1: PDF 読込 進捗インジケーター表示不具合調査・修正
+
+---
+
+## pdfium-render crate — PdfiumLibraryBindingsAlreadyInitialized 二重初期化エラー
+
+### 事象
+`extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更後、コマンド実行時に `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生する。PNG ファイルが生成されず、コマンドが失敗して返却される。
+
+### 原因
+`pdfium-render` crate はプロセス内で `Pdfium::bind_to_library()` を1回のみ呼び出し可能。
+async 部で `Pdfium::bind_to_library()` → `Pdfium::new()` を行った後、`tokio::task::spawn_blocking` 内で再度 `bind_to_library()` を呼んでいたため、2重初期化エラーが発生した。
+
+### 対応策
+```rust
+// ❌ 誤り: async 部と spawn_blocking 内で bind_to_library() を2回呼ぶ
+#[tauri::command]
+pub async fn extract_pdf_to_images(...) -> Result<String, String> {
+    let bindings = Pdfium::bind_to_library(&library_path)?; // 1回目
+    let pdfium = Pdfium::new(bindings);
+    let page_count = { /* ... */ };
+
+    tokio::task::spawn_blocking(move || {
+        let bindings = Pdfium::bind_to_library(&library_path)?; // 2回目 → エラー
+        // ...
+    }).await
+}
+
+// ✅ 正解: ライブラリパス等の情報のみを渡し、spawn_blocking 内でまとめて初期化する
+#[tauri::command]
+pub async fn extract_pdf_to_images(...) -> Result<String, String> {
+    let library_path = resolve_pdfium_library_path()?;
+    // async 部では PDFium 初期化を行わない
+
+    tokio::task::spawn_blocking(move || {
+        let bindings = Pdfium::bind_to_library(&library_path)?; // 1回のみ
+        let pdfium = Pdfium::new(bindings);
+        let document = pdfium.load_pdf_from_file(&pdf_path, None)?;
+        let page_count = document.pages().len();
+        // 進捗 emit(0) → レンダリング
+    }).await
+}
+```
+
+`Pdfium::bind_to_library()` は `OnceCell` のようなグローバルな `BINDINGS` を保持しているため、1度成功すると2回目の呼び出しはエラーとなる。async コマンド内で PDFium を初期化する必要がある場合は、初期化からレンダリングまでを `spawn_blocking` 内で一貫して実行する。
+
+### 関連タスク
+- 003002-2: PDF 読込 Pdfium 二重初期化エラー修正
+
+---
+
+## image crate による PNG 保存 — Operation timed out (os error 60)
+
+### 事象
+`extract_pdf_to_images` で PDF ページを PNG 画像として保存する際、特定のページ（例: ページ 6）で以下のエラーが発生することがある。
+
+```
+ページ 6 の保存に失敗しました: Operation timed out (os error 60)
+```
+
+PNG ファイルの書き込み途中で失敗し、画像が出力されない。
+
+### 原因
+`image::DynamicImage::save()` 実行時に、macOS のファイルシステム／I/O サブシステムで一時的なタイムアウトが発生したと考えられる。
+エラーコード `60` は `ETIMEDOUT` に対応し、macOS での一過性の OS レベル I/O エラーである。
+特定のページにのみ発生するため、ファイルサイズ・ディスクキャッシュの状態・他プロセスの I/O 負荷などが影響している可能性がある。
+
+### 対応策
+画像保存処理にリトライ機構を設ける（最大 3 回、失敗時は 1 秒待機）。
+
+```rust
+let mut save_error: Option<image::ImageError> = None;
+for attempt in 0..3 {
+    match rgba_image.save(&output_path) {
+        Ok(()) => {
+            save_error = None;
+            break;
+        }
+        Err(e) => {
+            save_error = Some(e);
+            if attempt < 2 {
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        }
+    }
+}
+if let Some(e) = save_error {
+    return Err(format!(
+        "ページ {} の保存に失敗しました（3回試行）: {}（ファイルパス: {}）",
+        page_number, e, output_path.display()
+    ));
+}
+```
+
+- 1 回目の保存で成功する場合がほとんどである
+- 3 回連続で失敗した場合のみエラーを返す
+- リトライ間隔は 1 秒とし、連続する I/O 負荷を避ける
+
+### 確認事項
+本対応後、ユーザー動作テストで `Operation timed out (os error 60)` が再発しないことを確認する。
+再発する場合は、以下を追加検討する。
+
+- 出力先ディスクの空き容量と権限の確認
+- ウイルス対策ソフト・クラウドストレージ同期ツールによるファイルロックの有無
+- リトライ間隔・回数の調整（指数バックオフ等）
+- 保存先を一時ディレクトリに変更してから最終出力先へ `rename` する方式
+
+### 関連タスク
+- 003002-2: PDF 読込 Pdfium 二重初期化エラー修正（本現象は動作テスト中に発見された副次的な問題）

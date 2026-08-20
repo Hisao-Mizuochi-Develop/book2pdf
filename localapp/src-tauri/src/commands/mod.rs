@@ -12,3 +12,5 @@
 /// lib.rs の `invoke_handler` で `commands::capture::capture_screen` のように
 /// `commands::<mod>::<fn>` 形式で登録することで、フロントエンドから呼び出し可能になる。
 pub mod capture;
+// 003: PDF 読込コマンド
+pub mod pdf;

@@ -47,7 +47,7 @@
 - `cargo check`: コンパイル成功
 - `npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 - `npm run tauri dev`: 起動成功
-  - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示
+  - フロントエンド表示確認: サイドバー「電子書籍」選択時に「キャプチャテスト」ボタンが正しく表示される
   - 注意: `invoke` API は Tauri WebView 内でのみ動作するため、ブラウザ直接アクセスでのキャプチャ実行は不可（想定内の制限）
 
 ---
@@ -171,7 +171,7 @@
 - `localapp/src/views/CaptureView.tsx` — 書籍タイトル入力 + 連続キャプチャ開始/停止ボタン
 - `cargo check`: エラー0
 - `npm run build`: 成功
-- ブランチ: `feature/002003-continuous-capture` → main マージ
+- ブランチ: `feature/002003-continuous-capture` → main にマージ（Fast-forward）
 - コミット: `3bce557`
 
 ---
@@ -234,8 +234,7 @@
   - `npm run tauri dev`: 起動成功
     - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
     - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
-- ブランチ: `feature/002004-capture-folder-management` → main にマージ（Fast-forward）
-- コミット: `b7c9946` — 002004: キャプチャ画像のフォルダ管理実装
+- ブランチ: `feature/002004-capture-folder-management`
 
 ---
 
@@ -251,7 +250,7 @@
 - 変更内容:
   1. `localapp/src-tauri/src/models/capture_profile.rs` — `crop_insets: Insets { top, right, bottom, left }` を追加
   2. `localapp/src-tauri/src/commands/capture.rs` — `capture_by_window_title()` を新規実装、`capture_screen()` / `capture_screen_raw()` をプロファイル受け取りに変更
-  3. `localapp/src-tauri/src/lib.rs` — シグネチャ変更確認
+  3. `localapp/src-tauri/src/lib.rs` — シグニチャ変更確認
   4. `localapp/src/components/capture/ProfileEditor.tsx` — トリミング値編集 UI を追加
   5. `localapp/src/views/CaptureView.tsx` — `capture_screen` 呼び出し時にプロファイルを渡すよう変更
 - 実施コマンド:
@@ -447,12 +446,12 @@
   2. **profileStore.ts: builtinProfiles.processName を空文字 → "Kindle" に修正**
      - 原因: `bring_window_to_front` は `profile.process_name` を `osascript` の引数に使用。空文字だと最前面化が機能しない
      - 修正: `processName: "Kindle"` に変更（Kindle for Mac のプロセス名に一致）
-  3. **ProfileEditor.tsx: SelectItem の `textValue` prop 対応 → Base UI 自動レンダリング方式に統合**
+  3. **ProfileEditor.tsx / select.tsx: SelectItem の `textValue` prop 対応 → Base UI 自動レンダリング方式に統合**
      - 原因: @base-ui/react/select の `SelectPrimitive.Item` が `textValue` prop を受け付けない型定義だった
      - 試行: `SelectItem` の型定義を拡張して `textValue` を追加 → JSX側で `<SelectPrimitive.Item textValue={textValue}>` を渡すも、依然として TypeScript エラー
      - 結論: Base UI の `SelectValue` は `SelectItemText` の children を自動認識するため、明示的な `textValue` は不要。呼び出し側（ProfileEditor.tsx）に `textValue` prop を追加しなくても日本語ラベルが正しく表示される
      - 修正: `select.tsx` は元の `...props` 方式に戻し、`ProfileEditor.tsx` は変更なしのままで正常動作
-- `cargo check`: コンパイル成功（エラー0）
+- `cargo check`: コンパイル成功（error 0）
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 - 2026-08-17: bookTitle / startFromBeginning 引数名の camelCase 統一修正
     - 原因: `invalid args \`bookTitle\` for command \`start_continuous_capture\`` エラーが発生
@@ -794,7 +793,7 @@
      - open({ directory: true }) でフォルダ選択ダイアログを開く
      - captureStore.lastCaptureFolder の自動引継ぎを維持
      - CaptureResultGallery を流用してサムネイルグリッド表示
-       - 選択中画像のハイライト表示を追加
+       - トリミング画面用に拡張：選択中画像のハイライト表示
 - 実施コマンド:
   1. `cargo check`
   2. `npm run build`
@@ -883,7 +882,7 @@
      - 右側: After（トリミング後）
      - ナビゲーションボタンで両方の画像が同期して切り替わる
   3. `localapp/src-tauri/src/commands/capture.rs` — `apply_crop_preview` コマンドを新規追加
-     - 画像ファイルを読み込み `DynamicImage::crop` でトリミング → PNG エンコード → Base64 返却
+     - 画像ファイルを読み込み `DynamicImage::crop` でトリミング → PNGエンコード → Base64 返却
   4. `localapp/src-tauri/src/lib.rs` — `apply_crop_preview` を `invoke_handler` に登録
   5. 左右のプレビュー領域に1pxの純粋な青枠線（`border border-[#0000FF]`）を追加し、背景と区別しやすくする
 - 実施コマンド:
@@ -918,4 +917,223 @@
 - `cargo check`: コンパイル成功（エラー0）
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 - ブランチ: `feature/004001-trim-thumbnails`
+
+---
+
+## 003001〜003002 — PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+
+### 【実施予定】
+
+- 日時: 2026-08-19
+- 目的: 外部 PDF を画像化してトリミングタブに引き継ぐ
+- 前提:
+  - feature/003001-pdf-import ブランチを作成済み
+  - `pdfium-render` crate は 001002 で追加済み
+  - `tauri-plugin-dialog` は 005002 で追加済み
+- 変更内容:
+  1. PDFium `.dylib` ダウンロード・配置
+     - macOS arm64 用の PDFium バイナリを公式リポジトリまたは `bblanchon/pdfium-binaries` から取得
+     - `localapp/src-tauri/pdfium/` 配下に `libpdfium.dylib` を配置
+     - 実行時に `PDFIUM_DYNAMIC_LIBRARY_PATH` 環境変数または `pdfium-render` の自動検出で読み込む
+  2. `localapp/src/store/pdfImportStore.ts` — 新規作成（Zustand ストア）
+     - `pdfPath`: 選択された PDF ファイルパス
+     - `outputFolder`: 出力先フォルダパス
+     - `dpi`: DPI 設定（200 / 300 / 400、デフォルト 300）
+     - `pageCount`: PDF 総ページ数
+     - `estimatedSize`: 推定ファイルサイズ
+     - `isConverting`: 変換実行中フラグ
+     - `progressMessage`: 進捗メッセージ
+     - `setPdfPath()`, `setOutputFolder()`, `setDpi()`, `estimateSize()`, `startConversion()`, `reset()`
+  3. `localapp/src/views/PdfImportView.tsx` — 既存ファイルを完全書き換え
+     - PDF ファイル選択ボタン（`open({ directory: false })`）
+     - 出力フォルダ表示・変更ボタン
+     - DPI 選択セグメントコントロール（200 / 300 / 400）
+     - ページ数・推定ファイルサイズ表示
+     - 「PDF を画像化」ボタン
+     - 進捗メッセージ表示
+     - 完了後「トリミングへ進む」ボタン
+  4. Rust 側コマンド実装
+     - `localapp/src-tauri/src/commands/pdf.rs` — 新規作成
+       - `extract_pdf_to_images(app_handle, pdfPath, outputFolder, dpi)` コマンド
+       - `pdfium-render` で PDF を開き、各ページを PNG レンダリング
+       - 10ページごとに `pdf-progress` イベントを emit
+       - 出力フォルダが存在しなければ作成
+       - 完了後、出力フォルダパスを返却
+     - `localapp/src-tauri/src/commands/mod.rs` — `pub mod pdf;` を追加
+     - `localapp/src-tauri/src/lib.rs` — `extract_pdf_to_images` を `invoke_handler` に登録
+  5. トリミングタブへの自動引き継ぎ
+     - 変換完了後、`trimStore.loadFolder(outputFolder)` を呼び出してトリミングタブに遷移
+- 実施コマンド:
+  1. PDFium `.dylib` ダウンロード・配置
+  2. `cd localapp/src-tauri && cargo check`
+  3. `cd localapp && npm run build`
+  4. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - PDFium は動的ライブラリなので、配布時に `.dylib` をバンドルする必要がある（`tauri.conf.json` の `resources` で設定）
+  - ファイルサイズ目安は「ページ幅×高さ（inch）× DPI² × 4（RGBA）」で概算。実際には PNG 圧縮で大幅に小さくなるため「目安」として表示
+  - 大きな PDF の場合、メモリ消費に注意。バックグラウンドスレッドで実行し、進捗を定期的に通知する
+
+### 【実施実績】
+
+- 2026-08-20: 進捗インジケーター改善（ユーザー要望対応）
+  - ユーザーから「PDFを画像化押下時からPDFのキャプチャーが終わるまで、進行を示すインジケーターを表示できないでしょうか」と指摘
+  - 改善方針をユーザーに提示し承認を取得
+  - `localapp/src/store/pdfImportStore.ts`
+    - `progressMessage` state を追加
+    - `extractPdf()` 開始時に `progressMessage: "PDFを読み込んでいます..."` を即座に設定
+    - `setProgress()` で `payload.message` もストアに反映
+  - `localapp/src/views/PdfImportView.tsx`
+    - ボタン押下直後（`isLoading === true`）から進捗エリアを即表示
+    - 回転スピナー + ステップメッセージを追加
+    - ページ数が判明するまでは不定形プログレス（shimmer アニメーション）を表示
+    - ページ数が判明したら確定的な進捗バーに切り替え（`5 / 120 ページ` + パーセント表示）
+  - `localapp/src-tauri/src/commands/pdf.rs`
+    - PDF オープン直後に `emit_progress(0)` を送信し、total ページ数を即座にフロントエンドに通知
+    - 各ページのレンダリング・保存直後に進捗イベントを emit（10ページごとから毎ページに変更）
+    - docstring の「10ページごとに進捗イベントを emit」という古い記述を修正
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0）
+    - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+
+- `pdfium-render` crate による PDF → 画像展開コマンドを実装
+  - `localapp/src-tauri/src/commands/pdf.rs` を新規作成
+    - `extract_pdf_to_images(app_handle, pdf_path, output_folder, dpi)` コマンド
+    - `Pdfium::bind_to_library()` で `localapp/src-tauri/pdfium/libpdfium.dylib` を動的読み込み
+    - 各ページを `scale_page_by_factor(dpi / 72.0)` でレンダリングし PNG 保存
+    - 10ページごとに `pdf-progress` イベントを emit
+    - 出力フォルダが存在しない場合は `fs::create_dir_all()` で作成
+  - `localapp/src-tauri/src/commands/mod.rs` に `pub mod pdf;` を追加
+  - `localapp/src-tauri/src/lib.rs` に `commands::pdf::extract_pdf_to_images` を `invoke_handler` に登録
+- フロントエンド PDF 読込 UI を実装
+  - `localapp/src/store/pdfImportStore.ts` を新規作成
+    - `pdfPath`, `outputFolder`, `dpi`, `pageCount`, `estimatedSize`, `isConverting`, `progressMessage` を管理
+    - `estimateSize()`: ページサイズ・ページ数・DPI から概算ファイルサイズを計算
+    - `startConversion()`: `invoke("extract_pdf_to_images")` を呼び出し、`listen("pdf-progress")` で進捗を受信
+    - 変換完了後に `trimStore.loadFolder(outputFolder)` と `navigationStore.setView("trim")` で自動引き継ぎ
+  - `localapp/src/views/PdfImportView.tsx` を完全書き換え
+    - PDF ファイル選択ボタン（`open({ directory: false })`）
+    - 出力フォルダ表示・変更ボタン
+    - DPI セグメントコントロール（200 / 300 / 400、デフォルト 300）
+    - ページ数・推定ファイルサイズ表示
+    - 「PDF を画像化」ボタンと進捗メッセージ表示
+    - 完了後「トリミングへ進む」ボタン
+- 初回実装時の問題と修正
+  - Rust コマンドの引数名を camelCase (`pdf_path`, `output_folder`) に統一
+    - 原因: Tauri `invoke` は JS 側キー名と Rust 側引数名が完全一致する必要がある
+    - 以前の snake_case 実装ではフロントエンド側で `pdfPath` / `outputFolder` を送信していたためマッチング失敗
+- PDFium 動的ライブラリの配置
+  - `localapp/src-tauri/pdfium/libpdfium.dylib` を配置（macOS arm64 用）
+  - `tauri.conf.json` の `bundle.resources` に `"pdfium/libpdfium.dylib": "pdfium/libpdfium.dylib"` を追加し、アプリバンドル時に同梱
+- ビルドエラー解消
+  - `npm run build` で PostCSS / Tailwind CSS v4 関連のエラーが発生
+    - `LazyResult.registerPostcss is not a function` など
+  - 原因: Node.js v26.0.0 と PostCSS / Tailwind v4 の互換性問題、または `node_modules` の破損
+  - 対策: `rm -rf localapp/node_modules localapp/package-lock.json && cd localapp && npm install` で再インストール
+  - 対策後、`cd localapp && npm run build` が成功
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: コンパイル成功（エラー0）
+  - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- ブランチ: `feature/003001-pdf-import`
+
+---
+
+## 003002-1 — PDF 読込 進捗インジケーター表示不具合調査・修正
+
+### 【実施予定】
+
+- 日時: 2026-08-20
+- 目的: ユーザーから報告された「PDF を画像化」ボタン押下後に進捗インジケーターが表示されない不具合を調査し、修正する
+- 前提:
+  - 003001〜003002（PDF 読込）の実装は完了している
+  - ユーザーが `npm run tauri dev` で動作確認中に「インジケータがでません」とフィードバック
+- 調査・変更内容:
+  1. `localapp/src-tauri/src/commands/pdf.rs` — 同期コマンドのままでは JavaScript 側がブロッキングされる可能性を確認
+  2. `localapp/src/store/pdfImportStore.ts` — `extractPdf()` の呼び出し方式を確認
+  3. 必要に応じて:
+     - Rust 側 `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更
+     - フロントエンド側で `extractPdf` のコマンド呼び出しをマイクロタスクで実行
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - Tauri の同期コマンド中はフロントエンドのメインスレッドがブロックされ、進捗イベントのリアルタイム受信ができない
+  - React 18 の自動バッチングも state 更新のタイミングに影響を与える可能性がある
+  - 修正後、ボタン押下直後に進捗エリアが表示され、`pdf-progress` イベントを受信しながら確定プログレスバーが更新される
+
+### 【実施実績】
+
+- 不具合症状の確認
+  - ユーザー報告: 「PDF を画像化」ボタン押下後、ボタン文字は変わらず、進捗エリアも表示されない
+  - PNG ファイル自体は正常に生成される（処理自体は動作）
+  - コンソールエラーは出ていない
+- 原因調査
+  - Tauri の同期コマンド（`#[tauri::command]`）を呼び出すと、コマンドが完了するまで JavaScript 側のメインスレッドがブロッキングされる
+  - その間、Rust 側から `pdf-progress` イベントが emit されても、WebView のメインスレッドがブロックされているため UI 更新が行われない
+  - React 18 の自動バッチングにより、イベント受信後の state 更新がコマンド完了までまとめられる可能性もある
+- 修正方針の決定
+  - Rust 側: `extract_pdf_to_images` を async コマンドに変更し、実際の PDF レンダリング処理を `tokio::task::spawn_blocking` でバックグラウンドスレッドに委譲
+  - フロントエンド側: `extractPdf()` 内で `invoke` をマイクロタスクに入れて呼び出し、メインスレッドを解放
+- 関連タスク
+  - 003002: PDF → 画像展開（Rust バックエンド）
+
+---
+
+## 003002-2 — PDF 読込 Pdfium 二重初期化エラー修正
+
+### 【実施予定】
+
+- 日時: 2026-08-20
+- 目的: `extract_pdf_to_images` の async 化後に発生した `PdfiumLibraryBindingsAlreadyInitialized` エラーを修正する
+- 前提:
+  - 003002-1（進捗インジケーター表示不具合調査・修正）で `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更済み
+  - ユーザーによる動作テストで `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生した
+- 調査・変更内容:
+  1. `localapp/src-tauri/src/commands/pdf.rs` — エラー発生箇所の確認
+  2. async 部での `Pdfium::bind_to_library()` / `Pdfium::new()` を削除
+  3. すべての PDFium 処理を `spawn_blocking` 内に移動
+- 実施コマンド:
+  1. `cd localapp/src-tauri && cargo check`
+  2. `cd localapp && npm run build`
+  3. `cd localapp && npm run tauri dev`
+- 想定される結果や注意点:
+  - `pdfium-render` はプロセス内で `bind_to_library()` を1回のみ許可する
+  - async 部と `spawn_blocking` 内の両方で初期化すると2重初期化エラーになる
+  - ライブラリパス・PDF パス・DPI など必要な情報のみを `spawn_blocking` に渡す
+
+### 【実施実績】
+
+- エラー症状の確認
+  - ユーザーによる動作テストで、`extract_pdf_to_images` 実行時に `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生
+  - PNG ファイルが生成されず、コマンドが失敗して返却される
+- 原因調査
+  - `pdfium-render` crate の内部実装を確認したところ、`Pdfium::bind_to_library()` はプロセス内で1回のみ呼び出し可能
+  - 現行の `pdf.rs` は async 部で `Pdfium::bind_to_library()` → `Pdfium::new()` を行い、その後 `tokio::task::spawn_blocking` 内で再度 `bind_to_library()` を呼んでいた
+  - この2重初期化が `PdfiumLibraryBindingsAlreadyInitialized` エラーの直接的原因
+- 修正方針の決定
+  - async 部での PDFium 初期化・PDF オープン・ページ数取得を完全に削除
+  - async 部では入力ファイル確認・出力フォルダ作成・ライブラリパス解決のみを行う
+  - `spawn_blocking` 内で PDFium 初期化 → PDF オープン → ページ数取得 → 進捗 emit(0) → レンダリング・保存 を一貫して実行
+- 関連タスク
+  - 003002: PDF → 画像展開（Rust バックエンド）
+  - 003002-1: PDF 読込 進捗インジケーター表示不具合調査・修正
+
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
+  - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- 2026-08-20: タイムアウトエラー対応（ページ 6 の保存失敗: Operation timed out (os error 60)）
+  - 事象: `extract_pdf_to_images` 実行中、6ページ目の PNG 保存で「ページ6の保存に失敗しました: Operation timed out (os error 60)」エラーが発生
+  - 原因: `image.save()` 実行時に macOS で一時的なファイルシステムタイムアウト（`ETIMEDOUT`）が発生。画像サイズが大きいページやクラウド同期フォルダ・外部ストレージへの書き込み時に発生しやすい
+  - 対応: `localapp/src-tauri/src/commands/pdf.rs` の PNG 保存処理にリトライ機構を追加
+    - 最大3回試行（初回 + 再試行2回）
+    - 失敗時は1秒待機してから再試行
+    - すべての試行が失敗した場合、試行回数・ファイルパスを含む詳細なエラーメッセージを返却
+    - コメントでリトライの理由（macOS での一時タイムアウト）を明記
+  - 注意点: `spawn_blocking` 自体にデフォルトタイムアウトは存在しないため、タイムアウトは `image.save()` → macOS ファイルシステムの書き込み処理で発生したと判断
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
+  - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
+- 次のステップ
+  - ユーザーによる動作テストを実施し、合格判定を得る
+  - 合格後、Git コミット・main ブランチマージ・タスク完了記録を実施
 

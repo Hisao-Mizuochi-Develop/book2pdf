@@ -710,28 +710,119 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 003001 | PDF 選択・設定 UI | 2026-08-15 |  | 実装 |
-| 003002 | PDF → 画像展開（Rust バックエンド） | 2026-08-15 |  | 実装 |
+| 003001 | PDF 選択・設定 UI | 2026-08-15 | 2026-08-19 | 実装 |
+| 003002 | PDF → 画像展開（Rust バックエンド） | 2026-08-15 | 2026-08-19 | 実装 |
+| 003002-2 | PDF 読込 Pdfium 二重初期化エラー修正 | 2026-08-20 | | 不具合修正 |
 
 ### 003001 PDF 選択・設定 UI
 
 【計画】
-- PDF ファイル選択ダイアログ
-- 出力フォルダ設定（自動設定含む）
-- DPI（150/200/300/400）と形式（PNG/JPG）選択
-- 設定の保存/リセット
+- 2026-08-19 実装予定
+- PDF ファイル選択ダイアログ（`tauri-plugin-dialog` の `open({ directory: false })` を使用）
+- 出力フォルダ設定（自動設定：PDF と同じディレクトリに `<PDF名>_images/` を作成）
+- DPI 選択：**200 / 300 / 400**、デフォルト **300**（150 は廃止、PNG のみで JPG は非対応）
+- ファイルサイズ目安表示：DPI とページ数から推定 PNG サイズを表示
+- 完了後、トリミングタブに自動引き継ぎ
+- 変更対象ファイル：
+  - `localapp/src/views/PdfImportView.tsx` — 既存ファイルを完全書き換え
+  - `localapp/src/store/pdfImportStore.ts` — 新規作成（Zustand ストア）
 
 【実施結果】
+- `localapp/src/store/pdfImportStore.ts` を新規作成
+  - Zustand ストアで PDF パス、出力フォルダ、DPI、進捗、エラー状態を管理
+  - `open()` で PDF ファイル / 出力フォルダを選択
+  - `listen("pdf-progress")` で Rust 側からの進捗イベントを受信
+  - 変換完了後に `useTrimStore.getState().loadFolder()` と `useNavigationStore.getState().setView("trim")` でトリミングタブへ自動引き継ぎ
+- `localapp/src/views/PdfImportView.tsx` を完全書き換え
+  - PDF ファイル選択ボタン、出力フォルダ選択ボタン、DPI 選択セグメントコントロール
+  - ページ数・推定ファイルサイズ表示
+  - 進捗バーとメッセージ表示
+  - 完了後「トリミングへ進む」ボタン
+- `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
+- 2026-08-20: 進捗インジケーター改善（ユーザー要望対応）
+  - ユーザー要望: 「PDFを画像化押下時からPDFのキャプチャーが終わるまで、進行を示すインジケーターを表示できないでしょうか」
+  - 対応内容:
+    - `pdfImportStore.ts`: `progressMessage` state を追加、`extractPdf()` 開始直後に不定形進捗メッセージを設定
+    - `PdfImportView.tsx`: ボタン押下直後から進捗エリアを表示。スピナー + メッセージ + 不定形プログレス/確定進捗バーを切り替え
+    - `pdf.rs`: PDF オープン直後に `emit_progress(0)` を送信、各ページ保存直後にも進捗イベントを emit
+  - `cargo check`: 成功
+  - `npm run build`: 成功
 
 ### 003002 PDF → 画像展開（Rust バックエンド）
 
 【計画】
-- `pdfium-render` 等で PDF をページ画像化
-- バックグラウンド実行
-- 進捗通知
-- 完了後、トリミングタブに自動引き継ぎ
+- 2026-08-19 実装予定
+- `pdfium-render` crate を使用して PDF をページ画像化
+- PDFium `.dylib` をダウンロード・配置（`localapp/src-tauri/pdfium/` または `localapp/public/` 配下）
+- バックグラウンドスレッドでレンダリング
+- 進捗通知：`pdf-progress` イベントを 10ページごとに emit
+- 完了後、トリミングタブに自動引き継ぎ（`trimStore.loadFolder(output_folder)`）
+- 変更対象ファイル：
+  - `localapp/src-tauri/Cargo.toml` — `pdfium-render` crate を追加
+  - `localapp/src-tauri/src/commands/capture.rs` または `localapp/src-tauri/src/commands/pdf.rs` — `extract_pdf_to_images` コマンドを新規追加
+  - `localapp/src-tauri/src/commands/mod.rs` — 新規モジュールを公開
+  - `localapp/src-tauri/src/lib.rs` — コマンドを `invoke_handler` に登録
 
 【実施結果】
+- PDFium 動的ライブラリを `localapp/src-tauri/pdfium/lib/libpdfium.dylib` に配置
+  - macOS arm64 用バイナリを `pdfium-mac-arm64.tgz` から展開
+  - `tauri.conf.json` の `bundle.resources` に `pdfium/lib/libpdfium.dylib` を追加
+- `localapp/src-tauri/src/commands/pdf.rs` を新規作成
+  - `extract_pdf_to_images` コマンドを実装
+  - `Pdfium::bind_to_library()` で `.dylib` を読み込み
+  - `PdfRenderConfig::new().scale_page_by_factor(dpi / 72.0)` で DPI 指定レンダリング
+  - `page.render_with_config(&render_config)?.as_image()?.as_rgba8()?.save(...)` で PNG 保存
+  - 10 ページごとに `pdf-progress` イベントを emit
+- `localapp/src-tauri/src/commands/mod.rs` に `pub mod pdf;` を追加
+- `localapp/src-tauri/src/lib.rs` に `commands::pdf::extract_pdf_to_images` を `invoke_handler` に登録
+- `cargo check`: 成功（既存ファイルの non_snake_case 警告 4 件のみ）
+- 2026-08-20: 進捗イベントの頻度を改善
+  - PDF オープン直後に `0 / total` を即座に emit
+  - 各ページのレンダリング・保存直後に進捗イベントを emit（10ページごとから毎ページに変更）
+  - UI 側で `progressMessage` を表示し、ボタン押下直後から進捗エリアが表示されるよう連携
+- 2026-08-20: 進捗インジケーター表示不具合の調査・修正対応
+  - **症状**: 「PDF を画像化」ボタン押下後、ボタン下に進捗エリアが表示されない。PNG ファイル自体は正常に生成される。
+  - **原因（仮説）**:
+    - Tauri の同期コマンド実行中は JavaScript 側のメインスレッドがブロッキング状態になり、`pdf-progress` イベントをリアルタイムで受信できない
+    - React 18 の自動バッチングにより、イベント受信時の state 更新がコマンド完了まで遅延する可能性もある
+  - **修正方針**:
+    - Rust 側 `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更
+    - フロントエンド側で `extractPdf` のコマンド呼び出しをマイクロタスク（例: `Promise.resolve().then()`）で実行し、メインスレッドを解放
+    - イベントループの次のティックで `listen` コールバックが動作するよう調整
+
+### 003002-2 PDF 読込 Pdfium 二重初期化エラー修正
+
+【計画】
+- 2026-08-20 実施
+- ユーザーによる動作テストで、`extract_pdf_to_images` の async 化後に `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生したことを確認
+- **原因**:
+  - `pdfium-render` crate はプロセス内で `Pdfium::bind_to_library()` を1回のみ呼び出し可能
+  - async 部で `Pdfium::bind_to_library()` → `Pdfium::new()` を行った後、`tokio::task::spawn_blocking` 内で再度 `bind_to_library()` を呼んでいたため、2重初期化エラーが発生
+- **修正方針**:
+  - async 部での PDFium 初期化（`Pdfium::bind_to_library()` / `Pdfium::new()`）を完全に削除
+  - async 部では入力ファイル確認・出力フォルダ作成・ライブラリパス解決のみを行う
+  - ライブラリパス・PDF パス・出力フォルダパス・DPI など「再オープンに必要な情報のみ」を `spawn_blocking` に渡す
+  - `spawn_blocking` 内で PDFium 初期化 → PDF オープン → ページ数取得 → 進捗 emit(0) → 各ページレンダリング・保存 を一貫して実行
+- 変更対象ファイル:
+  - `localapp/src-tauri/src/commands/pdf.rs`
+- 実施コマンド:
+  - `cd localapp/src-tauri && cargo check`
+  - `cd localapp && npm run build`
+  - `cd localapp && npm run tauri dev`
+
+【実施結果】
+- 2026-08-20: `localapp/src-tauri/src/commands/pdf.rs` を修正
+  - async 部での `Pdfium::bind_to_library()` / `Pdfium::new()` / PDF オープン・ページ数取得を削除
+  - ライブラリパス・PDF パス・出力フォルダパス・DPI のみを `spawn_blocking` に渡すように変更
+  - `render_pdf_pages` 内で PDFium 初期化 → PDF オープン → ページ数取得 → 進捗 emit(0) → レンダリング・保存 を一貫して実行
+  - docstring に「`Pdfium::bind_to_library()` はプロセス内で1回のみ」という注意事項を追加
+- 2026-08-20: タイムアウトエラー対応（ページ 6 の保存失敗: Operation timed out (os error 60)）
+  - 原因: `image.save()` 実行時に macOS で一時的なファイルシステムタイムアウトが発生
+  - 対応: PNG 保存処理にリトライ機構を追加（1秒待機、最大3回試行）
+  - エラーメッセージを詳細化（試行回数・ファイルパスを含む）
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
+  - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 
 ---
 
