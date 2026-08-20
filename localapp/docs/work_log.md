@@ -975,6 +975,11 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告のみ）
   - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
+- 2026-08-20: ユーザーによる動作テストを実施し、合格判定を取得
+- 2026-08-20: Git コミット・main ブランチへマージ
+  - ブランチ: `feature/002008-3-continuous-capture-premature-completion`
+  - コミット: `bd1afd0`
+  - マージ: `main` へ Fast-forward マージ完了
 - ブランチ: `feature/002008-3-continuous-capture-mse-grace`
 
 ---

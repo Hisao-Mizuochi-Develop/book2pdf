@@ -728,7 +728,9 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告のみ）
   - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
-- ブランチ: `feature/002008-3-continuous-capture-mse-grace`
+- 動作テスト: 2026-08-20 ユーザーにて実施、合格判定を取得
+- コミット: `002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）` (`bd1afd0`)
+- ブランチ: `feature/002008-3-continuous-capture-premature-completion`
 
 ### 002006（将来タスク）ウィンドウ最前面化・クリック自動化
 
