@@ -658,3 +658,42 @@ pub struct ProgressPayload {
 
 ### 関連タスク
 - 002009-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
+
+---
+
+## Tauri `invoke` の引数名不一致 — PDF作成機能（008001）
+
+### 事象
+「PDF作成」タブでフォルダ/ZIPを指定して「PDF作成」ボタンを押下しても、進捗インジケータが一瞬（約0.01秒）だけ表示されて消え、それ以降処理が進まない。
+
+### 原因
+Rust側 `create_searchable_pdf` コマンドの引数名が snake_case（`source_path`, `source_type`, `output_path`）になっていたが、フロントエンド `invoke()` は camelCase（`sourcePath`, `sourceType`, `outputPath`）で渡していた。Tauri v2 の `invoke` は JS側キー名と Rust側引数名が完全一致する必要があり、不一致の場合は undefined 扱いとなり即座にエラーが発生し、`finally { isProcessing = false }` でインディケータが消えていた。
+
+### 対応策
+```rust
+// ❌ 誤り: snake_case の引数名
+#[tauri::command]
+pub async fn create_searchable_pdf(
+    source_path: String,   // JS側が sourcePath を渡すと undefined
+    source_type: String,   // JS側が sourceType を渡すと undefined
+    output_path: String,   // JS側が outputPath を渡すと undefined
+) -> Result<String, String>
+
+// ✅ 正解: camelCase の引数名（#[allow(non_snake_case)] を併用）
+#[allow(non_snake_case)]
+#[tauri::command]
+pub async fn create_searchable_pdf(
+    sourcePath: String,
+    sourceType: String,
+    outputPath: String,
+) -> Result<String, String>
+```
+
+### 注意点
+- `#[allow(non_snake_case)]` を追加することで、Rust コンパイラの命名規約警告を抑制できる
+- 本件は task 002008-2 (`startFromBeginning` / `start_from_beginning`) と同じパターンの不具合であり、Tauri `invoke` の引数名整合性は実装後に必ず両ファイルを横並びで確認する必要がある
+- 新規コマンド実装時は、フロントエンド側の `invoke()` 呼び出しコードと Rust 側の関数シグニチャを同時に開き、キー名・引数名・型の整合性を確認することを習慣化する
+
+### 関連タスク
+- 008001: バグ修正 — PDF作成ボタン押下後インジケータが一瞬で消える
+- 002008-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）

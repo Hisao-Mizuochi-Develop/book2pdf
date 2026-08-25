@@ -56,6 +56,8 @@ pub fn run() {
             commands::pdf::extract_pdf_to_images,
             // 003003: PDF 出力フォルダ自動設定
             commands::pdf::get_pdf_default_output_folder,
+            // 006001: OCR 済み PDF 作成
+            commands::pdf_creation::create_searchable_pdf,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

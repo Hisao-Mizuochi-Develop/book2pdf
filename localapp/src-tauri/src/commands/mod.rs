@@ -14,3 +14,5 @@
 pub mod capture;
 // 003: PDF 読込コマンド
 pub mod pdf;
+// 006: OCR 済み PDF 作成コマンド
+pub mod pdf_creation;

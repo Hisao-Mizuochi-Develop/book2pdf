@@ -2,7 +2,7 @@
  * 左サイドバーナビゲーションコンポーネント
  *
  * 【役割】
- * アプリケーションの4つの機能（電子書籍 / PDF / トリミング / ZIP作成）を
+ * アプリケーションの5つの機能（電子書籍キャプチャ / PDF読込 / トリミング / ZIP作成 / PDF作成）を
  * 垂直リストで表示し、ユーザーが現在のビューを切り替えられるようにする。
  *
  * 【デザイン方針】
@@ -16,7 +16,7 @@
  * 状態変更は App.tsx に伝搬し、対応するビューコンポーネントが再描画される。
  */
 
-import { Camera, Crop, FileUp, Package } from "lucide-react";
+import { Camera, Crop, FileUp, Package, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { type AppView, useNavigationStore } from "@/store/navigationStore";
@@ -37,14 +37,16 @@ interface NavItem {
  * サイドバーに配置するナビゲーション項目一覧
  *
  * 【並び順の意図】
- * 電子書籍 → PDF → トリミング → ZIP作成 は、実際の作業フロー順に対応している。
- * キャプチャ → PDF読込 → トリミング → 出力の順でユーザーが作業を進める。
+ * 電子書籍キャプチャ → PDF読込 → トリミング → ZIP作成 → PDF作成 は、
+ * 実際の作業フロー順に対応している。
+ * キャプチャ → PDF読込 → トリミング → ZIP出力 → OCR済みPDF作成 の順でユーザーが作業を進める。
  */
 const navItems: NavItem[] = [
-  { view: "capture", label: "電子書籍", icon: Camera },
-  { view: "pdf", label: "PDF", icon: FileUp },
+  { view: "capture", label: "電子書籍キャプチャ", icon: Camera },
+  { view: "pdf", label: "PDFキャプチャ", icon: FileUp },
   { view: "trim", label: "トリミング", icon: Crop },
   { view: "export", label: "ZIP作成", icon: Package },
+  { view: "pdfCreation", label: "PDF作成", icon: FileText },
 ];
 
 /**

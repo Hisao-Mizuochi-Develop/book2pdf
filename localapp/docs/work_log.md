@@ -1469,3 +1469,27 @@
     - `cd localapp && npm run build`: ビルド成功
   - ユーザーテスト: 合格判定を取得
 
+## 008001 — バグ修正：PDF作成ボタン押下後インジケータが一瞬で消える
+
+### 実施予定
+- 日時: 2026-08-22
+- 目的: PDF作成画面で「PDF作成」ボタンを押下後、インジケータが約0.01秒で消えて処理が進まないバグを修正
+- 前提条件: feature/008001-pdf-creation ブランチ
+- 想定される原因: Tauri invoke の引数名不一致（camelCase vs snake_case）
+- 実施予定のコマンド
+  - `cargo check` でコンパイル確認
+  - `npm run build` でフロントエンドビルド確認
+
+### 実施実績
+- 2026-08-22: バグ修正実施
+  - 原因: Rust側の `create_searchable_pdf` コマンドの引数名が snake_case (`source_path`, `source_type`, `output_path`) だったが、フロントエンド側の `invoke()` は camelCase (`sourcePath`, `sourceType`, `outputPath`) で送信していた
+  - Tauri v2 の `invoke()` は自動的な camelCase ↔ snake_case 変換を行わないため、Rust側で全引数が undefined となり、即座にエラーが発生 → `finally` で `isProcessing = false` が実行されインジケータが消えていた
+  - 修正内容
+    - `localapp/src-tauri/src/commands/pdf_creation.rs`
+      - 引数名を camelCase に変更: `sourcePath`, `sourceType`, `outputPath`
+      - `#[allow(non_snake_case)]` を追加して Rust コンパイラ警告を抑制
+      - 関数内部での引数参照も合わせて修正
+  - ビルド確認
+    - `cd localapp/src-tauri && cargo check`: コンパイル成功（エラー0）
+    - `cd localapp && npm run build`: ビルド成功
+  - ユーザーテスト: 合格判定を取得（予定）

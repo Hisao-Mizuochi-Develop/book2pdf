@@ -8,21 +8,22 @@
  * 必要な状態だけを subscribe して利用する。
  *
  * 【このストアの役割】
- * サイドバーで選択された現在のビュー（capture / trim / pdf / export）を管理し、
+ * サイドバーで選択された現在のビュー（capture / trim / pdf / export / pdfCreation）を管理し、
  * App.tsx がこの状態を参照して対応する View コンポーネントを描画する。
  */
 
 import { create } from "zustand";
 
 /**
- * アプリケーション内の4つの機能ビューを表す型
+ * アプリケーション内の5つの機能ビューを表す型
  *
  * - capture: 電子書籍キャプチャ機能（UC002）
  * - pdf: PDF読込・画像展開機能（UC003）
  * - trim: 画像トリミング機能（UC004）
  * - export: ZIP出力機能（UC005）
+ * - pdfCreation: OCR済みPDF作成機能（UC006）
  */
-export type AppView = "capture" | "trim" | "pdf" | "export";
+export type AppView = "capture" | "trim" | "pdf" | "export" | "pdfCreation";
 
 /**
  * ナビゲーションストアの状態インターフェース

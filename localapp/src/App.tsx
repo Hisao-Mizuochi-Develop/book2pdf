@@ -23,6 +23,7 @@ import { CaptureView } from "@/views/CaptureView";
 import { TrimView } from "@/views/TrimView";
 import { PdfImportView } from "@/views/PdfImportView";
 import { ExportView } from "@/views/ExportView";
+import { PdfCreationView } from "@/views/PdfCreationView";
 import type { AppView } from "@/store/navigationStore";
 
 /**
@@ -32,10 +33,11 @@ import type { AppView } from "@/store/navigationStore";
  * 対応するコンポーネントが必ず設定されていることを型レベルで保証する。
  */
 const viewMap: Record<AppView, React.ComponentType> = {
-  capture: CaptureView,   // 電子書籍キャプチャ（UC002）
-  trim: TrimView,         // 画像トリミング（UC004）
-  pdf: PdfImportView,     // PDF読込・展開（UC003）
-  export: ExportView,     // ZIP出力（UC005）
+  capture: CaptureView,     // 電子書籍キャプチャ（UC002）
+  trim: TrimView,           // 画像トリミング（UC004）
+  pdf: PdfImportView,       // PDF読込・展開（UC003）
+  export: ExportView,       // ZIP出力（UC005）
+  pdfCreation: PdfCreationView, // OCR済みPDF作成（UC006）
 };
 
 /**
