@@ -6,6 +6,7 @@
 
 import copy
 import cv2
+import gc
 import glob
 import logging
 import os
@@ -20,6 +21,32 @@ from .. import procs
 
 # ロガー設定: モジュール名でロガーを取得し、呼び出し元のログ設定に従う
 logger = logging.getLogger(__name__)
+
+
+def _cleanup_memory():
+    """
+    1 ページの推論処理が終わった後に、不要な Python オブジェクトと PyTorch キャッシュを解放します。
+
+    OCR 処理では PyTorch Lightning の Trainer や mmdetection のレイアウト検出器を
+    ページ間で使い回すため、中間テンソル・データローダー・各種キャッシュが残りやすく、
+    ページ数に応じてメモリ使用量が増大します。
+    本関数を各ページ処理後に呼び出すことで、メモリ使用量を一定に抑えます。
+
+    Notes
+    -----
+    - `gc.collect()` で循環参照を含む不要オブジェクトを即座に回収します
+    - `torch.cuda.empty_cache()` は GPU 環境で CUDA キャッシュを開放します
+    - CPU 実行環境では torch.cuda が無い場合があるため、例外は無視します
+    """
+    gc.collect()
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        # torch が無い、または cuda が利用できない環境では何もしない
+        pass
+
 
 # Add import path for submodules
 currentdir = pathlib.Path(__file__).resolve().parent
@@ -185,6 +212,9 @@ class OcrInferrer:
             pred_list.extend(single_image_file_output)
             print('########  END PAGE INFERENCE PROCESS  ########')
 
+            # FIX(005001): 1 ページ処理ごとにメモリを解放します
+            _cleanup_memory()
+
         return pred_list
 
     def _infer(self, single_outputdir_data):
@@ -290,6 +320,11 @@ class OcrInferrer:
             # add inference result for single image file data to pred_list, including XML data
             pred_list.extend(single_image_file_output)
             print('########  END PAGE INFERENCE PROCESS  ########')
+
+            # FIX(005001): 1 ページ処理ごとにメモリを解放します
+            # PyTorch Lightning / mmdetection のキャッシュ・中間テンソル・循環参照を
+            # 即座に回収し、ページ数に応じたメモリ増加を防ぎます
+            _cleanup_memory()
 
         return pred_list
 

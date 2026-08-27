@@ -1161,3 +1161,66 @@ chmod +x scripts/run_003007_ocr_remaining.sh
 - 10ページの OCR 処理には 20〜30分を要し、backend → ocr-worker 間の HTTP タイムアウトを 1800秒から 3600秒に延長する必要があった
 - local_binarization は OpenCV/scipy 非依存で純粋 numpy の畳み込みを使用したが、文字潰れが発生しやすい
 - 4x アップスケール系は PDF ファイルサイズが 279MB と肥大化し、処理時間も長くなる
+
+---
+
+## 2026-08-27 タスク005001：OCR 処理のメモリ使用量安定化
+
+### 【実施予定】
+
+- 日時: 2026-08-27
+- 目的: ocr-worker が多ページジョブ（999 ページまで）で OOM（Exit code 137）にならず、ページ数に依存しない一定のメモリ使用量で OCR を完了できるようにする
+- 前提条件:
+  - `feature/005001-ocr-memory-optimization` ブランチを作成済み
+  - ocr-worker コンテナは停止中（OOM により Exited (137)）
+  - 原因調査済み：PyTorch Lightning `Trainer.predict()` の繰り返し呼び出し、画像データの `copy.deepcopy`、`LayoutDetector` テンソル累積が複合的なメモリリークの原因
+- 実施予定のコマンド:
+  ```bash
+  # ndlocr_cli_patches/ にパッチファイルを追加
+  # Dockerfile に COPY 行を追加
+  docker compose build ocr-worker
+  docker compose up -d ocr-worker
+  docker compose logs -f ocr-worker
+  ```
+- 変更予定ファイル:
+  - `ocr-worker/ndlocr_cli_patches/inference.py`（ページループ内にメモリクリーンアップを追加）
+  - `ocr-worker/ndlocr_cli_patches/base_proc.py`（新規：deep copy 抑制）
+  - `ocr-worker/ndlocr_cli_patches/line_ocr.py`（新規：推論後キャッシュクリア）
+  - `ocr-worker/ndlocr_cli_patches/layout_extraction.py`（新規：deep copy 回避）
+  - `ocr-worker/ndlocr_cli_patches/infer_task.py`（新規：predict 後処理）
+  - `ocr-worker/Dockerfile`（パッチ COPY 行追加）
+  - `ocr-worker/docs/tasks.md`, `ocr-worker/docs/work_log.md`, `ocr-worker/docs/caveats.md`
+- 想定される結果や注意点:
+  - Docker Desktop のメモリ制限に依存せず、999 ページまで処理可能になることを目指す
+  - 各ページ処理後の `gc.collect()` により処理時間が若干増加する可能性がある
+  - PyTorch Lightning の Trainer 内部状態をリセットすることで、進捗表示やログ出力に影響が出ないよう注意する
+
+### 【実施実績】
+
+- 2026-08-27: `ocr-worker/ndlocr_cli_patches/base_proc.py` を新規作成
+  - `_run_process()` の戻り値を `[input_data.copy()]` に変更し、画像 ndarray の deep copy を回避
+  - `_dump_result()` 内の `dump_img` deep copy を除去
+- 2026-08-27: `ocr-worker/ndlocr_cli_patches/line_ocr.py` を新規作成
+  - `_run_submodule_inference()` 呼び出し後に `trainer.predict_dataloaders = None` と `gc.collect()` を実行
+- 2026-08-27: `ocr-worker/ndlocr_cli_patches/layout_extraction.py` を新規作成
+  - `output_data = input_data.copy()` に置き換え、dump_img の deep copy を除去
+- 2026-08-27: `ocr-worker/ndlocr_cli_patches/infer_task.py` を新規作成
+  - `output_data = input_data.copy()` + `output_data['xml'] = copy.deepcopy(input_data['xml'])` に変更
+  - 画像データは共有しつつ、xml ツリーだけ独立した deep copy を保持
+  - `trainer.predict_dataloaders = None` を try/except で安全に実行
+- 2026-08-27: `ocr-worker/ndlocr_cli_patches/inference.py` を修正
+  - `_infer()` / `_infer_ruby_only()` のページループに `gc.collect()` と `torch.cuda.empty_cache()` を追加
+  - ページ処理開始・完了の DEBUG ログに `page=N` を含める形に統一
+- 2026-08-27: `ocr-worker/Dockerfile` にパッチ適用用の COPY 行を追加
+  - `base_proc.py` / `line_ocr.py` / `layout_extraction.py` / `infer_task.py` を上書きコピー
+- 2026-08-27: `py_compile` で全パッチファイルの構文チェックを実施し、エラーがないことを確認
+- 2026-08-27: `docker compose build ocr-worker` が成功し、`docker compose up -d ocr-worker` でコンテナが正常に起動
+- 2026-08-27: `curl -s http://localhost:8001/health` が `{"status":"ok"}` を返すことを確認
+- 2026-08-27: 3 ページジョブで backend API 経由の OCR フルフローを実行し、`completed` になることを確認
+- 2026-08-27: 50 ページジョブを作成・アップロード・OCR 実行
+  - `/tmp/test_50_pages.zip` を作成（3 枚のテスト画像を 50 ページ分コピー）
+  - `docker stats` でメモリ使用量を 30 秒間隔で記録
+  - page 14 時点まで OOM は発生せず、メモリ使用量は 4.3GiB〜4.9GiB / 7.75GiB の範囲で推移
+  - 明らかな増加傾向は見られず、ページ数に依存しない一定のメモリ使用量が維持されていることを示唆
+- 2026-08-27: 999 ページまでのフルスケールテストは 1 ページあたり約 80〜120 秒かかるため、今回は実施せず別途長時間実行テストとして予定
+- 2026-08-27: `ocr-worker/docs/tasks.md` / `ocr-worker/docs/caveats.md` / 本ファイルを更新

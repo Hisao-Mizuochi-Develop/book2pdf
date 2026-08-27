@@ -172,4 +172,22 @@
   - 参考: 3 ページのサンプルで、OFF 時 5 個だった「〓」が ON 時 3 個に減少
 - 前処理適用後も座標は ndlocr_cli 内部で前処理済み画像に対して計算されるため、backend 側の座標変換（必要に応じて）で元画像スケールに戻す必要がある
 
+## 21. OCR 処理のメモリ最適化（005001）
+
+- 多ページジョブ（257 ページ以上）で ocr-worker が OOM（Exit code 137）になる問題があった
+- 原因は以下の複合的要因だった
+  - `base_proc.py` / `infer_task.py` / `layout_extraction.py` で `copy.deepcopy(input_data)` により画像 ndarray が毎ページ複製されていた
+  - PyTorch Lightning `Trainer.predict()` をページごとに繰り返し呼び出す際、DataLoader や内部テンソルが累積していた
+  - ページループ内でガベージコレクションが行われていなかった
+- 対策として `ocr-worker/ndlocr_cli_patches/` に以下のパッチを適用した
+  - `base_proc.py`: `_run_process()` の戻り値を `[input_data.copy()]` にし、dump 用画像の deep copy を除去
+  - `line_ocr.py`: `_run_submodule_inference()` 後に `trainer.predict_dataloaders = None` と `gc.collect()` を実行
+  - `layout_extraction.py`: `input_data.copy()` に置き換え、dump_img の deep copy を除去
+  - `infer_task.py`: `input_data.copy()` + `copy.deepcopy(input_data['xml'])` に変更。画像は共有し、xml ツリーだけ独立した deep copy を保持
+  - `inference.py`: `_infer()` / `_infer_ruby_only()` のページループに `gc.collect()` と `torch.cuda.empty_cache()` を追加
+- 50 ページジョブの検証では page 14 時点まで OOM は発生せず、メモリ使用量は 4.3GiB〜4.9GiB / 7.75GiB で推移した
+- 999 ページまでのフルスケールテストは時間がかかるため、別途長時間実行テストとして実施する
+- パッチファイルを変更した場合は `docker compose build ocr-worker` でイメージを再ビルドすること
+- 将来 ndlocr_cli のバージョンアップで対象ファイルの構造が変わった場合、パッチの適用箇所を見直す必要がある
+
 

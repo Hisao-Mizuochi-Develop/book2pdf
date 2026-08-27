@@ -138,6 +138,13 @@ COPY ndlocr_cli_patches/inference.py ${PROJECT_DIR}/cli/core/inference.py
 # ndl_layout submodule の process_textblock.py をパッチ版で上書きします
 COPY ndlocr_cli_patches/process_textblock.py ${PROJECT_DIR}/submodules/ndl_layout/tools/process_textblock.py
 
+# FIX(005001): ページ数に応じたメモリ増加を防ぐためのパッチを適用します
+# PyTorch Lightning / mmdetection のキャッシュ・中間テンソル・画像の deep copy を抑制します
+COPY ndlocr_cli_patches/base_proc.py ${PROJECT_DIR}/cli/procs/base_proc.py
+COPY ndlocr_cli_patches/line_ocr.py ${PROJECT_DIR}/cli/procs/line_ocr.py
+COPY ndlocr_cli_patches/layout_extraction.py ${PROJECT_DIR}/cli/procs/layout_extraction.py
+COPY ndlocr_cli_patches/infer_task.py ${PROJECT_DIR}/submodules/text_recognition_lightning/src/tasks/infer_task.py
+
 # ocr-worker アプリケーションのソースコードをコピーします
 COPY app/ ${PROJECT_DIR}/app/
 

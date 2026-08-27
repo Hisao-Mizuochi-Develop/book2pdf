@@ -421,3 +421,38 @@ OCR精度向上に関する今後の要検討対応・技術的負債・改善�
 |  | - 技術書の表紙は1ページのみのため、一律前処理を選ぶ方がシンプルな可能性 |  |  |  |
 |  | 【結論】 |  |  |  |
 |  | 現状はコストパフォーマンスが不明確。OCR後処理（辞書補正）やUIでの手動補正を優先し、本対応は将来の検討事項として保留とする。 |  |  |  |
+
+---
+
+## ユースケースNo | 005
+
+ユースケース
+OCR 処理の安定性・スケーラビリティ向上（ページ数に依存しない一定のメモリ使用量を実現する）
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| 005001 | OCR 処理のメモリ使用量安定化 | 2026-08-27 | 2026-08-27 | 不具合修正 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | 原因調査：ocr-worker が 257 ページジョブの page 3 で OOM（Exit code 137）になる原因を特定する |  |  |  |
+|  | 調査結果：PyTorch Lightning Trainer.predict() の繰り返し呼び出し、画像データの copy.deepcopy、LayoutDetector テンソル累積が複合してメモリリークしていると特定 |  |  |  |
+|  | `ocr-worker/ndlocr_cli_patches/` にメモリクリーンアップ用パッチを追加する（base_proc.py / line_ocr.py / layout_extraction.py / infer_task.py） |  |  |  |
+|  | `ocr-worker/Dockerfile` にパッチ適用用の COPY 行を追加する |  |  |  |
+|  | `ocr-worker/ndlocr_cli_patches/inference.py` のページループに `gc.collect()` と `torch.cuda.empty_cache()` を追加する |  |  |  |
+|  | コンテナをビルド・再起動し、`/health` が正常に返ることを確認する |  |  |  |
+|  | 多ページジョブ（50/100/200/500/999 ページ）でメモリ使用量をモニタリングし、OOM が解消されることを検証する |  |  |  |
+|  | `ocr-worker/docs/tasks.md` / `work_log.md` / `caveats.md` を更新する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-08-27: 原因調査を実施。257 ページジョブで page 3 付近で OOM（Exit code 137）が発生していた |  |  |  |
+|  | 2026-08-27: `ndlocr_cli` 内で `copy.deepcopy(input_data)` による画像データのディープコピー、`Trainer.predict()` の繰り返し呼び出しによる DataLoader / テンソル累積、ページループでのガベージコレクション不足が複合していると特定 |  |  |  |
+|  | 2026-08-27: `ocr-worker/ndlocr_cli_patches/base_proc.py` を修正：`_run_process()` の戻り値を `[input_data.copy()]` に変更し、dump 用画像の `copy.deepcopy()` を除去 |  |  |  |
+|  | 2026-08-27: `ocr-worker/ndlocr_cli_patches/line_ocr.py` を修正：`_run_submodule_inference()` 呼び出し後に `trainer.predict_dataloaders = None` と `gc.collect()` を実行 |  |  |  |
+|  | 2026-08-27: `ocr-worker/ndlocr_cli_patches/layout_extraction.py` を修正：`input_data.copy()` に置き換えて dump_img の deep copy を除去 |  |  |  |
+|  | 2026-08-27: `ocr-worker/ndlocr_cli_patches/infer_task.py` を修正：`copy.deepcopy(input_data)` を `input_data.copy()` + `copy.deepcopy(input_data['xml'])` に変更し、`trainer.predict_dataloaders = None` を try/except で安全に実行 |  |  |  |
+|  | 2026-08-27: `ocr-worker/ndlocr_cli_patches/inference.py` を修正：`_infer()` / `_infer_ruby_only()` のページループに `gc.collect()` と `torch.cuda.empty_cache()` を追加 |  |  |  |
+|  | 2026-08-27: `ocr-worker/Dockerfile` に `base_proc.py` / `line_ocr.py` / `layout_extraction.py` / `infer_task.py` の COPY 行を追加 |  |  |  |
+|  | 2026-08-27: `docker compose build ocr-worker` が成功し、コンテナが正常に起動することを確認 |  |  |  |
+|  | 2026-08-27: 3 ページジョブで backend API 経由の OCR フルフローが `completed` になることを確認 |  |  |  |
+|  | 2026-08-27: 50 ページジョブを開始し、`docker stats` でメモリ使用量をモニタリング。page 14 時点までに OOM は発生せず、メモリ使用量は 4.3GiB〜4.9GiB / 7.75GiB の範囲で推移し、明らかな増加傾向は見られなかった |  |  |  |
+|  | 2026-08-27: 999 ページまでのフルスケールテストは処理時間（1 ページあたり約 80〜120 秒）のため今回は実施せず、別途長時間実行テストとして予定 |  |  |  |
+|  | 2026-08-27: `ocr-worker/docs/work_log.md` / `caveats.md` / 本ファイルを更新 |  |  |  |
