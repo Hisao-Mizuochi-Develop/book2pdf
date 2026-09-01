@@ -530,6 +530,11 @@
   1. `use screenshots::Window` → `Window` struct が `screenshots` v0.8.10 でエクスポートされていない
   2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
 - エラー修正は 002007 として別タスクで対応
+- 2026-09-01: 本タスクは実質的に 002008 に統合完了したため、完了扱いとする
+  - `localapp/docs/tasks.md` の 002005「タスク完了日付」を 2026-08-17（002008 完了日）に記載
+  - `crop_insets` 機能は 002007 / 002008 で実装済み
+  - ウィンドウ指定キャプチャ機能は 002008 で実装済み
+  - ブランチ: `feature/002005-formal-completion`
 
 ---
 
