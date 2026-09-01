@@ -338,7 +338,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 実施タイミングは性能テスト完了後とする |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | （性能テスト完了後に実施予定） |  |  |  |
-| 004003 | OCR 処理性能計測の実施 | 2026-08-12 |  | 性能評価 |
+| 004003 | OCR 処理性能計測の実施 | 2026-08-12 | 2026-09-01 | 性能評価 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | サンプル画像 `sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed/001.png` 〜 `010.png` を 1 つのアーカイブ `/tmp/book2pdf-benchmark/benchmark-input-10pages.zip` にまとめる |  |  |  |
@@ -354,6 +354,11 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 1. `ocr-worker/ndlocr_cli_patches/inference.py` に 1 ページごとの OCR 処理時間 DEBUG ログを追加（処理開始・完了の両方、page=N を含む形式） |  |  |  |
 |  | 2. `scripts/benchmark_ocr.sh` を ZIP 内の画像ファイル数に依存した汎用ページ数対応に改修 |  |  |  |
 |  | 3. 性能計測の実行と結果のドキュメント記録は今回は実施しない |  |  |  |
+|  | 2026-09-01: ユーザー指示により本計測を実施。テスト画像は `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`（3 ページ）を使用 |  |  |  |
+|  | 2026-09-01: `feature/004003-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行 |  |  |  |
+|  | 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測 |  |  |  |
+|  | 2026-09-01: 精度比較レポート [ocr-results-004003/performance-test-report-004003.md](ocr-results-004003/performance-test-report-004003.md) を作成 |  |  |  |
+|  | 2026-09-01: `docs/integration-test-guide.md` の性能テスト結果セクションを更新 |  |  |  |
 
 ---
 

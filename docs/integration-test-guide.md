@@ -335,6 +335,28 @@ PDF ダウンロード時間,0.045
   - `scripts/benchmark_ocr.sh` の backend ログ抽出パターンが実際のログ形式と一致していないため、ZIP 解凍時間と PDF 生成時間が `N/A` となっていた問題
   - `docker compose logs` が ocr-worker の全ログを対象としていたため、1 ページごとの OCR 処理時間に過去の実行分が混在していた問題
 
+#### 2026-09-01 実施結果（005001 メモリ最適化パッチ適用後）
+
+- 日時: 2026-09-01
+- 実行方式: Docker Compose（backend / ocr-worker 分離、CPU 実行）
+- ブランチ: `feature/004003-ocr-performance-test`
+- 入力データ: 3 ページ（`test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`）
+
+| 項目 | 時間（秒） |
+|---|---|---|
+| Docker Compose 起動時間 | 0.128 |
+| ジョブ作成時間 | 0.066 |
+| ZIP アップロード時間 | 0.074 |
+| OCR 全体時間 | 396.407 |
+| 1 ページあたり平均 OCR 処理時間 | 125.629 |
+| ZIP 解凍時間（ログ） | 0.013 |
+| PDF 生成時間（ログ） | 1.172 |
+| PDF ダウンロード時間 | 0.239 |
+| 合計処理時間 | 396.914 |
+
+- 個別ページの OCR 処理時間：122.762 秒、110.116 秒、144.009 秒
+- 詳細は [ocr-results-004003/performance-test-report-004003.md](../ocr-results-004003/performance-test-report-004003.md) を参照
+
 ## 8. 終了処理
 
 テスト完了後、コンテナを停止・削除する場合は以下を実行してください。

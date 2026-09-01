@@ -1212,3 +1212,36 @@ bash -n scripts/benchmark_ocr.sh
 - 性能計測の実行と結果のドキュメント記録は、ユーザー指示により今回は実施しない
 - 実際の性能計測時は、サンプル画像ディレクトリに含まれる画像ファイル数に応じて自動的にページ数が決定される
 
+---
+
+## 2026-09-01 タスク004003：OCR 処理性能計測の実施
+
+### 【実施予定】
+
+- 日時: 2026-09-01
+- 目的: 最新コードベース（005001 メモリ最適化パッチ適用後）での OCR 処理性能を計測する
+- 前提条件:
+  - `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png` が存在すること
+  - `docker-compose.yml` の `LOG_LEVEL=DEBUG` が設定されていること
+  - `scripts/benchmark_ocr.sh` が汎用ページ数対応になっていること
+- 実施予定のコマンド:
+  - `docker compose up -d --build`
+  - `scripts/benchmark_ocr.sh`
+- 想定される結果や注意点:
+  - 3 ページ OCR には数分〜十数分かかる可能性がある
+  - 初回実行時は ndlocr_cli のモデル初期化に時間がかかる
+  - メモリ最適化パッチ（005001）適用後の 1 ページあたり処理時間を確認する
+
+### 【実施実績】
+
+- 2026-09-01: `feature/005002-pdf-e2e-test` ブランチの未コミット変更を `git stash` で一時退避
+- 2026-09-01: `main` ブランチを最新化し、`feature/004003-ocr-performance-test` ブランチを作成
+- 2026-09-01: `docker compose up -d --build backend ocr-worker` を実行（ビルド約 58 秒）
+- 2026-09-01: backend（`http://localhost:8000/health`）および ocr-worker（`http://localhost:8001/health`）が正常応答することを確認
+- 2026-09-01: `scripts/benchmark_ocr.sh` を改修し、`BENCHMARK_SAMPLE_DIR` 環境変数でサンプルディレクトリを指定可能にした
+- 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-004003/` にコピー
+- 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-004003 ./scripts/benchmark_ocr.sh` を実行
+- 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
+- 2026-09-01: 検証結果レポート `ocr-results-004003/performance-test-report-004003.md` を作成
+- 2026-09-01: `backend/docs/tasks.md` に実施結果とレポートリンクを追記
+

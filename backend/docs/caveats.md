@@ -498,3 +498,11 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - OCR 認識ミス（`RAG` → `RAC`、`Improving` → `mproving`、`GPT-4` → `〓PT-4` など）は OCR エンジン側の問題であり、backend 側の修正では解消できない
 - 認識精度改善は `ocr-worker` 側のモデル・前処理・推論パラメータ調整が必要
 
+## 14. OCR 性能計測に関する注意事項（004003）
+
+- `scripts/benchmark_ocr.sh` の `SAMPLE_DIR` は `PROJECT_ROOT` と結合して使用されるため、絶対パスを指定するとパスが二重になる
+- 2026-09-01 に `BENCHMARK_SAMPLE_DIR` 環境変数で上書き可能にしたが、相対パス（`sample-png/...`）を指定することを推奨する
+- 3 ページの OCR 処理でも約 6 分半（396 秒）かかるため、テスト時の HTTP タイムアウト設定に注意する
+- 性能計測スクリプトは実行完了後に `/data/extracted/{job_id}` と `/data/ocr_output/{job_id}` を削除するが、`/data/pdfs/{job_id}.pdf` は削除しない
+- 詳細は `ocr-results-004003/performance-test-report-004003.md` を参照
+

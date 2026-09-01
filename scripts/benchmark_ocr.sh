@@ -35,7 +35,8 @@ BENCH_DIR="/tmp/book2pdf-benchmark"
 mkdir -p "${BENCH_DIR}"
 
 # サンプル画像の配置ディレクトリです
-SAMPLE_DIR="sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed"
+# 環境変数 BENCHMARK_SAMPLE_DIR で上書き可能です
+SAMPLE_DIR="${BENCHMARK_SAMPLE_DIR:-sample-png/AI ・LLMの実務でつかえるRAG精度改善_trimmed}"
 
 # 入力 ZIP ファイルのパスです
 INPUT_ZIP="${BENCH_DIR}/benchmark-input.zip"
