@@ -1248,7 +1248,7 @@
 
 ---
 
-## 003002-1 — PDF 読込 進捗インジケーター表示不具合調査・修正
+## 003003 — PDF 読込 進捗インジケーター表示不具合調査・修正
 
 ### 【実施予定】
 
@@ -1292,14 +1292,14 @@
 
 ---
 
-## 003002-2 — PDF 読込 Pdfium 二重初期化エラー修正
+## 003004 — PDF 読込 Pdfium 二重初期化エラー修正
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: `extract_pdf_to_images` の async 化後に発生した `PdfiumLibraryBindingsAlreadyInitialized` エラーを修正する
 - 前提:
-  - 003002-1（進捗インジケーター表示不具合調査・修正）で `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更済み
+  - 003003（進捗インジケーター表示不具合調査・修正）で `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更済み
   - ユーザーによる動作テストで `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生した
 - 調査・変更内容:
   1. `localapp/src-tauri/src/commands/pdf.rs` — エラー発生箇所の確認
@@ -1329,7 +1329,7 @@
   - `spawn_blocking` 内で PDFium 初期化 → PDF オープン → ページ数取得 → 進捗 emit(0) → レンダリング・保存 を一貫して実行
 - 関連タスク
   - 003002: PDF → 画像展開（Rust バックエンド）
-  - 003002-1: PDF 読込 進捗インジケーター表示不具合調査・修正
+  - 003003: PDF 読込 進捗インジケーター表示不具合調査・修正
 
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
@@ -1420,7 +1420,7 @@
 
 ---
 
-## 003003 — PDF 画面の出力フォルダ自動設定と完了後表示改善
+## 003005 — PDF 画面の出力フォルダ自動設定と完了後表示改善
 
 ### 【実施予定】
 
