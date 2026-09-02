@@ -1673,6 +1673,13 @@
 - 2026-09-03: ドキュメント更新
   - `localapp/docs/tasks.md` の 003006 に【実施結果】を追記
   - `localapp/docs/work_log.md` に本エントリを追記
+- 2026-09-03: テスト結果ドキュメントの整理
+  - `e2e-runtime-steps.md` を `localapp/test-results/003006-backend-ocr-test/README.md` に統合
+  - 重複ファイルを削除し、`.clinerules` 第 2.6 章に準拠した配置に整理
+- 2026-09-03: Python 3.13 互換性修正
+  - `localapp/testdata/mock_backend_server.py` で削除された `cgi.parse_header` を使用していた箇所を、自己完結の `_parse_content_type` に置換
+  - `cargo test backend_api_impl -- --nocapture` で再合格を確認
+  - `mock_backend.pdf` はテスト実行中に上書きされていたため `git restore` で元に戻し、テスト用固定データとして管理し続ける
 
 ### 【実施予定との差分】
 

@@ -875,6 +875,13 @@
     - `cargo test backend_api_impl -- --nocapture`: 成功
       - `preparing` → `creating` → `uploading` → `ocr` → `polling` → `downloading` → `completed` の各イベントを確認
       - 出力 PDF ファイルが作成され、内容が空でないことを確認
+- 2026-09-03: テスト結果ドキュメントを整理
+  - `e2e-runtime-steps.md` の内容を `localapp/test-results/003006-backend-ocr-test/README.md` に統合
+  - 重複ファイルは削除し、`.clinerules` 第 2.6 章のテスト結果配置ルールに準拠
+- 2026-09-03: Python 3.13 互換性修正
+  - `localapp/testdata/mock_backend_server.py` から削除された `cgi.parse_header` を除去
+  - 同機能を持つ `_parse_content_type` を自己完結で実装
+  - `cargo test backend_api_impl -- --nocapture` で再合格を確認
 
 ### 003001 PDF 選択・設定 UI
 
