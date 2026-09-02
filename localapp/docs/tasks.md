@@ -862,6 +862,19 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
   - `cd localapp && npx tsc --noEmit`: 成功
+- 2026-09-03: `run_backend_ocr` のテスタブルなコア分離
+  - `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` を新規作成
+    - `run_backend_ocr_inner`: HTTP/polling/ダウンロードの backend 通信コア
+    - `create_zip_from_folder`: 画像フォルダをソートして ZIP 化
+  - `localapp/src-tauri/src/commands/backend_api.rs` をリファクタリング
+    - Tauri 固有の `AppHandle` / 進捗 emit を薄いラッパーに留める
+    - `backend_api_impl::run_backend_ocr_inner` を呼び出すのみ
+  - モック backend による結合テストを追加
+    - `localapp/testdata/mock_backend_server.py`（軽量 Python モックサーバー）
+    - `localapp/testdata/mock_backend.pdf`（テスト用 PDF）
+    - `cargo test backend_api_impl -- --nocapture`: 成功
+      - `preparing` → `creating` → `uploading` → `ocr` → `polling` → `downloading` → `completed` の各イベントを確認
+      - 出力 PDF ファイルが作成され、内容が空でないことを確認
 
 ### 003001 PDF 選択・設定 UI
 

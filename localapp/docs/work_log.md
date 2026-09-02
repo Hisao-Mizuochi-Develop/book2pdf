@@ -1624,3 +1624,59 @@
 - OCR 完了までの時間が数十分と長いため、curl による completed 確認は実施せず、processing 受付確認で終了
 - 必要に応じて別途 backend API 経由のフルフロー completed 確認を実施する
 
+
+---
+
+## 003006-1 — `run_backend_ocr` のテスタブルコア分離
+
+### 【実施予定】
+
+- 日時: 2026-09-03
+- 目的: `run_backend_ocr` Tauri コマンドをテスト可能なコアモジュールにリファクタリングし、結合テストで backend 通信フローを検証する
+- 前提条件:
+  - `localapp/src-tauri/src/commands/backend_api.rs` に既に backend API 連携が実装済み
+  - backend `/ocr` は非同期化され、即座に `processing` を返すようになっている
+- 実施予定のコマンド:
+  - `cd localapp/src-tauri && cargo check --tests`
+  - `cd localapp/src-tauri && cargo test backend_api_impl -- --nocapture`
+  - `cd localapp && npx tsc --noEmit`
+  - `cd /Users/hisao/Documents/work4/sakura/book2pdf && git status`
+- 想定される結果や注意点:
+  - `backend_api_impl.rs` は `AppHandle` に依存せず、reqwest クライアントと進捗コールバックだけを受け取る
+  - テストでは Python 製モック backend を起動して `run_backend_ocr_inner` を呼び出し、completed までの一連の流れを検証する
+  - `npm run tauri dev` による実際の UI 検証は時間がかかるため、ビルド・テスト合格をもって一旦完了とする
+
+### 【実施実績】
+
+- 2026-09-03: `run_backend_ocr` のコアを `backend_api_impl.rs` に切り出し
+  - `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` を新規作成
+    - `run_backend_ocr_inner`: job 作成 → ZIP アップロード → OCR 開始 → 状態ポーリング → PDF ダウンロード → 一時ディレクトリ削除
+    - `create_zip_from_folder`: `.png`/`.jpg`/`.jpeg` ファイルを昇順に ZIP 化
+  - `localapp/src-tauri/src/commands/backend_api.rs` をリファクタリング
+    - 不要になった ZIP 作成ロジック等を `backend_api_impl.rs` へ移管
+    - 60 秒タイムアウトの reqwest クライアントを構築
+    - `backend_api_impl::run_backend_ocr_inner` を呼び出し、進捗コールバックで `ocr-progress` イベントを emit
+- 2026-09-03: モック backend による結合テストを追加
+  - `localapp/testdata/mock_backend_server.py` を新規作成
+    - `POST /api/jobs/`、`POST .../upload`、`POST .../ocr`、`GET .../pdf`、`GET .../jobs/{id}` を実装
+    - 規定回数のポーリング後に `completed` を返す
+  - `localapp/testdata/mock_backend.pdf` を新規作成（テスト用ダミー PDF）
+  - `backend_api_impl.rs` の `tests` モジュールを新規作成
+    - Python モックサーバーを子プロセスで起動
+    - ダミー画像フォルダを作成し `run_backend_ocr_inner` を実行
+    - `completed` イベントが発行されることを確認
+    - 出力 PDF ファイルが作成され、空でないことを確認
+- 2026-09-03: 検証結果
+  - `cd localapp/src-tauri && cargo check --tests`: 成功（既存の non_snake_case 警告のみ）
+  - `cd localapp/src-tauri && cargo test backend_api_impl -- --nocapture`: 成功（1 passed）
+  - `cd localapp && npx tsc --noEmit`: 成功
+- 2026-09-03: ドキュメント更新
+  - `localapp/docs/tasks.md` の 003006 に【実施結果】を追記
+  - `localapp/docs/work_log.md` に本エントリを追記
+
+### 【実施予定との差分】
+
+- 予定通りコア分離と結合テストを実施できた
+- テスト完了後、ファイルクリーンアップは Rust テスト内で実施済み
+- `npm run tauri dev` による実機 E2E は未実施（backend OCR 完了まで数十分かかるため、自動テストでフローを担保）
+
