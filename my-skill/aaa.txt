@@ -1,0 +1,44 @@
+
+
+
+03-4376-8501
+平日：9:00-17:00
+
+有人チャット
+
+
+
+
+
+
+・「プロファイル」はデフォルト値を　”kindle”　とする
+・「ページ送りキー」が変更できない。
+　　変更可能とし、デフォルト値は　”right” でなく　”右矢印（→）”　の様に選択リストと同じ文言にすうる。
+・「ウィンドウタイトルキーワード」はどうぜ変更できないのなら表示不要
+・「プロセス名」はどうぜ変更できないのなら表示不要
+
+
+
+
+
+実装を開始するため、.clinerules の手順に則り進めてください。
+
+ユースケース 003 — PDF 読込
+
+
+1. `git checkout main && git pull`
+2. `git checkout -b feature/003001-pdf-import`
+3. `tasks.md` / `work_log.md` に計画記載
+4. PDFium `.dylib` ダウンロード・配置
+5. `PdfImportView.tsx` UI 実装
+6. Rust 側 `extract_pdf_to_images` コマンド実装
+7. `cargo check` / `npm run build`
+8. ユーザー確認依頼
+
+
+
+担当　アルファパートナーズ (2026年8月19日，13:20)
+s-wakatsuki@al-p.co.jp
+ 
+自分 (2026年8月19日，13:20)
+hisao.mizuochi@gmail.com

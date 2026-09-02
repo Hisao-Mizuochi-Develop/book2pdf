@@ -1498,3 +1498,129 @@
     - `cd localapp/src-tauri && cargo check`: コンパイル成功（エラー0）
     - `cd localapp && npm run build`: ビルド成功
   - ユーザーテスト: 合格判定を取得（予定）
+
+---
+
+## 008001〜008005 — localapp → backend API 連携（003006）
+
+### 実施予定
+- 日時: 2026-09-01
+- 目的: localapp から backend API（FastAPI）を経由して OCR 処理を実行し、検索可能 PDF を取得する機能を実装
+- 前提条件: feature/003006-backend-api-integration ブランチ
+- 実施予定の内容
+  - Rust 側に `run_backend_ocr` コマンドを実装
+    - 画像フォルダを一時 ZIP に圧縮
+    - `POST /api/jobs` → `POST /api/jobs/{id}/upload` → `POST /api/jobs/{id}/ocr` → ポーリング → `GET /api/jobs/{id}/pdf`
+  - フロントエンド側に backend OCR 用のストア・ボタン・進捗表示を追加
+  - 設定ファイル `settings.json` に backend URL 等を追加
+  - ドキュメント更新（localapp-spec.md / caveats.md / tasks.md）
+- 実施予定のコマンド
+  - `cd localapp/src-tauri && cargo check`
+  - `cd localapp && npx tsc --noEmit`
+  - `cd localapp && npm run build`
+  - `docker compose up -d`（backend / ocr-worker 起動）
+  - ローカル UI または curl で end-to-end テスト
+
+### 実施実績
+- 2026-09-01: 実装完了
+  - Rust 側実装
+    - `localapp/src-tauri/src/commands/backend_api.rs`（新規）
+      - `run_backend_ocr` コマンドを実装
+      - `create_zip_from_folder` ヘルパーを実装
+      - 各フェーズで `ocr-progress` イベントを emit
+    - `localapp/src-tauri/src/lib.rs`
+      - `tauri_plugin_http::init()` を追加
+      - `load_settings`, `save_settings`, `run_backend_ocr` を command handler として登録
+    - `localapp/src-tauri/src/commands/mod.rs`
+      - `backend_api` モジュールを公開
+    - `localapp/src-tauri/Cargo.toml`
+      - `tauri-plugin-http = { version = "2", features = ["multipart", "json"] }` を追加
+    - `localapp/src-tauri/capabilities/default.json`
+      - `http:default` 権限を追加
+  - フロントエンド側実装
+    - `localapp/src/store/backendApiStore.ts`（新規）
+      - `ocr-progress` イベントを listen
+      - `runBackendOcr` アクションを提供
+    - `localapp/src/lib/settings.ts`（新規）
+      - Rust 側と snake_case で整合する `AppSettings` 型を定義
+    - `localapp/src/views/PdfCreationView.tsx`
+      - 「backend OCR で PDF 作成」ボタンを追加
+      - 保存ダイアログで出力先 PDF パスを選択
+      - ローカル OCR / backend OCR の進捗・結果を同一 UI に統合
+  - ビルド確認
+    - `cd localapp && npx tsc --noEmit`: 成功（exit 0）
+    - `cd localapp/src-tauri && cargo check`: 成功（既存 warning のみ）
+    - `cd localapp && npm run build`: Vite の `transforming...` ステップで長時間停止する現象が発生。TypeScript 型チェックは通過済み
+  - ドキュメント更新
+    - `localapp/docs/localapp-spec.md` に backend API 連携の責務・フローを追記
+    - `localapp/docs/caveats.md` に `tauri-plugin-http` の feature 指定と `settings.json` の snake_case 化に関する注意事項を追記
+    - `localapp/docs/tasks.md` の 008001〜008005 に【実施結果】を追記し、タスク完了日付を 2026-09-01 に更新
+- 変更ファイル
+  - `localapp/src-tauri/src/commands/backend_api.rs`
+  - `localapp/src-tauri/src/commands/mod.rs`
+  - `localapp/src-tauri/src/lib.rs`
+  - `localapp/src-tauri/src/config.rs`
+  - `localapp/src-tauri/Cargo.toml`
+  - `localapp/src-tauri/capabilities/default.json`
+  - `localapp/src/store/backendApiStore.ts`
+  - `localapp/src/lib/settings.ts`
+  - `localapp/src/views/PdfCreationView.tsx`
+  - `localapp/docs/localapp-spec.md`
+  - `localapp/docs/caveats.md`
+  - `localapp/docs/tasks.md`
+  - `localapp/docs/work_log.md`（本エントリ）
+
+---
+
+## 003006 — backend `/ocr` 非同期化と localapp 連携の検証
+
+### 【実施予定】
+
+- 日時: 2026-09-03
+- 目的: backend `/ocr` の HTTP タイムアウト（3600s）を回避し、localapp からの E2E フローを成立させる
+- 前提条件:
+  - `backend/app/routers/jobs.py` が同期ブロッキング実装のままで、`/ocr` が ocr-worker 完了まで返答しない状態
+  - `localapp/src-tauri/src/commands/backend_api.rs` のポーリングは `processing` 状態を継続可能
+- 実施予定のコマンド:
+  - `docker compose restart backend`
+  - `curl -X POST http://localhost:8000/api/jobs`
+  - `curl -X POST http://localhost:8000/api/jobs/{job_id}/upload -F "file=@..."`
+  - `curl -X POST http://localhost:8000/api/jobs/{job_id}/ocr`
+  - `cd localapp/src-tauri && cargo check`
+  - `cd localapp && npx tsc --noEmit`
+- 想定される結果や注意点:
+  - `/ocr` は数秒以内に `{"status":"processing"}` を返すべき
+  - backend コンテナ再起動時に docker compose コマンドが長時間ブロックする可能性がある
+  - OCR 完了まで数十分かかるため、curl 検証では processing 受付確認までとする
+
+### 【実施実績】
+
+- 2026-09-03: backend `/ocr` エンドポイントを非同期化
+  - `backend/app/routers/jobs.py` の `run_ocr()` を修正
+  - ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task(_run_ocr_and_generate_pdf(...))` でバックグラウンド実行
+  - `_run_ocr_and_generate_pdf` 内では `ocr_engine.run()` と `generate_searchable_pdf()` を `asyncio.to_thread` で別スレッド化
+  - 完了時に `COMPLETED`、失敗時に `FAILED` に状態更新
+- 2026-09-03: `localapp/src-tauri/src/commands/backend_api.rs` のタイムアウト調整
+  - reqwest クライアント全体に 60 秒タイムアウトを設定
+  - `/ocr` リクエスト個別のタイムアウトを 60 秒に短縮
+- 2026-09-03: backend コンテナ再起動
+  - `docker compose restart backend` を実行（約 2 分、進捗表示は大量に出力されたが最終的に再起動完了）
+  - `docker compose ps backend` で `Up About a minute` を確認
+- 2026-09-03: curl による API 動作確認
+  - `POST /api/jobs` → `{"job_id":"...","status":"pending"}`
+  - `POST /api/jobs/{job_id}/upload`（`Content-Type: application/zip` を明示）→ `{"status":"uploaded","files":["002.png","003.png","004.png"]}`
+  - `POST /api/jobs/{job_id}/ocr` → HTTP 200、即座に `{"status":"processing","message":"OCR 処理を開始しました"}`
+  - `GET /api/jobs/{job_id}` を 3 分間ポーリング → `processing` 状態が維持（OCR 処理が継続中）
+- 2026-09-03: ビルド確認
+  - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
+  - `cd localapp && npx tsc --noEmit`: 成功
+- 2026-09-03: ドキュメント更新
+  - `localapp/docs/tasks.md` の 003006 に【計画】【実施結果】を追記、タスク完了日付を 2026-09-03 に更新
+  - `localapp/docs/work_log.md` に本エントリを追記
+
+### 【実施予定との差分】
+
+- 予定通り `/ocr` の即座返答を確認できた
+- OCR 完了までの時間が数十分と長いため、curl による completed 確認は実施せず、processing 受付確認で終了
+- 必要に応じて別途 backend API 経由のフルフロー completed 確認を実施する
+

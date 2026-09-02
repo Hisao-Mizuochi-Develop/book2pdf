@@ -286,6 +286,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 2026-08-12: 目視確認用に PDF ページにテキスト bbox を赤枠で描画した画像を生成し、Preview で目視確認できる状態にした |  |  |  |
 |  | 2026-08-12: 結論：Y 座標変換式を修正。XML 座標系（左上原点）と PDF 座標系（左下原点）の関係を正しく反映し、PyMuPDF `insert_text()` の baseline 配置を考慮して `font_size` 分下げる補正を追加。コメント整理と単体テスト追加で将来の誤解を防止 |  |  |  |
 | 003011 | PDF テキスト抽出時の異体字問題を解決する | 2026-08-12 |  | 不具合修正 |
+| 003012 | `/ocr` エンドポイントの非同期化 | 2026-09-03 | 2026-09-03 | 不具合修正 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `backend/tests/test_pdf.py` の `test_generate_searchable_pdf` で「検索可能PDF」が「検索可能PDF」と抽出される原因を特定する |  |  |  |
@@ -305,6 +306,22 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 2026-08-12: `backend/tests/test_pdf.py` に `test_generate_searchable_pdf_normalizes_variant_characters` テストを追加し、NFKC で正規字体に戻せる互換異体字（漢 → 漢）が正規化されることを確認した |  |  |  |
 |  | 2026-08-12: ユーザーにより本タスクは対応不要と決定された。今後一切の切り戻しは行わず、追加した NFKC 正規化処理とテストはそのまま保持する |  |  |  |
 |  | 2026-08-12: ndlocr_cli の認識ミス（RAG→RAC、Improving→mproving、GPT-4→〓PT-4 など）の原因調査は未実施。今後 `ocr-worker` 側の改善を検討する |  |  |  |
+| 003012 | `/ocr` エンドポイントの非同期化 |  |  |  |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `POST /api/jobs/{job_id}/ocr` は ocr-worker への HTTP 呼び出しを同期的に待っていたため、1 時間の HTTP タイムアウトで失敗していた |  |  |  |
+|  | エンドポイントはリクエストを受け付けたら即座に processing を返し、OCR→PDF 生成をバックグラウンドで非同期に実行する |  |  |  |
+|  | OCR エンジンの `run()` と PDF 生成 `generate_searchable_pdf()` は同期ブロッキング処理なので、`asyncio.to_thread` で別スレッド化する |  |  |  |
+|  | 処理完了後にジョブ状態を `COMPLETED` または `FAILED` に更新する |  |  |  |
+|  | クライアントは `GET /api/jobs/{job_id}` でポーリングして完了を待つ |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-03: `backend/app/routers/jobs.py` の `run_ocr()` を修正 |  |  |  |
+|  | ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task(_run_ocr_and_generate_pdf(...))` でバックグラウンドタスクを起動 |  |  |  |
+|  | `_run_ocr_and_generate_pdf` 内で `ocr_engine.run()` と `generate_searchable_pdf()` を `asyncio.to_thread` で別スレッド化 |  |  |  |
+|  | 処理成功時は `COMPLETED`、例外発生時は `FAILED` に状態更新 |  |  |  |
+|  | 2026-09-03: backend コンテナを再起動し、`/ocr` が即座に `{"status":"processing"}` を返すことを curl で確認 |  |  |  |
+|  | 2026-09-03: `GET /api/jobs/{job_id}` で `processing` 状態が維持されることを 3 分間ポーリングで確認 |  |  |  |
+|  | 2026-09-03: ローカル pytest は実施せず（backend コンテナ内の動作確認で問題なし） |  |  |  |
 
 ---
 

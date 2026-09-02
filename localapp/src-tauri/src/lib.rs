@@ -14,6 +14,8 @@
 mod commands;
 // データモデル（フロントエンドと共有する構造体）
 mod models;
+// 003006: アプリケーション設定（backend URL、タイムアウト値など）
+mod config;
 
 /// Tauri アプリケーションを起動する
 ///
@@ -37,6 +39,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         // フォルダ選択・保存ダイアログ用プラグイン（005002: 出力設定 UIで使用）
         .plugin(tauri_plugin_dialog::init())
+        // 003006: HTTP クライアント用プラグイン（backend API 連携）
+        .plugin(tauri_plugin_http::init())
         // フロントエンドから呼び出せるコマンドを登録
         // ここに列挙した関数が `invoke("関数名")` で呼び出される
         .invoke_handler(tauri::generate_handler![
@@ -58,6 +62,10 @@ pub fn run() {
             commands::pdf::get_pdf_default_output_folder,
             // 006001: OCR 済み PDF 作成
             commands::pdf_creation::create_searchable_pdf,
+            // 003006: backend API 連携（設定読み書き + OCR 実行）
+            config::load_settings,
+            config::save_settings,
+            commands::backend_api::run_backend_ocr,
         ])
         // tauri.conf.json の設定を読み込んでアプリケーションを起動
         .run(tauri::generate_context!())

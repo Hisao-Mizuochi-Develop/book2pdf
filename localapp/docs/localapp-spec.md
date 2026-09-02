@@ -9,6 +9,7 @@
 - 画像から外枠や余白などの不要部分をトリミングする
 - トリミング済み画像を ZIP アーカイブにまとめて保存する
 - Web システム（backend/frontend）へアップロードするための入出力ファイルを提供する
+- backend API（FastAPI）経由で OCR 処理を実行し、検索可能 PDF を取得する（003006）
 
 ## 2. 技術選定
 
@@ -21,6 +22,7 @@
 | 画像処理 | Rust `image` crate + frontend Canvas | 高品質なリサイズ・クロップ処理 |
 | ZIP 圧縮 | Rust `zip` crate | 標準的で使いやすい ZIP 圧縮ライブラリ |
 | PDF 展開 | Rust `pdfium-render` crate 等 | ページ画像化の実現 |
+| HTTP クライアント | Tauri `tauri-plugin-http` | backend API との通信。`reqwest` を re-export し、`multipart`/`json` feature でファイルアップロードを実現（003006） |
 | 状態管理 | Zustand | 軽量なグローバル状態管理 |
 | UI コンポーネント | shadcn/ui + Tailwind CSS v4 | モダンで統一感のある UI 構築 |
 | アイコン | lucide-react | シンプルで統一感のあるアイコンセット |
@@ -34,6 +36,8 @@
    - **PDF読込**: PDF 選択 → DPI/形式設定 → 画像展開
    - **トリミング**: 画像フォルダ選択 → プレビュー → 余白調整 → 一括トリミング実行
    - **ZIP出力**: トリミング済みフォルダ選択 → ファイル名設定 → ZIP 保存
+   - **PDF作成（ローカル）**: 画像フォルダ/ZIP 選択 → 出力先設定 → `create_searchable_pdf` で OCR → PDF 保存
+   - **PDF作成（backend API 経由）**: 画像フォルダ/ZIP 選択 → 保存ダイアログで PDF パス指定 → `run_backend_ocr` で ZIP 作成 → backend ジョブ作成 → アップロード → OCR → PDF ダウンロード（003006）
 4. 各工程の結果は次の工程に自動的に引き継がれる
 
 ## 4. GUI デザイン方針

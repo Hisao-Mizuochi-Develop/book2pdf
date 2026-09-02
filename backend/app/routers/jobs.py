@@ -174,13 +174,18 @@ async def upload_zip(job_id: str, file: UploadFile) -> JobUploadResponse:
 
 @router.post("/{job_id}/ocr", response_model=JobOcrResponse)
 async def run_ocr(job_id: str) -> JobOcrResponse:
-    """指定されたジョブの画像に対して OCR 処理を実行します。
+    """指定されたジョブの画像に対して OCR 処理を開始します。
+
+    OCR 処理は数十分〜数時間かかることがあるため、
+    このエンドポイントはリクエストを受け付けたら即座に processing 状態を返し、
+    実際の OCR→PDF 生成はバックグラウンドで非同期に実行します。
+    クライアントは `GET /api/jobs/{job_id}` で完了をポーリングしてください。
 
     Args:
         job_id: OCR 処理対象のジョブ ID
 
     Returns:
-        ジョブ ID、更新後の状態、OCR 認識結果テキスト
+        ジョブ ID、受付後の状態
 
     Raises:
         HTTPException: ジョブが存在しない場合や画像が未アップロードの場合
@@ -216,37 +221,60 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     # ジョブ状態を PROCESSING に更新します
     job_manager.update_job_status(job_id, JobStatus.PROCESSING)
 
-    # OCR エンドポイント全体の処理時間を計測します
+    # OCR 処理をバックグラウンドで非同期に開始します
+    # HTTP 接続を長時間維持せず、即座にレスポンスを返すため、タイムアウトを回避できます
     logger.debug("OCR エンドポイント処理を開始します: job_id=%s", job_id)
-    endpoint_start_time = time.time()
+    asyncio.create_task(_run_ocr_and_generate_pdf(job_id, extract_dir, image_files))
+
+    # レスポンスモデルに合わせて即座に返却します
+    return JobOcrResponse(
+        job_id=job_id,
+        status=JobStatus.PROCESSING,
+        text="",
+        message="OCR 処理を開始しました",
+    )
+
+
+async def _run_ocr_and_generate_pdf(
+    job_id: str,
+    extract_dir: str,
+    image_files: list[str],
+) -> None:
+    """OCR と PDF 生成を非同期に実行し、ジョブ状態を更新します。
+
+    OCR エンジンの `run()` と `generate_searchable_pdf()` は同期ブロッキング処理のため、
+    `asyncio.to_thread` で別スレッドに委譲してイベントループをブロックしません。
+    処理が完了したらジョブ状態を COMPLETED または FAILED に更新します。
+    """
+    start_time = time.time()
 
     # OCR エンジンを作成します
     # ocr-worker が設定されていればリモート呼び出し、なければモックにフォールバックします
     ocr_engine = create_ocr_engine(use_mock=False)
 
     try:
-        # OCR 処理を実行します
         # 画像ファイルの相対パスを展開ディレクトリ内の絶対パスに変換します
         absolute_image_files = [
             str(Path(extract_dir) / image_file)
             for image_file in image_files
         ]
-        result = ocr_engine.run(
+
+        # OCR 処理は同期ブロッキングなので別スレッドで実行します
+        result = await asyncio.to_thread(
+            ocr_engine.run,
             image_files=absolute_image_files,
             work_dir=Path(extract_dir),
             job_id=job_id,
         )
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
+        logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
         job_manager.update_job_with_ocr_result(
             job_id,
             success=False,
             message=f"OCR 処理に失敗しました: {exc}",
         )
-        raise HTTPException(
-            status_code=500,
-            detail=f"OCR 処理に失敗しました: {exc}",
-        ) from exc
+        return
 
     # OCR 結果をジョブ情報に保存します
     job_manager.update_job_with_ocr_result(
@@ -257,9 +285,9 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     )
 
     # OCR 結果から検索可能 PDF を生成します
-    # PDF 生成に失敗しても OCR 結果自体は返します
     try:
-        pdf_path = generate_searchable_pdf(
+        pdf_path = await asyncio.to_thread(
+            generate_searchable_pdf,
             job_id=job_id,
             output_dir=result.output_dir,
             extract_dir=Path(extract_dir),
@@ -271,25 +299,20 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
         )
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合はメッセージに記録します
+        logger.exception("PDF 生成に失敗しました: job_id=%s", job_id)
         job_manager.update_job_with_pdf_path(
             job_id,
             pdf_path="",
             message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
         )
+        return
 
     # OCR エンドポイント全体の処理時間を計算します
-    endpoint_elapsed = time.time() - endpoint_start_time
+    elapsed = time.time() - start_time
     logger.debug(
         "OCR エンドポイント処理が完了しました: job_id=%s, elapsed=%.3fs",
         job_id,
-        endpoint_elapsed,
-    )
-
-    # レスポンスモデルに合わせて返却します
-    return JobOcrResponse(
-        job_id=job_id,
-        status=JobStatus.COMPLETED,
-        text=result.text,
+        elapsed,
     )
 
 

@@ -16,3 +16,5 @@ pub mod capture;
 pub mod pdf;
 // 006: OCR 済み PDF 作成コマンド
 pub mod pdf_creation;
+// 003006: localapp → backend API 連携コマンド
+pub mod backend_api;

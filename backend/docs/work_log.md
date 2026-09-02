@@ -1245,3 +1245,55 @@ bash -n scripts/benchmark_ocr.sh
 - 2026-09-01: 検証結果レポート `ocr-results-004003/performance-test-report-004003.md` を作成
 - 2026-09-01: `backend/docs/tasks.md` に実施結果とレポートリンクを追記
 
+---
+
+## 2026-09-03 タスク003012：`/ocr` エンドポイントの非同期化
+
+### 目的
+
+`POST /api/jobs/{job_id}/ocr` が ocr-worker への同期 HTTP 呼び出しで 1 時間のタイムアウトまでブロックしていた問題を解消し、リクエスト受付後即座に processing を返すようにする。
+
+### 前提
+
+- backend コンテナが `docker compose` で起動していること
+- ocr-worker コンテナが同じネットワークで起動していること
+- `localapp/src-tauri/src/commands/backend_api.rs` が `processing` 状態をポーリングして完了を待つ実装であること
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+
+# backend コンテナ再起動
+docker compose restart backend
+
+# /ocr の即座返答確認
+JOB_RESPONSE=$(curl -s -X POST http://localhost:8000/api/jobs/)
+JOB_ID=$(echo "$JOB_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['job_id'])")
+curl -s -X POST "http://localhost:8000/api/jobs/$JOB_ID/upload" \
+  -F "file=@/tmp/003006-backend-ocr-test.zip;type=application/zip"
+curl -s -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | python3 -m json.tool
+
+# processing 状態の維持確認（3 分間ポーリング）
+for i in 1 2 3 4 5 6; do
+  curl -s "http://localhost:8000/api/jobs/$JOB_ID" | python3 -m json.tool
+  sleep 30
+done
+```
+
+### 結果
+
+- `backend/app/routers/jobs.py` の `run_ocr()` を修正
+  - ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task(_run_ocr_and_generate_pdf(...))` でバックグラウンドタスクを起動
+  - `_run_ocr_and_generate_pdf` 内で `ocr_engine.run()` と `generate_searchable_pdf()` を `asyncio.to_thread` で別スレッド化
+  - 処理成功時は `COMPLETED`、例外発生時は `FAILED` に状態更新
+- backend コンテナを再起動後、`/ocr` が即座に HTTP 200 で `{"status":"processing"}` を返すことを curl で確認
+- `GET /api/jobs/{job_id}` で 3 分間ポーリングし、`processing` 状態が維持されることを確認
+- `backend/docs/tasks.md` にタスク003012を追加し、`backend/docs/work_log.md` に本エントリを追記
+
+### 注意事項
+
+- エンドポイントの即座返答を確認したが、OCR 完了までには数十分かかるため、completed になるまでのフルフロー確認は別途実施する
+- クライアント側は `processing` 状態を継続ポーリングし、`completed`/`failed` で完了判定する必要がある
+- バックグラウンドタスク実行中に backend コンテナが再起動するとジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+

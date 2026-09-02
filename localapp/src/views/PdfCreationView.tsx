@@ -10,18 +10,20 @@
  *
  * 【技術仕様】
  * - `tauri-plugin-dialog` の `open()` でフォルダ/ZIP を選択
- * - `invoke("create_searchable_pdf")` で Rust 側コマンドを呼び出し
- * - `listen("pdf-creation-progress")` で進捗イベントを受信
+ * - `invoke("create_searchable_pdf")` でローカル OCR を実行
+ * - `invoke("run_backend_ocr")` で backend API 経由の OCR を実行（003006）
+ * - `listen("pdf-creation-progress")` / `listen("ocr-progress")` で進捗イベントを受信
  * - `exportStore` と同様の UI パターンで統一感を持たせる
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePdfCreationStore } from "@/store/pdfCreationStore";
+import { useBackendApiStore } from "@/store/backendApiStore";
 import {
   FileText,
   FolderOpen,
@@ -29,6 +31,7 @@ import {
   FileArchive,
   RotateCcw,
   BookOpen,
+  Cloud,
 } from "lucide-react";
 
 /**
@@ -57,10 +60,39 @@ export function PdfCreationView() {
     reset,
   } = usePdfCreationStore();
 
+  // ─── backend API 連携ストアから状態を取得 ───
+  const {
+    isProcessing: backendIsProcessing,
+    progressMessage: backendProgressMessage,
+    progressCurrent: backendProgressCurrent,
+    progressTotal: backendProgressTotal,
+    resultPdfPath: backendResultPdfPath,
+    runBackendOcr,
+    reset: resetBackend,
+  } = useBackendApiStore();
+
+  // いずれかの処理が実行中か
+  const anyProcessing = isProcessing || backendIsProcessing;
+  // 表示する進捗情報（処理中の方を優先）
+  const activeProgressMessage = isProcessing
+    ? progressMessage
+    : backendProgressMessage;
+  const activeProgressCurrent = isProcessing
+    ? progressCurrent
+    : backendProgressCurrent;
+  const activeProgressTotal = isProcessing
+    ? progressTotal
+    : backendProgressTotal;
+  // 表示する結果パス
+  const activeResultPdfPath = resultPdfPath ?? backendResultPdfPath;
+
+  // 一時的デバッグ：backend OCR ボタンのエラー表示用
+  const [backendDebugError, setBackendDebugError] = useState<string | null>(null);
+
   // 進捗率（0〜100）
   const progressPercent =
-    progressTotal > 0
-      ? Math.round((progressCurrent / progressTotal) * 100)
+    activeProgressTotal > 0
+      ? Math.round((activeProgressCurrent / activeProgressTotal) * 100)
       : 0;
 
   /**
@@ -120,13 +152,43 @@ export function PdfCreationView() {
   };
 
   /**
-   * PDF 作成ボタンクリックハンドラ
+   * PDF 作成ボタンクリックハンドラ（ローカル OCR）
    */
   const handleCreatePdf = async () => {
     try {
       await createPdf();
     } catch {
       // エラーは store 内で progressMessage に設定されている
+    }
+  };
+
+  /**
+   * backend API 経由で OCR 済み PDF を作成するハンドラ
+   *
+   * 保存ダイアログで出力先 PDF パスを選択し、Rust 側 `run_backend_ocr` を呼び出す。
+   * ユーザーが出力ファイル名に `.pdf` を含めて入力しても、重複しないよう除去する。
+   */
+  const handleBackendOcr = async () => {
+    if (!sourcePath || !sourceType) return;
+
+    const baseName = outputName.replace(/\.pdf$/i, "");
+    const defaultPath = outputFolder
+      ? `${outputFolder}/${baseName}.pdf`
+      : `${baseName}.pdf`;
+
+    try {
+      setBackendDebugError(null);
+      const selected = await save({
+        defaultPath,
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+      });
+      if (selected && typeof selected === "string") {
+        await runBackendOcr(sourcePath, sourceType, selected);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("backend OCR ハンドラエラー:", err);
+      setBackendDebugError(message);
     }
   };
 
@@ -241,7 +303,9 @@ export function PdfCreationView() {
               <Input
                 id="pdf-output-name"
                 value={outputName}
-                onChange={(e) => setOutputName(e.target.value)}
+                onChange={(e) =>
+                  setOutputName(e.target.value.replace(/\.pdf$/i, ""))
+                }
                 placeholder="output"
                 disabled={isProcessing}
                 className="max-w-[240px]"
@@ -275,34 +339,68 @@ export function PdfCreationView() {
         </div>
       </section>
 
+      {/* ─── 一時的デバッグ表示（003006 disabled 原因調査用） ─── */}
+      <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-xs text-yellow-900">
+        <div className="font-semibold">デバッグ情報</div>
+        <div>sourcePath: {sourcePath ?? "null"}</div>
+        <div>sourceType: {sourceType ?? "null"}</div>
+        <div>isProcessing: {String(isProcessing)}</div>
+        <div>backendIsProcessing: {String(backendIsProcessing)}</div>
+        <div>anyProcessing: {String(anyProcessing)}</div>
+        <div>outputName: {outputName}</div>
+        <div>
+          disabled評価: {!sourcePath || !sourceType || anyProcessing ? "true" : "false"}
+        </div>
+        {backendDebugError && (
+          <div className="mt-2 font-semibold text-red-700">
+            エラー: {backendDebugError}
+          </div>
+        )}
+      </div>
+
       {/* ─── アクションエリア ─── */}
       <div className="flex flex-col gap-3">
-        <Button
-          className="w-full"
-          onClick={handleCreatePdf}
-          disabled={!sourcePath || !outputFolder || isProcessing}
-          size="lg"
-        >
-          <FileText className="mr-2 h-4 w-4" />
-          {isProcessing ? "PDF 作成中..." : "PDF 作成"}
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            className="w-full"
+            onClick={handleCreatePdf}
+            disabled={!sourcePath || !outputFolder || anyProcessing}
+            size="lg"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {isProcessing ? "PDF 作成中..." : "PDF 作成（ローカル）"}
+          </Button>
+
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={handleBackendOcr}
+            disabled={!sourcePath || !sourceType || anyProcessing}
+            size="lg"
+          >
+            <Cloud className="mr-2 h-4 w-4" />
+            {backendIsProcessing ? "backend OCR 実行中..." : "backend OCR で PDF 作成"}
+          </Button>
+        </div>
 
         {/* 進捗表示 */}
-        {isProcessing && (
+        {anyProcessing && (
           <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               <div className="flex flex-col">
-                <span className="text-sm font-medium">OCR 処理を実行しています</span>
-                {progressMessage && (
+                <span className="text-sm font-medium">
+                  {isProcessing ? "OCR 処理を実行しています" : "backend OCR 処理を実行しています"}
+                </span>
+                {activeProgressMessage && (
                   <span className="text-xs text-muted-foreground">
-                    {progressMessage}
+                    {activeProgressMessage}
                   </span>
                 )}
               </div>
             </div>
 
-            {progressTotal > 0 ? (
+            {activeProgressTotal > 0 ? (
               <>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
@@ -312,7 +410,7 @@ export function PdfCreationView() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    {progressCurrent} / {progressTotal} ページ
+                    {activeProgressCurrent} / {activeProgressTotal} ページ
                   </span>
                   <span>{progressPercent}%</span>
                 </div>
@@ -326,11 +424,11 @@ export function PdfCreationView() {
         )}
 
         {/* 完了後の結果表示 */}
-        {resultPdfPath && !isProcessing && (
+        {activeResultPdfPath && !anyProcessing && (
           <div className="space-y-2">
             <div className="rounded-md border border-border bg-white px-3 py-2 text-sm">
               <span className="text-muted-foreground">作成先:</span>{" "}
-              <span className="font-mono">{resultPdfPath}</span>
+              <span className="font-mono">{activeResultPdfPath}</span>
             </div>
             <div className="flex gap-2">
               <Button
@@ -341,7 +439,14 @@ export function PdfCreationView() {
                 <FolderOpen className="mr-1.5 h-4 w-4" />
                 フォルダを開く
               </Button>
-              <Button variant="ghost" size="icon" onClick={reset}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  reset();
+                  resetBackend();
+                }}
+              >
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </div>

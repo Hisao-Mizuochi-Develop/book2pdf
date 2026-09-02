@@ -506,3 +506,31 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - 性能計測スクリプトは実行完了後に `/data/extracted/{job_id}` と `/data/ocr_output/{job_id}` を削除するが、`/data/pdfs/{job_id}.pdf` は削除しない
 - 詳細は `ocr-results-004003/performance-test-report-004003.md` を参照
 
+---
+
+## 15. `/ocr` エンドポイントの非同期化に関する注意事項（003012）
+
+### 事象
+
+`POST /api/jobs/{job_id}/ocr` が ocr-worker への同期 HTTP 呼び出しで 1 時間のタイムアウトまでブロックし、最終的に 500 エラーになっていた。
+
+### 原因
+
+- ocr-worker は 1 ページあたり約 6 分（テストデータ 3 ページで計測値 396 秒）かかる
+- backend の `/ocr` は ocr-worker からのレスポンスをそのままクライアントに返す同期実装だったため、1 時間を超えると HTTP ReadTimeout で失敗していた
+
+### 対応策
+
+- `backend/app/routers/jobs.py` の `run_ocr()` を修正
+  - ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task(_run_ocr_and_generate_pdf(...))` でバックグラウンドタスクを起動
+  - 同期ブロッキング処理である `ocr_engine.run()` と `generate_searchable_pdf()` は `asyncio.to_thread()` で別スレッド化
+  - エンドポイントは即座に `{"status":"processing"}` を返す
+- クライアント（localapp）は `GET /api/jobs/{job_id}` で `completed`/`failed` になるまでポーリングする
+
+### 注意点
+
+- `/ocr` は即座に返るようになったが、実際の OCR 完了までは数十分かかる
+- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+- テスト用 curl で ZIP アップロードする際は、`-F "file=@...;type=application/zip"` のように Content-Type を明示しないと、backend が ZIP 以外として拒否する
+- localapp 側の reqwest クライアントは `/ocr` 受付までのタイムアウトを短く（60 秒）設定し、完了まではポーリングで待つ
+

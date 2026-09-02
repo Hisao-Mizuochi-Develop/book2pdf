@@ -698,3 +698,106 @@ pub async fn create_searchable_pdf(
 ### 関連タスク
 - 008001: バグ修正 — PDF作成ボタン押下後インジケータが一瞬で消える
 - 002008-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）
+
+---
+
+## localapp → backend API 連携 — `tauri-plugin-http` の feature 指定（003006）
+
+### 事象
+`localapp/src-tauri/src/commands/backend_api.rs` で `reqwest::multipart::Form` や `Response::json()` を使用したところ、コンパイルエラーが発生した。
+
+```
+error[E0433]: cannot find `multipart` in `reqwest`
+error[E0599]: no method named `json` found for struct `tauri_plugin_http::reqwest::Response`
+```
+
+### 原因
+`tauri-plugin-http` は内部で `reqwest` を re-export しているが、デフォルト feature では `multipart` と `json` が無効になっている。これらの機能を使うには `Cargo.toml` で明示的に feature を有効化する必要がある。
+
+### 対応策
+`Cargo.toml` の `tauri-plugin-http` 依存を以下のように変更する。
+
+```toml
+tauri-plugin-http = { version = "2", features = ["multipart", "json"] }
+```
+
+これにより `reqwest::multipart::*` と `Response::json()` が利用可能になる。
+
+### 注意点
+- `tauri-plugin-http` の features は `reqwest` の features をそのまま転送している（`multipart = ["reqwest/multipart"]` など）
+- `tauri-plugin-http` の re-export する `reqwest` と、プロジェクトが直接追加した `reqwest` は別の crate になりうるため、型の不一致に注意
+- HTTP クライアントを直接追加する場合は `tauri-plugin-http` の feature 指定を優先し、重複追加を避ける
+
+### 関連タスク
+- 003006: localapp → backend API OCR 統合
+
+---
+
+## localapp → backend API 連携 — 設定ファイルの snake_case 化（003006）
+
+### 事象
+フロントエンドと Rust 間で `AppSettings` をやり取りする際、フィールド名の不一致でデシリアライズに失敗する恐れがあった。
+
+### 原因
+Rust 側の `AppSettings` はユーザーが直接編集することを想定し、フィールド名を snake_case としていた。一方、フロントエンド側の型定義を慣例に従い camelCase にすると、Tauri の `invoke` 経由で JSON 送信する際にキー名が合わなくなる。
+
+### 対応策
+1. Rust 側は `#[serde(rename_all = "camelCase")]` を使わず、フィールド名をそのまま JSON キーとして使用する
+2. フロントエンド側の `AppSettings` 型も snake_case に合わせる
+
+```typescript
+export interface AppSettings {
+  backend_url: string;
+  ocr_worker_url: string;
+  frontend_url: string;
+  page_timeout_sec: number;
+  polling_interval_sec: number;
+}
+```
+
+3. 設定ファイル `~/.config/book2pdf/settings.json`（macOS では `~/Library/Application Support/book2pdf/settings.json`）はユーザーが直接編集できる形式を維持する
+
+### 注意点
+- Tauri v2 の `invoke` は引数名について自動変換を行わない
+- イベントペイロード（`ocr-progress` など）は Rust 側で `#[serde(rename_all = "camelCase")]` を付けて送信するため、フロントエンド側は camelCase で受け取る
+- 「設定の永続化」と「イベントペイロード」で命名規約が異なることに注意し、それぞれのファイルを同時に確認する
+
+### 関連タスク
+- 003006: localapp → backend API OCR 統合
+
+---
+
+## localapp → backend API 連携 — `/ocr` の非同期化とタイムアウト（003006）
+
+### 事象
+
+backend の `POST /api/jobs/{job_id}/ocr` は、ocr-worker への HTTP 呼び出しを同期的に待っていたため、1 時間の HTTP タイムアウトで失敗していた。
+
+### 原因
+
+- ocr-worker は 1 ページあたり約 6 分（テストデータ 3 ページで計測値 396 秒）かかる
+- backend の `/ocr` は ocr-worker からのレスポンスをそのままクライアントに返す実装だったため、1 時間を超えると HTTP ReadTimeout で 500 エラーになっていた
+
+### 対応策
+
+1. backend 側で `/ocr` を非同期化
+   - `backend/app/routers/jobs.py` の `run_ocr()` は、ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task()` でバックグラウンドタスクを起動
+   - 同期ブロッキング処理である `ocr_engine.run()` と `generate_searchable_pdf()` は `asyncio.to_thread()` で別スレッド化
+   - エンドポイントは即座に `{"status":"processing"}` を返す
+2. localapp 側でタイムアウトを調整
+   - `localapp/src-tauri/src/commands/backend_api.rs` の reqwest クライアント全体に 60 秒タイムアウトを設定
+   - `/ocr` リクエスト個別のタイムアウトも 60 秒に短縮
+   - `/ocr` 受付後は `GET /api/jobs/{job_id}` で `completed`/`failed` になるまでポーリングを継続
+
+### 注意点
+
+- backend の `/ocr` は即座に返るようになったが、実際の OCR 完了までは数十分かかる
+- クライアント側は `processing` 状態を継続ポーリングし、`completed`/`failed` で完了判定する
+- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+- テスト用 curl で ZIP アップロードする際は、`-F "file=@...;type=application/zip"` のように Content-Type を明示しないと、backend が ZIP 以外として拒否する
+
+### 関連タスク
+
+- 003006: localapp → backend API OCR 統合
+- backend 003012: `/ocr` エンドポイントの非同期化
+

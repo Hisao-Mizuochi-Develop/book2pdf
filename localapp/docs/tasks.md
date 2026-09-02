@@ -825,7 +825,43 @@
 | 003003 | PDF 読込 進捗インジケーター表示不具合調査・修正 | 2026-08-20 | 2026-08-20 | 不具合修正 |
 | 003004 | PDF 読込 Pdfium 二重初期化エラー修正 | 2026-08-20 | 2026-08-20 | 不具合修正 |
 | 003005 | PDF 画面の出力フォルダ自動設定と完了後表示改善 | 2026-08-21 | 2026-08-21 | 実装 |
-| 003006 | PDF → OCR 連携（localapp → backend API） | 2026-09-01 | | 実装 |
+| 003006 | PDF → OCR 連携（localapp → backend API） | 2026-09-01 | 2026-09-03 | 実装 |
+
+### 003006 PDF → OCR 連携（localapp → backend API）
+
+【計画】
+- localapp から backend API を呼び出し、OCR → 検索可能 PDF 生成 → ダウンロードまでを自動化する
+- Rust 側に `run_backend_ocr` コマンドを実装
+  - `~/.config/book2pdf/settings.json` から backend URL を読み込む
+  - 入力が画像フォルダの場合は一時 ZIP を作成
+  - `POST /api/jobs`、`POST /api/jobs/{job_id}/upload`、`POST /api/jobs/{job_id}/ocr` を順に呼び出す
+  - `GET /api/jobs/{job_id}` で completed/failed になるまでポーリング
+  - `GET /api/jobs/{job_id}/pdf` で PDF をダウンロードして指定パスに保存
+  - 各フェーズで `ocr-progress` イベントを emit
+- フロントエンド側で `ocr-progress` イベントを受信し、進捗を表示する
+- backend の `/ocr` は OCR 処理に数十分かかるため、リクエストを受け付けたら即座に processing を返すよう改修する
+- ビルド確認: `cargo check`、`npx tsc --noEmit`
+
+【実施結果】
+- 2026-09-03: backend `/ocr` エンドポイントを非同期化
+  - `backend/app/routers/jobs.py` の `run_ocr()` を修正
+  - ジョブ状態を `PROCESSING` に更新後、`asyncio.create_task` でバックグラウンドタスクを起動
+  - OCR エンジンの `run()` と PDF 生成 `generate_searchable_pdf()` は同期ブロッキング処理なので `asyncio.to_thread` で別スレッド化
+  - 処理完了後に `COMPLETED` または `FAILED` に状態更新
+  - これにより HTTP タイムアウト（3600s）を回避し、即座に `{"status":"processing"}` を返すようになった
+- 2026-09-03: localapp Rust 側の HTTP タイムアウトを調整
+  - `localapp/src-tauri/src/commands/backend_api.rs`
+  - reqwest クライアント全体に 60 秒タイムアウトを設定
+  - `/ocr` リクエスト個別のタイムアウトも 60 秒に短縮（backend は即座に返すため）
+  - ポーリングループは `processing` 状態を継続し、`completed`/`failed` で終了するため、今回の改修と両立
+- 2026-09-03: backend コンテナ再起動と API 動作確認
+  - `docker compose restart backend`
+  - `POST /api/jobs`、`POST .../upload`、`POST .../ocr` を curl で実行
+  - `/ocr` が即座に HTTP 200 で `{"status":"processing"}` を返すことを確認
+  - その後 `GET /api/jobs/{job_id}` で `processing` 状態が維持されることを確認
+- ビルド確認
+  - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
+  - `cd localapp && npx tsc --noEmit`: 成功
 
 ### 003001 PDF 選択・設定 UI
 
@@ -1423,11 +1459,11 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 008001 | ローカル画像収集・ZIPアーカイブ化コマンド | 2026-08-22 |  | 実装 |
-| 008002 | Backend API連携 — ジョブ作成・アップロード・OCR実行 | 2026-08-22 |  | 実装 |
-| 008003 | Backend API連携 — ジョブ状態ポーリング・PDFダウンロード | 2026-08-22 |  | 実装 |
-| 008004 | フロントエンド進捗インジケーター統合 | 2026-08-22 |  | 実装 |
-| 008005 | 完了後「フォルダを開く」ボタン実装 | 2026-08-22 |  | 実装 |
+| 008001 | ローカル画像収集・ZIPアーカイブ化コマンド | 2026-08-22 | 2026-09-01 | 実装 |
+| 008002 | Backend API連携 — ジョブ作成・アップロード・OCR実行 | 2026-08-22 | 2026-09-01 | 実装 |
+| 008003 | Backend API連携 — ジョブ状態ポーリング・PDFダウンロード | 2026-08-22 | 2026-09-01 | 実装 |
+| 008004 | フロントエンド進捗インジケーター統合 | 2026-08-22 | 2026-09-01 | 実装 |
+| 008005 | 完了後「フォルダを開く」ボタン実装 | 2026-08-22 | 2026-09-01 | 実装 |
 
 ### 008001 ローカル画像収集・ZIPアーカイブ化コマンド
 
@@ -1435,9 +1471,15 @@
 - 対象フォルダ内の `001.png`〜`999.png`（または `.jpg`）を正規表現で収集
 - ファイル名の数値部分で昇順ソート
 - `zip` crate で一時ZIPファイルを作成（`std::env::temp_dir()` 配下）
-- ZIP作成進捗を `pdf-progress` イベントで送信
+- ZIP作成進捗をイベントで送信（当初は `pdf-progress` を検討したが、backend API 連携専用の `ocr-progress` に統一）
 
 【実施結果】
+- 2026-09-01: 実装完了
+- `localapp/src-tauri/src/commands/backend_api.rs` に `create_zip_from_folder` ヘルパーを実装
+- `walkdir` を使用して対象フォルダ内の画像ファイルを収集し、昇順ソートして ZIP に追加
+- 一時ディレクトリは `std::env::temp_dir()/book2pdf/ocr-{uuid}-temp/images.zip` に作成
+- 処理終了後に一時ディレクトリを削除するクリーンアップ処理も実装
+- 進捗イベントは `ocr-progress`（stage: "preparing"）を使用して、既存のローカル PDF 作成機能（`pdf-progress`）と区別
 
 ### 008002 Backend API連携 — ジョブ作成・アップロード・OCR実行
 
@@ -1448,6 +1490,10 @@
 - エラーハンドリング（接続エラー、APIエラー、タイムアウト）
 
 【実施結果】
+- 2026-09-01: 実装完了
+- `tauri-plugin-http` の re-export する `reqwest` を使用
+- `multipart/form-data` でファイルアップロードを実現するため、`Cargo.toml` で `tauri-plugin-http` に `multipart`/`json` feature を追加
+- 各 API 呼び出しでエラーを `String` 形式で返却し、フロントエンド側で表示
 
 ### 008003 Backend API連携 — ジョブ状態ポーリング・PDFダウンロード
 
@@ -1457,6 +1503,11 @@
 - ユーザー指定の `outputPath` に書き出し
 
 【実施結果】
+- 2026-09-01: 実装完了
+- ポーリング間隔は `AppSettings::polling_interval_sec`（デフォルト3秒）で可変
+- タイムアウトは `ページ数 × AppSettings::page_timeout_sec` で計算
+- `status == "completed"` で `GET /api/jobs/{id}/pdf` を呼び出し、レスポンスバイトを `output_path` に書き出し
+- 一時ディレクトリは `fs::remove_dir_all` で確実に削除
 
 ### 008004 フロントエンド進捗インジケーター統合
 
@@ -1469,6 +1520,11 @@
 - 対象キャプチャ画像数に対する処理数を示すインジケーターを表示
 
 【実施結果】
+- 2026-09-01: 実装完了
+- `localapp/src/store/backendApiStore.ts` で `ocr-progress` イベントを listen
+- `stage` に応じたメッセージを `progressMessage` に設定
+- `PdfCreationView.tsx` において、ローカル OCR と backend OCR の進捗を同一のインジケーターで表示
+- 処理中は両方のボタンを非活性化し、進捗率を計算してプログレスバーに反映
 
 ### 008005 完了後「フォルダを開く」ボタン実装
 
@@ -1477,3 +1533,6 @@
 - `open` crate でOSのファイルマネージャーを起動
 
 【実施結果】
+- 2026-09-01: 実装完了
+- `PdfCreationView.tsx` の既存「フォルダを開く」ボタンを流用
+- backend OCR 結果も `resultPdfPath` として格納され、同じく `open_capture_folder` を呼び出して PDF の親フォルダを開く

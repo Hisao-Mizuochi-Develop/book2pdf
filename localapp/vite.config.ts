@@ -3,7 +3,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// @ts-expect-error process is a nodejs global
+// Vite 8 のネイティブ設定ローダーでは `__dirname` が非推奨。
+// `import.meta.dirname` を使用して警告を回避する。
+const __dirname = import.meta.dirname;
+
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
