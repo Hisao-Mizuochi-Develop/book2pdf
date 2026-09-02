@@ -34,7 +34,10 @@
 
 - 画像ファイルが 3 枚と認識される
 - 進捗バーが `preparing → uploading → ocr → polling → downloading → completed` と進む
+- `/ocr` リクエストは 60 秒以内に `processing` 状態を返す
+- ポーリング中に `processing` 状態が維持される
 - `localapp/testdata/003006-backend-ocr-test-09030008.pdf` が作成される
+- 生成された PDF はテキスト検索可能（例：「Improving」「RAG」などで検索）
 - DevTools Console に赤いエラーが表示されない
 
 ## 実際の結果
@@ -54,4 +57,6 @@
 
 ## 備考
 
+- OCR 処理は 1 ページあたり約 6 分かかる（3 ページで計測値 396 秒）。完了までに数十分かかるため、テスト時は時間に余裕を持つこと。
+- backend コンテナを再起動すると、進行中のバックグラウンド OCR タスクは失われる。今後 005001（SQLite 永続化）の対応で解消予定。
 - （スクリーンショットや追加メモがあれば記入）

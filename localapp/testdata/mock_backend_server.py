@@ -4,13 +4,33 @@
 実際の backend /ocr の非同期動作を再現し、固定の PDF を即座に返す。
 """
 import argparse
-import cgi
 import json
 import os
 import sys
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+
+
+def _parse_content_type(header_value: str) -> tuple[str, dict[str, str]]:
+    """Content-Type ヘッダーをメディアタイプとパラメータに分解する。
+
+    Python 3.13 で削除された `cgi.parse_header` の代替実装。
+    `multipart/form-data; boundary=----WebKitFormBoundary...` のような値を扱う。
+    """
+    parts = [p.strip() for p in header_value.split(";")]
+    media_type = parts[0] if parts else ""
+    params: dict[str, str] = {}
+    for param in parts[1:]:
+        if "=" not in param:
+            continue
+        key, value = param.split("=", 1)
+        key = key.strip().lower()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            value = value[1:-1]
+        params[key] = value
+    return media_type, params
 
 
 class MockBackendHandler(BaseHTTPRequestHandler):
@@ -40,7 +60,7 @@ class MockBackendHandler(BaseHTTPRequestHandler):
         if self.path.endswith("/upload"):
             # multipart を最低限パースし、ファイル数だけ数える
             content_type = self.headers.get("Content-Type", "")
-            _, options = cgi.parse_header(content_type)
+            _, options = _parse_content_type(content_type)
             boundary = options.get("boundary", "").encode()
             length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(length)
