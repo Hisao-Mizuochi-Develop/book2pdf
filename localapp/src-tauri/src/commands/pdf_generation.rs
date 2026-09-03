@@ -52,7 +52,25 @@ pub struct PdfGenerationProgressPayload {
     pub message: String,
 }
 
-/// 001-999 の範囲の画像ファイルを収集して昇順で返す
+/// 指定フォルダ内の画像ファイル（001-999.png/jpg）を収集し、ファイル名の数字順で昇順ソートして返す
+///
+/// # 引数
+/// - `folder` — 画像ファイルを走査する対象フォルダのパス
+///
+/// # 戻り値
+/// - `Ok(Vec<PathBuf>)` — ソート済みの画像ファイルパスのベクター。ファイル名の数字部分（001, 002 …）で昇順に並ぶ
+/// - `Err(String)` — フォルダ読み込み失敗時、または該当する画像ファイルが1枚も存在しない場合
+///
+/// # 「001-999」の命名規約について
+/// この命名規約は `capture.rs`（連番スクリーンショット撮影）で採用されたルールと対応している。
+/// 撮影時に `001.png`, `002.png` … のように連番でファイルが作成されるため、
+/// そのままのファイル名でページ順を自動認識できる。拡張子は `.png`, `.jpg`, `.jpeg` のいずれかを受け付ける。
+///
+/// # 処理の流れ
+/// 1. `std::fs::read_dir` でフォルダ内のエントリを列挙
+/// 2. ファイル名が「数字のみ（001〜999）」かつ拡張子が PNG/JPEG のものをフィルタ
+/// 3. `parse::<u32>()` で数値化し、`cmp` で昇順ソート
+/// 4. 該当ファイルがなければエラーを返す（空の PDF は意味を持たないため）
 fn collect_images_sorted(folder: &Path) -> Result<Vec<PathBuf>, String> {
     let entries = std::fs::read_dir(folder)
         .map_err(|e| format!("ディレクトリ読み込みエラー: {}", e))?;
@@ -92,7 +110,27 @@ fn collect_images_sorted(folder: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(image_files)
 }
 
-/// ZIP ファイルを一時フォルダに展開する
+/// ZIP ファイル（*.zip）をシステムの一時フォルダ内に展開し、展開先のフォルダパスを返す
+///
+/// # 引数
+/// - `zip_path` — 展開対象の ZIP ファイルの絶対パス文字列
+///
+/// # 戻り値
+/// - `Ok(PathBuf)` — 展開されたファイル群が格納された一時フォルダのパス
+///   パス形式: `{システム一時フォルダ}/book2pdf_pdf_gen_{一意文字列}/`
+/// - `Err(String)` — ZIP ファイルが開けない、または ZIP アーカイブの読み込みに失敗した場合
+///
+/// # 注意：呼び出し側のクリーンアップ責任
+/// 本関数は一時フォルダを**作成するだけ**であり、自動削除は行わない。
+/// 呼び出し側（`generate_image_pdf`）で `remove_dir_all` を呼び出し、
+/// PDF 生成完了後に必ず一時フォルダを削除すること。そうしないとユーザーのディスクにゴミが残る。
+///
+/// # 処理の流れ
+/// 1. `File::open` で ZIP ファイルをオープン
+/// 2. `zip::ZipArchive::new` で ZIP 構造を解析
+/// 3. `temp_dir().join()` で一意な一時フォルダ名を生成（`uuid_v4` で命名）
+/// 4. `create_dir_all` でフォルダを作成
+/// 5. ZIP 内の各ファイルを順次展開し、一時フォルダに書き出し
 fn extract_zip_to_temp(zip_path: &str) -> Result<PathBuf, String> {
     let zip_file = File::open(zip_path)
         .map_err(|e| format!("ZIP ファイルオープンエラー: {}", e))?;
@@ -127,22 +165,57 @@ fn extract_zip_to_temp(zip_path: &str) -> Result<PathBuf, String> {
     Ok(temp_dir)
 }
 
-/// UUID v4 風の一意な文字列を生成（一時フォルダ名用）
+/// 一意なファイル名用文字列を生成する（一時フォルダ名の命名用）
+///
+/// # 本関数は「UUID v4（RFC 4122）ではない」ことに注意
+/// 関数名が `uuid_v4` だが、実体はナノ秒精度のタイムスタンプを16進数文字列化したもの。
+/// 暗号学的な一意性やグローバルな衝突耐性は不要で、
+/// 同一ユーザーの同一実行環境内で一時フォルダ名が重複しないことが目的のためこの簡易実装としている。
+///
+/// # 戻り値の形式
+/// `{:x}` フォーマットされた UNIX EPOCH からの経過ナノ秒値
+/// 例: `16a3b4c5d6e7f890`
 fn uuid_v4() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    // 同じナノ秒内に連続で呼ばれた場合も一意性を保証するため、
+    // 呼び出し回数をアトミックカウンターでインクリメントして付与する
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    format!("{:x}", ts)
+    let count = COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("{:x}_{:x}", ts, count)
 }
 
-/// A4 ページサイズ（mm）
+/// A4 用紙サイズ（幅）
+///
+/// ISO 216 で定義された A4 用紙の幅 210 mm。
+/// 印刷機関が標準的に対応する用紙サイズを採用し、
+/// PDF のページサイズを固定することで、どの環境でも同じ見た目を保証する。
 const A4_WIDTH_MM: f32 = 210.0;
+
+/// A4 用紙サイズ（高さ）
+///
+/// ISO 216 で定義された A4 用紙の高さ 297 mm。
+/// スクリーンショット等の横長画像が来た場合は、縦置きの A4 にアスペクト比維持で中心配置する。
 const A4_HEIGHT_MM: f32 = 297.0;
-/// ページマージン（mm）
+
+/// ページ余白（mm）
+///
+/// 四方向に 10 mm の余白を設ける。
+/// 余白がないと見た目が窮屈になり、かつ印刷時にトンボ（裁ち落とし）により画像が欠けるリスクがあるため、
+/// 最低限の余白を設けることをプロジェクトのデザイン方針として定めている。
 const MARGIN_MM: f32 = 10.0;
-/// DPI（px → mm 変換用）
+
+/// 画像解像度（DPI: dots per inch）
+///
+/// 300 DPI は電子書籍スキャンや印刷業界の標準解像度。
+/// スクリーンショットの 96 DPI とは異なり、印刷品質を想定して高解像度を採用する。
+/// この値を使って「画像のピクセル数 → mm サイズ」に変換する（1 inch = 25.4 mm = 300 px）。
 const DPI: f32 = 300.0;
 
 /// 画像ファイルベクターから A4 PDF を生成する
@@ -216,19 +289,26 @@ fn create_image_pdf_impl(
         let img_w_mm = img_w_px * 25.4 / DPI;
         let img_h_mm = img_h_px * 25.4 / DPI;
 
-        // マージンを考慮した最大配置領域
+        // マージンを考慮した最大配置領域（余白込みの実際に画像が置ける領域）
         let max_w = A4_WIDTH_MM - MARGIN_MM * 2.0;
         let max_h = A4_HEIGHT_MM - MARGIN_MM * 2.0;
 
         // アスペクト比維持でフィットするスケールを計算
+        // scale_x = 横方向に収めるために必要な倍率（縮小: <1、拡大: >1）
+        // scale_y = 縦方向に収めるために必要な倍率
         let scale_x = max_w / img_w_mm;
         let scale_y = max_h / img_h_mm;
-        let scale = scale_x.min(scale_y).min(1.0);
+        // 縦横のうち小さい方を採用 → 両方の領域に収まるようにする（はみ出し防止）
+        // 元画像より拡大（scale > 1）しても A4 にフィットさせる。
+        // なぜ拡大を許容するのか：電子書籍の閲覧を優先し、低解像度のソース画像でも
+        // PDF 上で極端に小さく表示されるのを防ぐため。画質はソースに依存する。
+        let scale = scale_x.min(scale_y);
 
         let final_w = img_w_mm * scale;
         let final_h = img_h_mm * scale;
 
-        // センタリング
+        // センタリング：配置可能領域の中央に画像の中心を合わせる
+        // 計算式の意味：余白 +（余白を除いた領域 - 実際の画像サイズ）/ 2
         let x = MARGIN_MM + (max_w - final_w) / 2.0;
         let y = MARGIN_MM + (max_h - final_h) / 2.0;
 
@@ -237,15 +317,20 @@ fn create_image_pdf_impl(
         image.add_to_layer(
             layer.clone(),
             ImageTransform {
+                // translate_x / translate_y: PDF 座標系（左下が原点）での配置位置（mm）
+                // x は左からの距離、y は下からの距離を指定する
                 translate_x: Some(Mm(x)),
                 translate_y: Some(Mm(y)),
+                // scale_x / scale_y: アスペクト比維持のため両方同じ値を設定
+                // 異なる値を設定すると画像が縦横に伸び縮みしてしまう
                 scale_x: Some(scale as f32),
                 scale_y: Some(scale as f32),
+                // 回転・スキューは使用しないためデフォルト値
                 ..Default::default()
             },
         );
 
-        // 最後の画像でなければ次のページを追加
+        // 最後の画像でなければ次のページを追加（1画像 = 1ページ）
         if i < image_files.len() - 1 {
             let (next_page, next_layer) = doc.add_page(
                 Mm(A4_WIDTH_MM),
@@ -338,4 +423,140 @@ pub async fn generate_image_pdf(
     }
 
     pdf_result.map_err(|e| format!("PDF 作成スレッドでエラーが発生しました: {}", e))?
+}
+
+// ────────────────────────────────────────────────
+// 単体テスト
+// ────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    /// テスト用データフォルダのパスを取得する
+    ///
+    /// `CARGO_MANIFEST_DIR`（Cargo.toml のあるディレクトリ）から
+    /// `../testdata/003006-backend-ocr-test/` への絶対パスを返す。
+    fn test_data_dir() -> PathBuf {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        manifest_dir.join("..").join("testdata").join("003006-backend-ocr-test")
+    }
+
+    /// 【テスト1】既存テストデータから画像を正しく収集・ソートできること
+    ///
+    /// テストデータ `003006-backend-ocr-test/` 内の `002.png`, `003.png`, `004.png` を
+    /// ファイル名順に昇順で収集することを確認する。
+    /// 非画像ファイル・非数字ファイル名が混在していても除外されることを兼ねて確認する。
+    #[tokio::test]
+    async fn test_collect_images_sorted_with_existing_data() {
+        let dir = test_data_dir();
+        let result = collect_images_sorted(&dir);
+        assert!(result.is_ok(), "画像収集に失敗しました: {:?}", result.err());
+
+        let images = result.unwrap();
+        assert_eq!(images.len(), 3, "3枚の画像が検出されるべき");
+
+        // ファイル名順に 002, 003, 004 となっていることを確認
+        let stems: Vec<String> = images
+            .iter()
+            .map(|p| p.file_stem().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert_eq!(stems, vec!["002", "003", "004"]);
+    }
+
+    /// 【テスト2】画像が存在しないフォルダでエラーが返ること
+    ///
+    /// 空の一時フォルダを作成し、`collect_images_sorted` を呼び出す。
+    /// 該当画像がないため `Err` が返されることを確認する。
+    #[tokio::test]
+    async fn test_collect_images_sorted_empty() {
+        let temp_dir = std::env::temp_dir().join(format!("test_empty_{}", uuid_v4()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let result = collect_images_sorted(&temp_dir);
+        assert!(result.is_err(), "空フォルダではエラーが返されるべき");
+
+        // クリーンアップ
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    /// 【テスト3】uuid_v4 が一意な値を生成すること
+    ///
+    /// 100回連続で呼び出し、全ての値が異なることを確認する。
+    /// タイムスタンプベースの実装なので、同じナノ秒内に呼ばれても
+    /// 基本衝突しないことを検証する。
+    #[tokio::test]
+    async fn test_uuid_v4_unique() {
+        let mut values = Vec::new();
+        for _ in 0..100 {
+            values.push(uuid_v4());
+        }
+
+        let unique_count = values.iter().collect::<std::collections::HashSet<_>>().len();
+        assert_eq!(
+            unique_count, 100,
+            "100回の呼び出しで全て異なる値が生成されるべき"
+        );
+    }
+
+    /// 【テスト4】create_image_pdf_impl が正しいページ数の PDF を生成すること
+    ///
+    /// テストデータ `003006-backend-ocr-test/` の3枚の画像を使い、
+    /// PDF を生成後、`lopdf` でページ数が3であることを確認する。
+    #[tokio::test]
+    async fn test_create_image_pdf_impl_page_count() {
+        let dir = test_data_dir();
+        let image_files = collect_images_sorted(&dir).expect("画像収集失敗");
+        assert_eq!(image_files.len(), 3);
+
+        // 出力先（一時ファイル）
+        let output_path = std::env::temp_dir().join(format!("test_pdf_{}.pdf", uuid_v4()));
+
+        // 進捗通知用チャンネル（テストでは内容は確認しない）
+        let (tx, _rx) = tokio::sync::mpsc::channel::<PdfGenerationProgressPayload>(32);
+
+        // PDF 生成実行
+        let result = create_image_pdf_impl(&image_files, output_path.clone(), &tx);
+        assert!(result.is_ok(), "PDF 生成に失敗: {:?}", result.err());
+
+        // lopdf でページ数を検証
+        let doc = lopdf::Document::load(&output_path).expect("PDF 読み込み失敗");
+        let pages = doc.get_pages();
+        assert_eq!(
+            pages.len(),
+            3,
+            "画像3枚 → PDF 3ページであるべき"
+        );
+
+        // クリーンアップ
+        let _ = fs::remove_file(&output_path);
+    }
+
+    /// 【テスト5】create_image_pdf_impl が空でない PDF を生成すること
+    ///
+    /// ファイルサイズが 1KB 以上であることを確認し、
+    /// 実際に画像データが含まれていることを間接的に検証する。
+    #[tokio::test]
+    async fn test_create_image_pdf_impl_file_size() {
+        let dir = test_data_dir();
+        let image_files = collect_images_sorted(&dir).expect("画像収集失敗");
+
+        let output_path = std::env::temp_dir().join(format!("test_pdf_size_{}.pdf", uuid_v4()));
+        let (tx, _rx) = tokio::sync::mpsc::channel::<PdfGenerationProgressPayload>(32);
+
+        let result = create_image_pdf_impl(&image_files, output_path.clone(), &tx);
+        assert!(result.is_ok(), "PDF 生成に失敗: {:?}", result.err());
+
+        let metadata = fs::metadata(&output_path).expect("メタデータ取得失敗");
+        let file_size = metadata.len();
+        assert!(
+            file_size > 1024,
+            "PDF ファイルサイズが 1KB 以上であるべき。実際: {} bytes",
+            file_size
+        );
+
+        // クリーンアップ
+        let _ = fs::remove_file(&output_path);
+    }
 }

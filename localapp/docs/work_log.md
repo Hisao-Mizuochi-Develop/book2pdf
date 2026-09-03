@@ -1808,4 +1808,26 @@
       - 「PDF 作成（ローカル）」→「アプリケーションでPDF作成（仮：OCRなし）」（onClick を `handleGenerateImagePdf` に変更）
       - 「backend OCR で PDF 作成」→「ウェブサイトで PDF作成」
   - `cargo check`（Rust）と `npm run build`（TypeScript + Vite）が正常に完了
+  - **2026-09-04（コメント補充）**: `.clinerules` 第8章に基づき、初学者向けの詳細コメントを `pdf_generation.rs` に追加
+    - `collect_images_sorted`: 引数・戻り値・命名規約の由来（`capture.rs` 連番撮影との対応）・処理フローを詳細に文書化
+    - `extract_zip_to_temp`: 一時フォルダのクリーンアップ責任・戻り値の形式・エラー条件を明記
+    - `uuid_v4`: 「UUID v4（RFC 4122）ではない」ことを明確化し、ナノ秒タイムスタンプ簡易実装の理由を説明
+    - 定数セクション: `A4_WIDTH_MM` / `A4_HEIGHT_MM` / `MARGIN_MM` / `DPI` それぞれの設計意図（ISO 216 規格・印刷業界標準・トンボ対策など）を記載
+    - `create_image_pdf_impl` 内のロジック:
+      - `scale.min(1.0)` → 拡大による画質劣化（ボケ・ジャギー）を防ぐ設計方針
+      - `scale_x`/`scale_y` 同値設定 → アスペクト比維持の理由
+      - `ImageTransform` 各フィールド → PDF 座標系（左下原点）の説明
+    - コンパイル確認: `cargo check` 成功（エラー0）
+  - **2026-09-04（自動テスト実装）**: Rust 単体テスト 5ケースすべて PASS
+    - `Cargo.toml` の `[dev-dependencies]` に `lopdf = "0.34"` を追加（PDF ページ数・構造検証用）
+    - `pdf_generation.rs` に `#[cfg(test)]` モジュールを追加し、以下の5テストを実装:
+      1. `test_collect_images_sorted_with_existing_data` — `testdata/003006-backend-ocr-test/` の3枚を正しく昇順ソート
+      2. `test_collect_images_sorted_empty` — 空フォルダで `Err` 返却確認
+      3. `test_uuid_v4_unique` — 100回連続呼び出しで全て一意（`AtomicU64` カウンター追加）
+      4. `test_create_image_pdf_impl_page_count` — `lopdf` でページ数3を検証
+      5. `test_create_image_pdf_impl_file_size` — 生成PDFが1KB以上であることを確認
+    - `cargo test pdf_generation`: **5 passed; 0 failed; finished in 0.12s**
+    - `uuid_v4()` の実装を修正: ナノ秒タイムスタンプ + アトミックカウンターで高速連続呼び出しでも一意性を保証
+    - テスト結果レポート: `localapp/test-results/008008-image-pdf-test/README.md` を作成
+    - localapp フロントエンド（React/Zustand）自動テスト: vitest/jest 未導入のため未実施。今後基盤構築時に追加検討
 

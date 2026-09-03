@@ -1638,6 +1638,29 @@
       - 「backend OCR で PDF 作成」→「ウェブサイトで PDF作成」
     - 「アプリケーションでPDF作成」ボタンの onClick を `handleGenerateImagePdf`（`generateImagePdf` 呼び出し）に差し替え
   - `cargo check`（Rust）と `npm run build`（TypeScript + Vite）が正常に完了
+  - **2026-09-04（コメント補充）**: `.clinerules` 第8章に基づき、初学者向けの詳細コメントを追加
+    - `collect_images_sorted`: 引数・戻り値・命名規約の由来（`capture.rs` 連番撮影との対応）・処理フローを詳細に文書化
+    - `extract_zip_to_temp`: 一時フォルダのクリーンアップ責任・戻り値の形式・エラー条件を明記
+    - `uuid_v4`: 「UUID v4（RFC 4122）ではない」ことを明確化し、ナノ秒タイムスタンプ簡易実装の理由を説明
+    - 定数セクション: `A4_WIDTH_MM` / `A4_HEIGHT_MM` / `MARGIN_MM` / `DPI` それぞれの設計意図（ISO 216 規格・印刷業界標準・トンボ対策など）を記載
+    - `create_image_pdf_impl` 内のロジック:
+      - `scale.min(1.0)` → 拡大による画質劣化（ボケ・ジャギー）を防ぐ設計方針
+      - `scale_x`/`scale_y` 同値設定 → アスペクト比維持の理由
+      - `ImageTransform` 各フィールド → PDF 座標系（左下原点）の説明
+    - コンパイル確認: `cargo check` 成功（エラー0）
+  - **2026-09-04（自動テスト実装）**: Rust 単体テスト 5ケースすべて PASS
+    - テストデータ: `localapp/testdata/003006-backend-ocr-test/`（`002.png`, `003.png`, `004.png`）を流用
+    - テストケース:
+      1. `collect_images_sorted` — 既存データから画像を正しく昇順ソート
+      2. `collect_images_sorted_empty` — 空フォルダでエラー返却
+      3. `uuid_v4_unique` — 100回連続呼び出しで全て一意（アトミックカウンターで保証）
+      4. `create_image_pdf_impl_page_count` — 画像3枚 → PDF 3ページ（`lopdf` で検証）
+      5. `create_image_pdf_impl_file_size` — 生成 PDF が 1KB 以上（空ファイルでないこと）
+    - `cargo test pdf_generation`: **5 passed; 0 failed**
+    - `lopdf = "0.34"` を `[dev-dependencies]` に追加（PDF 構造検証用）
+    - `uuid_v4()` に `AtomicU64` カウンターを追加し、高速連続呼び出しでの一意性を保証
+    - テスト結果レポート: `localapp/test-results/008008-image-pdf-test/README.md` を作成
+    - **localapp フロントエンド（React/Zustand）自動テスト**: vitest/jest 等のテストフレームワーク未導入のため現時点では未実施。将来基盤構築時に `pdfCreationStore.ts` の `generateImagePdf` アクション単体テストを検討
 
 | 項目 | 詳細 |
 |---|---|

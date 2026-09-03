@@ -43,3 +43,8 @@ tauri-plugin-dialog = "2"
 tauri-plugin-http = { version = "2.6.0", features = ["multipart", "json"] }
 # 003006: 一時 ZIP 出力先の一意なフォルダ名生成用
 uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+# 008008: 自動テストで生成した PDF のページ数・構造を検証するためのライブラリ
+# printpdf で生成した PDF の整合性を確認するために使用
+lopdf = "0.34"
