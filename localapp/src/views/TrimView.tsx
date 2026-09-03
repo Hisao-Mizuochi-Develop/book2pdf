@@ -21,13 +21,30 @@
  * └─────────────────────────────────────────────────────┘
  */
 
+// React のフック（状態管理・副作用処理）を読み込み
+// useState: トリミング値等の状態管理, useEffect: ストア購読・キーボードイベント
 import { useEffect, useState } from "react";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): トリミング対象の画像フォルダ選択ダイアログを表示する
 import { open } from "@tauri-apps/plugin-dialog";
+// キャプチャ状態管理ストア（Zustand）を読み込み
+// キャプチャ結果フォルダの自動引き継ぎに使用する
 import { useCaptureStore } from "@/store/captureStore";
+// トリミング状態管理ストア（Zustand）を読み込み
+// トリミング値・プレビュー画像・ページナビゲーション等を管理する
 import { useTrimStore } from "@/store/trimStore";
+// UI ボタンコンポーネントを読み込み
+// 適用・リセット・ページ移動等のアクションボタン
 import { Button } from "@/components/ui/button";
+// UI テキスト入力コンポーネントを読み込み
+// トリミング値（上/下/左/右ピクセル）の入力欄
 import { Input } from "@/components/ui/input";
+// UI ラベルコンポーネントを読み込み
+// フォーム項目の見出しとして使用する
 import { Label } from "@/components/ui/label";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// FolderInput（フォルダ）, Scissors（トリミング）, ChevronLeft/Right（ページ移動）,
+// RotateCcw（リセット）, Eye（プレビュー）, Minus/Plus（調整）アイコン
 import {
   FolderInput,
   Scissors,

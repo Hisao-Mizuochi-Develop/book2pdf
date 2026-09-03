@@ -17,9 +17,17 @@
  * - cropInsets: コンテンツ領域トリミング（上/右/下/左 のピクセル入力）
  */
 
+// UI ボタンコンポーネントを読み込み
+// リセット・プレビュー等のアクションボタン
 import { Button } from "@/components/ui/button";
+// UI テキスト入力コンポーネントを読み込み
+// 待機時間・トリミング値等の数値入力欄
 import { Input } from "@/components/ui/input";
+// UI ラベルコンポーネントを読み込み
+// フォーム項目の見出しとして使用する
 import { Label } from "@/components/ui/label";
+// UI セレクト（ドロップダウン）コンポーネント群を読み込み
+// pageTurnKey の選択肢（right/left/space/arrow）を表示する
 import {
   Select,
   SelectContent,
@@ -27,9 +35,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// プロファイル状態管理ストア（Zustand）を読み込み
+// 現在選択中のプロファイル・カスタム設定の読み書きに使用する
 import { useProfileStore } from "@/store/profileStore";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// RotateCcw（リセット）, Camera, ZoomIn, ZoomOut, Minus, Plus アイコン
 import { RotateCcw, Camera, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react";
+// React のフック（状態管理・副作用処理・派生値計算）を読み込み
+// useState: 編集中の値, useMemo: 派生値, useEffect: 初期化時のプロファイル読み込み
 import { useState, useMemo, useEffect } from "react";
 
 

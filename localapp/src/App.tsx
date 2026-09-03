@@ -17,13 +17,29 @@
  * ここのマッピングを忘れると TypeScript が即座にエラーを出す。
  */
 
+// 画面レイアウトコンポーネント（Sidebar + メインコンテンツエリア）を読み込みます
+// アプリ全体の共通レイアウト枠を提供する
 import { MainLayout } from "@/components/layout/MainLayout";
+// ナビゲーション状態管理ストア（Zustand）を読み込みます
+// 現在の表示ビュー（currentView）を取得して画面切り替えに使用する
 import { useNavigationStore } from "@/store/navigationStore";
+// 電子書籍キャプチャ画面コンポーネントを読み込みます
+// ウィンドウキャプチャ・連続キャプチャ機能の UI（UC002）
 import { CaptureView } from "@/views/CaptureView";
+// 画像トリミング画面コンポーネントを読み込みます
+// キャプチャ画像の余白トリミング機能の UI（UC004）
 import { TrimView } from "@/views/TrimView";
+// PDF読込・展開画面コンポーネントを読み込みます
+// PDF ファイルからページ画像を抽出する機能の UI（UC003）
 import { PdfImportView } from "@/views/PdfImportView";
+// ZIP出力画面コンポーネントを読み込みます
+// キャプチャ画像を ZIP アーカイブ化する機能の UI（UC005）
 import { ExportView } from "@/views/ExportView";
+// OCR済みPDF作成画面コンポーネントを読み込みます
+// 画像から OCR 処理済み PDF を生成する機能の UI（UC006）
 import { PdfCreationView } from "@/views/PdfCreationView";
+// ナビゲーションストアで定義したビュー型を読み込みます
+// viewMap の型安全性（Record<AppView, ...>）を保証するために使用する
 import type { AppView } from "@/store/navigationStore";
 
 /**

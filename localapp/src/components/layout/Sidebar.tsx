@@ -16,7 +16,12 @@
  * 状態変更は App.tsx に伝搬し、対応するビューコンポーネントが再描画される。
  */
 
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// Camera（キャプチャ）, Crop（トリミング）, FileUp（PDF読込）,
+// Package（ZIP出力）, FileText（PDF作成）アイコン
 import { Camera, Crop, FileUp, Package, FileText } from "lucide-react";
+// Tailwind CSS クラス名ユーティリティ関数を読み込み
+// clsx + tailwind-merge で条件付きクラス結合を行う
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { type AppView, useNavigationStore } from "@/store/navigationStore";

@@ -14,14 +14,32 @@
  * - `captureStore.lastCaptureFolder` の変更を監視して自動連携（005003）
  */
 
+// React のフック（状態管理・副作用処理）を読み込み
+// useState: フォーム入力値等の状態管理, useEffect: ストア購読等の副作用
 import { useState, useEffect } from "react";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): 出力先フォルダ選択ダイアログを表示する
 import { open } from "@tauri-apps/plugin-dialog";
+// UI ボタンコンポーネントを読み込み
+// ZIP 作成・フォルダ開く等のアクションを実行するボタン
 import { Button } from "@/components/ui/button";
+// UI テキスト入力コンポーネントを読み込み
+// 出力ファイル名の入力欄として使用する
 import { Input } from "@/components/ui/input";
+// UI ラベルコンポーネントを読み込み
+// フォーム項目の見出しとして使用する
 import { Label } from "@/components/ui/label";
+// ZIP 出力状態管理ストア（Zustand）を読み込み
+// 進捗・結果パス・処理中フラグ等を取得するために使用する
 import { useExportStore } from "@/store/exportStore";
+// キャプチャ状態管理ストア（Zustand）を読み込み
+// キャプチャ完了フォルダの自動引き継ぎに使用する
 import { useCaptureStore } from "@/store/captureStore";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// FileArchive（ZIP）, FolderOpen, Folder, Package, RotateCcw（再試行）アイコン
 import { FileArchive, FolderOpen, Folder, Package, RotateCcw } from "lucide-react";
 
 /**

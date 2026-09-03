@@ -19,7 +19,11 @@
  * 保存・復元を実装する予定。
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// プロファイル一覧・選択状態をコンポーネント間で共有するために使用する
 import { create } from "zustand";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
 
 /**

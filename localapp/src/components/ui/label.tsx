@@ -1,5 +1,9 @@
+// React ライブラリ全体を名前空間として読み込み
+// ComponentProps<"label"> 等の型を使用するために使用する
 import * as React from "react"
 
+// Tailwind CSS クラス名ユーティリティ関数を読み込み
+// clsx + tailwind-merge で条件付きクラス結合を行う
 import { cn } from "@/lib/utils"
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {

@@ -10,8 +10,14 @@
  * 6. 完了後、resultPdfPath にダウンロードされた PDF のパスを保存
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// グローバル状態（進捗・結果パス等）をコンポーネント間で共有するために使用する
 import { create } from "zustand";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のイベント購読機能を読み込み
+// listen("event_name", callback) で Rust 側から発射されたイベントを受信する
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 /**

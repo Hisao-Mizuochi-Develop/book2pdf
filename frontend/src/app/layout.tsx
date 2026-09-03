@@ -1,5 +1,10 @@
+// Next.js のメタデータ型を読み込み
+// ページの SEO 情報（タイトル・説明）を型安全に定義するために使用する
 import type { Metadata } from "next";
+// Next.js の Google Fonts 最適化読み込み機能から Geist フォントを読み込み
+// 無衬線（サンセリフ）フォントとして UI テキストに使用する
 import { Geist, Geist_Mono } from "next/font/google";
+// アプリケーション全体のグローバル CSS（Tailwind ベース）を読み込み
 import "./globals.css";
 
 const geistSans = Geist({

@@ -4,19 +4,40 @@
 # https://creativecommons.org/licenses/by/4.0/
 
 
+# 標準ライブラリ — オブジェクトの深いコピーを作成する
+# 設定オブジェクトなどを変更せずに複製する際に使用する
 import copy
+# 外部ライブラリ — OpenCV（コンピュータビジョン）
+# cv2.imread(): 画像ファイルを読み込む, cv2.resize(): 画像をリサイズする
 import cv2
+# 標準ライブラリ — ガベージコレクションを制御する
+# 大きな画像オブジェクトを明示的に解放してメモリを節約する際に使用する
 import gc
+# 標準ライブラリ — ファイルパスのパターンマッチングを行う
+# glob.glob("*.png") で特定の拡張子のファイル一覧を取得する
 import glob
+# 標準ライブラリ — アプリケーションのログ出力を管理する
 import logging
+# 標準ライブラリ — OS とのファイルシステム操作を提供する
 import os
+# 標準ライブラリ — ファイルパスをオブジェクトとして扱う
+# Path("/data/img") のように OS 非依存のパス操作を提供する
 import pathlib
+# 標準ライブラリ — システムパラメータと関数を提供する
+# sys.path の操作や sys.exit() でプロセスを終了する際に使用する
 import sys
+# 標準ライブラリ — 処理時間を計測する
 import time
+# 標準ライブラリ — XML データを扱う
+# xml.etree.ElementTree: XML のパース・構築・書き出しを行う
 import xml
 import xml.etree.ElementTree as ET
 
+# 同一パッケージ内のユーティリティモジュールを読み込み
+# 画像前処理・後処理の補助関数群
 from . import utils
+# 親パッケージの処理モジュール群を読み込み
+# OCR パイプラインの各処理ステップ（テキスト検出・認識等）
 from .. import procs
 
 # ロガー設定: モジュール名でロガーを取得し、呼び出し元のログ設定に従う

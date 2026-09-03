@@ -16,14 +16,33 @@
  * - `exportStore` と同様の UI パターンで統一感を持たせる
  */
 
+// React のフック（状態管理・副作用処理）を読み込み
+// useState: フォーム入力値等の状態管理, useEffect: イベント購読等の副作用
 import { useEffect, useState } from "react";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): フォルダ/ファイル選択, save(): 出力先ファイル保存ダイアログ
 import { open, save } from "@tauri-apps/plugin-dialog";
+// UI ボタンコンポーネントを読み込み
+// PDF 生成・フォルダ開く等のアクションボタン
 import { Button } from "@/components/ui/button";
+// UI テキスト入力コンポーネントを読み込み
+// 出力ファイル名の入力欄として使用する
 import { Input } from "@/components/ui/input";
+// UI ラベルコンポーネントを読み込み
+// フォーム項目の見出しとして使用する
 import { Label } from "@/components/ui/label";
+// PDF 作成状態管理ストア（Zustand）を読み込み
+// ローカル PDF 生成の進捙・結果パス等を管理する
 import { usePdfCreationStore } from "@/store/pdfCreationStore";
+// Backend API 連携状態管理ストア（Zustand）を読み込み
+// backend 経由 OCR の進捙・結果パス等を管理する
 import { useBackendApiStore } from "@/store/backendApiStore";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// FileText（PDF）, FolderOpen, Folder, FileArchive（ZIP）,
+// RotateCcw（再試行）, BookOpen, Cloud（backend連携）アイコン
 import {
   FileText,
   FolderOpen,

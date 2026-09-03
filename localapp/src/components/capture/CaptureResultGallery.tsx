@@ -11,9 +11,17 @@
  * 3. 残りはファイル名のみ表示（クリック時に読み込む方式は将来拡張）
  */
 
+// React のフック（状態管理・副作用処理）を読み込み
+// useState: サムネイルリスト・選択状態の管理, useEffect: マウント時の画像読み込み
 import { useState, useEffect } from "react";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("list_capture_images") / invoke("get_capture_image") で画像一覧・データを取得する
 import { invoke } from "@tauri-apps/api/core";
+// UI ボタンコンポーネントを読み込み
+// 「フォルダを開く」「トリミングへ進む」等のアクションボタン
 import { Button } from "@/components/ui/button";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// FolderOpen（フォルダ開く）, Scissors（トリミングへ進む）アイコン
 import { FolderOpen, Scissors } from "lucide-react";
 
 /**

@@ -10,6 +10,9 @@
  * 選択が変更されると `selectProfile()` で Zustand ストアを更新する。
  */
 
+// UI セレクト（ドロップダウン）コンポーネント群を読み込み
+// Select: ドロップダウン本体, SelectContent: 選択肢リスト,
+// SelectItem: 個別選択肢, SelectTrigger: トリガー, SelectValue: 表示値
 import {
   Select,
   SelectContent,
@@ -17,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// プロファイル状態管理ストア（Zustand）を読み込み
+// ビルトインプロファイル一覧・選択中プロファイルを取得するために使用する
 import { useProfileStore } from "@/store/profileStore";
 
 /**

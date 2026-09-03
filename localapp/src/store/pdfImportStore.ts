@@ -18,12 +18,26 @@
  * 6. `useNavigationStore.setView("trim")` でタブを切り替え
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// PDF 読込の進捙・状態をコンポーネント間で共有するために使用する
 import { create } from "zustand";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のイベント購読機能を読み込み
+// listen("event_name", callback) で Rust 側から発射されたイベントを受信する
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): フォルダ/ファイル選択ダイアログを表示する
 import { open } from "@tauri-apps/plugin-dialog";
+// トリミング機能の状態管理ストアを読み込み
+// PDF 読込完了後の自動引き継ぎ（trim タブ切り替え）に使用する
 import { useTrimStore } from "@/store/trimStore";
+// ZIP 出力機能の状態管理ストアを読み込み
+// PDF 読込完了後のフォルダ自動設定に使用する
 import { useExportStore } from "@/store/exportStore";
+// ナビゲーション状態管理ストアを読み込み
+// PDF 読込完了後のタブ自動切り替え（trim タブ）に使用する
 import { useNavigationStore } from "@/store/navigationStore";
 
 /** PDF 読込完了後の結果状態 */

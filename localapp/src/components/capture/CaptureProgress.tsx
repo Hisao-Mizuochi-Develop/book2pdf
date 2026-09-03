@@ -11,6 +11,8 @@
  * - ページ数（"X / Y ページ"形式）
  */
 
+// キャプチャ状態管理ストアの型（CaptureStatus）のみを型として読み込み
+// プロパティの型定義に使用する（値の実行時インポートは行わない）
 import type { CaptureStatus } from "@/store/captureStore";
 
 /**

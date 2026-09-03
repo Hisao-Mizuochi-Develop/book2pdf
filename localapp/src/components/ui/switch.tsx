@@ -1,7 +1,11 @@
 "use client"
 
+// Base UI ライブラリからアクセシビリティ対応のトグルスイッチプリミティブを読み込み
+// ARIA 対応・キーボードナビゲーション・フォーカス管理が組み込まれている
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 
+// Tailwind CSS クラス名ユーティリティ関数を読み込み
+// clsx + tailwind-merge で条件付きクラス結合を行う
 import { cn } from "@/lib/utils"
 
 function Switch({

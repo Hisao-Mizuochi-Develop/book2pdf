@@ -20,9 +20,18 @@
  * └─────────────────────────────────────────────────────┘
  */
 
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// FileUp（ファイル選択）, FolderInput（フォルダ入力）, FileText（PDF）, AlertCircle（警告）アイコン
 import { FileUp, FolderInput, FileText, AlertCircle } from "lucide-react";
+// UI ボタンコンポーネントを読み込み
+// PDF 画像化・フォルダ選択等のアクションボタン
 import { Button } from "@/components/ui/button";
+// UI ラベルコンポーネントを読み込み
+// DPI 選択等のフォーム項目見出しとして使用する
 import { Label } from "@/components/ui/label";
+// UI セレクト（ドロップダウン）コンポーネント群を読み込み
+// Select: ドロップダウン本体, SelectContent: 選択肢リスト,
+// SelectItem: 個別選択肢, SelectTrigger: トリガー, SelectValue: 表示値
 import {
   Select,
   SelectContent,
@@ -30,7 +39,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// キャプチャ結果サムネイルギャラリーコンポーネントを読み込み
+// PDF 展開結果の画像一覧を表示するために使用する
 import { CaptureResultGallery } from "@/components/capture/CaptureResultGallery";
+// PDF 読込状態管理ストア（Zustand）と関連定数・関数を読み込み
+// PDF 読込の進捙管理・DPI オプション定数・ファイルサイズ見積もり関数
 import {
   usePdfImportStore,
   PDF_DPI_OPTIONS,

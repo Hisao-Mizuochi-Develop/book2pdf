@@ -1,7 +1,15 @@
+// React ライブラリ全体を名前空間として読み込み
+// ComponentProps 等の型を使用するために使用する
 import * as React from "react"
+// Base UI ライブラリからアクセシビリティ対応のセレクト（ドロップダウン）プリミティブを読み込み
+// ARIA 対応・キーボードナビゲーション・フォーカス管理が組み込まれている
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
+// Tailwind CSS クラス名ユーティリティ関数を読み込み
+// clsx + tailwind-merge で条件付きクラス結合を行う
 import { cn } from "@/lib/utils"
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// ChevronDownIcon（展開）, CheckIcon（選択済み）, ChevronUpIcon（折りたたみ）アイコン
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 const Select = SelectPrimitive.Root

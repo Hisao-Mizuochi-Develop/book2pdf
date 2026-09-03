@@ -1,6 +1,14 @@
+// React のコア機能を読み込みます
+// React コンポーネントの作成・レンダリングに必要な基本ライブラリ
 import React from "react";
+// React 18 の新しいレンダリング API を読み込みます
+// createRoot: 従来の ReactDOM.render に代わる新しいエントリポイント作成関数
 import ReactDOM from "react-dom/client";
+// アプリケーションのルートコンポーネントを読み込みます
+// ナビゲーション・レイアウト・各ビューの統合を担当する最上位コンポーネント
 import App from "./App";
+// Tailwind CSS ベースのグローバルスタイルシートを読み込みます
+// ダークモード対応の CSS 変数やユーティリティクラスを定義
 import "./index.css";
 
 /**

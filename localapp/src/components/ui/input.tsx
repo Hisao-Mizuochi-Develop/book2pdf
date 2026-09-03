@@ -1,6 +1,12 @@
+// React ライブラリ全体を名前空間として読み込み
+// ComponentProps<"input"> 等の型を使用するために使用する
 import * as React from "react"
+// Base UI ライブラリからアクセシビリティ対応の入力フィールドプリミティブを読み込み
+// ARIA 対応・キーボードナビゲーション・フォーカス管理が組み込まれている
 import { Input as InputPrimitive } from "@base-ui/react/input"
 
+// Tailwind CSS クラス名ユーティリティ関数を読み込み
+// clsx + tailwind-merge で条件付きクラス結合を行う
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {

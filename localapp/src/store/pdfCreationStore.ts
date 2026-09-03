@@ -15,9 +15,17 @@
  * - zip: ZIP ファイルを指定し、Rust 側で一時フォルダに展開して処理
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// PDF 作成の進捗・結果をコンポーネント間で共有するために使用する
 import { create } from "zustand";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のイベント購読機能を読み込み
+// listen("event_name", callback) で Rust 側から発射されたイベントを受信する
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): フォルダ/ファイル選択ダイアログを表示する
 import { open } from "@tauri-apps/plugin-dialog";
 
 /**

@@ -18,7 +18,11 @@
  * 存在する場合は自動的に trimStore.loadFolder() を呼び出す。
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// トリミング設定・プレビュー状態をコンポーネント間で共有するために使用する
 import { create } from "zustand";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
 
 /**

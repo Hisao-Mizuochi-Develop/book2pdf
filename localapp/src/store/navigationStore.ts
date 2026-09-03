@@ -12,6 +12,8 @@
  * App.tsx がこの状態を参照して対応する View コンポーネントを描画する。
  */
 
+// React 用の軽量状態管理ライブラリ Zustand のストア作成関数を読み込み
+// 現在の表示ビュー（currentView）をコンポーネント間で共有するために使用する
 import { create } from "zustand";
 
 /**

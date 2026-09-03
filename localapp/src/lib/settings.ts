@@ -4,6 +4,8 @@
  * Rust 側 `config.rs` で定義された `AppSettings` と対応する。
  * 設定ファイルは `~/.config/book2pdf/settings.json`（snake_case）で保存される。
  */
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
 
 /**

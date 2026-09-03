@@ -4,11 +4,12 @@ backend コンテナから HTTP で OCR 実行をリクエストされ、
 コンテナ内の ndlocr_cli を使って OCR 処理を行います。
 """
 
-# 型注釈を文字列として遅延評価できるようにするための import です
+# 型注釈を文字列として遅延評価できるようにするための標準ライブラリです
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
+# Path("/data/jobs") のように OS 非依存のパス操作を提供する
 from pathlib import Path
 
 # 現在日時を取得するための標準ライブラリです
@@ -18,44 +19,48 @@ from datetime import datetime, timezone
 # JSON 形式で進捗ファイルを書き出すための標準ライブラリです
 import json
 
-# ファイル操作でディレクトリ作成が必要なための標準ライブラリです
+# 標準ライブラリ — OS とのファイルシステム操作を提供する
+# os.makedirs() で出力ディレクトリを作成するために使用する
 import os
 
-# ログ出力のための標準ライブラリです
-# 環境変数 LOG_LEVEL で出力レベルを切り替えます
+# 標準ライブラリ — アプリケーションのログ出力を管理する
+# 環境変数 LOG_LEVEL で出力レベルを切り替える
 import logging
 
-# 処理時間を計測するための標準ライブラリです
+# 標準ライブラリ — 処理時間を計測する
+# OCR 実行開始・終了時刻の差分を計測してログに出力する
 import time
 
-# 一時ディレクトリ作成のための標準ライブラリです
-# 前処理済み画像の一時保存先として使用します
+# 標準ライブラリ — 一時ディレクトリと一時ファイルの作成を行う
+# 前処理済み画像の一時保存先として tempfile.mkdtemp() を使用する
 import tempfile
 
-# 画像前処理のためのライブラリです
-# sharpen_light_upscale_2x 前処理に使用します
+# 外部ライブラリ — Python Imaging Library（画像処理）
+# Image.open(): 画像ファイルを開く, ImageFilter: 画像フィルタ（シャープ化等）
 from PIL import Image, ImageFilter
 
-# FastAPI の機能を読み込みます
-# FastAPI: アプリケーション本体
-# HTTPException: HTTP エラーレスポンスを返す
+# 外部ライブラリ — FastAPI Web フレームワーク
+# FastAPI: アプリケーション本体を構築, HTTPException: HTTP エラーレスポンスを返す
 from fastapi import FastAPI, HTTPException
 
-# 非同期処理中に同期処理をスレッドプールで実行するための機能です
-# OCR 処理は重いため、イベントループをブロックしないようにします
+# 外部ライブラリ — FastAPI の非同期処理補助機能
+# run_in_threadpool: 同期処理（OCR 等の重い処理）をスレッドプールで実行し、イベントループをブロックしないようにする
 from fastapi.concurrency import run_in_threadpool
 
-# リクエスト・レスポンスの型とルールを宣言するための import です
+# 外部ライブラリ — データ検証・シリアライズライブラリ
+# BaseModel: API のリクエスト・レスポンス型を定義, Field: フィールドの制約（デフォルト値等）を設定
 from pydantic import BaseModel, Field
 
-# ndlocr_cli の OCR 推論クラスを読み込みます
+# 外部ライブラリ（ndlocr_cli）— OCR 推論エンジン
+# OcrInferrer: 画像からテキストを抽出するメインクラス
 from cli.core import OcrInferrer
 
-# ndlocr_cli のユーティリティ関数を読み込みます
+# 外部ライブラリ（ndlocr_cli）— OCR ユーティリティ関数群
+# 画像の前処理・後処理に使用する補助関数
 from cli.core import utils as ndlocr_utils
 
-# Hydra のグローバルインスタンスをクリアするための import です
-# 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にします
+# 外部ライブラリ（Hydra）— 設定管理フレームワークのグローバルインスタンス
+# GlobalHydra.instance().clear(): 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にする
 from hydra.core.global_hydra import GlobalHydra
 
 # アプリケーション全体のログレベルを設定します

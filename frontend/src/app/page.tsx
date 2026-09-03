@@ -3,7 +3,12 @@
 // book2pdf Web OCR/PDF システムのメインページです
 // ZIP アップロードから OCR 実行、PDF ダウンロードまでをブラウザ上で操作できます
 
+// React のフック（状態管理・参照保持）を読み込み
+// useState: ファイル・ジョブ ID 等の状態管理, useRef: SSE 接続の参照保持
 import { useState, useRef } from "react";
+// FastAPI バックエンド通信用 API 関数群を読み込み
+// createJob: ジョブ作成, uploadZip: ZIP アップロード, runOcr: OCR 実行,
+// subscribeJobProgress: 進捗購読（SSE）, downloadPdf: PDF ダウンロード
 import {
   createJob,
   uploadZip,

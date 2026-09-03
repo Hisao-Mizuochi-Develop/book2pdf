@@ -1,17 +1,47 @@
+// React のフック（状態管理・副作用処理）を読み込み
+// useState: コンポーネント内で状態を管理する, useEffect: 副作用（イベント購読等）を実行する
 import { useState, useEffect } from "react";
+// Tauri の Rust コマンド呼び出し関数を読み込み
+// invoke("command_name") で Rust 側の #[tauri::command] 関数を実行する
 import { invoke } from "@tauri-apps/api/core";
+// Tauri のネイティブファイルダイアログ機能を読み込み
+// open(): フォルダ/ファイル選択ダイアログを表示する
 import { open } from "@tauri-apps/plugin-dialog";
+// UI ボタンコンポーネントを読み込み
+// Apple HIG 風デザインのボタン（primary/secondary/ghost バリエーション）
 import { Button } from "@/components/ui/button";
+// UI テキスト入力コンポーネントを読み込み
+// フォーム入力欄として使用する
 import { Input } from "@/components/ui/input";
+// UI ラベルコンポーネントを読み込み
+// フォーム項目の見出しとして使用する
 import { Label } from "@/components/ui/label";
+// UI トグルスイッチコンポーネントを読み込み
+// ON/OFF の切り替え UI として使用する
 import { Switch } from "@/components/ui/switch";
+// アイコンライブラリ（lucide-react）からアイコンを読み込み
+// Play（開始）, Square（停止）, FolderOpen（フォルダ開く）アイコン
 import { Play, Square, FolderOpen } from "lucide-react";
+// キャプチャプロファイル選択 UI コンポーネントを読み込み
+// 電子書籍アプリ別のキャプチャ設定を選択するドロップダウン
 import { ProfileSelector } from "@/components/capture/ProfileSelector";
+// キャプチャプロファイル編集 UI コンポーネントを読み込み
+// プロファイルの各種パラメータ（待機時間・クリック位置等）を編集するフォーム
 import { ProfileEditor } from "@/components/capture/ProfileEditor";
+// 連続キャプチャ進捗表示コンポーネントを読み込み
+// キャプチャ中の進捗バー・メッセージ・アニメーションを表示
 import { CaptureProgress } from "@/components/capture/CaptureProgress";
+// キャプチャ結果サムネイルギャラリーコンポーネントを読み込み
+// キャプチャ済み画像の一覧・プレビューを表示
 import { CaptureResultGallery } from "@/components/capture/CaptureResultGallery";
+// プロファイル状態管理ストア（Zustand）を読み込み
+// 現在選択中のプロファイル・プロファイル一覧を取得するために使用する
 import { useProfileStore } from "@/store/profileStore";
+// キャプチャ状態管理ストア（Zustand）を読み込み
+// 連続キャプチャの進捗・結果フォルダパス等を取得するために使用する
 import { useCaptureStore } from "@/store/captureStore";
+// ナビゲーション状態管理ストア（Zustand）を読み込み
+// 画面遷移（タブ切り替え）のために使用する
 import { useNavigationStore } from "@/store/navigationStore";
 
 /**
