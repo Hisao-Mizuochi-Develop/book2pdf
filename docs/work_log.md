@@ -2,6 +2,36 @@
 
 本ドキュメントは、book2pdf プロジェクトの複数モジュールにまたがる全体横断の作業ログです。
 
+## 2026-09-04 .clinerules §8 import/use/from コメント追加（全モジュール横断）
+
+### 目的
+
+`.clinerules` §8 で定義された「外部依存の宣言文（import / use / from 等）に必ずコメントを付ける」ルールを、既存コードベース全体に適用する。
+
+### 対象モジュールとファイル数
+
+| モジュール | ファイル数 | 言語 |
+|---|---|---|
+| localapp/src-tauri/src/ | 7 | Rust |
+| localapp/src/ | 26 | TypeScript/React |
+| frontend/src/ | 2 | TypeScript/React |
+| ocr-worker/ | 2 | Python |
+| **合計** | **37** | — |
+
+### コメントの形式
+
+- **Rust**: `///` doc コメント（`use crate::module;` / `use external_crate::Type;` / `mod submodule;`）
+- **TypeScript**: `//` 行コメント（`import { ... } from "module"` / `import type { ... }`）
+- **Python**: `#` 行コメント（`import module` / `from module import name`）
+
+各コメントには「標準ライブラリか外部ライブラリかを明示」「モジュールが何を提供するものか」「インポートしている識別子の役割」を記載。
+
+### コミット
+
+`5c1870c` — docs: Add beginner-friendly comments to all import/use/from declarations per .clinerules §8
+
+---
+
 ## 2026-08-13 frontend Docker イメージ再構成・docker compose 起動確認
 
 ### 目的

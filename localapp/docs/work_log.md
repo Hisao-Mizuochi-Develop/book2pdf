@@ -2,6 +2,37 @@
 
 ---
 
+## .clinerules §8 — import/use/from 宣言に初学者向けコメントを追加
+
+### 【実施予定】
+
+- 日時: 2026-09-04
+- 目的: `.clinerules` §8 で定義された「外部依存の宣言文に必ずコメントを付ける」ルールを全コードベースに適用する
+- 計画:
+  - Rust (`use`/`mod`): `localapp/src-tauri/src/` 配下の全 `.rs` ファイル
+  - TypeScript (`import`): `localapp/src/` および `frontend/src/` 配下の全 `.ts`/`.tsx` ファイル
+  - Python (`import`/`from`): `ocr-worker/` 配下の `.py` ファイル
+  - 各宣言文の上に「ライブラリの用途 + インポート識別子の役割」を説明するコメントを追加
+- 想定される注意点:
+  - JSON は文法的にコメント不可のため対象外
+  - 宣言文以外（変数宣言・関数定義等）は既存ルールでカバーされるため対象外
+
+### 【実施実績】
+
+- Rust ファイル（Phase 1、既に別コミット）: `commands/*.rs`, `config.rs`, `models/capture_profile.rs`
+- TypeScript/React ファイル（Phase 2）: `localapp/src/` 配下 26 ファイル、`frontend/src/` 配下 2 ファイル
+  - `main.tsx`, `App.tsx`
+  - `store/`: `backendApiStore.ts`, `captureStore.ts`, `exportStore.ts`, `navigationStore.ts`, `pdfCreationStore.ts`, `pdfImportStore.ts`, `profileStore.ts`, `trimStore.ts`
+  - `views/`: `CaptureView.tsx`, `ExportView.tsx`, `TrimView.tsx`, `PdfCreationView.tsx`, `PdfImportView.tsx`
+  - `components/`: `MainLayout.tsx`, `Sidebar.tsx`, `ProfileEditor.tsx`, `ProfileSelector.tsx`, `CaptureProgress.tsx`, `CaptureResultGallery.tsx`, `input.tsx`, `label.tsx`, `select.tsx`, `switch.tsx`
+  - `lib/`: `settings.ts`, `utils.ts`
+  - `frontend/`: `layout.tsx`, `page.tsx`
+- Python ファイル（Phase 3）: `ocr-worker/app/main.py`, `ocr-worker/ndlocr_cli_patches/inference.py`
+- コミット: `5c1870c`（31 files changed, 292 insertions(+), 19 deletions(-)）
+- backend の Python ファイルは既に同様のコメントが付いていたため対象外
+
+---
+
 ## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
 
 ### 【実施予定】
