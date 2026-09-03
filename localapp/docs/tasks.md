@@ -1591,6 +1591,15 @@
    - 各候補の評価スコア、採用理由、POC 結果を記載
 
 【実施結果】
+- `printpdf` 0.7.0 の画像→A4 PDF 埋め込み POC を実施し成功。正しい API パターンは `Image::try_from(decoder)` + `image.add_to_layer()` + `ImageTransform`
+- `image` crate の namespace shadowing（printpdf の `pub mod image`）を解決し、`image_crate` として alias 化
+- A4 フィットロジックを確立：10mm マージン、300 DPI px→mm 変換、`ImageTransform` でのセンタリング＋スケーリング
+- `tesseract` crate 0.15.2 と `leptess` 0.14.0 を調査し、`leptess` を採用（`get_component_boxes()` で word/line bbox を直接取得可能、hOCR/TSV パース不要）
+- backend + ocr-worker 実装との差異を調査・分析。OCR エンジン（ndlocr_cli vs Tesseract）、PDF 生成ライブラリ（PyMuPDF vs printpdf）、座標系処理、アーキテクチャの 4 面で根本的な違いがあることを確認
+- 調査レポート `localapp/docs/ocr-technology-survey-008007.md` を作成
+- 残課題：
+  - `image` crate 0.25.x と `printpdf` 内部の 0.24.x とのデュアルバージョン対応（008008 で対応方針確定）
+  - 008009 で `leptess` 統合 POC（画像→OCR→テキストレイヤーPDF）を実施
 
 ### 008008 画像結合PDF生成の実装（OCRなし）
 

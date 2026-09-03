@@ -1,0 +1,8 @@
+[package]
+name = "poc_printpdf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+printpdf = { version = "0.7", features = ["embedded_images"] }
+image_crate = { package = "image", version = "0.24", default-features = false, features = ["png", "jpeg"] }

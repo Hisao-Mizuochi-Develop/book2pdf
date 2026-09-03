@@ -33,6 +33,55 @@
 
 ---
 
+## 008007 — localapp 単体生成 技術調査・選定
+
+### 【実施予定】
+
+- 日時: 2026-09-04
+- 目的: localapp 内で画像→OCR→検索可能PDF を単体完結させるための技術選定
+- 計画:
+  1. **PDF 生成 crate 選定**
+     - 候補：`printpdf`（シンプル・画像埋め込み対応）、`pdf-writer`（低レベル制御）、`genpdf`（高レベル抽象）
+     - 評価基準：画像埋め込みの容易さ、メモリ効率、ライセンス、A4サイズ指定の容易さ
+     - POC：`printpdf` で画像→PDF の最小構成を実装し、動作確認
+  2. **OCR エンジン選定**
+     - 候補：Tesseract（OSS・日本語対応）、PaddleOCR（精度重視）、EasyOCR
+     - 評価基準：日本語認識精度、Rust FFI / CLI 呼び出しの容易さ、ライセンス、バイナリサイズ
+     - POC：Tesseract の CLI 呼び出しで日本語テキスト認識を試行
+  3. **画像サイズ扱いの方針決定**
+     - A4（210mm × 297mm）に統一し、アスペクト比維持で fit
+     - 将来的に「元画像サイズ維持」オプションも追加可能な設計
+  4. **調査結果のドキュメント化**
+     - `localapp/docs/ocr-technology-survey-008007.md` に調査レポートを作成
+     - 各候補の評価スコア、採用理由、POC 結果を記載
+- 想定される注意点:
+  - macOS 環境での Tesseract インストール状態を確認（`brew list tesseract`）
+  - `printpdf` の最新バージョンが Rust Edition 2021 に対応しているか確認
+  - 日本語縦書きテキストの認識精度は別途検討（008009 で対応）
+
+### 【実施実績】
+
+- 2026-09-04: `printpdf` 0.7.0 POC 実施
+  - `localapp/poc_printpdf/Cargo.toml` を新規作成し、`printpdf` 0.7.0 + `image` 0.24.x を追加
+  - `src/main.rs` で `Image::try_from(decoder)` + `image.add_to_layer()` + `ImageTransform` のパターンを実装
+  - 10mm マージン、300 DPI px→mm 変換、アスペクト比維持センタリングの A4 フィットロジックを実装
+  - `/tmp/poc_printpdf_output.pdf` を生成し、PyMuPDF + pikepdf で A4 サイズ（595.28×841.89 pt）と画像埋め込みを検証
+  - `image` crate の namespace shadowing（printpdf の `pub mod image`）を `image_crate` alias で解決
+- 2026-09-04: OCR crate 調査
+  - `tesseract` crate 0.15.2 を調査：文字列テキスト取得は可能だが、bbox 取得には hOCR パースが必要
+  - `leptess` 0.14.0 を調査：`get_component_boxes()` で word/line レベルの bbox を直接取得可能。Leptonica の safe wrapper も魅力
+  - 結論：`leptess` を採用（`tesseract` crate より実装コストが低い）
+- 2026-09-04: backend + ocr-worker 実装差異調査
+  - `backend/app/services/ocr_engine.py`、`ocr-worker/app/main.py`、`backend/app/services/pdf_generator.py`、`backend/app/services/xml_parser.py` を読み込み
+  - backend は ndlocr_cli + PyMuPDF + XML 中間ファイル。localapp は Tesseract + printpdf + 構造体直接
+  - 座標系、ページサイズ扱い、アーキテクチャの差異を文書化（調査レポート §4 参照）
+- 2026-09-04: 調査レポート作成、ドキュメント更新
+  - `localapp/docs/ocr-technology-survey-008007.md` を新規作成
+  - `localapp/docs/tasks.md` の 008007 【実施結果】に追記
+  - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
+
+---
+
 ## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
 
 ### 【実施予定】

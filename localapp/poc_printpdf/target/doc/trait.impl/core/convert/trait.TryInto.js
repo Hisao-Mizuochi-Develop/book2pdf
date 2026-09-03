@@ -1,0 +1,9 @@
+(function() {
+    const implementors = Object.fromEntries([["lopdf",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.TryInto.html\" title=\"trait core::convert::TryInto\">TryInto</a>&lt;<a class=\"struct\" href=\"lopdf/struct.Document.html\" title=\"struct lopdf::Document\">Document</a>&gt; for &amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.96.0/std/primitive.u8.html\">u8</a>]",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.TryInto.html\" title=\"trait core::convert::TryInto\">TryInto</a>&lt;<a class=\"struct\" href=\"lopdf/struct.IncrementalDocument.html\" title=\"struct lopdf::IncrementalDocument\">IncrementalDocument</a>&gt; for &amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.96.0/std/primitive.u8.html\">u8</a>]",0]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[782]}
