@@ -3,8 +3,15 @@
 /// `~/.config/book2pdf/settings.json`（macOS では `~/Library/Application Support/book2pdf/settings.json`）
 /// に backend API 接続先やタイムアウト値を永続化する。
 /// 設定ファイルが存在しない場合はデフォルト値を返し、必要に応じて新規作成する。
+///
+/// JSON へのシリアライズ・デシリアライズを自動化する crate の読み込み
+/// Serialize: Rust 構造体 → JSON 文字列, Deserialize: JSON 文字列 → Rust 構造体
 use serde::{Deserialize, Serialize};
+/// ファイルシステム操作（ファイル読み書き等）の標準ライブラリ読み込み
+/// settings.json の読み込み・書き出しに使用する
 use std::fs;
+/// ファイルパスを扱うための標準ライブラリ読み込み
+/// 設定ファイルの保存先ディレクトリパスの構築に使用する
 use std::path::PathBuf;
 
 /// アプリケーション設定を表す構造体。

@@ -6,6 +6,9 @@
 /// ユーザーがカスタマイズした値も保持できる。
 ///
 /// 参考: reference/localapp/core/capture_profiles.py の CaptureProfile dataclass
+///
+/// JSON へのシリアライズ・デシリアライズを自動化する crate の読み込み
+/// フロントエンドと型安全に連携するため、serde の derive マクロで Serialize/Deserialize を実装する
 use serde::{Deserialize, Serialize};
 
 /// コンテンツ領域トリミング設定（ピクセル単位）

@@ -10,9 +10,18 @@
 /// 開発時: `src-tauri/pdfium/lib/libpdfium.dylib`
 /// 配布時: Tauri の `bundle.resources` により app バンドル内に含まれる。
 ///         実行時に `current_exe` からの相対パスで検索する。
+///
+/// PDFium（Chromium の PDF エンジン）を Rust から利用するための crate の読み込み
+/// PDF の読み込み・書き出し・ページレンダリング機能を提供する
 use pdfium_render::prelude::*;
+/// ファイルシステム操作（ディレクトリ作成・ファイル書き出し等）の標準ライブラリ読み込み
+/// レンダリングしたページ画像を PNG ファイルとして出力するために使用する
 use std::fs;
+/// ファイルパスを扱うための標準ライブラリ読み込み
+/// PDF ファイルパスや出力先フォルダパスの検証・操作用に使用する
 use std::path::{Path, PathBuf};
+/// Tauri のイベント発射（emit）機能を読み込み
+/// フロントエンドに進捗イベント（pdf-extract-progress）を送信するために使用する
 use tauri::Emitter;
 
 /// PDF ファイルパスからデフォルトの出力フォルダパスを計算する

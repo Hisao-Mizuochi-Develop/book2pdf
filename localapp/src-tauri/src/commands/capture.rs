@@ -11,17 +11,36 @@
 /// 【連続キャプチャコマンド】
 /// - `start_continuous_capture`: バックグラウンドスレッドで連続キャプチャを開始
 /// - `stop_continuous_capture`: 実行中の連続キャプチャを停止
+///
+/// PNG/JPEG/TIFF など各種画像形式のエンコード処理を提供する crate の読み込み
+/// Base64 PNG 生成に `image::codecs::png::PngEncoder` を使用する
 use image::ImageEncoder;
+/// キャプチャプロファイル（領域・キー設定）のデータモデルを読み込み
+/// プロファイル定義（CaptureProfile, ProfileEntry, CropInsets）を使用する
 use crate::models::capture_profile::{CaptureProfile, ProfileEntry, CropInsets};
+/// 画面キャプチャ（スクリーンショット）を取得するための crate の読み込み
+/// Windows/macOS/Linux のウィンドウ単位・モニター単位のキャプチャを提供する
 use xcap::Window;
 
 // 連続キャプチャ制御用のグローバル状態
 // Rust 1.70+ では std::sync::OnceLock で標準化されているため、外部 crate は不要
+/// 複数スレッド間で安全に読み書きできるブール値の読み込み
+/// 連続キャプチャの停止フラグとして使用する（AtomicBool） と（Ordering）
 use std::sync::atomic::{AtomicBool, Ordering};
+/// 共有所有権（Arc）と一度だけの初期化（OnceLock）のための標準ライブラリ読み込み
+/// 連続キャプチャスレッド停止フラグとイベント発射ハンドルの共有に使用する
 use std::sync::{Arc, OnceLock};
+/// スレッド生成・管理のための標準ライブラリ読み込み
+/// 連続キャプチャをバックグラウンドスレッドで実行するために使用する
 use std::thread;
+/// 時間間隔を表現するための標準ライブラリ読み込み
+/// 連続キャプチャの待機間隔やプログレスイベント送信間隔に使用する
 use std::time::Duration;
+/// Tauri のイベント発射（emit）機能を読み込み
+/// フロントエンドに進捗イベント（capture-progress）を送信するために使用する
 use tauri::Emitter;
+/// OS レベルのキーボード入力シミュレーションを提供する crate の読み込み
+/// 連続キャプチャ中の自動ページ送り（PgDn キー入力）に使用する
 use enigo::{Enigo, Key, Keyboard, Settings, Direction};
 
 /// 連続キャプチャの進捗通知用イベントペイロード

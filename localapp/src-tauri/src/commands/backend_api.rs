@@ -16,11 +16,21 @@
 /// 【進捗通知】
 /// 各フェーズで `ocr-progress` イベントを emit する。フロントエンドは
 /// `listen("ocr-progress")` で受信し、UI に表示する。
+///
+/// タイムアウトや待機時間を指定するための標準ライブラリ読み込み
+/// HTTP リクエストタイムアウトやポーリング間隔に使用する
 use std::time::Duration;
 
+/// Tauri のアプリケーションハンドル・イベント発射・ランタイム抽象化を読み込み
+/// AppHandle: アプリ全体の操作（リソースパス解決等）
+/// Emitter: フロントエンドへのイベント送信
+/// Runtime: Tauri ランタイムの抽象（テスト時にモック可能にするため）
 use tauri::{AppHandle, Emitter, Runtime};
+/// Tauri の HTTP プラグインが提供する reqwest クライアントを読み込み
+/// backend API への HTTP リクエスト（POST/GET）を送信するために使用する
 use tauri_plugin_http::reqwest;
-
+/// アプリケーション設定（backend URL・タイムアウト値等）のデータモデルを読み込み
+/// `~/.config/book2pdf/settings.json` の読み書きに使用する
 use crate::config::AppSettings;
 
 /// OCR 連携の進捗通知用イベント名

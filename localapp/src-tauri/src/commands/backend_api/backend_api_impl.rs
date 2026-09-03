@@ -2,14 +2,29 @@
 ///
 /// Tauri の `AppHandle` や設定読み込みに依存しないため、
 /// モック backend を使った結合テストから直接呼び出すことができる。
+///
+/// ファイルシステム操作（ファイル読み書き・ディレクトリ作成等）の標準ライブラリ読み込み
+/// ZIP ファイルの作成・展開に使用する
 use std::fs;
+/// バイト列の書き出しを行うための標準ライブラリトレイト読み込み
+/// ZIP ファイルへのエントリ書き込みに使用する
 use std::io::Write;
+/// ファイルパスを扱うための標準ライブラリ読み込み
+/// 一時フォルダパスや ZIP ファイルパスの構築に使用する
 use std::path::{Path, PathBuf};
+/// タイムアウトや待機時間を指定するための標準ライブラリ読み込み
+/// HTTP リクエストタイムアウト・ポーリング間隔に使用する
 use std::time::Duration;
 
+/// Tauri の HTTP プラグインが提供する reqwest クライアントを読み込み
+/// backend API への HTTP リクエストを送信するために使用する
 use tauri_plugin_http::reqwest;
+/// ZIP アーカイブの書き出し設定を提供する crate の読み込み
+/// 画像フォルダから ZIP ファイルを作成する際の圧縮設定に使用する
 use zip::write::SimpleFileOptions;
 
+/// 親モジュール（backend_api.rs）で定義した OCR 結果型を読み込み
+/// `run_backend_ocr` の戻り値型として使用する
 use super::BackendOcrResult;
 
 /// `GET /api/jobs/{job_id}` を使ってジョブ状態を取得し、一過性の接続エラーに対して
