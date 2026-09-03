@@ -74,7 +74,7 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| 006001 | 進捗通知のポーリング方式仕様策定と localapp リトライ実装 | 2026-09-03 |  | 設計 / 実装 |
+| 006001 | 進捗通知のポーリング方式仕様策定と localapp リトライ実装 | 2026-09-03 | 2026-09-03 | 設計 / 実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `docs/progress-notification-polling-design.md` と `docs/progress-notification-spec.md` を統合し、SSE / HTTP ポーリングの全体仕様を `docs/progress-notification-spec.md` に整理する |  |  |  |
@@ -93,3 +93,4 @@
 |  | 2026-09-03: localapp OCR タイムアウトの原因調査を実施し、タイムアウト値の管理方法（設定ファイル vs ハードコード vs 環境変数）を明確化した — 調査報告書 [localapp/docs/timeout-investigation-report-006001.md](../localapp/docs/timeout-investigation-report-006001.md) |  |  |  |
 |  | 2026-09-03: `localapp/src-tauri/src/config.rs` に `http_client_timeout_sec` / `upload_timeout_sec` / `ocr_request_timeout_sec` / `poll_request_timeout_sec` を追加し、すべてのタイムアウト値を設定ファイルで一元管理できるようにした |  |  |  |
 |  | 2026-09-03: `localapp/src-tauri/src/commands/backend_api.rs` と `backend_api_impl.rs` のハードコードされたタイムアウト値を、設定ファイルから読み込んだ値を参照するように変更した |  |  |  |
+|  | 2026-09-03: 本タスク完了。タスク完了日付を 2026-09-03 に記入 |  |  |  |
