@@ -10,6 +10,9 @@ from __future__ import annotations
 # メモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
+# ポーリング待機に使用する標準ライブラリです
+import time
+
 # 一時ディレクトリを作成するための標準ライブラリです
 import tempfile
 
@@ -52,7 +55,8 @@ from app.services.pdf_generator import (
 @pytest.fixture
 def client() -> TestClient:
     """テスト用の HTTP クライアントを提供します。"""
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 # 実際の OCR エンジンをモックに置き換えるための fixture です
@@ -302,9 +306,18 @@ def test_download_pdf(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> No
         lambda use_mock=False: PatchedMockOcrEngine(),
     )
 
-    # OCR を実行します（この中で PDF 生成も行われます）
+    # OCR を実行します（バックグラウンドで PDF 生成が行われます）
     response = client.post(f"/api/jobs/{job_id}/ocr")
     assert response.status_code == 200
+
+    # バックグラウンドタスクの完了を待ちます
+    # COMPLETED にならないと PDF が生成されていない可能性があるため
+    for _ in range(100):
+        response = client.get(f"/api/jobs/{job_id}")
+        data = response.json()
+        if data["status"] in ("completed", "failed"):
+            break
+        time.sleep(0.2)
 
     # PDF ダウンロード API を呼び出します
     response = client.get(f"/api/jobs/{job_id}/pdf")

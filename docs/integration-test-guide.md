@@ -355,7 +355,7 @@ PDF ダウンロード時間,0.045
 | 合計処理時間 | 396.914 |
 
 - 個別ページの OCR 処理時間：122.762 秒、110.116 秒、144.009 秒
-- 詳細は [ocr-results-004003/performance-test-report-004003.md](../ocr-results-004003/performance-test-report-004003.md) を参照
+- 詳細は [test_cases/ocr-results-004003/performance-test-report-004003.md](../test_cases/ocr-results-004003/performance-test-report-004003.md) を参照
 
 ## 8. 終了処理
 

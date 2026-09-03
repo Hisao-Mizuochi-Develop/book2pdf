@@ -34,6 +34,30 @@ pub struct AppSettings {
 
     /// ジョブ状態ポーリング間隔（秒）
     pub polling_interval_sec: u64,
+
+    /// HTTP クライアント全体のタイムアウト（秒）。
+    ///
+    /// reqwest クライアントのデフォルトタイムアウト。個別の API 呼び出しで
+    /// この値を上書きしない限り適用される。
+    pub http_client_timeout_sec: u64,
+
+    /// ZIP アップロード時の個別タイムアウト（秒）。
+    ///
+    /// 大容量 ZIP ファイルのアップロードに時間がかかるため、
+    /// 通常の HTTP タイムアウトより長めに設定する。
+    pub upload_timeout_sec: u64,
+
+    /// OCR 実行依頼（`POST /ocr`）の個別タイムアウト（秒）。
+    ///
+    /// backend はリクエスト受付後即座にレスポンスを返すが、
+    /// 通信異常時の無限待ち防止のためタイムアウトを設定する。
+    pub ocr_request_timeout_sec: u64,
+
+    /// ジョブ状態取得（`GET /api/jobs/{job_id}`）の個別タイムアウト（秒）。
+    ///
+    /// ポーリング中の 1 リクエストあたりのタイムアウト。接続失敗時は
+    /// 指数関数的バックオフでリトライするため、この値は短めでよい。
+    pub poll_request_timeout_sec: u64,
 }
 
 impl Default for AppSettings {
@@ -45,8 +69,12 @@ impl Default for AppSettings {
             backend_url: "http://localhost:8000".to_string(),
             ocr_worker_url: "http://localhost:8001".to_string(),
             frontend_url: "http://localhost:3000".to_string(),
-            page_timeout_sec: 300,
+            page_timeout_sec: 600,
             polling_interval_sec: 5,
+            http_client_timeout_sec: 60,
+            upload_timeout_sec: 600,
+            ocr_request_timeout_sec: 60,
+            poll_request_timeout_sec: 10,
         }
     }
 }

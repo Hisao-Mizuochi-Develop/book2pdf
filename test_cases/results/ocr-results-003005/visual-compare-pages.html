@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>003005 PDF ページ画像目視比較</title>
+  <style>
+    body { font-family: sans-serif; margin: 1rem; }
+    h1 { font-size: 1.2rem; }
+    h2 { font-size: 1rem; margin-top: 1.5rem; border-bottom: 1px solid #999; padding-bottom: 0.3rem; }
+    .row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .col { flex: 1; min-width: 200px; text-align: center; }
+    .col img { width: 100%; max-width: 320px; border: 1px solid #ccc; }
+    .label { font-size: 0.85rem; color: #333; margin: 0.3rem 0; }
+    .meta { font-size: 0.85rem; color: #555; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>003005 score_thr 比較: ページ画像</h1>
+  <div class="meta">
+    Pattern-A: score_thr=0.2 | Pattern-B: score_thr=0.1 | Pattern-C: score_thr=0.5<br>
+    テストデータ: benchmark-ocr-003002.zip (002.png, 003.png, 004.png)
+  </div>
+
+  <h2>Page 1: 表紙 (002.png)</h2>
+  <div class="row">
+    <div class="col"><div class="label">Pattern-A (0.2)</div><img src="pdf_page_images/pattern-a-page1.png"></div>
+    <div class="col"><div class="label">Pattern-B (0.1)</div><img src="pdf_page_images/pattern-b-page1.png"></div>
+    <div class="col"><div class="label">Pattern-C (0.5)</div><img src="pdf_page_images/pattern-c-page1.png"></div>
+  </div>
+
+  <h2>Page 2: 注意書き (003.png)</h2>
+  <div class="row">
+    <div class="col"><div class="label">Pattern-A (0.2)</div><img src="pdf_page_images/pattern-a-page2.png"></div>
+    <div class="col"><div class="label">Pattern-B (0.1)</div><img src="pdf_page_images/pattern-b-page2.png"></div>
+    <div class="col"><div class="label">Pattern-C (0.5)</div><img src="pdf_page_images/pattern-c-page2.png"></div>
+  </div>
+
+  <h2>Page 3: はじめに (004.png)</h2>
+  <div class="row">
+    <div class="col"><div class="label">Pattern-A (0.2)</div><img src="pdf_page_images/pattern-a-page3.png"></div>
+    <div class="col"><div class="label">Pattern-B (0.1)</div><img src="pdf_page_images/pattern-b-page3.png"></div>
+    <div class="col"><div class="label">Pattern-C (0.5)</div><img src="pdf_page_images/pattern-c-page3.png"></div>
+  </div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 old/
 reference/
-test_cases/
 .venv/
 __pycache__/
 dist/
 .DS_Store
+.git_status.txt
+.tmp_*.log
+.tmp_git_status.txt

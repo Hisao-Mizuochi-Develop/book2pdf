@@ -12,6 +12,80 @@ use zip::write::SimpleFileOptions;
 
 use super::BackendOcrResult;
 
+/// `GET /api/jobs/{job_id}` を使ってジョブ状態を取得し、一過性の接続エラーに対して
+/// 指数関数的バックオフでリトライする。
+///
+/// 接続失敗時は最大 3 回まで 1 秒 / 2 秒 / 4 秒の間隔で再試行する。
+/// リトライ前には「ジョブ状態の取得を再試行します」の進捗メッセージを通知する。
+///
+/// # Args
+/// - `client`: 既に構築済みの reqwest クライアント
+/// - `job_url`: `GET /api/jobs/{job_id}` の完全な URL
+/// - `request_timeout_sec`: 1 リクエストあたりのタイムアウト（秒）
+/// - `max_retries`: 最大リトライ回数（例: 3）
+/// - `emit_progress`: 進捗通知用コールバック
+async fn poll_job_status<F>(
+    client: &reqwest::Client,
+    job_url: &str,
+    request_timeout_sec: u64,
+    max_retries: u32,
+    emit_progress: &mut F,
+) -> Result<serde_json::Value, String>
+where
+    F: FnMut(&str, &str, Option<u32>, Option<u32>),
+{
+    // 指数関数的バックオフ: 1 秒 / 2 秒 / 4 秒
+    const BACKOFF_SECS: [u64; 3] = [1, 2, 4];
+
+    for attempt in 0..=max_retries {
+        match client
+            .get(job_url)
+            .timeout(Duration::from_secs(request_timeout_sec))
+            .send()
+            .await
+        {
+            Ok(resp) => {
+                if resp.status().is_success() {
+                    return resp.json().await.map_err(|e| {
+                        format!("ジョブ状態レスポンスの解析に失敗しました: {}", e)
+                    });
+                }
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(format!(
+                    "ジョブ状態の取得に失敗しました (HTTP {}): {}",
+                    status, body
+                ));
+            }
+            Err(e) => {
+                // 最後の試行でも失敗した場合はエラーを返す
+                if attempt == max_retries {
+                    return Err(format!("ジョブ状態の取得に失敗しました: {}", e));
+                }
+                // リトライ前にユーザーに一過性の通信エラーであることを伝える
+                emit_progress(
+                    "polling_retry",
+                    &format!(
+                        "ジョブ状態の取得を再試行します（{} / {} 回目）...",
+                        attempt + 1,
+                        max_retries
+                    ),
+                    None,
+                    None,
+                );
+                let wait_sec = BACKOFF_SECS
+                    .get(attempt as usize)
+                    .copied()
+                    .unwrap_or(BACKOFF_SECS.last().copied().unwrap_or(4));
+                tokio::time::sleep(Duration::from_secs(wait_sec)).await;
+            }
+        }
+    }
+
+    // ループは必ず return するため、ここには到達しない
+    unreachable!()
+}
+
 /// backend API を使って OCR 済み PDF を生成するコア処理。
 ///
 /// # Args
@@ -21,6 +95,9 @@ use super::BackendOcrResult;
 /// - `backend_url`: backend API のベース URL（末尾スラッシュなし）
 /// - `page_timeout_sec`: 1 ページあたりのタイムアウト（ポーリング全体の deadline 計算用）
 /// - `polling_interval_sec`: ジョブ状態ポーリング間隔（秒）
+/// - `upload_timeout_sec`: ZIP アップロード時の個別タイムアウト（秒）
+/// - `ocr_request_timeout_sec`: OCR 実行依頼の個別タイムアウト（秒）
+/// - `poll_request_timeout_sec`: ジョブ状態取得の個別タイムアウト（秒）
 /// - `client`: 既に構築済みの reqwest クライアント
 /// - `emit_progress`: 進捗通知用コールバック
 pub async fn run_backend_ocr_inner<F>(
@@ -30,6 +107,9 @@ pub async fn run_backend_ocr_inner<F>(
     backend_url: String,
     page_timeout_sec: u64,
     polling_interval_sec: u64,
+    upload_timeout_sec: u64,
+    ocr_request_timeout_sec: u64,
+    poll_request_timeout_sec: u64,
     client: &reqwest::Client,
     mut emit_progress: F,
 ) -> Result<BackendOcrResult, String>
@@ -118,7 +198,7 @@ where
     let upload_resp = client
         .post(&upload_url)
         .multipart(form)
-        .timeout(Duration::from_secs(600))
+        .timeout(Duration::from_secs(upload_timeout_sec))
         .send()
         .await
         .map_err(|e| format!("ZIP アップロードに失敗しました: {}", e))?;
@@ -149,7 +229,7 @@ where
     let ocr_url = format!("{}/api/jobs/{}/ocr", backend_url, job_id);
     let ocr_resp = client
         .post(&ocr_url)
-        .timeout(Duration::from_secs(60))
+        .timeout(Duration::from_secs(ocr_request_timeout_sec))
         .send()
         .await
         .map_err(|e| format!("OCR 開始リクエストに失敗しました: {}", e))?;
@@ -183,27 +263,19 @@ where
     loop {
         if std::time::Instant::now() > deadline {
             return Err(
-                "OCR 処理がタイムアウトしました。page_timeout_sec を長くするか、backend/ocr-worker の状態を確認してください。"
+                "OCR 処理がタイムアウトしました。設定画面で「1ページあたりのタイムアウト時間」を長くするか、backend/ocr-worker の状態を確認してください。"
                     .to_string(),
             );
         }
 
-        let job_resp = client
-            .get(&job_url)
-            .send()
-            .await
-            .map_err(|e| format!("ジョブ状態の取得に失敗しました: {}", e))?;
-        if !job_resp.status().is_success() {
-            return Err(format!(
-                "ジョブ状態の取得に失敗しました (HTTP {}): {}",
-                job_resp.status(),
-                job_resp.text().await.unwrap_or_default()
-            ));
-        }
-        let job_body: serde_json::Value = job_resp
-            .json()
-            .await
-            .map_err(|e| format!("ジョブ状態レスポンスの解析に失敗しました: {}", e))?;
+        let job_body = poll_job_status(
+            client,
+            &job_url,
+            poll_request_timeout_sec,
+            3,
+            &mut emit_progress,
+        )
+        .await?;
         let status = job_body["status"].as_str().unwrap_or("unknown");
 
         match status {
@@ -474,8 +546,11 @@ mod tests {
             "folder".to_string(),
             output_path.to_string_lossy().to_string(),
             format!("http://127.0.0.1:{}", MOCK_PORT),
-            60,
-            1,
+            60, // page_timeout_sec
+            1,  // polling_interval_sec
+            60, // upload_timeout_sec
+            10, // ocr_request_timeout_sec
+            5,  // poll_request_timeout_sec
             &client,
             |stage, message, current, total| {
                 events.push((stage.to_string(), message.to_string(), current, total));

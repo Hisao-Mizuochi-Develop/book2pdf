@@ -801,3 +801,44 @@ backend の `POST /api/jobs/{job_id}/ocr` は、ocr-worker への HTTP 呼び出
 - 003006: localapp → backend API OCR 統合
 - backend 003012: `/ocr` エンドポイントの非同期化
 
+---
+
+## localapp → backend API 連携 — `page_timeout_sec` のデフォルト値調整（006001）
+
+### 事象
+
+backend OCR で 3 ページのテストデータを処理した際、localapp 側で「OCR 処理がタイムアウトしました」エラーが表示された。backend/ocr-worker のログを確認すると、OCR は正常に完了し、PDF も生成されていた。
+
+### 原因
+
+- `page_timeout_sec` のデフォルト値が `300`（5 分/ページ）に設定されていた
+- ocr-worker の実測値は 1 ページあたり約 383 秒（約 6.4 分）かかる（CPU 実行、ndlocr_cli）
+- 計算式 `ページ数 × page_timeout_sec` では `3 × 300 = 900` 秒（15 分）でタイムアウト
+- 実際の処理時間は約 1152 秒（約 19 分）となり、localapp 側が先にタイムアウト判定してしまった
+
+### 対応策
+
+1. `localapp/src-tauri/src/config.rs` のデフォルト値を `page_timeout_sec: 600`（10 分/ページ）に変更
+2. `docs/progress-notification-spec.md` の記載も合わせて更新
+3. タイムアウトエラーメッセージを以下のように改善し、設定画面への誘導を追加
+   - 「OCR 処理がタイムアウトしました。設定画面で「1ページあたりのタイムアウト時間」を長くするか、backend/ocr-worker の状態を確認してください。」
+
+### 対応策（追加：設定ファイル化）
+
+4. 2026-09-03: すべてのタイムアウト値を `settings.json` で一元管理できるよう設定ファイル化した
+   - `http_client_timeout_sec`（デフォルト 60 秒）：HTTP クライアント全体のタイムアウト
+   - `upload_timeout_sec`（デフォルト 600 秒）：ZIP アップロードの個別タイムアウト
+   - `ocr_request_timeout_sec`（デフォルト 60 秒）：OCR 実行依頼の個別タイムアウト
+   - `poll_request_timeout_sec`（デフォルト 10 秒）：ジョブ状態取得の個別タイムアウト
+   - これらは今後 `settings.json` を編集するだけで調整可能（再ビルド不要）
+
+### 注意点
+
+- ndlocr_cli の初回実行時はモデル初期化に追加時間がかかるため、1ページ目はさらに時間がかかることがある
+- `settings.json` が存在する場合、Rust 側のデフォルト値は無視される。そのためバイナリ更新後に新しいデフォルト値を適用したい場合は、設定ファイルを削除するか手動で値を変更する必要がある
+
+### 関連タスク
+
+- 006001: 進捗通知仕様書の作成と実装
+- 006001: タイムアウト値の設定ファイル化
+

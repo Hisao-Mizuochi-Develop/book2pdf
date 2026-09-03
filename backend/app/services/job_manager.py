@@ -122,16 +122,17 @@ def update_job_status(
 
 def update_job_with_ocr_result(
     job_id: str,
-    success: bool,
     text: str = "",
     output_dir: str = "",
     message: str = "",
 ) -> bool:
-    """OCR 処理結果をもとにジョブ状態を更新します。
+    """OCR 処理結果をジョブ情報に保存します。
+
+    この関数はジョブの状態（status）を変更しません。
+    状態遷移は呼び出し元で update_job_status を使って行ってください。
 
     Args:
         job_id: 更新対象のジョブ ID
-        success: OCR 処理が成功したかどうか
         text: 認識されたテキスト全文
         output_dir: OCR 結果が出力されたディレクトリパス
         message: 補足メッセージ（エラー時など）
@@ -142,12 +143,6 @@ def update_job_with_ocr_result(
     # ジョブが存在しない場合は更新せず False を返します
     if job_id not in _jobs:
         return False
-
-    # 処理結果に応じて状態を更新します
-    if success:
-        _jobs[job_id]["status"] = JobStatus.COMPLETED.value
-    else:
-        _jobs[job_id]["status"] = JobStatus.FAILED.value
 
     # 更新時刻を現在時刻に設定します
     _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()

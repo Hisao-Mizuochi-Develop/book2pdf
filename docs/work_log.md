@@ -122,3 +122,36 @@ zip -j sample_002-004.zip \
 - frontend タスク：Next.js 15.1.6 への Docker 再構成（完了）
 - backend タスク：ocr-worker 500 エラーの原因調査（未完了）
 - 全体タスク：frontend から ZIP アップロード・PDF ダウンロードの統合検証（未完了）
+
+## 2026-09-03 006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
+
+### 目的
+
+localapp で発生していた「ジョブ状態の取得に失敗しました」というポーリングエラーを、per-request タイムアウトと指数関数的バックオフによるリトライで解消し、SSE / HTTP ポーリングの進捗通知仕様をプロジェクト全体で統一する。
+
+### 前提
+
+- `docs/progress-notification-polling-design.md` と `docs/progress-notification-spec.md` が別々に存在していた
+- localapp のポーリングは 1 秒間隔で `GET /api/jobs/{job_id}` を呼び出すのみで、タイムアウト・リトライが未実装だった
+- 進捗ペイロードに `progress_percent` と `stage`/`message`/`current`/`total` が混在していた
+
+### 実施内容
+
+- `docs/progress-notification-polling-design.md` を `docs/progress-notification-spec.md` に統合し、前者は削除した
+- `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
+- ポーリングプロトコルを文書化した
+  - 1 リクエストあたり 10 秒タイムアウト
+  - 接続失敗時は最大 3 回まで 1 秒 / 2 秒 / 4 秒の指数関数的バックオフでリトライ
+  - リトライ前に「ジョブ状態の取得を再試行します」の進捗メッセージを UI に通知
+- `docs/README.md` / `docs/web-ocr-system-plan.md` / `docs/caveats.md` / `docs/tasks.md` に進捗通知仕様と 006001 の計画を反映した
+- `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` のポーリング処理に `poll_job_status` ヘルパーを導入し、タイムアウト・リトライ・バックオフを実装した
+
+### 結果
+
+- 進捗通知仕様書 [`docs/progress-notification-spec.md`](progress-notification-spec.md) が整備された
+- localapp のポーリングが一過性の接続エラーに対して耐性を持つようになった
+- `cargo check --tests` と `cargo test backend_api_impl -- --nocapture` にてコンパイル・テストを確認した
+
+### 関連タスク
+
+- 006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装（実施中）

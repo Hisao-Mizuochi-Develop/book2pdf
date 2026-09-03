@@ -374,8 +374,17 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 2026-09-01: ユーザー指示により本計測を実施。テスト画像は `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`（3 ページ）を使用 |  |  |  |
 |  | 2026-09-01: `feature/004003-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行 |  |  |  |
 |  | 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測 |  |  |  |
-|  | 2026-09-01: 精度比較レポート [ocr-results-004003/performance-test-report-004003.md](ocr-results-004003/performance-test-report-004003.md) を作成 |  |  |  |
+|  | 2026-09-01: 精度比較レポート [test_cases/ocr-results-004003/performance-test-report-004003.md](../test_cases/ocr-results-004003/performance-test-report-004003.md) を作成 |  |  |  |
 |  | 2026-09-01: `docs/integration-test-guide.md` の性能テスト結果セクションを更新 |  |  |  |
+|  | 004004 | backend PDF 作成時間チューニング | 2026-09-03 |  | 性能改善 |
+|  |  | タスク詳細 |  |  |  |
+|  |  | 【計画】 |  |  |  |
+|  |  | `backend/app/services/pdf_generator.py` の PDF 生成処理をプロファイリングし、ボトルネックを特定する |  |  |  |
+|  |  | 画像のリサイズ・変換処理の最適化（`pymupdf` / `PIL` の使い分け検討） |  |  |  |
+|  |  | 並列処理の導入検討（複数ページの並列 PDF エンコーディング） |  |  |  |
+|  |  | OCR 結果 XML のパース処理の高速化 |  |  |  |
+|  |  | メモリ使用量とのトレードオフを考慮したチューニング |  |  |  |
+|  |  | 【実施結果】 |  |  |  |
 
 ---
 

@@ -57,6 +57,38 @@
 - プロジェクト全体で共有するベンチマーク・評価用データは `test_cases/` に配置し、個別のタスク用テストデータは各モジュールの `testdata/` に配置する
 - `testdata/` 配下のファイルは Git 管理の対象とする（`.gitignore` で除外しない）
 
+## 2.7 `test_cases/` ドキュメント更新ルール
+
+`test_cases/` はプロジェクト全体で共有するテストデータ・ベンチマーク・検証レポートを配置するディレクトリであり、以下のルールを適用する。
+
+### 配置ルール
+
+- `test_cases/benchmarks/` — ベンチマーク用画像 ZIP ファイル群。ファイル名形式: `benchmark-ocr-<タスクNo>-<条件>.zip`
+- `test_cases/results/` — OCR 精度比較・検証レポート（`ocr-results-<タスクNo>/`）。原則として backend API 経由のフルフロー実行結果を格納する
+- `test_cases/ocr-results-<タスクNo>/` — 個別タスクの検証レポートディレクトリ。大規模・横断的な検証は `results/` 配下に、単独タスクの検証は `test_cases/` 直下に配置する
+- `test_cases/<書籍名>/` — テスト対象書籍のキャプチャ画像・トリミング済み画像・メタデータ
+- `test_cases/README.md` — 本ディレクトリ全体のインデックス。新規レポート追加時は必ず更新する
+
+### レポートファイル命名規則
+
+- 形式: `<レポート種別>-report-<タスクNo>.md`
+  - 例：`preprocess-comparison-report-003003.md`（前処理比較レポート）
+  - 例：`performance-test-report-004003.md`（性能計測レポート）
+- 付属データ（CSV、テキスト、画像など）も同じディレクトリに配置し、レポート本文で参照する
+
+### 更新ルール（厳格）
+
+- `test_cases/README.md` および `test_cases/**/ *.md` の**既存レポート**を更新する際は、**必ず `replace_in_file` を使用**すること
+- `write_to_file` は**新規レポートファイル作成時のみ**使用し、既存ファイルの更新には絶対に使用しないこと
+- 新規レポートディレクトリ（例: `test_cases/ocr-results-005001/`）を作成した場合は、必ず `test_cases/README.md` の該当セクションにエントリを追加する
+  - 追加形式：表形式の1行（タスク No、実施日、評価内容、結論の概要、レポートへのリンク）
+  - 追加位置：対応するセクション（`results/`、`ocr-results-*/`、`benchmarks/` 等）のテーブル末尾
+- `test_cases/README.md` の更新も `replace_in_file` で行い、テーブルの `|---|---|---|` 区切り行を `SEARCH` に指定するなど、既存テキストを確実にマッチさせて追記すること
+- レポート本文や他のドキュメントから `test_cases/` 内のファイルを参照する際は、**`test_cases/` からの相対パス**で統一すること
+  - 例：`[レポート](test_cases/ocr-results-004003/performance-test-report-004003.md)`（`docs/` 配下から参照する場合）
+  - 例：`[レポート](../test_cases/ocr-results-004003/performance-test-report-004003.md)`（`<module>/docs/` 配下から参照する場合）
+- root 直下に `ocr-results-*` ディレクトリを作成しないこと。必ず `test_cases/` 配下に配置する
+
 ## 3. `docs/` 変更時の承認フロー
 
 - `./docs/` および `backend/docs/`、`frontend/docs/`、`localapp/docs/`、`ocr-worker/docs/` 配下の内容を変更する際は、必ず変更箇所をユーザーに提案すること
@@ -148,10 +180,31 @@
 - ocr-worker コンテナ内での `OcrInferrer` 直接実行は、単体動作確認にのみ使用し、検証結果の比較・評価・レポート作成には backend API 経由のフルフローを使用する
 - 成果物を `docker compose cp` でホスト側にコピーする
 
-### 10.3 検証結果レポートの作成（必須）
+### 10.3 テスト実施時の必須作業フロー
+
+検証・調査系タスクを実施する際は、以下の工程を必ず順に実施すること。いずれかを省略してはならない。
+
+| 順序 | 工程 | 必須アクション | 成果物の配置先 |
+|---|---|---|---|
+| 1 | **テストデータの用意** | ベンチマーク用 ZIP または対象画像セットを準備・確認する | `test_cases/benchmarks/` または `<module>/testdata/<タスクNo>-<概要>/` |
+| 2 | **テスト実行** | 第 10.2 項に従い、backend API 経由でフルフローを実行する | — |
+| 3 | **テスト結果（レポート）の作成** | 第 10.4 項に従い、レポートファイルを作成する | `test_cases/ocr-results-<タスクNo>/` または `test_cases/results/ocr-results-<タスクNo>/` |
+| 4 | **付属データの同梱** | CSV、テキスト、画像、比較用 PDF などをレポートと同じディレクトリに配置する | `test_cases/ocr-results-<タスクNo>/` |
+| 5 | **README.md へのインデックス追加** | `test_cases/README.md` の該当セクションにエントリを追加する | `test_cases/README.md` |
+| 6 | **tasks.md への記録** | タスク管理表に実施結果とレポートリンクを追記する | `<module>/docs/tasks.md` |
+
+#### 工程ごとの詳細
+
+- **工程 1（テストデータ）**: 過去のタスクと同じ条件で比較する場合は既存のベンチマーク ZIP を再利用可能。新規条件を追加する場合は `benchmark-ocr-<タスクNo>-<条件>.zip` の形式で命名し、`test_cases/benchmarks/` に配置する。
+- **工程 3（レポート作成）**: 既存レポートを更新する場合は `replace_in_file` を使用。新規作成の場合は `write_to_file` を使用。
+- **工程 5（README.md）**: 新規レポートディレクトリを作成した場合に **特に重要**。エントリがないとインデックスから漏れ、他の開発者がレポートを発見できなくなる。
+- **工程 6（tasks.md）**: レポートへのリンクは `test_cases/` からの相対パスで統一すること（例: `test_cases/ocr-results-003003/preprocess-comparison-report-003003.md`）。
+
+### 10.4 検証結果レポートの作成（必須）
 
 - `write_to_file` でレポートファイルを作成する
 - ファイル名形式: `ocr-results-<タスクNo>/<report-name>-<タスクNo>.md`
+- **レポートファイルは `test_cases/` 配下に配置すること**（`ocr-results-<タスクNo>/` ディレクトリを新規作成する場合も、`test_cases/` 直下に作成する）
 - レポートには以下を含める:
   - 概要（タスク名、実施日、対象データ、OCR エンジン、評価指標）
   - 比較パターンの一覧と条件
@@ -159,15 +212,20 @@
   - 考察（なぜその結果になったかの分析）
   - 結論
   - 今後の検討事項
-- `replace_in_file` で tasks.md の【実施結果】欄末尾に、作成したレポートへのマークダウンリンクを追加する。形式: `精度比較レポート [ocr-results-003003/preprocess-comparison-report-003003.md](ocr-results-003003/preprocess-comparison-report-003003.md) を作成した`
+- **付属データ（CSV、テキスト、画像、比較用PDFなど）はレポートと同じディレクトリに配置し、レポート本文から相対パスで参照すること**
+- `replace_in_file` で tasks.md の【実施結果】欄末尾に、作成したレポートへのマークダウンリンクを追加する。形式: `精度比較レポート [test_cases/ocr-results-003003/preprocess-comparison-report-003003.md](test_cases/ocr-results-003003/preprocess-comparison-report-003003.md) を作成した`
+- **`test_cases/README.md` へのインデックス追加も必須**:
+  1. `replace_in_file` で該当セクションのテーブル末尾にエントリを追加（タスク No、実施日、評価内容、結論の概要、レポートへのリンク）
+  2. テーブル区切り行（`|---|---|---|---|---|`) を `SEARCH` に指定して追記すること
+  3. セクションが存在しない場合は、適切な見出し（`## N. ocr-results-<タスクNo>/` 等）と共に新規にテーブルを作成して追加すること
 
-### 10.4 PDF 目視確認が必要な検証
+### 10.5 PDF 目視確認が必要な検証
 
 - 各パターンごとに backend API 経由でジョブを実行する
-- `docker compose cp backend:/data/pdfs/<job_id>.pdf ./ocr-results-<タスクNo>/<パターン名>/pdfs/` で PDF を取得する
+- `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/ocr-results-<タスクNo>/<パターン名>/pdfs/` で PDF を取得する
 - PDF を開いて目視確認を実施し、結果をレポートに記載する
 
-### 10.5 例外
+### 10.6 例外
 
 - 「単体動作確認」と明確に限定された作業では、ocr-worker コンテナ内の直接実行を認める
 - その場合も `replace_in_file` で tasks.md の【実施結果】に「単体動作確認（backend 連携なし）」と明記する

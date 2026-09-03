@@ -146,7 +146,8 @@
 ### 6.5 進捗通知
 
 - リアルタイムな処理進捗の表示
-- プロキシ環境への対応としてポーリング方式のフォールバック（将来対応）
+- プロキシ環境への対応として SSE と HTTP ポーリングの両方を定義
+- 詳細は [`docs/progress-notification-spec.md`](progress-notification-spec.md) を参照
 
 ## 7. 技術選定の概要
 
@@ -189,8 +190,9 @@
 
 ### 9.2 進捗通知方式の見直し
 
-- **目標**: フロントエンドのポーリング方式も検討
+- **目標**: localapp / frontend のポーリング方式を整備
 - **理由**: プロキシ環境やタイムアウト設定によって SSE が不安定になる場合への対応
+- **詳細**: [`docs/progress-notification-spec.md`](progress-notification-spec.md)
 
 ### 9.3 縦書き・複雑レイアウトの本格対応
 
@@ -227,6 +229,8 @@ book2pdf/
 │   ├── caveats.md               # 全体横断の注意事項
 │   ├── coding-conventions.md    # コーディング規約
 │   ├── design-decisions.md      # 設計決定事項
+│   ├── progress-notification-spec.md  # 進捗通知方式仕様書
+│   ├── README.md                # ドキュメントインデックス
 │   ├── integration-test-guide.md  # 結合テスト手順書
 │   ├── tasks.md                 # 全体横断のタスク管理表
 │   ├── web-ocr-system-plan.md   # 本ドキュメント
@@ -246,3 +250,4 @@ book2pdf/
   - frontend: [`frontend/docs/frontend-system-spec.md`](../frontend/docs/frontend-system-spec.md)
   - ocr-worker: [`ocr-worker/docs/ocr-worker-system-spec.md`](../ocr-worker/docs/ocr-worker-system-spec.md)
   - localapp: [`localapp/docs/localapp-spec.md`](../localapp/docs/localapp-spec.md)
+- 進捗通知方式: [`docs/progress-notification-spec.md`](progress-notification-spec.md)

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>003005 PDF 目視比較</title>
+  <style>
+    body { font-family: sans-serif; margin: 1rem; }
+    h1 { font-size: 1.2rem; }
+    .row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .col { flex: 1; min-width: 280px; border: 1px solid #ccc; padding: 0.5rem; }
+    .col h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+    iframe { width: 100%; height: 500px; border: none; }
+    .meta { font-size: 0.85rem; color: #555; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>003005 score_thr 比較: Pattern-A vs B vs C</h1>
+  <div class="meta">
+    Pattern-A: score_thr=0.2 | Pattern-B: score_thr=0.1 | Pattern-C: score_thr=0.5<br>
+    テストデータ: benchmark-ocr-003002.zip (002.png, 003.png, 004.png)
+  </div>
+  <div class="row">
+    <div class="col">
+      <h2>Pattern-A (score_thr=0.2)</h2>
+      <iframe src="pattern-a/pdfs/9c09ae26-bc1b-48e8-a0e1-5408ce42a3a6.pdf"></iframe>
+    </div>
+    <div class="col">
+      <h2>Pattern-B (score_thr=0.1)</h2>
+      <iframe src="pattern-b/pdfs/a4345c8a-9842-440d-8731-200f7785f059.pdf"></iframe>
+    </div>
+    <div class="col">
+      <h2>Pattern-C (score_thr=0.5)</h2>
+      <iframe src="pattern-c/pdfs/068fee0f-6ab1-4dfa-be9a-958568687897.pdf"></iframe>
+    </div>
+  </div>
+</body>
+</html>

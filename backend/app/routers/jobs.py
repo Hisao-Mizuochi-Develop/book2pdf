@@ -120,6 +120,7 @@ def get_job(job_id: str) -> JobResponse:
         status=JobStatus(job["status"]),
         message=job.get("message", ""),
         files=job.get("files", []),
+        text=job.get("text", ""),
     )
 
 
@@ -271,15 +272,18 @@ async def _run_ocr_and_generate_pdf(
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
         job_manager.update_job_with_ocr_result(
             job_id,
-            success=False,
+            message=f"OCR 処理に失敗しました: {exc}",
+        )
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.FAILED,
             message=f"OCR 処理に失敗しました: {exc}",
         )
         return
 
-    # OCR 結果をジョブ情報に保存します
+    # OCR 結果をジョブ情報に保存します（ステータスは PROCESSING のまま）
     job_manager.update_job_with_ocr_result(
         job_id,
-        success=True,
         text=result.text,
         output_dir=str(result.output_dir),
     )
@@ -297,12 +301,25 @@ async def _run_ocr_and_generate_pdf(
             pdf_path=str(pdf_path),
             message="PDF 生成が完了しました",
         )
+        # PDF 生成が完了してから COMPLETED に遷移します
+        # これにより、フロントエンドが completed を検出した時点では
+        # PDF が必ず生成済みであることが保証されます
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.COMPLETED,
+            message="PDF 生成が完了しました",
+        )
     except Exception as pdf_exc:
-        # PDF 生成に失敗した場合はメッセージに記録します
+        # PDF 生成に失敗した場合は FAILED に遷移します
         logger.exception("PDF 生成に失敗しました: job_id=%s", job_id)
         job_manager.update_job_with_pdf_path(
             job_id,
             pdf_path="",
+            message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
+        )
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.FAILED,
             message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
         )
         return

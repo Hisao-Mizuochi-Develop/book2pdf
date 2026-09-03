@@ -23,6 +23,14 @@ export interface AppSettings {
   page_timeout_sec: number;
   /** ジョブ状態ポーリング間隔（秒） */
   polling_interval_sec: number;
+  /** HTTP クライアント全体のタイムアウト（秒） */
+  http_client_timeout_sec: number;
+  /** ZIP アップロード時の個別タイムアウト（秒） */
+  upload_timeout_sec: number;
+  /** OCR 実行依頼の個別タイムアウト（秒） */
+  ocr_request_timeout_sec: number;
+  /** ジョブ状態取得の個別タイムアウト（秒） */
+  poll_request_timeout_sec: number;
 }
 
 /**

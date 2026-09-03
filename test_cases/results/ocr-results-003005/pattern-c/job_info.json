@@ -1,0 +1,10 @@
+{
+  "job_id": "068fee0f-6ab1-4dfa-be9a-958568687897",
+  "status": "completed",
+  "message": "PDF 生成が完了しました",
+  "files": [
+    "002.png",
+    "003.png",
+    "004.png"
+  ]
+}

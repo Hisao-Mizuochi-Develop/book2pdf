@@ -79,7 +79,7 @@ pub async fn run_backend_ocr<R: Runtime>(
     // /ocr エンドポイントはリクエスト受付後即座に processing を返すようになったが、
     // 通信異常時に無限待ちにならないようタイムアウトを明示的に設定しておく。
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(60))
+        .timeout(Duration::from_secs(settings.http_client_timeout_sec))
         .build()
         .map_err(|e| format!("HTTP クライアントの作成に失敗しました: {}", e))?;
 
@@ -102,6 +102,9 @@ pub async fn run_backend_ocr<R: Runtime>(
         settings.backend_url,
         settings.page_timeout_sec,
         settings.polling_interval_sec,
+        settings.upload_timeout_sec,
+        settings.ocr_request_timeout_sec,
+        settings.poll_request_timeout_sec,
         &client,
         emit_progress,
     )

@@ -64,3 +64,32 @@
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `./docs/caveats.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した |  |  |  |
 |  | 2026-08-12: 各モジュール固有の注意事項については `backend/docs/caveats.md` / `ocr-worker/docs/caveats.md` へのリンクを設置した |  |  |  |
+
+---
+
+## ユースケースNo | 006
+
+ユースケース
+進捗通知方式の整備と localapp ポーリングの改善
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| 006001 | 進捗通知のポーリング方式仕様策定と localapp リトライ実装 | 2026-09-03 |  | 設計 / 実装 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `docs/progress-notification-polling-design.md` と `docs/progress-notification-spec.md` を統合し、SSE / HTTP ポーリングの全体仕様を `docs/progress-notification-spec.md` に整理する |  |  |  |
+|  | 進捗ペイロード `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止する |  |  |  |
+|  | ポーリングプロトコルを文書化する（1 リクエストあたり 10 秒タイムアウト、1 秒 / 2 秒 / 4 秒の指数関数的バックオフ、最大 3 回リトライ） |  |  |  |
+|  | `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` の `GET /api/jobs/{job_id}` ポーリング処理に、per-request タイムアウトと指数関数的バックオフによるリトライを実装する |  |  |  |
+|  | リトライ前に「ジョブ状態の取得を再試行します」という進捗メッセージを UI に通知し、ユーザーに一過性の通信エラーであることを伝える |  |  |  |
+|  | `docs/tasks.md` / `docs/work_log.md` / `docs/caveats.md` / `docs/web-ocr-system-plan.md` / `docs/README.md` を更新する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-03: `docs/progress-notification-polling-design.md` を `docs/progress-notification-spec.md` に統合し、前者を削除した |  |  |  |
+|  | 2026-09-03: `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した |  |  |  |
+|  | 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/progress-notification-spec.md` に文書化した |  |  |  |
+|  | 2026-09-03: `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` に `poll_job_status` ヘルパーを追加し、per-request タイムアウトと指数関数的バックオフによるリトライを実装した |  |  |  |
+|  | 2026-09-03: `docs/README.md` / `docs/web-ocr-system-plan.md` / `docs/caveats.md` / `docs/tasks.md` / `docs/work_log.md` を更新した |  |  |  |
+|  | 2026-09-03: `cargo check --tests` と `cargo test backend_api_impl -- --nocapture` にてコンパイル・テストを確認した |  |  |  |
+|  | 2026-09-03: localapp OCR タイムアウトの原因調査を実施し、タイムアウト値の管理方法（設定ファイル vs ハードコード vs 環境変数）を明確化した — 調査報告書 [localapp/docs/timeout-investigation-report-006001.md](../localapp/docs/timeout-investigation-report-006001.md) |  |  |  |
+|  | 2026-09-03: `localapp/src-tauri/src/config.rs` に `http_client_timeout_sec` / `upload_timeout_sec` / `ocr_request_timeout_sec` / `poll_request_timeout_sec` を追加し、すべてのタイムアウト値を設定ファイルで一元管理できるようにした |  |  |  |
+|  | 2026-09-03: `localapp/src-tauri/src/commands/backend_api.rs` と `backend_api_impl.rs` のハードコードされたタイムアウト値を、設定ファイルから読み込んだ値を参照するように変更した |  |  |  |

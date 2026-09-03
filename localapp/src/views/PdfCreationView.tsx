@@ -196,11 +196,12 @@ export function PdfCreationView() {
    * 作成された PDF の親フォルダを OS のファイルマネージャーで開く
    */
   const handleOpenResultFolder = async () => {
-    if (!resultPdfPath) return;
-    const lastSep = resultPdfPath.lastIndexOf("/");
-    const lastSepWin = resultPdfPath.lastIndexOf("\\");
+    const pdfPath = activeResultPdfPath;
+    if (!pdfPath) return;
+    const lastSep = pdfPath.lastIndexOf("/");
+    const lastSepWin = pdfPath.lastIndexOf("\\");
     const sepIndex = Math.max(lastSep, lastSepWin);
-    const folder = sepIndex > 0 ? resultPdfPath.substring(0, sepIndex) : resultPdfPath;
+    const folder = sepIndex > 0 ? pdfPath.substring(0, sepIndex) : pdfPath;
     try {
       await invoke("open_capture_folder", { folderPath: folder });
     } catch (err) {
@@ -373,7 +374,6 @@ export function PdfCreationView() {
 
           <Button
             className="w-full"
-            variant="secondary"
             onClick={handleBackendOcr}
             disabled={!sourcePath || !sourceType || anyProcessing}
             size="lg"

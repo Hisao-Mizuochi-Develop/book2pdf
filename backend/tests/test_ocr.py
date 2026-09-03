@@ -13,6 +13,15 @@ from __future__ import annotations
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
+# ファイルパスをオブジェクトとして扱うための標準ライブラリです
+from pathlib import Path
+
+# 一時ファイルを作成するための標準ライブラリです
+import tempfile
+
+# ポーリング待機に使用する標準ライブラリです
+import time
+
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
@@ -34,8 +43,14 @@ from app.services.ocr_engine import MockOcrEngine
 # 各テスト関数で利用できるように fixture として定義します
 @pytest.fixture
 def client() -> TestClient:
-    """テスト用の HTTP クライアントを提供します。"""
-    return TestClient(app)
+    """テスト用の HTTP クライアントを提供します。
+
+    TestClient をコンテキストマネージャとして使用することで、
+    バックグラウンドタスク（asyncio.create_task など）が
+    正しくスケジュールされ、実行されるようになります。
+    """
+    with TestClient(app) as client:
+        yield client
 
 
 def create_zip_buffer(filenames: list[str]) -> io.BytesIO:
@@ -75,7 +90,50 @@ def mock_ocr_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_run_ocr_success(client: TestClient) -> None:
+@pytest.fixture
+def mock_pdf_generator(monkeypatch: pytest.MonkeyPatch) -> None:
+    """検索可能 PDF 生成をモックに置き換えます。
+
+    MockOcrEngine は sorted XML を作成しないため、実際の PDF 生成は失敗します。
+    この fixture で PDF 生成をモックすることで、OCR 成功 → PDF 成功 → COMPLETED
+    というフロー全体をテストできます。
+    """
+    mock_pdf = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    mock_pdf.write(b"%PDF-1.4\n")
+    mock_pdf.close()
+
+    def mock_generate(job_id: str, output_dir: Path, extract_dir: Path) -> Path:
+        return Path(mock_pdf.name)
+
+    monkeypatch.setattr(
+        "app.routers.jobs.generate_searchable_pdf",
+        mock_generate,
+    )
+
+
+def _wait_for_terminal_status(client: TestClient, job_id: str, timeout_sec: float = 2.0) -> dict:
+    """ジョブが完了または失敗の終端状態になるまでポーリングします。
+
+    Args:
+        client: テスト用 HTTP クライアント
+        job_id: 対象ジョブ ID
+        timeout_sec: 最大待機時間（秒）
+
+    Returns:
+        ジョブ状態の JSON（辞書）
+    """
+    end_time = time.time() + timeout_sec
+    while time.time() < end_time:
+        response = client.get(f"/api/jobs/{job_id}")
+        data = response.json()
+        if data["status"] in ("completed", "failed"):
+            return data
+        time.sleep(0.05)
+    # タイムアウト時は最後に取得した状態を返します
+    return data
+
+
+def test_run_ocr_success(client: TestClient, mock_pdf_generator: None) -> None:
     """OCR 実行が成功し、認識結果テキストが取得できることを確認します。"""
     # まずジョブを作成します
     response = client.post("/api/jobs/")
@@ -93,17 +151,23 @@ def test_run_ocr_success(client: TestClient) -> None:
     # OCR 実行エンドポイントを呼び出します
     response = client.post(f"/api/jobs/{job_id}/ocr")
 
-    # OCR 処理が成功していることを確認します
+    # OCR 処理が正常に開始されたことを確認します
     assert response.status_code == 200
     data = response.json()
 
     # レスポンスに job_id が含まれていることを確認します
     assert data["job_id"] == job_id
 
-    # ジョブ状態が completed であることを確認します
+    # エンドポイントは即座に PROCESSING を返します（非同期処理のため）
+    assert data["status"] == "processing"
+
+    # バックグラウンドタスクの完了を待ちます
+    data = _wait_for_terminal_status(client, job_id)
+
+    # 最終的に completed に遷移していることを確認します
     assert data["status"] == "completed"
 
-    # モック OCR から認識結果テキストが返されていることを確認します
+    # モック OCR から認識結果テキストが保存されていることを確認します
     assert "page1.png" in data["text"]
     assert "page2.jpg" in data["text"]
 
@@ -154,8 +218,11 @@ def test_run_ocr_no_images(client: TestClient) -> None:
     assert "画像" in response.json()["detail"]
 
 
-def test_run_ocr_updates_job_status(client: TestClient) -> None:
-    """OCR 実行後にジョブ状態が completed に更新されることを確認します。"""
+def test_run_ocr_updates_job_status(
+    client: TestClient,
+    mock_pdf_generator: None,
+) -> None:
+    """OCR・PDF 生成完了後にジョブ状態が completed に更新されることを確認します。"""
     # ジョブを作成して ZIP をアップロードします
     response = client.post("/api/jobs/")
     job_id = response.json()["job_id"]
@@ -166,13 +233,12 @@ def test_run_ocr_updates_job_status(client: TestClient) -> None:
         files={"file": ("images.zip", zip_buffer, "application/zip")},
     )
 
-    # OCR を実行します
-    client.post(f"/api/jobs/{job_id}/ocr")
-
-    # ジョブ状態を取得します
-    response = client.get(f"/api/jobs/{job_id}")
+    # OCR を実行します（非同期でバックグラウンドタスクが開始されます）
+    response = client.post(f"/api/jobs/{job_id}/ocr")
     assert response.status_code == 200
-    data = response.json()
+
+    # バックグラウンドタスクの完了を待ちます
+    data = _wait_for_terminal_status(client, job_id)
 
     # 状態が completed に更新されていることを確認します
     assert data["status"] == "completed"

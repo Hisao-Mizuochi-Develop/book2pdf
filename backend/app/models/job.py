@@ -60,6 +60,10 @@ class JobResponse(BaseModel):
         description="展開された画像ファイルの相対パス一覧",
     )
 
+    # OCR によって認識されたテキスト全文です
+    # 処理中や失敗時、未実行時は空文字列になります
+    text: str = Field(default="", description="OCR 認識結果のテキスト")
+
 
 class JobUploadResponse(BaseModel):
     """ZIP アップロード API のレスポンスモデルです。"""
