@@ -62,6 +62,8 @@ pub fn run() {
             commands::pdf::get_pdf_default_output_folder,
             // 006001: OCR 済み PDF 作成
             commands::pdf_creation::create_searchable_pdf,
+            // 008008: 画像結合 PDF 生成（OCR なし）
+            commands::pdf_generation::generate_image_pdf,
             // 003006: backend API 連携（設定読み書き + OCR 実行）
             config::load_settings,
             config::save_settings,

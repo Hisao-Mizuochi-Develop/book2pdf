@@ -75,7 +75,7 @@ export function PdfCreationView() {
     setOutputName,
     setOutputFolder,
     setImageCount,
-    createPdf,
+    generateImagePdf,
     reset,
   } = usePdfCreationStore();
 
@@ -171,11 +171,11 @@ export function PdfCreationView() {
   };
 
   /**
-   * PDF 作成ボタンクリックハンドラ（ローカル OCR）
+   * 画像結合 PDF 生成ボタンクリックハンドラ（OCR なし）
    */
-  const handleCreatePdf = async () => {
+  const handleGenerateImagePdf = async () => {
     try {
-      await createPdf();
+      await generateImagePdf();
     } catch {
       // エラーは store 内で progressMessage に設定されている
     }
@@ -383,12 +383,12 @@ export function PdfCreationView() {
         <div className="flex flex-col gap-2">
           <Button
             className="w-full"
-            onClick={handleCreatePdf}
+            onClick={handleGenerateImagePdf}
             disabled={!sourcePath || !outputFolder || anyProcessing}
             size="lg"
           >
             <FileText className="mr-2 h-4 w-4" />
-            {isProcessing ? "PDF 作成中..." : "PDF 作成（ローカル）"}
+            {isProcessing ? "PDF 作成中..." : "アプリケーションでPDF作成（仮：OCRなし）"}
           </Button>
 
           <Button
@@ -398,7 +398,7 @@ export function PdfCreationView() {
             size="lg"
           >
             <Cloud className="mr-2 h-4 w-4" />
-            {backendIsProcessing ? "backend OCR 実行中..." : "backend OCR で PDF 作成"}
+            {backendIsProcessing ? "PDF 作成中..." : "ウェブサイトで PDF作成"}
           </Button>
         </div>
 

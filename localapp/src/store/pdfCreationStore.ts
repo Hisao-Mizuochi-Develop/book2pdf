@@ -86,6 +86,8 @@ export interface PdfCreationState {
   setOutputName: (name: string) => void;
   /** OCR 済み PDF を作成 */
   createPdf: () => Promise<void>;
+  /** 画像結合 PDF（OCR なし）を作成 */
+  generateImagePdf: () => Promise<void>;
   /** 進捗メッセージを設定 */
   setProgressMessage: (message: string) => void;
   /** 結果パスを設定 */
@@ -249,6 +251,73 @@ export const usePdfCreationStore = create<PdfCreationState>((set, get) => ({
       set({
         resultPdfPath: result,
         progressMessage: "PDF の作成が完了しました",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      set({ progressMessage: `エラー: ${message}` });
+      throw err;
+    } finally {
+      if (unlisten) {
+        unlisten();
+      }
+      set({ isProcessing: false });
+    }
+  },
+
+  /**
+   * 画像結合 PDF（OCR なし）を作成する
+   *
+   * 1. 入力ソースと出力先のバリデーション
+   * 2. `pdf-creation-progress` イベントリスナーを登録
+   * 3. Rust 側 `generate_image_pdf` を呼び出し
+   * 4. 進捗イベントを受信して progressCurrent / progressTotal を更新
+   * 5. 完了後、resultPdfPath に PDF ファイルパスを保存
+   */
+  generateImagePdf: async () => {
+    const { sourcePath, sourceType, outputName, outputFolder } = get();
+
+    if (!sourcePath || !sourceType) {
+      throw new Error("入力フォルダまたは ZIP ファイルが選択されていません");
+    }
+    if (!outputFolder) {
+      throw new Error("出力先フォルダが設定されていません");
+    }
+
+    set({
+      isProcessing: true,
+      progressMessage: "画像を PDF に結合しています...",
+      progressCurrent: 0,
+      progressTotal: 0,
+      resultPdfPath: null,
+    });
+
+    const outputPath = `${outputFolder}/${outputName}.pdf`;
+
+    let unlisten: UnlistenFn | null = null;
+
+    try {
+      // 進捗イベントリスナーを登録
+      unlisten = await listen<PdfCreationProgressPayload>(
+        "pdf-creation-progress",
+        (event) => {
+          set({
+            progressMessage: event.payload.message,
+            progressCurrent: event.payload.current,
+            progressTotal: event.payload.total,
+          });
+        }
+      );
+
+      // Rust 側で ZIP 展開 → 画像結合 PDF 生成
+      const result = await invoke<string>("generate_image_pdf", {
+        sourcePath: sourcePath,
+        sourceType: sourceType,
+        outputPath: outputPath,
+      });
+
+      set({
+        resultPdfPath: result,
+        progressMessage: "PDF の結合が完了しました",
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

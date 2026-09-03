@@ -1620,6 +1620,29 @@
    - `cargo check` / `npm run build`
 
 【実施結果】
+- 2026-09-04: 実装完了
+  - `printpdf = "0.7"`（`embedded_images` feature）と `image_crate`（`image` 0.24.x の別名）を `Cargo.toml` に追加
+    - `printpdf` 内部の `image` 0.24.x との互換性確保のため、別名インポート方式を採用
+  - `localapp/src-tauri/src/commands/pdf_generation.rs` を新規作成
+    - `generate_image_pdf` コマンド（非同期）：入力フォルダまたは ZIP から画像（001-999.png/jpg）を収集・ソート
+    - 画像を A4（210mm × 297mm、10mm マージン）にアスペクト比維持でフィットさせ、各画像を独立ページに配置
+    - px → mm 変換は 300 DPI 基準で実施
+    - 進捗イベント `pdf-creation-progress` を emit（current/total/message）
+    - ZIP 入力時は一時フォルダに展開し、処理完了後に自動クリーンアップ
+    - `pdf_creation.rs`（検索可能 PDF）とは完全に独立した自己完結モジュール
+  - `commands/mod.rs` と `lib.rs` に `pdf_generation::generate_image_pdf` を登録
+  - フロントエンド統合
+    - `pdfCreationStore.ts` に `generateImagePdf` アクションを追加（`generate_image_pdf` コマンドを invoke、進捗イベントを購読）
+    - `PdfCreationView.tsx` のボタンラベルを変更：
+      - 「PDF 作成（ローカル）」→「アプリケーションでPDF作成（仮：OCRなし）」
+      - 「backend OCR で PDF 作成」→「ウェブサイトで PDF作成」
+    - 「アプリケーションでPDF作成」ボタンの onClick を `handleGenerateImagePdf`（`generateImagePdf` 呼び出し）に差し替え
+  - `cargo check`（Rust）と `npm run build`（TypeScript + Vite）が正常に完了
+
+| 項目 | 詳細 |
+|---|---|
+| 作成ファイル | `localapp/src-tauri/src/commands/pdf_generation.rs` |
+| 変更ファイル | `localapp/src-tauri/Cargo.toml`, `localapp/src-tauri/src/commands/mod.rs`, `localapp/src-tauri/src/lib.rs`, `localapp/src/store/pdfCreationStore.ts`, `localapp/src/views/PdfCreationView.tsx` |
 
 ### 008009 OCRエンジン統合・検索可能PDF生成の実装
 
