@@ -81,7 +81,7 @@
 テスト・検証系タスクのフローと成果物の扱いを定めます。
 
 - テストデータは `test_cases/benchmarks/` または `test_cases/testdata/<module>/<タスクNo>-<概要>/` に配置する
-- レポートは `test_cases/ocr-results-<タスクNo>/<report-name>-<タスクNo>.md` 形式で作成する
+- レポートは `test_cases/results/ocr-results-<タスクNo>/<report-name>-<タスクNo>.md` 形式で作成する
 - レポートには以下を含める:
   - タスク名・実施日・目的
   - 対象データ、OCR エンジン、評価指標
@@ -90,7 +90,7 @@
   - 判定（PASS/FAIL）
   - 考察・結論・今後の検討事項
 - 付属データ（CSV、テキスト、画像、比較用 PDF 等）はレポートと同じディレクトリに配置する
-- PDF 目視確認時は `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/ocr-results-<タスクNo>/<パターン名>/pdfs/` で取得する
+- PDF 目視確認時は `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/results/ocr-results-<タスクNo>/<パターン名>/pdfs/` で取得する
 - 作成後は必ず `test_cases/README.md` のインデックスと `<module>/docs/tasks.md` の【実施結果】にリンクを追加する
 
 詳細な配置ルールは `.cline/skills/test-manager/references/testdata-locations.md` を参照。

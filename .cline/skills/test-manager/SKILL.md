@@ -49,7 +49,7 @@ metadata:
    - それ以外の検証は必ず backend API 経由で実施する
 
 4. **検証レポートの作成**
-   - 配置: `test_cases/ocr-results-<タスクNo>/`
+   - 配置: `test_cases/results/ocr-results-<タスクNo>/`
    - 命名: `<レポート名>-<タスクNo>.md`（例: `preprocess-comparison-report-003003.md`）
    - レポートに含める内容:
      - タスク名・実施日・目的
@@ -68,7 +68,7 @@ metadata:
    - レポート本文から相対パスで参照する
 
 6. **PDF の目視確認手順**
-   - `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/ocr-results-<タスクNo>/<パターン名>/pdfs/` で PDF を取得する
+   - `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/results/ocr-results-<タスクNo>/<パターン名>/pdfs/` で PDF を取得する
    - コピーした PDF を開いて目視で品質を確認
    - 確認結果をレポートに記載する
 

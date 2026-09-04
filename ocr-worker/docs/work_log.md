@@ -1249,7 +1249,7 @@ chmod +x scripts/run_003007_ocr_remaining.sh
 - 2026-09-01: `ocr-worker/docs/work_log.md` の 003003・003004・003007 の記録をレビュー
 - 2026-09-01: 過去の検証結果ディレクトリ（`ocr-results-003003/`、`ocr-results-003007/`）は存在しなかったため、ワークログに記載された定量的データを使用
 - 2026-09-01: ページ分類ベース・認識置信度ベース・レイアウト認識結果ベースの 3 方式を実装コスト・処理時間・効果の観点から評価
-- 2026-09-01: 検討レポート `test_cases/ocr-results-003008/adaptive-preprocess-report-003008.md` を作成
+- 2026-09-01: 検討レポート `ocr-worker/test-results/ocr-results-003008/adaptive-preprocess-report-003008.md` を作成
 - 2026-09-01: 結論として「適応的前処理の導入は保留」とし、理由を記載
 - 2026-09-01: `ocr-worker/docs/tasks.md` に実施結果とレポートリンクを追記
 
