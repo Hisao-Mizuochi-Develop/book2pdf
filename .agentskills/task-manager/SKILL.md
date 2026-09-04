@@ -1,0 +1,38 @@
+---
+name: task-manager
+description: |
+  Manage tasks, work logs, and progress tracking for the book2pdf project.
+  Activate when creating or updating tasks.md, work_log.md, or task entries.
+compatibility: VS Code + Cline
+metadata:
+  author: book2pdf-team
+  version: "1.0"
+---
+
+# task-manager
+
+## Overview
+本スキルは、book2pdf プロジェクトのタスク管理表・作業ログの運用ルールを定めます。
+
+## Step-by-step Instructions
+
+1. **タスクNo体系**
+   - 形式: ユースケースNo(3桁) + 通番(3桁)
+   - 例: ユースケース001の1番目 → `001001`
+   - 通番は各ユースケース内で 001 から連番
+
+2. **タスク粒度**
+   - 数時間〜1日以内で完了できる単位
+   - 1つのタスクに複数の責務が含まれる場合は分割を検討
+
+3. **記録場所**
+   - タスク管理表 → `<module>/docs/tasks.md`
+   - 作業ログ → `<module>/docs/work_log.md`
+   - 全体横断 → `./docs/work_log.md`, `./docs/tasks.md`
+
+4. **計画の変更**
+   - 一度記載した【計画】は削除せず、追記のみ
+   - 実施しない場合は、その理由を【計画】欄内に追記
+
+## Common Edge Cases
+- 新規ユースケースが必要な場合: まずユーザーに提案し、承認を得てから起票
