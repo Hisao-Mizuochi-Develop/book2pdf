@@ -27,7 +27,7 @@
 
 
 1. `git checkout main && git pull`
-2. `git checkout -b feature/003001-pdf-import`
+2. `git checkout -b feature/LA003001-pdf-import`
 3. `tasks.md` / `work_log.md` に計画記載
 4. PDFium `.dylib` ダウンロード・配置
 5. `PdfImportView.tsx` UI 実装
