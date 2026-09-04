@@ -7,3 +7,6 @@ dist/
 .git_status.txt
 .tmp_*.log
 .tmp_git_status.txt
+
+# Binary outputs: PDFs are generated artifacts and should not be tracked
+*.pdf
