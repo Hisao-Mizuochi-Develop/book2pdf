@@ -10,7 +10,7 @@
  * 6. `listen()` でイベントを受信し、progressMessage を更新
  * 7. 完了後、resultPath に出力ファイルパスを保存
  *
- * 【タブ間自動連携（005003）】
+ * 【タブ間自動連携（LA005003）】
  * - captureStore.lastCaptureFolder の変更を監視し、自動的に sourceFolder に反映する
  * - exportStore の sourceFolder は captureStore の変更を受けて常に最新になる
  */

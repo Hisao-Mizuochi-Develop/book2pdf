@@ -346,7 +346,7 @@ python -m pytest tests/ -q
 - SSE エンドポイントは進捗ファイル `/data/progress/{job_id}.json` をポーリングして配信する
 - 本番環境では `PROGRESS_POLL_INTERVAL` を省略し、デフォルトの 0.5 秒間隔を使用する
 - テスト時は `conftest.py` で `PROGRESS_POLL_INTERVAL=0.05` を設定し、高速化している
-- プロキシ環境で SSE が不安定な場合は、別途ポーリング方式（005001）を検討する
+- プロキシ環境で SSE が不安定な場合は、別途ポーリング方式（BE005001）を検討する
 
 ---
 
@@ -472,15 +472,15 @@ file /tmp/book2pdf-test/output.pdf
 - backend コードを変更した後は、必ず `docker compose up -d --build backend` などでイメージを再ビルドすること
   - 単なる `docker compose restart backend` ではホスト側のソース変更が反映されない
 - テスト用のジョブは backend のメモリ内に保持されているため、backend 再起動後は過去のジョブにアクセスできなくなる
-  - 永続化は別タスク（004001）で対応予定
+  - 永続化は別タスク（BE004001）で対応予定
 
 ---
 
-## 2026-08-12 全体横断タスクの管理移行（タスク 006001 → `./docs/tasks.md`）
+## 2026-08-12 全体横断タスクの管理移行（タスク BE006001 → `./docs/tasks.md`）
 
 ### 目的
 
-`backend/docs/tasks.md` に誤作成したモジュール横断タスク「結合テスト手順書の作成（タスク 006001）」を、`.clinerules` で定める `./docs/` 配下のタスク管理表に移行する。
+`backend/docs/tasks.md` に誤作成したモジュール横断タスク「結合テスト手順書の作成（タスク BE006001）」を、`.clinerules` で定める `./docs/` 配下のタスク管理表に移行する。
 
 ### 前提
 
@@ -491,7 +491,7 @@ file /tmp/book2pdf-test/output.pdf
 
 ```bash
 # backend/docs/tasks.md からユースケース 006 を削除
-# backend/docs/work_log.md から 006001 のエントリを削除
+# backend/docs/work_log.md から BE006001 のエントリを削除
 # ./docs/tasks.md / ./docs/work_log.md に内容を移行
 
 # git 状態確認
@@ -502,8 +502,8 @@ git status --short
 ### 結果
 
 - `backend/docs/tasks.md` からユースケース 006「結合テスト・運用ドキュメントの整備」を削除した
-- `backend/docs/work_log.md` から「2026-08-12 結合テスト手順書の作成（タスク 006001）」のエントリを削除した
-- `./docs/tasks.md` の 001002 として「結合テスト手順書の作成」を追加した
+- `backend/docs/work_log.md` から「2026-08-12 結合テスト手順書の作成（タスク BE006001）」のエントリを削除した
+- `./docs/tasks.md` の BE001002 として「結合テスト手順書の作成」を追加した
 - `./docs/work_log.md` の 2026-08-12 エントリとして結合テスト手順書作成を記録した
 
 ### 注意事項
@@ -545,7 +545,7 @@ git diff -- docker-compose.yml
   - `backend/app/services/pdf_generator.py`: PDF 生成開始・完了、処理時間を DEBUG ログに出力
   - `backend/app/routers/jobs.py`: OCR エンドポイント全体の処理開始・完了、処理時間を DEBUG ログに出力
 - `docker-compose.yml` の backend サービスに `LOG_LEVEL=DEBUG` を追加した
-- `backend/docs/tasks.md` にタスク 004001 を追記した
+- `backend/docs/tasks.md` にタスク BE004001 を追記した
 - `backend/docs/work_log.md` に本エントリを追記した
 
 ### 注意事項
@@ -668,7 +668,7 @@ PY
 
 ---
 
-## 2026-08-12 タスク003004〜003006：PDF 透明テキストの配置ズレとフォント fallback 調査
+## 2026-08-12 タスク003004〜BE003006：PDF 透明テキストの配置ズレとフォント fallback 調査
 
 ### 目的
 
@@ -760,9 +760,9 @@ PY
   - pdf_x = xml_x * scale_x
   - pdf_y = pdf_height - (xml_y + xml_height) * scale_y
 - OCR 認識精度の改善（RAG→RAC など）は、ndlocr_cli 側のモデル・前処理・推論パラメータを調査する必要がある
-- 次のステップ: タスク 003007 で座標スケーリングを実装し、OCR 認識精度の改善策を調査する
+- 次のステップ: タスク BE003007 で座標スケーリングを実装し、OCR 認識精度の改善策を調査する
 
-## 2026-08-12 003007 OCR 結果の座標スケーリング実装と検証
+## 2026-08-12 BE003007 OCR 結果の座標スケーリング実装と検証
 
 ### 目的
 
@@ -770,7 +770,7 @@ OCR 結果 XML のページサイズと PDF ページサイズ（元画像サイ
 
 ### 前提
 
-- タスク 003004/003005 で XML ページサイズと PDF ページサイズの差異が原因であることを特定済み
+- タスク BE003004/BE003005 で XML ページサイズと PDF ページサイズの差異が原因であることを特定済み
 - 元画像サイズは 664×942、XML ページサイズは Page 1: 698×965、Page 2: 686×958、Page 3: 666×943
 - `backend/app/services/xml_parser.py` と `backend/app/services/pdf_generator.py` を修正する
 
@@ -876,7 +876,7 @@ OCR 結果を目視確認しやすくするため、PDF 透明テキストの色
 
 ### 前提
 
-- タスク 003007 で座標スケーリングが実装済み
+- タスク BE003007 で座標スケーリングが実装済み
 - 最新の生成 PDF `output_scaled_20260812_121956.pdf` が作業ディレクトリに存在する
 - `backend/app/services/pdf_generator.py` のテキスト色を変更する
 
@@ -1012,7 +1012,7 @@ python -m pytest tests/ -q
 
 ### 前提
 
-- タスク 003008 で PDF 目視評価を実施済み
+- タスク BE003008 で PDF 目視評価を実施済み
 - `backend/app/services/pdf_generator.py` の `_insert_text_line()` に Y 座標変換の問題があることをユーザーが指摘
 - `backend/.venv` が Python 3.12 で作成済み
 
@@ -1040,7 +1040,7 @@ python -m pytest tests/ -q
 
 ### 注意事項
 
-- 今回の仮修正は「XML 座標系が正しい」という前提に基づく。本当に正しいかはタスク 003010 で調査する
+- 今回の仮修正は「XML 座標系が正しい」という前提に基づく。本当に正しいかはタスク BE003010 で調査する
 - Docker コンテナで結合テストする際は、`docker compose up -d --build backend` でイメージを再ビルドすること
 - 修正後の PDF はまだ Docker 結合テストでの目視確認が必要
 
@@ -1054,7 +1054,7 @@ OCR 結果 XML の座標系と PyMuPDF の `insert_text()` の座標系を調査
 
 ### 前提
 
-- タスク 003009 で仮修正を実施済み
+- タスク BE003009 で仮修正を実施済み
 - `input_6971e033.sorted.xml` と `output_scaled_20260812_121956.pdf` が作業ディレクトリに存在する
 - `backend/.venv` が Python 3.12 で作成済み
 - PyMuPDF、元画像ファイルにアクセス可能
@@ -1169,7 +1169,7 @@ python -m pytest tests/ -q
 
 ### 目的
 
-backend 004003「OCR 処理性能計測の実施」のうち、ユーザー指示により以下の 2 項目を実施する。
+backend BE004003「OCR 処理性能計測の実施」のうち、ユーザー指示により以下の 2 項目を実施する。
 
 1. `ocr-worker/ndlocr_cli_patches/inference.py` に 1 ページごとの OCR 処理時間 DEBUG ログを追加する
 2. `scripts/benchmark_ocr.sh` を ZIP 内の画像ファイル数に依存した汎用ページ数対応に改修する
@@ -1202,7 +1202,7 @@ bash -n scripts/benchmark_ocr.sh
   - `seq 1 92` のハードコードを廃止し、サンプル画像ディレクトリ内の画像ファイルを `find` で自動収集
   - ZIP 内の画像ファイル数を `unzip -Z1 | wc -l` で自動検出し、0 ページの場合はエラー終了
   - ocr-worker ログ抽出の正規表現を `page=N` 付きの新しい DEBUG ログ形式に合わせて更新
-- `backend/docs/tasks.md` の 004003 タスク詳細に実施結果を追記した
+- `backend/docs/tasks.md` の BE004003 タスク詳細に実施結果を追記した
 - `backend/docs/work_log.md` に本エントリを追記した
 
 ### 注意事項
@@ -1219,7 +1219,7 @@ bash -n scripts/benchmark_ocr.sh
 ### 【実施予定】
 
 - 日時: 2026-09-01
-- 目的: 最新コードベース（005001 メモリ最適化パッチ適用後）での OCR 処理性能を計測する
+- 目的: 最新コードベース（BE005001 メモリ最適化パッチ適用後）での OCR 処理性能を計測する
 - 前提条件:
   - `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png` が存在すること
   - `docker-compose.yml` の `LOG_LEVEL=DEBUG` が設定されていること
@@ -1230,19 +1230,19 @@ bash -n scripts/benchmark_ocr.sh
 - 想定される結果や注意点:
   - 3 ページ OCR には数分〜十数分かかる可能性がある
   - 初回実行時は ndlocr_cli のモデル初期化に時間がかかる
-  - メモリ最適化パッチ（005001）適用後の 1 ページあたり処理時間を確認する
+  - メモリ最適化パッチ（BE005001）適用後の 1 ページあたり処理時間を確認する
 
 ### 【実施実績】
 
-- 2026-09-01: `feature/005002-pdf-e2e-test` ブランチの未コミット変更を `git stash` で一時退避
-- 2026-09-01: `main` ブランチを最新化し、`feature/004003-ocr-performance-test` ブランチを作成
+- 2026-09-01: `feature/BE005002-pdf-e2e-test` ブランチの未コミット変更を `git stash` で一時退避
+- 2026-09-01: `main` ブランチを最新化し、`feature/BE004003-ocr-performance-test` ブランチを作成
 - 2026-09-01: `docker compose up -d --build backend ocr-worker` を実行（ビルド約 58 秒）
 - 2026-09-01: backend（`http://localhost:8000/health`）および ocr-worker（`http://localhost:8001/health`）が正常応答することを確認
 - 2026-09-01: `scripts/benchmark_ocr.sh` を改修し、`BENCHMARK_SAMPLE_DIR` 環境変数でサンプルディレクトリを指定可能にした
-- 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-004003/` にコピー
-- 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-004003 ./scripts/benchmark_ocr.sh` を実行
+- 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-BE004003/` にコピー
+- 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-BE004003 ./scripts/benchmark_ocr.sh` を実行
 - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
-- 2026-09-01: 検証結果レポート `backend/test-results/benchmark-004003/performance-test-report-004003.md` を作成
+- 2026-09-01: 検証結果レポート `backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md` を作成
 - 2026-09-01: `backend/docs/tasks.md` に実施結果とレポートリンクを追記
 
 ---
@@ -1271,7 +1271,7 @@ docker compose restart backend
 JOB_RESPONSE=$(curl -s -X POST http://localhost:8000/api/jobs/)
 JOB_ID=$(echo "$JOB_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['job_id'])")
 curl -s -X POST "http://localhost:8000/api/jobs/$JOB_ID/upload" \
-  -F "file=@/tmp/003006-backend-ocr-test.zip;type=application/zip"
+  -F "file=@/tmp/BE003006-backend-ocr-test.zip;type=application/zip"
 curl -s -X POST "http://localhost:8000/api/jobs/$JOB_ID/ocr" | python3 -m json.tool
 
 # processing 状態の維持確認（3 分間ポーリング）
@@ -1295,5 +1295,5 @@ done
 
 - エンドポイントの即座返答を確認したが、OCR 完了までには数十分かかるため、completed になるまでのフルフロー確認は別途実施する
 - クライアント側は `processing` 状態を継続ポーリングし、`completed`/`failed` で完了判定する必要がある
-- バックグラウンドタスク実行中に backend コンテナが再起動するとジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+- バックグラウンドタスク実行中に backend コンテナが再起動するとジョブ状態は失われる（BE005001 SQLite 永続化完了後に解消予定）
 

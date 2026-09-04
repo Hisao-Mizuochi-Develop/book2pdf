@@ -66,7 +66,7 @@ class LayoutExtractionProcess(BaseInferenceProcess):
             基本的にinput_dataと同じ構造です。
         """
         print('### Layout Extraction Process ###')
-        # FIX(005001): input_data のディープコピーを避け、メモリ使用量を削減します
+        # FIX(OW004001): input_data のディープコピーを避け、メモリ使用量を削減します
         # output_data['xml'] は推論後に新しい ElementTree で置き換わるため、
         # input_data と画像データを共有しても後続処理に影響しません
         output_data = input_data.copy()

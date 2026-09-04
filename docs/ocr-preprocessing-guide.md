@@ -8,11 +8,11 @@
 
 | 項目 | book2pdf での対応状況 | 根拠レポート |
 |---|---|---|
-| ✅ OCR 前処理 ON/OFF | `ocr-worker/app/main.py` の `PREPROCESS_ENABLED` 環境変数で制御。`true` がデフォルト | [003006 レポート](../ocr-results-003006/preprocess-integration-report-003006.md) |
-| ✅ 2x アップスケール + 軽度シャープニング | `ocr-worker/app/main.py` の `_preprocess_image()` で固定実装。デフォルト前処理として採用 | [003003 レポート](../ocr-results-003003/preprocess-comparison-report-003003.md)（最も効果的）、[003006 レポート](../ocr-results-003006/preprocess-integration-report-003006.md) |
-| ✅ `layout_extraction.score_thr` 調整 | `ocr-worker/ndlocr_cli_patches/process_textblock.py` で config.yml の値を参照するようパッチ。0.1〜0.5 で検証済み | [003005 レポート](../ocr-results-003005/config-comparison-report-003005.md) |
-| ✅ 前処理なし（baseline）との比較 | 003003 で全パターンが baseline と比較。003006 で `PREPROCESS_ENABLED=true/false` で検証 | [003003 レポート](../ocr-results-003003/preprocess-comparison-report-003003.md)、[003006 レポート](../ocr-results-003006/preprocess-integration-report-003006.md) |
-| ✅ 追加前処理パターンの効果検証 | `scripts/preprocess_image.py` に 11 パターンを実装。003007 で 7 パターンを比較 | [003007 レポート](../ocr-results-003007/additional-preprocess-report-003007.md) |
+| ✅ OCR 前処理 ON/OFF | `ocr-worker/app/main.py` の `PREPROCESS_ENABLED` 環境変数で制御。`true` がデフォルト | [OW003006 レポート](../ocr-results-OW003006/preprocess-integration-report-OW003006.md) |
+| ✅ 2x アップスケール + 軽度シャープニング | `ocr-worker/app/main.py` の `_preprocess_image()` で固定実装。デフォルト前処理として採用 | [OW003003 レポート](../ocr-results-OW003003/preprocess-comparison-report-OW003003.md)（最も効果的）、[OW003006 レポート](../ocr-results-OW003006/preprocess-integration-report-OW003006.md) |
+| ✅ `layout_extraction.score_thr` 調整 | `ocr-worker/ndlocr_cli_patches/process_textblock.py` で config.yml の値を参照するようパッチ。0.1〜0.5 で検証済み | [OW003005 レポート](../ocr-results-OW003005/config-comparison-report-OW003005.md) |
+| ✅ 前処理なし（baseline）との比較 | OW003003 で全パターンが baseline と比較。OW003006 で `PREPROCESS_ENABLED=true/false` で検証 | [OW003003 レポート](../ocr-results-OW003003/preprocess-comparison-report-OW003003.md)、[OW003006 レポート](../ocr-results-OW003006/preprocess-integration-report-OW003006.md) |
+| ✅ 追加前処理パターンの効果検証 | `scripts/preprocess_image.py` に 11 パターンを実装。OW003007 で 7 パターンを比較 | [OW003007 レポート](../ocr-results-OW003007/additional-preprocess-report-OW003007.md) |
 
 ### 1.1 取り込み済み前処理の詳細
 
@@ -29,14 +29,14 @@ img = img.filter(
 )
 ```
 
-これは 003003 で最も効果的だった `sharpen_light_upscale_2x` と同一の処理です。
+これは OW003003 で最も効果的だった `sharpen_light_upscale_2x` と同一の処理です。
 
 ### 1.2 取り込み済み設定の推奨値
 
 | 項目 | 推奨値 | 備考 |
 |---|---|---|
-| `PREPROCESS_ENABLED` | `true` | 前処理 ON で「〓」出現数が減少（003006: 5→3） |
-| `layout_extraction.score_thr` | `0.2`〜`0.3` | デフォルト 0.3 で問題ない。0.2 まで下げても最終 PDF への影響は小さい（003005） |
+| `PREPROCESS_ENABLED` | `true` | 前処理 ON で「〓」出現数が減少（OW003006: 5→3） |
+| `layout_extraction.score_thr` | `0.2`〜`0.3` | デフォルト 0.3 で問題ない。0.2 まで下げても最終 PDF への影響は小さい（OW003005） |
 | `OCR_WORKER_REQUEST_TIMEOUT` | `1800` 秒 | 一般書籍で十分。超大判書籍では `3600` 秒以上を検討 |
 
 ---
@@ -46,11 +46,11 @@ img = img.filter(
 | 項目 | 現状 | 未採用の理由 | 検討条件 |
 |---|---|---|---|
 | ⏳ `max_pixels` による画素数制限 | 未実装。`ocr-worker` は 2x アップスケールを固定適用し、上限なし | 超大判画像で処理時間短縮・メモリ抑制に有効だが、現状のテストデータでは発生していない | 8,000×14,000 ピクセル級の超大判書籍でタイムアウト / メモリ不足が発生した場合 |
-| ⏳ `binarize`（二値化）の自動統合 | `scripts/preprocess_image.py` の `local_binarization` は実装済みだが、`ocr-worker` 自動前処理には未統合 | 003007 で「文字潰れによる誤認識が増加」と判定。カラー図版では逆効果のリスク | 白黒印刷物・旧字体文書など、別データセットで再検証して効果が確認できた場合 |
-| ⏳ `enhance_contrast`（コントラスト強調）の自動統合 | `contrast_gamma` / `contrast_strong` は実装済みだが、`ocr-worker` 自動前処理には未統合 | 003007 で「細部潰れ・認識欠落」と判定。特に表紙・目次で悪化 | 薄字・地色ノイズが多い文書で、2x アップスケール単独では不足と確認できた場合 |
-| ⏳ `upscale` 倍率の動的切り替え（1.5x / 3x など） | `ocr-worker` は固定 2x のみ | 003003 で 2x が最良と確認。1.5x / 3x の効果は未検証 | 処理速度優先で 1.5x を試す、または表紙対策で 3x を試す場合 |
+| ⏳ `binarize`（二値化）の自動統合 | `scripts/preprocess_image.py` の `local_binarization` は実装済みだが、`ocr-worker` 自動前処理には未統合 | OW003007 で「文字潰れによる誤認識が増加」と判定。カラー図版では逆効果のリスク | 白黒印刷物・旧字体文書など、別データセットで再検証して効果が確認できた場合 |
+| ⏳ `enhance_contrast`（コントラスト強調）の自動統合 | `contrast_gamma` / `contrast_strong` は実装済みだが、`ocr-worker` 自動前処理には未統合 | OW003007 で「細部潰れ・認識欠落」と判定。特に表紙・目次で悪化 | 薄字・地色ノイズが多い文書で、2x アップスケール単独では不足と確認できた場合 |
+| ⏳ `upscale` 倍率の動的切り替え（1.5x / 3x など） | `ocr-worker` は固定 2x のみ | OW003003 で 2x が最良と確認。1.5x / 3x の効果は未検証 | 処理速度優先で 1.5x を試す、または表紙対策で 3x を試す場合 |
 | ⏳ per-page タイムアウト制御 | backend→ocr-worker は job 全体の HTTP タイムアウト（1800秒）のみ | reference 側は 1枚あたり 120〜300 秒。book2pdf のアーキテクチャでは job 単位が自然 | 長大な文書で特定ページだけタイムアウトする問題が発生した場合 |
-| ⏳ `replacements`（文字置換辞書） | 未実装 | 003002 の「GPT-4→〓PT-4」「LLM→lm」など、固有名詞・記号の誤認識に対して有効 | 頻出する誤認識パターンが特定でき、後処理で補正したい場合 |
+| ⏳ `replacements`（文字置換辞書） | 未実装 | OW003002 の「GPT-4→〓PT-4」「LLM→lm」など、固有名詞・記号の誤認識に対して有効 | 頻出する誤認識パターンが特定でき、後処理で補正したい場合 |
 | ⏳ `reflow_paragraphs`（段落自動再構成） | 未実装。Markdown 出力機能自体が未実装 | Markdown 出力時の可読性向上に有効 | Markdown ダウンロード機能を実装する場合 |
 | ⏳ `chapter_bookmarks`（章しおり検出） | 未実装。PDF 生成時に見出し検出・しおり挿入の機能なし | テキスト PDF の利便性向上に有効 | 検索可能 PDF にしおり / 目次を追加する場合 |
 | ⏳ `markdown.embed_images` | 未実装 | Markdown ファイル単体配布時に画像を含めたい場合 | Markdown 出力機能を実装する場合 |
@@ -91,8 +91,8 @@ kindle_shot（reference）側の変換タブでは、以下の前処理パラメ
 
 - **標準的な電子書籍画像**: `sharpen_light_upscale_2x` がバランス良好（`ocr-worker` のデフォルト前処理と同じ）。
 - **薄字や地色ノイズが多い**: `scripts/preprocess_image.py` の `contrast_gamma` または `contrast_gamma_sharpen_light` を試す（ただし `ocr-worker` 自動適用は非推奨）。
-- **古い白黒印刷物**: `scripts/preprocess_image.py` の `local_binarization` を試す（ただし 003007 で文字潰れが確認されているため注意）。
-- **極端に小さい文字**: `4x_upscale_sharpen` を試す。003007 では baseline より改善したが、ファイルサイズ・処理時間が 3 倍以上になるため注意。
+- **古い白黒印刷物**: `scripts/preprocess_image.py` の `local_binarization` を試す（ただし OW003007 で文字潰れが確認されているため注意）。
+- **極端に小さい文字**: `4x_upscale_sharpen` を試す。OW003007 では baseline より改善したが、ファイルサイズ・処理時間が 3 倍以上になるため注意。
 
 ---
 
@@ -183,7 +183,7 @@ reference 側では UI 層・前処理層・OCR エンジン層の 3 層で対�
 | 日付 | 変更内容 |
 |---|---|
 | 2026-08-15 | 新規作成。reference/docs の「変換」章を参考に book2pdf 向けに整理 |
-| 2026-08-15 | 003002〜003007 の過去レポートを照らし、「取り込み済み」「要検討」を明確に分類 |
+| 2026-08-15 | OW003002〜OW003007 の過去レポートを照らし、「取り込み済み」「要検討」を明確に分類 |
 
 ---
 

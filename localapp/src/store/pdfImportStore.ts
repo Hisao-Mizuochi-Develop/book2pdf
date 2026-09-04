@@ -157,7 +157,7 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
       });
 
       if (selected && typeof selected === "string") {
-        // 003003: PDF ファイル名からデフォルト出力フォルダを自動設定
+        // LA003003: PDF ファイル名からデフォルト出力フォルダを自動設定
         let defaultOutputFolder: string | null = null;
         try {
           defaultOutputFolder = await invoke<string>(
@@ -217,7 +217,7 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
    * 4. Rust 側 `extract_pdf_to_images` を invoke
    * 5. 完了後、result 状態を設定し完了表示を行う
    *
-   * 003003 改修により、完了後の自動遷移は廃止。
+   * LA003003 改修により、完了後の自動遷移は廃止。
    * ユーザーは「フォルダを開く」「トリミングに進む」ボタンで次のアクションを選択する。
    */
   extractPdf: async () => {
@@ -281,7 +281,7 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
       );
 
       // 完了状態を更新
-      // 003003: 自動遷移せず、result 状態に完了情報を保持して完了表示を行う
+      // LA003003: 自動遷移せず、result 状態に完了情報を保持して完了表示を行う
       const completedImageCount = get().progressTotal;
       set({
         isLoading: false,
@@ -292,7 +292,7 @@ export const usePdfImportStore = create<PdfImportState>((set, get) => ({
         },
       });
 
-      // 003003: 取り込み完了後は出力フォルダをトリミング・ZIP 出力の入力フォルダに反映
+      // LA003003: 取り込み完了後は出力フォルダをトリミング・ZIP 出力の入力フォルダに反映
       await useTrimStore.getState().loadFolder(resultFolder);
       useExportStore.getState().setSourceFolder(resultFolder);
     } catch (err) {

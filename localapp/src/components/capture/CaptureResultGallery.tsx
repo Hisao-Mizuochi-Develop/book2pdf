@@ -1,7 +1,7 @@
 /**
  * キャプチャ結果のサムネイルギャラリーコンポーネント
  *
- * 002004: キャプチャ画像のフォルダ管理
+ * LA002004: キャプチャ画像のフォルダ管理
  * キャプチャ完了後に CaptureView で表示される。
  * サムネイルグリッド・フォルダを開く・トリミングへ進む の3機能を提供する。
  *
@@ -37,14 +37,14 @@ interface CaptureResultGalleryProps {
   /** 「トリミングへ進む」ボタンクリック時のコールバック */
   onGoTrim: () => void;
   /**
-   * 選択中の画像ファイル名（004001 トリミング画面用）
+   * 選択中の画像ファイル名（LA004001 トリミング画面用）
    *
    * 指定された場合、該当サムネイルにハイライト枠を表示する。
    * 選択状態の制御は親コンポーネント（TrimView）で行う。
    */
   selectedFilename?: string | null;
   /**
-   * サムネイルクリック時のコールバック（004001 トリミング画面用）
+   * サムネイルクリック時のコールバック（LA004001 トリミング画面用）
    *
    * クリックされた画像のファイル名を親コンポーネントに通知する。
    */
@@ -211,7 +211,7 @@ export function CaptureResultGallery({
                 <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
                   {index + 1} / {images.length}
                 </div>
-                {/* 選択中インジケータ（004001） */}
+                {/* 選択中インジケータ（LA004001） */}
                 {isSelected && (
                   <div className="absolute inset-0 bg-primary/10" />
                 )}

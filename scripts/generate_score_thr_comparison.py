@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""003005 score_thr 5パターンの PDF からページ画像を生成し、比較 HTML を作成します。"""
+"""OW003005 score_thr 5パターンの PDF からページ画像を生成し、比較 HTML を作成します。"""
 
 from pathlib import Path
 import pymupdf
 
-BASE_DIR = Path("/Users/hisao/Documents/work4/sakura/book2pdf/ocr-results-003005")
+BASE_DIR = Path("/Users/hisao/Documents/work4/sakura/book2pdf/ocr-results-OW003005")
 PATTERNS = [
     ("score-thr-0.1-preprocess-on", "0.1"),
     ("score-thr-0.2-preprocess-on", "0.2"),
@@ -56,7 +56,7 @@ def main() -> None:
         '<html lang="ja">',
         "<head>",
         '  <meta charset="UTF-8">',
-        "  <title>003005 score_thr 5パターン PDF ページ画像目視比較</title>",
+        "  <title>OW003005 score_thr 5パターン PDF ページ画像目視比較</title>",
         "  <style>",
         "    body { font-family: sans-serif; margin: 1rem; }",
         "    h1 { font-size: 1.2rem; }",
@@ -69,10 +69,10 @@ def main() -> None:
         "  </style>",
         "</head>",
         "<body>",
-        "  <h1>003005 score_thr 比較: 5パターン（前処理 ON）</h1>",
+        "  <h1>OW003005 score_thr 比較: 5パターン（前処理 ON）</h1>",
         "  <div class=\"meta\">",
         "    score_thr: 0.1 / 0.2 / 0.3 / 0.4 / 0.5<br>",
-        "    テストデータ: benchmark-ocr-003002.zip (002.png, 003.png, 004.png)",
+        "    テストデータ: benchmark-ocr-OW003002.zip (002.png, 003.png, 004.png)",
         "  </div>",
     ]
 

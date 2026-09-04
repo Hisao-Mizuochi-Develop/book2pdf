@@ -1,4 +1,4 @@
-/// 003006: localapp → backend API 経由で OCR/PDF 生成を実行するコマンド
+/// LA003006: localapp → backend API 経由で OCR/PDF 生成を実行するコマンド
 ///
 /// ユーザーが選択した「画像フォルダ」または「ZIP ファイル」を backend API に送信し、
 /// ndlocr_cli による OCR → 検索可能 PDF 生成 → ダウンロード までを Rust 側で一貫して処理する。

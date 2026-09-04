@@ -233,7 +233,7 @@ class OcrInferrer:
             pred_list.extend(single_image_file_output)
             print('########  END PAGE INFERENCE PROCESS  ########')
 
-            # FIX(005001): 1 ページ処理ごとにメモリを解放します
+            # FIX(OW004001): 1 ページ処理ごとにメモリを解放します
             _cleanup_memory()
 
         return pred_list
@@ -342,7 +342,7 @@ class OcrInferrer:
             pred_list.extend(single_image_file_output)
             print('########  END PAGE INFERENCE PROCESS  ########')
 
-            # FIX(005001): 1 ページ処理ごとにメモリを解放します
+            # FIX(OW004001): 1 ページ処理ごとにメモリを解放します
             # PyTorch Lightning / mmdetection のキャッシュ・中間テンソル・循環参照を
             # 即座に回収し、ページ数に応じたメモリ増加を防ぎます
             _cleanup_memory()

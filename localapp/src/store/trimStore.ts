@@ -13,7 +13,7 @@
  * - トリミング値（上/右/下/左）
  * - 画像読み込み中フラグ/エラー
  *
- * captureStore（002004）との連携：
+ * captureStore（LA002004）との連携：
  * TrimView.tsx で captureStore.lastCaptureFolder を監視し、
  * 存在する場合は自動的に trimStore.loadFolder() を呼び出す。
  */

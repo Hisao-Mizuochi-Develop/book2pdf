@@ -1,0 +1,47 @@
+========================================
+Pattern: local_binarization_sharpen
+ZIP: benchmark-ocr-OW003007-local-binarization-sharpen.zip
+========================================
+Job ID: 5dfd249c-6046-4411-916b-af914fc50750
+Uploading...
+Running OCR...
+jq: parse error: Invalid string: control characters from U+0000 through U+001F must be escaped at line 480, column 1
+Polling job status...
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed
+  status: completed

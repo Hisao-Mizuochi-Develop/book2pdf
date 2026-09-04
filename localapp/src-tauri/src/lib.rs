@@ -14,7 +14,7 @@
 mod commands;
 // データモデル（フロントエンドと共有する構造体）
 mod models;
-// 003006: アプリケーション設定（backend URL、タイムアウト値など）
+// LA003006: アプリケーション設定（backend URL、タイムアウト値など）
 mod config;
 
 /// Tauri アプリケーションを起動する
@@ -37,9 +37,9 @@ pub fn run() {
     tauri::Builder::default()
         // 外部リンクをデフォルトブラウザで開くための公式プラグイン
         .plugin(tauri_plugin_opener::init())
-        // フォルダ選択・保存ダイアログ用プラグイン（005002: 出力設定 UIで使用）
+        // フォルダ選択・保存ダイアログ用プラグイン（LA005002: 出力設定 UIで使用）
         .plugin(tauri_plugin_dialog::init())
-        // 003006: HTTP クライアント用プラグイン（backend API 連携）
+        // LA003006: HTTP クライアント用プラグイン（backend API 連携）
         .plugin(tauri_plugin_http::init())
         // フロントエンドから呼び出せるコマンドを登録
         // ここに列挙した関数が `invoke("関数名")` で呼び出される
@@ -48,24 +48,24 @@ pub fn run() {
             commands::capture::get_builtin_profiles,
             commands::capture::start_continuous_capture,
             commands::capture::stop_continuous_capture,
-            // 002004: キャプチャ画像のフォルダ管理
+            // LA002004: キャプチャ画像のフォルダ管理
             commands::capture::list_capture_images,
             commands::capture::get_capture_image,
             commands::capture::open_capture_folder,
-            // 004001: トリミングプレビュー
+            // LA004001: トリミングプレビュー
             commands::capture::apply_crop_preview,
-            // 005001: ZIP アーカイブ化
+            // LA005001: ZIP アーカイブ化
             commands::capture::create_zip_archive,
-            // 003002: PDF → 画像展開
+            // LA003002: PDF → 画像展開
             commands::pdf::extract_pdf_to_images,
-            // 003003: PDF 出力フォルダ自動設定
+            // LA003003: PDF 出力フォルダ自動設定
             commands::pdf::get_pdf_default_output_folder,
-            // 008009: OCR 付き検索可能 PDF 生成（ローカル完結）
-            // 006001 のダミー実装は統合され、本コマンドが正式な検索可能 PDF 生成を担う
+            // LA008009: OCR 付き検索可能 PDF 生成（ローカル完結）
+            // LA006001 のダミー実装は統合され、本コマンドが正式な検索可能 PDF 生成を担う
             commands::pdf_searchable::create_searchable_pdf,
-            // 008008: 画像結合 PDF 生成（OCR なし）
+            // LA008008: 画像結合 PDF 生成（OCR なし）
             commands::pdf_generation::generate_image_pdf,
-            // 003006: backend API 連携（設定読み書き + OCR 実行）
+            // LA003006: backend API 連携（設定読み書き + OCR 実行）
             config::load_settings,
             config::save_settings,
             commands::backend_api::run_backend_ocr,

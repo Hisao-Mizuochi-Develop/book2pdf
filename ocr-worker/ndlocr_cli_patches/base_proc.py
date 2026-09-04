@@ -95,7 +95,7 @@ class BaseInferenceProcess:
             基本的にinput_dataと同じ構造です。
         """
         print('### Base Inference Process ###')
-        # FIX(005001): input_data のディープコピーを避け、shallow copy を返します
+        # FIX(OW004001): input_data のディープコピーを避け、shallow copy を返します
         # 基底クラスのデフォルト動作として、後続プロセスで input_data を変更する場合は
         # 各継承先で必要に応じてコピーしてください
         result = [input_data.copy()]
@@ -293,7 +293,7 @@ class BaseInferenceProcess:
             推論処理の結果を保持する辞書型データ。
         """
         dump_img = None
-        # FIX(005001): dump 用画像の deep copy を避け、参照を共有します
+        # FIX(OW004001): dump 用画像の deep copy を避け、参照を共有します
         # cv2.putText で描画しますが、dump 用途では元画像を書き換えても問題ありません
         if 'dump_img' in single_result.keys():
             dump_img = single_result['dump_img']

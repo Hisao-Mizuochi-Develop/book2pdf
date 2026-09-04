@@ -3,8 +3,8 @@
 
 Usage:
     python scripts/preprocess_image.py \
-        --input-zip benchmark-ocr-003001.zip \
-        --output-zip benchmark-ocr-003002-sharpen.zip \
+        --input-zip benchmark-ocr-OW003001.zip \
+        --output-zip benchmark-ocr-OW003002-sharpen.zip \
         --pattern sharpen_light
 
 Supported patterns:

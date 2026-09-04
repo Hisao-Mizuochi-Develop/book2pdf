@@ -11,7 +11,7 @@
  * - `tauri-plugin-dialog` の `open()` で出力先フォルダを選択
  * - `invoke("create_zip_archive")` で Rust 側コマンドを呼び出し
  * - `listen("zip-progress")` で進捗イベントを受信（exportStore 内で処理）
- * - `captureStore.lastCaptureFolder` の変更を監視して自動連携（005003）
+ * - `captureStore.lastCaptureFolder` の変更を監視して自動連携（LA005003）
  */
 
 // React のフック（状態管理・副作用処理）を読み込み
@@ -71,7 +71,7 @@ export function ExportView() {
       ? Math.round((progressCurrent / progressTotal) * 100)
       : 0;
 
-  // ─── captureStore からタブ間連携情報を取得（005003） ───
+  // ─── captureStore からタブ間連携情報を取得（LA005003） ───
   const lastCaptureFolder = useCaptureStore((state) => state.lastCaptureFolder);
 
   // ─── 入力フォルダ内の画像枚数を管理 ───

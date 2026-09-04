@@ -50,7 +50,7 @@ metadata:
 
 4. **検証レポートの作成**
    - 配置: `test_cases/results/ocr-results-<タスクNo>/`
-   - 命名: `<レポート名>-<タスクNo>.md`（例: `preprocess-comparison-report-003003.md`）
+   - 命名: `<レポート名>-<タスクNo>.md`（例: `preprocess-comparison-report-OW003003.md`）
    - レポートに含める内容:
      - タスク名・実施日・目的
      - 対象データ、OCR エンジン、評価指標

@@ -30,7 +30,7 @@ use std::io::BufWriter;
 // バイト列を Read トレートとして扱うための構造体
 // printpdf の Image decoder にバイト列を渡すために使用
 use std::io::Cursor;
-// PDF 生成ライブラリ（008007 で選定）
+// PDF 生成ライブラリ（LA008007 で選定）
 // A4 ドキュメント作成・画像埋め込み・レイヤー操作用
 use printpdf::*;
 // Tauri のイベント発射（emit）機能
@@ -437,7 +437,7 @@ mod tests {
     /// テスト用データフォルダのパスを取得する
     ///
     /// `CARGO_MANIFEST_DIR`（Cargo.toml のあるディレクトリ）から
-    /// `../../test_cases/testdata/localapp/003006-backend-ocr-test/` への絶対パスを返す。
+    /// `../../test_cases/testdata/localapp/LA003006-backend-ocr-test/` への絶対パスを返す。
     fn test_data_dir() -> PathBuf {
         let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         manifest_dir
@@ -446,12 +446,12 @@ mod tests {
             .join("test_cases")
             .join("testdata")
             .join("localapp")
-            .join("003006-backend-ocr-test")
+            .join("LA003006-backend-ocr-test")
     }
 
     /// 【テスト1】既存テストデータから画像を正しく収集・ソートできること
     ///
-    /// テストデータ `003006-backend-ocr-test/` 内の `002.png`, `003.png`, `004.png` を
+    /// テストデータ `LA003006-backend-ocr-test/` 内の `002.png`, `003.png`, `004.png` を
     /// ファイル名順に昇順で収集することを確認する。
     /// 非画像ファイル・非数字ファイル名が混在していても除外されることを兼ねて確認する。
     #[tokio::test]
@@ -508,7 +508,7 @@ mod tests {
 
     /// 【テスト4】create_image_pdf_impl が正しいページ数の PDF を生成すること
     ///
-    /// テストデータ `003006-backend-ocr-test/` の3枚の画像を使い、
+    /// テストデータ `LA003006-backend-ocr-test/` の3枚の画像を使い、
     /// PDF を生成後、`lopdf` でページ数が3であることを確認する。
     #[tokio::test]
     async fn test_create_image_pdf_impl_page_count() {

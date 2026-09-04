@@ -41,7 +41,7 @@ for attempt in 0..3 {
 
 ---
 
-## 008009 — leptess / printpdf での検索可能 PDF 生成
+## LA008009 — leptess / printpdf での検索可能 PDF 生成
 
 ### 事象 1: `leptess::get_component_boxes` からテキストが取れない
 
@@ -85,11 +85,11 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
 `cargo test --lib` は `src-tauri` ディレクトリをカレントディレクトリとして実行される。テストデータは `test_cases/testdata/localapp/` へ統合したため、`src-tauri` からは `../../test_cases/testdata/localapp/...` とする必要がある。
 
 ### 対応策
-テストコード内で `Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test")` のように、`src-tauri` からリポジトリルート経由の相対パスを使用する。
+テストコード内で `Path::new("../../test_cases/testdata/localapp/LA003006-backend-ocr-test")` のように、`src-tauri` からリポジトリルート経由の相対パスを使用する。
 - 3回連続で失敗した場合のみエラーを返す
 
 ### 関連タスク
-- 002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+- LA002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
 
 ---
 
@@ -120,8 +120,8 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
 3. ビルトインプロファイルの `process_name` を `"Kindle.exe"` ではなく `"Kindle"` に変更する
 
 ### 関連タスク
-- 002008: ウィンドウ指定キャプチャ実装（xcap crate 版）
-- 002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+- LA002008: ウィンドウ指定キャプチャ実装（xcap crate 版）
+- LA002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
 
 ---
 
@@ -143,9 +143,9 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
   - Tauri plugin の公式スクリーンショット機能（将来リリース時）
 
 ### 関連タスク
-- 002005: ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング（実装途中で本問題を発見。2026-09-01 に 002008 へ統合されたため完了）
-- 002007: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
-- 002008: ウィンドウ指定キャプチャ実装（xcap crate 版）（002005 のウィンドウ指定キャプチャ機能を実質的に実現）
+- LA002005: ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング（実装途中で本問題を発見。2026-09-01 に LA002008 へ統合されたため完了）
+- LA002007: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
+- LA002008: ウィンドウ指定キャプチャ実装（xcap crate 版）（LA002005 のウィンドウ指定キャプチャ機能を実質的に実現）
 
 ---
 
@@ -170,7 +170,7 @@ let samples = cropped.to_image().as_raw();
 `SubImage<&RgbaImage>` → `to_image()` → `ImageBuffer<Rgba<u8>, Vec<u8>>` → `as_raw()` → `&Vec<u8>`
 
 ### 関連タスク
-- 002007: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
+- LA002007: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
 
 ---
 
@@ -195,7 +195,7 @@ enigo.key(Key::RightArrow, Direction::Click).unwrap();
 ```
 
 ### 関連タスク
-- 002003: 連続キャプチャ実行・進捗表示（enigo 導入時に対応済み）
+- LA002003: 連続キャプチャ実行・進捗表示（enigo 導入時に対応済み）
 
 ---
 
@@ -213,7 +213,7 @@ use tauri::Emitter; // 明示的にインポートする必要がある
 ```
 
 ### 関連タスク
-- 002003: 連続キャプチャ実行・進捗表示（初回実装時に発生・対応済み）
+- LA002003: 連続キャプチャ実行・進捗表示（初回実装時に発生・対応済み）
 
 ---
 
@@ -231,7 +231,7 @@ use tauri::Emitter; // 明示的にインポートする必要がある
 - 本プロジェクトでは将来実装必須のため、未使用 import の放置を最小限に留める（必要に応じて TODO コメント付きで残す）
 
 ### 関連タスク
-- 002002: アプリプロファイル管理 UI（`capture_profile.rs` にて `HashMap` の unused import warning が検出された）
+- LA002002: アプリプロファイル管理 UI（`capture_profile.rs` にて `HashMap` の unused import warning が検出された）
 
 ---
 
@@ -256,7 +256,7 @@ await invoke("start_continuous_capture", {
 ```
 
 ### 関連タスク
-- 002008-2: プロファイルUI改善（`startFromBeginning` → `start_from_beginning` の修正）
+- LA002008-2: プロファイルUI改善（`startFromBeginning` → `start_from_beginning` の修正）
 
 ---
 
@@ -278,7 +278,7 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 手動で `displayLabel` を計算して children として渡す。読み込み前は `selectedProfileKey`（"kindle"）が表示され、読み込み後は正しい日本語名に切り替わる。
 
 ### 関連タスク
-- 002008-2: プロファイルUI改善（ProfileSelector 初期表示対応）
+- LA002008-2: プロファイルUI改善（ProfileSelector 初期表示対応）
 
 ---
 
@@ -300,7 +300,7 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 AI 側の入力ミスであっても、最終的にファイルに書き込まれる内容は人間が確認する必要がある。特に diff 形式の入力では、SEPARATOR の正否を必ずチェックすること。
 
 ### 関連タスク
-- 002008-2: プロファイルUI改善（デフォルト選択・表示・バリデーション）
+- LA002008-2: プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
 ---
 
@@ -323,8 +323,8 @@ cd localapp && npm install
 上記で `node_modules` と `package-lock.json` を削除して再インストールすることで解消した。同様の症状が再発した場合、まず本対策を試す。
 
 ### 関連タスク
-- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
-- 005001〜005003: ZIP アーカイブ化・出力設定 UI・タブ間連携（node_modules 破損発生）
+- LA003001〜LA003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+- LA005001〜LA005003: ZIP アーカイブ化・出力設定 UI・タブ間連携（node_modules 破損発生）
 
 ---
 
@@ -352,7 +352,7 @@ cd localapp && npm install
 4. Windows/Linux への移植時はそれぞれ `pdfium.dll` / `libpdfium.so` を同様に配置する
 
 ### 関連タスク
-- 003001〜003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+- LA003001〜LA003002: PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
 
 ---
 
@@ -397,7 +397,7 @@ Tauri の同期コマンドを `invoke` で呼び出すと、コマンドが完�
    ボタン押下時に即座に `setProgressMessage("PDFを読み込んでいます...")` 等を呼び出してから `invoke` を実行する。ただし、同期コマンドの場合はこの state 更新もコマンド完了までバッチングされることがあるため、根本解決には async 化が必要。
 
 ### 関連タスク
-- 003003: PDF 読込 進捗インジケーター表示不具合調査・修正
+- LA003003: PDF 読込 進捗インジケーター表示不具合調査・修正
 
 ---
 
@@ -444,7 +444,7 @@ pub async fn extract_pdf_to_images(...) -> Result<String, String> {
 `Pdfium::bind_to_library()` は `OnceCell` のようなグローバルな `BINDINGS` を保持しているため、1度成功すると2回目の呼び出しはエラーとなる。async コマンド内で PDFium を初期化する必要がある場合は、初期化からレンダリングまでを `spawn_blocking` 内で一貫して実行する。
 
 ### 関連タスク
-- 003004: PDF 読込 Pdfium 二重初期化エラー修正
+- LA003004: PDF 読込 Pdfium 二重初期化エラー修正
 
 ---
 
@@ -505,7 +505,7 @@ if let Some(e) = save_error {
 - 保存先を一時ディレクトリに変更してから最終出力先へ `rename` する方式
 
 ### 関連タスク
-- 003004: PDF 読込 Pdfium 二重初期化エラー修正（本現象は動作テスト中に発見された副次的な問題）
+- LA003004: PDF 読込 Pdfium 二重初期化エラー修正（本現象は動作テスト中に発見された副次的な問題）
 
 ---
 
@@ -531,11 +531,11 @@ if let Some(e) = save_error {
 `write_to_file` は強力なツールであるが、既存ファイルに対しては非常に危険である。ドキュメント類の更新では、必ず `replace_in_file` を使う習慣を徹底する。
 
 ### 関連タスク
-- 005004: ZIP 作成進捗インジケーター追加
+- LA005004: ZIP 作成進捗インジケーター追加
 
 ---
 
-## Tauri 同期コマンドのイベント配信制限（005004 ZIP 進捗表示で再発）
+## Tauri 同期コマンドのイベント配信制限（LA005004 ZIP 進捗表示で再発）
 
 ### 事象
 「ZIP作成」タブで ZIP 作成を実行しても、進捗バー・カウンタ・パーセンテージが表示されず、ボタンがローディング状態のまま処理が完了する。
@@ -561,12 +561,12 @@ if let Some(e) = save_error {
 - `localapp/src/views/ExportView.tsx` — 進捗 UI 表示
 
 ### 関連タスク
-- 005004: ZIP 作成進捗インジケーター追加
-- 003002: PDF 読込（同様の同期コマンドブロッキング問題を事前に対応済み）
+- LA005004: ZIP 作成進捗インジケーター追加
+- LA003002: PDF 読込（同様の同期コマンドブロッキング問題を事前に対応済み）
 
 ---
 
-## 連続キャプチャ — MSE 同一ページ判定の猶予（002008-3）
+## 連続キャプチャ — MSE 同一ページ判定の猶予（LA002008-3）
 
 ### 事象
 Kindle プロファイル等で `page_wait` が短い（0.15秒）場合、ページ送り直後に次のキャプチャが実行され、ページ遷移が完了する前に前回と同じ画像が取得されることがある。この状態で MSE（平均二乗誤差）が閾値未満となり、「最終ページ到達」と誤判定して連続キャプチャが途中で完了してしまう。
@@ -610,7 +610,7 @@ if mse < MSE_THRESHOLD {
 
 ```rust
 eprintln!(
-    "[002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
+    "[LA002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
     page_num, mse, MSE_THRESHOLD, same_page_count
 );
 ```
@@ -621,11 +621,11 @@ eprintln!(
 - 必要に応じて `page_wait` の調整も検討する（Kindle プロファイルのデフォルト 0.15秒は現状維持）
 
 ### 関連タスク
-- 002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+- LA002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
 
 ---
 
-## 連続キャプチャ — 出力フォルダ指定とタブ間引継ぎ（002009）
+## 連続キャプチャ — 出力フォルダ指定とタブ間引継ぎ（LA002009）
 
 ### 事象
 「電子書籍」画面で連続キャプチャを実行する際、出力先フォルダをユーザーが任意に指定したい。
@@ -656,11 +656,11 @@ eprintln!(
 - 既存 `create_capture_folder` 関数は `resolve_output_folder` に統合され、削除された
 
 ### 関連タスク
-- 002009: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+- LA002009: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
 
 ---
 
-## serde — Tauri イベントペイロードのフィールド名変換（002009-1）
+## serde — Tauri イベントペイロードのフィールド名変換（LA002009-1）
 
 ### 事象
 連続キャプチャ完了後、Rust 側から `capture-progress` イベントで送信した `capture_folder` がフロントエンドで受信できず、`lastCaptureFolder` に値が設定されない。
@@ -706,11 +706,11 @@ pub struct ProgressPayload {
 - フロントエンド側の型定義（`capture-progress` イベントのペイロード型）と Rust 側の `serde` 属性が一致しているか、両ファイルを横並びで確認する
 
 ### 関連タスク
-- 002009-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
+- LA002009-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
 
 ---
 
-## Tauri `invoke` の引数名不一致 — PDF作成機能（008001）
+## Tauri `invoke` の引数名不一致 — PDF作成機能（LA008001）
 
 ### 事象
 「PDF作成」タブでフォルダ/ZIPを指定して「PDF作成」ボタンを押下しても、進捗インジケータが一瞬（約0.01秒）だけ表示されて消え、それ以降処理が進まない。
@@ -740,16 +740,16 @@ pub async fn create_searchable_pdf(
 
 ### 注意点
 - `#[allow(non_snake_case)]` を追加することで、Rust コンパイラの命名規約警告を抑制できる
-- 本件は task 002008-2 (`startFromBeginning` / `start_from_beginning`) と同じパターンの不具合であり、Tauri `invoke` の引数名整合性は実装後に必ず両ファイルを横並びで確認する必要がある
+- 本件は task LA002008-2 (`startFromBeginning` / `start_from_beginning`) と同じパターンの不具合であり、Tauri `invoke` の引数名整合性は実装後に必ず両ファイルを横並びで確認する必要がある
 - 新規コマンド実装時は、フロントエンド側の `invoke()` 呼び出しコードと Rust 側の関数シグニチャを同時に開き、キー名・引数名・型の整合性を確認することを習慣化する
 
 ### 関連タスク
-- 008001: バグ修正 — PDF作成ボタン押下後インジケータが一瞬で消える
-- 002008-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）
+- LA008001: バグ修正 — PDF作成ボタン押下後インジケータが一瞬で消える
+- LA002008-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）
 
 ---
 
-## localapp → backend API 連携 — `tauri-plugin-http` の feature 指定（003006）
+## localapp → backend API 連携 — `tauri-plugin-http` の feature 指定（LA003006）
 
 ### 事象
 `localapp/src-tauri/src/commands/backend_api.rs` で `reqwest::multipart::Form` や `Response::json()` を使用したところ、コンパイルエラーが発生した。
@@ -777,11 +777,11 @@ tauri-plugin-http = { version = "2", features = ["multipart", "json"] }
 - HTTP クライアントを直接追加する場合は `tauri-plugin-http` の feature 指定を優先し、重複追加を避ける
 
 ### 関連タスク
-- 003006: localapp → backend API OCR 統合
+- LA003006: localapp → backend API OCR 統合
 
 ---
 
-## localapp → backend API 連携 — 設定ファイルの snake_case 化（003006）
+## localapp → backend API 連携 — 設定ファイルの snake_case 化（LA003006）
 
 ### 事象
 フロントエンドと Rust 間で `AppSettings` をやり取りする際、フィールド名の不一致でデシリアライズに失敗する恐れがあった。
@@ -811,11 +811,11 @@ export interface AppSettings {
 - 「設定の永続化」と「イベントペイロード」で命名規約が異なることに注意し、それぞれのファイルを同時に確認する
 
 ### 関連タスク
-- 003006: localapp → backend API OCR 統合
+- LA003006: localapp → backend API OCR 統合
 
 ---
 
-## localapp → backend API 連携 — `/ocr` の非同期化とタイムアウト（003006）
+## localapp → backend API 連携 — `/ocr` の非同期化とタイムアウト（LA003006）
 
 ### 事象
 
@@ -841,17 +841,17 @@ backend の `POST /api/jobs/{job_id}/ocr` は、ocr-worker への HTTP 呼び出
 
 - backend の `/ocr` は即座に返るようになったが、実際の OCR 完了までは数十分かかる
 - クライアント側は `processing` 状態を継続ポーリングし、`completed`/`failed` で完了判定する
-- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（LA005001 SQLite 永続化完了後に解消予定）
 - テスト用 curl で ZIP アップロードする際は、`-F "file=@...;type=application/zip"` のように Content-Type を明示しないと、backend が ZIP 以外として拒否する
 
 ### 関連タスク
 
-- 003006: localapp → backend API OCR 統合
-- backend 003012: `/ocr` エンドポイントの非同期化
+- LA003006: localapp → backend API OCR 統合
+- backend BE003012: `/ocr` エンドポイントの非同期化
 
 ---
 
-## localapp → backend API 連携 — `page_timeout_sec` のデフォルト値調整（006001）
+## localapp → backend API 連携 — `page_timeout_sec` のデフォルト値調整（LA006001）
 
 ### 事象
 
@@ -887,12 +887,12 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 
 ### 関連タスク
 
-- 006001: 進捗通知仕様書の作成と実装
-- 006001: タイムアウト値の設定ファイル化
+- LA006001: 進捗通知仕様書の作成と実装
+- LA006001: タイムアウト値の設定ファイル化
 
 ---
 
-## 008008 自動テストに関する注意事項（2026-09-04）
+## LA008008 自動テストに関する注意事項（2026-09-04）
 
 ### テストフレームワーク導入状況
 
@@ -903,7 +903,7 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 
 ### テストデータの再利用
 
-- `test_cases/testdata/localapp/003006-backend-ocr-test/` の画像データ（`002.png`, `003.png`, `004.png`）を 008008 の自動テストに流用済み
+- `test_cases/testdata/localapp/LA003006-backend-ocr-test/` の画像データ（`002.png`, `003.png`, `004.png`）を LA008008 の自動テストに流用済み
 - `testdata` 配下のファイルは `.gitignore` の対象外であり、Git 管理対象として運用する（`.clinerules` 2.6 節準拠）
 
 ### `uuid_v4()` の実装に関する注意
@@ -920,5 +920,5 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 
 ### 関連タスク
 
-- 008008: 画像結合PDF生成の実装（OCRなし）
+- LA008008: 画像結合PDF生成の実装（OCRなし）
 

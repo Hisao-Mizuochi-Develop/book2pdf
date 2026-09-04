@@ -86,7 +86,7 @@ RUN pip install --no-cache-dir -r ${PROJECT_DIR}/submodules/ruby_prediction/requ
 # FastAPI で /ocr エンドポイントを提供し、backend からの HTTP 呼び出しに応答します
 RUN pip install --no-cache-dir fastapi uvicorn httpx
 
-# 003006: 入力画像前処理（sharpen_light_upscale_2x）に Pillow を使用します
+# OW003006: 入力画像前処理（sharpen_light_upscale_2x）に Pillow を使用します
 RUN pip install --no-cache-dir Pillow
 
 # ruby_prediction が参照する KyTea のモデルファイルを配置します
@@ -134,11 +134,11 @@ RUN sed -i 's/accelerator: gpu/accelerator: cpu/g' ${PROJECT_DIR}/submodules/tex
 # オリジナルの cli/core/inference.py は logging を使用していないため、修正版を上書きします
 COPY ndlocr_cli_patches/inference.py ${PROJECT_DIR}/cli/core/inference.py
 
-# FIX(003005): config.yml の score_thr が無視される問題を修正
+# FIX(OW003005): config.yml の score_thr が無視される問題を修正
 # ndl_layout submodule の process_textblock.py をパッチ版で上書きします
 COPY ndlocr_cli_patches/process_textblock.py ${PROJECT_DIR}/submodules/ndl_layout/tools/process_textblock.py
 
-# FIX(005001): ページ数に応じたメモリ増加を防ぐためのパッチを適用します
+# FIX(OW004001): ページ数に応じたメモリ増加を防ぐためのパッチを適用します
 # PyTorch Lightning / mmdetection のキャッシュ・中間テンソル・画像の deep copy を抑制します
 COPY ndlocr_cli_patches/base_proc.py ${PROJECT_DIR}/cli/procs/base_proc.py
 COPY ndlocr_cli_patches/line_ocr.py ${PROJECT_DIR}/cli/procs/line_ocr.py

@@ -33,7 +33,7 @@
 
 ---
 
-## 008007 — localapp 単体生成 技術調査・選定
+## LA008007 — localapp 単体生成 技術調査・選定
 
 ### 【実施予定】
 
@@ -52,12 +52,12 @@
      - A4（210mm × 297mm）に統一し、アスペクト比維持で fit
      - 将来的に「元画像サイズ維持」オプションも追加可能な設計
   4. **調査結果のドキュメント化**
-     - `localapp/docs/ocr-technology-survey-008007.md` に調査レポートを作成
+     - `localapp/docs/ocr-technology-survey-LA008007.md` に調査レポートを作成
      - 各候補の評価スコア、採用理由、POC 結果を記載
 - 想定される注意点:
   - macOS 環境での Tesseract インストール状態を確認（`brew list tesseract`）
   - `printpdf` の最新バージョンが Rust Edition 2021 に対応しているか確認
-  - 日本語縦書きテキストの認識精度は別途検討（008009 で対応）
+  - 日本語縦書きテキストの認識精度は別途検討（LA008009 で対応）
 
 ### 【実施実績】
 
@@ -76,13 +76,13 @@
   - backend は ndlocr_cli + PyMuPDF + XML 中間ファイル。localapp は Tesseract + printpdf + 構造体直接
   - 座標系、ページサイズ扱い、アーキテクチャの差異を文書化（調査レポート §4 参照）
 - 2026-09-04: 調査レポート作成、ドキュメント更新
-  - `localapp/docs/ocr-technology-survey-008007.md` を新規作成
-  - `localapp/docs/tasks.md` の 008007 【実施結果】に追記
+  - `localapp/docs/ocr-technology-survey-LA008007.md` を新規作成
+  - `localapp/docs/tasks.md` の LA008007 【実施結果】に追記
   - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
 
 ---
 
-## 001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
+## LA001001 — Tauri v2 + React + Vite プロジェクト scaffold 作成
 
 ### 【実施予定】
 
@@ -105,7 +105,7 @@
 
 ---
 
-## 001002 — Rust 側依存クレートの選定・追加
+## LA001002 — Rust 側依存クレートの選定・追加
 
 ### 【実施予定】
 
@@ -128,7 +128,7 @@
 
 ---
 
-## 001003 — frontend 側依存の選定・追加
+## LA001003 — frontend 側依存の選定・追加
 
 ### 【実施予定】
 
@@ -155,7 +155,7 @@
 
 ---
 
-## 001004 — 開発・ビルド環境整備（tauri.conf.json / scripts 等）
+## LA001004 — 開発・ビルド環境整備（tauri.conf.json / scripts 等）
 
 ### 【実施予定】
 
@@ -183,7 +183,7 @@
 
 ---
 
-## 006001 — デザインシステム定義
+## LA006001 — デザインシステム定義
 
 ### 【実施予定】
 
@@ -224,7 +224,7 @@
 
 ---
 
-## 006002 — サイドバー＋メインレイアウト実装
+## LA006002 — サイドバー＋メインレイアウト実装
 
 ### 【実施予定】
 
@@ -255,7 +255,7 @@
 
 ---
 
-## 006003 — ライトモード対応 + OS 設定連動
+## LA006003 — ライトモード対応 + OS 設定連動
 
 ### 【実施予定】
 
@@ -304,7 +304,7 @@
 
 ---
 
-## 006004 — アプリ名・サイドバー変更
+## LA006004 — アプリ名・サイドバー変更
 
 ### 【実施予定】
 
@@ -333,14 +333,14 @@
 
 ---
 
-## 002001 — 画面キャプチャ方式調査・実装
+## LA002001 — 画面キャプチャ方式調査・実装
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: Tauri v2 でスクリーンショット取得方式を調査し、単発キャプチャコマンドを実装する
 - 前提:
-  - feature/002001-screenshot-research ブランチを作成済み
+  - feature/LA002001-screenshot-research ブランチを作成済み
   - reference/localapp (Python版) のキャプチャ機能を参考にする
 - 変更内容:
   1. `localapp/src-tauri/Cargo.toml` — `screenshots`, `base64` crate を追加
@@ -387,15 +387,15 @@
 
 ---
 
-## 002002 — アプリプロファイル管理 UI
+## LA002002 — アプリプロファイル管理 UI
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: 電子書籍アプリごとのプロファイルを Rust 側で定義し、フロントエンドで選択・編集できるようにする
 - 前提:
-  - 002001（画面キャプチャ方式調査・実装）が完了していること
-  - feature/002002-profile-management ブランチを作成済み
+  - LA002001（画面キャプチャ方式調査・実装）が完了していること
+  - feature/LA002002-profile-management ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/src/models/capture_profile.rs` — 新規作成、`CaptureProfile` struct + ビルトインプロファイル
   2. `localapp/src-tauri/src/models/mod.rs` — 新規作成、モジュール公開
@@ -450,21 +450,21 @@
   - `cargo check`: 成功（unused import warning のみ）
   - `npm run build`: 成功（`tsc && vite build` ともにエラーなし）
 - マージ日: 2026-08-16
-- ブランチ: `feature/002002-profile-management`
+- ブランチ: `feature/LA002002-profile-management`
 
 ---
 
 ---
 
-## 002003 — 連続キャプチャ実行・進捗表示
+## LA002003 — 連続キャプチャ実行・進捗表示
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: プロファイルに基づいて連続キャプチャを自動実行し、進捗を UI に表示する
 - 前提:
-  - 002002（アプリプロファイル管理 UI）が完了していること
-  - feature/002003-continuous-capture ブランチを作成済み
+  - LA002002（アプリプロファイル管理 UI）が完了していること
+  - feature/LA002003-continuous-capture ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/Cargo.toml` — `enigo` crate を追加（ページ送りキー入力用）
   2. `localapp/src-tauri/src/commands/capture.rs` — 連続キャプチャコマンド群を追加
@@ -508,22 +508,22 @@
 - `localapp/src/views/CaptureView.tsx` — 書籍タイトル入力 + 連続キャプチャ開始/停止ボタン
 - `cargo check`: エラー0
 - `npm run build`: 成功
-- ブランチ: `feature/002003-continuous-capture` → main にマージ（Fast-forward）
+- ブランチ: `feature/LA002003-continuous-capture` → main にマージ（Fast-forward）
 - コミット: `3bce557`
 
 ---
 
 ---
 
-## 002004 — キャプチャ画像のフォルダ管理
+## LA002004 — キャプチャ画像のフォルダ管理
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: キャプチャ結果をフォルダで管理し、画像一覧表示・フォルダを開く・トリミングタブ連携を実現する
 - 前提:
-  - 002003（連続キャプチャ実行・進捗表示）が完了していること
-  - feature/002004-capture-folder-management ブランチを作成済みであること
+  - LA002003（連続キャプチャ実行・進捗表示）が完了していること
+  - feature/LA002004-capture-folder-management ブランチを作成済みであること
 - 変更内容:
   1. `localapp/src-tauri/Cargo.toml` — `open` crate を追加（フォルダを OS で開くため）
   2. `localapp/src-tauri/src/commands/capture.rs` — `create_capture_folder()` に重複回避を追加、`list_capture_images`, `get_capture_image`, `open_capture_folder` コマンドを新規追加
@@ -573,21 +573,21 @@
   - `npm run tauri dev`: 起動成功
     - 連続キャプチャ完了後、結果セクションにフォルダパスとサムネイルが表示されることを確認
     - 「トリミングへ進む」ボタンでトリミングタブに遷移し、同じサムネイルが表示されることを確認
-- ブランチ: `feature/002004-capture-folder-management`
+- ブランチ: `feature/LA002004-capture-folder-management`
 
 ---
 
 ---
 
-## 002005 — ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
+## LA002005 — ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: プロファイルで指定されたウィンドウのみをキャプチャし、外枠を除外して書籍コンテンツ部分だけを切り出す
 - 前提:
-  - 002004（キャプチャ画像のフォルダ管理）が完了していること
-  - feature/002005-window-capture ブランチを作成済みであること
+  - LA002004（キャプチャ画像のフォルダ管理）が完了していること
+  - feature/LA002005-window-capture ブランチを作成済みであること
 - 変更内容:
   1. `localapp/src-tauri/src/models/capture_profile.rs` — `crop_insets: Insets { top, right, bottom, left }` を追加
   2. `localapp/src-tauri/src/commands/capture.rs` — `capture_by_window_title()` を新規実装、`capture_screen()` / `capture_screen_raw()` をプロファイル受け取りに変更
@@ -609,26 +609,26 @@
 - 2026-08-16: 実装途中で2つのコンパイルエラーが発生
   1. `use screenshots::Window` → `Window` struct が `screenshots` v0.8.10 でエクスポートされていない
   2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
-- エラー修正は 002007 として別タスクで対応
-- 2026-09-01: 本タスクは実質的に 002008 に統合完了したため、完了扱いとする
-  - `localapp/docs/tasks.md` の 002005「タスク完了日付」を 2026-08-17（002008 完了日）に記載
-  - `crop_insets` 機能は 002007 / 002008 で実装済み
-  - ウィンドウ指定キャプチャ機能は 002008 で実装済み
-  - ブランチ: `feature/002005-formal-completion`
+- エラー修正は LA002007 として別タスクで対応
+- 2026-09-01: 本タスクは実質的に LA002008 に統合完了したため、完了扱いとする
+  - `localapp/docs/tasks.md` の LA002005「タスク完了日付」を 2026-08-17（LA002008 完了日）に記載
+  - `crop_insets` 機能は LA002007 / LA002008 で実装済み
+  - ウィンドウ指定キャプチャ機能は LA002008 で実装済み
+  - ブランチ: `feature/LA002005-formal-completion`
 
 ---
 
 ---
 
-## 002008 — ウィンドウ指定キャプチャ実装（xcap crate 版）
+## LA002008 — ウィンドウ指定キャプチャ実装（xcap crate 版）
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: `screenshots` crate（全画面キャプチャのみ）から `xcap` crate（ウィンドウ指定キャプチャ対応）へ切り替え、プロファイルで指定されたアプリウィンドウを直接キャプチャする
 - 前提:
-  - 002007（コンパイルエラー修正）が完了していること
-  - feature/002008-window-capture-xcap ブランチを作成済みであること
+  - LA002007（コンパイルエラー修正）が完了していること
+  - feature/LA002008-window-capture-xcap ブランチを作成済みであること
   - main ブランチが最新であること
 - 変更内容:
   1. `localapp/src-tauri/Cargo.toml` — `screenshots` を削除、`xcap` を追加
@@ -676,15 +676,15 @@
 - `npm run tauri dev`: 起動成功
   - 単発キャプチャで Kindle ウィンドウが正しく取得されることを確認
   - プロファイル編集で `window_title_keyword`、`process_name`、`crop_insets` の変更が即座に反映されることを確認
-- 連続キャプチャテスト中に2つのバグを発見（詳細は tasks.md 002008-1 欄を参照）
+- 連続キャプチャテスト中に2つのバグを発見（詳細は tasks.md LA002008-1 欄を参照）
   - Bug 1: 連続キャプチャで1ページしかキャプチャできない → `calculate_mse()` が PNG 圧縮バイト列を比較しているため、ウィンドウキャプチャ後の画像サイズ縮小で MSE < 1000.0 と誤判定され「最終ページ到達」と判断される
   - Bug 2: 「キャプチャ前に最前面へ持ってくる」が機能しない → `use_bring_to_top: true` フラグがあるが `run_continuous_capture_loop()` に一切実装がない
-- 002005 と 002008 の重複問題の解消
-  - 002005 は「ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング」を目指したが、`screenshots` crate で `Window` struct が使えず実装途中で断念
-  - 002007 でコンパイルエラー修正（全画面キャプチャ + `crop_insets` トリミングに後退）を実施
-  - 002008 で `xcap` crate を採用し、当初 002005 で目指した「ウィンドウ指定キャプチャ」を実現
-  - tasks.md の 002005 【実施結果】に「実装内容は 002008 に引き継がれた」と明記し、重複を解消
-- ブランチ: `feature/002008-window-capture-xcap`
+- LA002005 と LA002008 の重複問題の解消
+  - LA002005 は「ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング」を目指したが、`screenshots` crate で `Window` struct が使えず実装途中で断念
+  - LA002007 でコンパイルエラー修正（全画面キャプチャ + `crop_insets` トリミングに後退）を実施
+  - LA002008 で `xcap` crate を採用し、当初 LA002005 で目指した「ウィンドウ指定キャプチャ」を実現
+  - tasks.md の LA002005 【実施結果】に「実装内容は LA002008 に引き継がれた」と明記し、重複を解消
+- ブランチ: `feature/LA002008-window-capture-xcap`
 
 > **注意**: Git コミットはユーザーの合格確認後に実施すること（ユーザー指示）
 
@@ -692,7 +692,7 @@
 
 ---
 
-## 002008-1 — 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
+## LA002008-1 — 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
 
 ### 【実施予定】
 
@@ -700,7 +700,7 @@
 - 目的: 連続キャプチャで発見された2つのバグを修正する
 - 前提:
   - 002008での単発キャプチャテスト成功後、連続キャプチャテスト中にBug 1・Bug 2を発見済み
-  - feature/002008-1-bug-fix ブランチを作成済み
+  - feature/LA002008-1-bug-fix ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/src/commands/capture.rs` — `calculate_mse()` をピクセルレベル比較に修正、`bring_window_to_front()` を新規実装
   2. `cargo check` / `npm run build`
@@ -737,7 +737,7 @@
     4. 「ウィンドウタイトルキーワード」はビルトインプロファイルでは変更不可なので表示不要
     5. 「プロセス名」はビルトインプロファイルでは変更不可なので表示不要、デフォルト値を "Kindle.exe" → "Kindle" に変更すべき
 - `.clinerules` に「コミット前にユーザーのテストと合格判定が必須」を追記
-- ブランチ: `feature/002008-1-bug-fix`
+- ブランチ: `feature/LA002008-1-bug-fix`
 - 2026-08-17: 前回セッションの修正が不完全に反映されていた追加修正（3点）
   1. **capture.rs: 先頭復帰処理をMSE差分検出ベースに完全書き換え**
      - 原因: 固定200回ループでは「先頭到達検出」ができない。ユーザーから「200回の根拠はなんですか？本来は先頭ページに到達するまでが正解です」と指摘
@@ -768,7 +768,7 @@
     - `npm run tauri dev`: 起動成功
     - ユーザーテスト: 「連続キャプチャ開始」ボタンクリックで `bookTitle` エラーが解消されたことを確認
 - Git コミット・マージ完了
-  - ブランチ: `feature/002008-window-capture-xcap`
+  - ブランチ: `feature/LA002008-window-capture-xcap`
   - コミット: `34723f6`
   - main ブランチへ Fast-forward マージ済み
 
@@ -776,14 +776,14 @@
 
 ---
 
-## 002008-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
+## LA002008-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
-- 目的: 002008-1 の手動テストで発見したUI・UX問題を修正する
+- 目的: LA002008-1 の手動テストで発見したUI・UX問題を修正する
 - 前提:
-  - feature/002008-2-profile-ui-fix ブランチを作成済み
+  - feature/LA002008-2-profile-ui-fix ブランチを作成済み
 - 変更内容:
   1. `localapp/src/store/profileStore.ts` — デフォルト選択を "kindle" に固定
   2. `localapp/src/components/capture/ProfileEditor.tsx` — SelectValue に日本語ラベル表示を追加、pageWait を Input から Select に変更
@@ -828,7 +828,7 @@
 - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 - `>>>>+++ REPLACE` の混入原因: replace_in_file の SEARCH/REPLACE ブロック内に誤って SEPARATOR 文字列が含まれた
 - 以後、replace_in_file 実行時に REPLACE 区切り文字が SEARCH/REPLACE ブロック内に含まれていないか二重確認する
-- ブランチ: `feature/002008-2-profile-ui-fix`
+- ブランチ: `feature/LA002008-2-profile-ui-fix`
 - 2026-08-17: ユーザーテスト後のバグ修正（3点）
   1. 「先頭ページから」を選択しても先頭に戻らない（機能しない）
      - 原因: `captureStore.ts` の `invoke("start_continuous_capture")` で引数キーが camelCase (`startFromBeginning`) だったが、Rust 側コマンドの引数名は snake_case (`start_from_beginning`)
@@ -853,19 +853,19 @@
     - 下段中央: 「下 (px)」
   - トリミング入力欄に `text-center` を追加し、数字を中央揃えに
   - トリミング説明文を `text-center` に変更
-- Git コミット完了（002008-1/002008-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
+- Git コミット完了（LA002008-1/LA002008-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
 
 ---
 
-## 005001〜005003 — ZIP アーカイブ化・出力設定 UI・タブ間連携
+## LA005001〜LA005003 — ZIP アーカイブ化・出力設定 UI・タブ間連携
 
 ### 【実施予定】
 
 - 日時: 2026-08-18
 - 目的: トリミング済み画像フォルダを ZIP アーカイブにまとめる機能を実装する
 - 前提:
-  - feature/005001-zip-archiver ブランチを作成済み
-  - `zip` crate は既に Cargo.toml に追加済み（002002 scaffold 時）
+  - feature/LA005001-zip-archiver ブランチを作成済み
+  - `zip` crate は既に Cargo.toml に追加済み（LA002002 scaffold 時）
 - 変更内容:
   1. `localapp/src-tauri/src/commands/capture.rs` — `create_zip_archive` コマンド新規追加
   2. `localapp/src-tauri/src/lib.rs` — invoke_handler に登録
@@ -885,7 +885,7 @@
 
 ### 【実施実績】
 
-- 005001: ZIP アーカイブ化（Rust バックエンド）
+- LA005001: ZIP アーカイブ化（Rust バックエンド）
   - `capture.rs` に `create_zip_archive` コマンドを追加
     - `ZipWriter::new(File::create(output_path)?)` で ZIP ファイルを作成
     - `.png` / `.jpg` / `.jpeg` を小文字でフィルタ、ファイル名順に `sort()`
@@ -896,7 +896,7 @@
   - `cargo check`: コンパイル成功（エラー0）
   - `npm run build`: ビルド成功
 
-- 005002: 出力設定・ファイル名設定 UI
+- LA005002: 出力設定・ファイル名設定 UI
   - `tauri-plugin-dialog` を追加
     - `Cargo.toml`: `tauri-plugin-dialog = "2.7.2"`
     - `package.json`: `@tauri-apps/plugin-dialog`
@@ -912,7 +912,7 @@
   - `cargo check`: 成功
   - `npm run build`: 成功
 
-- 005003: タブ間自動連携 + 入力フォルダ任意選択
+- LA005003: タブ間自動連携 + 入力フォルダ任意選択
   - `ExportView.tsx` に `useEffect` で `captureStore.lastCaptureFolder` を監視
     - 連続キャプチャ完了後に ZIP 作成タブを開くと入力フォルダが自動設定される
   - `sourceFolder` 変更時に `list_capture_images` で画像枚数を取得して表示
@@ -929,24 +929,24 @@
   - 修復後、`cargo check` / `npm run build` ともに成功
 
 - Git コミット・マージ
-  - ブランチ: `feature/005001-zip-archiver`
-  - コミット: `715ec37` — 005001-005003: ZIP archive command, export UI, tab linkage, tauri-plugin-dialog folder selection
+  - ブランチ: `feature/LA005001-zip-archiver`
+  - コミット: `715ec37` — LA005001-LA005003: ZIP archive command, export UI, tab linkage, tauri-plugin-dialog folder selection
   - main ブランチへ Fast-forward マージ済み
 
 ---
 
 ---
 
-## 004001 — 画像フォルダ読み込み・サムネイル一覧 UI
+## LA004001 — 画像フォルダ読み込み・サムネイル一覧 UI
 
 ### 【実施予定】
 
 - 日時: 2026-08-18
 - 目的: トリミングタブで任意の画像フォルダを読み込み、サムネイル一覧を表示する
 - 前提:
-  - feature/004001-trim-thumbnails ブランチを作成済み
-  - tauri-plugin-dialog は 005002 で追加済み
-  - list_capture_images / get_capture_image コマンドは 002004 で実装済み
+  - feature/LA004001-trim-thumbnails ブランチを作成済み
+  - tauri-plugin-dialog は LA005002 で追加済み
+  - list_capture_images / get_capture_image コマンドは LA002004 で実装済み
 - 変更内容:
   1. `localapp/src/store/trimStore.ts` — 新規作成（Zustand ストア）
      - folderPath, imageFiles[], selectedImage を管理
@@ -977,19 +977,19 @@
   - 「フォルダを選択」ボタンを有効化（`open({ directory: true })` でフォルダ選択ダイアログを開く）
   - `captureStore.lastCaptureFolder` の自動引継ぎを維持
   - `CaptureResultGallery` を流用してサムネイルグリッドを表示
-  - 選択中画像のハイライト表示は未実装（004002 で Before/After プレビューに移行）
+  - 選択中画像のハイライト表示は未実装（LA004002 で Before/After プレビューに移行）
 - `cargo check`: コンパイル成功（エラー0）
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
-- ブランチ: `feature/004001-trim-thumbnails`
+- ブランチ: `feature/LA004001-trim-thumbnails`
 
-## 004001 (追加) — トリミング入力欄の自由入力＋+/-ボタン実装
+## LA004001 (追加) — トリミング入力欄の自由入力＋+/-ボタン実装
 
 ### 【実施予定】
 
 - 日時: 2026-08-18
 - 目的: 「トリミング」タブと「電子書籍」タブ双方のトリミング値入力欄で、0 削除問題を解消しつつ +/- ボタンも使えるようにする
 - 前提:
-  - feature/004001-trim-thumbnails ブランチにて実装
+  - feature/LA004001-trim-thumbnails ブランチにて実装
   - 前回の TrimView.tsx 改修では、0 削除ができるが +/- ボタンがない状態だった
 - 変更内容:
   1. `localapp/src/views/TrimView.tsx` — `type="text" inputMode="numeric"` + onBlur 確定 + カスタム +/- ボタンを追加
@@ -998,7 +998,7 @@
   1. `npm run build`
   2. `cargo check`
   3. `git add && git commit`
-  4. `git merge feature/004001-trim-thumbnails`
+  4. `git merge feature/LA004001-trim-thumbnails`
 - 想定される結果や注意点:
   - 0 削除問題: `type="number"` の実装では、onChange で parseInt → 0 に戻る問題があった。対策として `type="text" inputMode="numeric"` + ローカル state + onBlur で確定する方式を採用。
   - ProfileEditor.tsx では profile 自体が null の可能性があるため、guard clause でチェック
@@ -1021,23 +1021,23 @@
   - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
   - `cargo check`: コンパイル成功（既存の snake_case 警告 4 件のみ）
 - Git:
-  - コミット `a964a87`: 「004001: トリミング入力欄に自由入力＋+/-ボタンを実装」（TrimView.tsx）
-  - コミット `dea345f`: 「004001: 電子書籍タブのトリミング入力欄に自由入力＋+/-ボタンを実装」（ProfileEditor.tsx）
+  - コミット `a964a87`: 「LA004001: トリミング入力欄に自由入力＋+/-ボタンを実装」（TrimView.tsx）
+  - コミット `dea345f`: 「LA004001: 電子書籍タブのトリミング入力欄に自由入力＋+/-ボタンを実装」（ProfileEditor.tsx）
   - main ブランチに fast-forward マージ完了
-- ブランチ: `feature/004001-trim-thumbnails` → `main`
+- ブランチ: `feature/LA004001-trim-thumbnails` → `main`
 
 ---
 
 ---
 
-## 002008-3 — 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+## LA002008-3 — 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: 「電子書籍」画面の「連続キャプチャ開始」ボタンを押下しても途中で完了してしまう不具合を調査・修正する
 - 前提:
-  - feature/002008-3-continuous-capture-mse-grace ブランチを作成済み
+  - feature/LA002008-3-continuous-capture-mse-grace ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/src/commands/capture.rs` — MSE 同一ページ判定を「連続2回閾値未満」方式に変更
   2. MSE 値・判定結果をログ出力してデバッグを強化
@@ -1062,25 +1062,25 @@
   - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 - 2026-08-20: ユーザーによる動作テストを実施し、合格判定を取得
 - 2026-08-20: Git コミット・main ブランチへマージ
-  - ブランチ: `feature/002008-3-continuous-capture-premature-completion`
+  - ブランチ: `feature/LA002008-3-continuous-capture-premature-completion`
   - コミット: `bd1afd0`
   - マージ: `main` へ Fast-forward マージ完了
-- ブランチ: `feature/002008-3-continuous-capture-mse-grace`
+- ブランチ: `feature/LA002008-3-continuous-capture-mse-grace`
 
 ---
 
 ---
 
-## 002009 — 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+## LA002009 — 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: 「電子書籍」画面で連続キャプチャの出力フォルダをユーザーが指定可能とし、キャプチャ完了後に「トリミング」画面に自動引き継ぐ
 - 前提:
-  - feature/002009-custom-output-folder ブランチを作成済み
-  - 002008-3（連続キャプチャ途中完了バグ修正）が完了していること
-  - tauri-plugin-dialog は 005002 で追加済み
+  - feature/LA002009-custom-output-folder ブランチを作成済み
+  - LA002008-3（連続キャプチャ途中完了バグ修正）が完了していること
+  - tauri-plugin-dialog は LA005002 で追加済み
 - 変更内容:
   1. `localapp/src/views/CaptureView.tsx`
      - 出力フォルダ選択ボタンを追加（`tauri-plugin-dialog` の `open({ directory: true })`）
@@ -1134,7 +1134,7 @@
 - 2026-08-21: ドキュメント更新
   - `localapp/docs/tasks.md` に【実施結果】を追記
   - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
-- 2026-08-21: バグ修正（002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
+- 2026-08-21: バグ修正（LA002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
   - **事象**: キャプチャ完了後、「トリミング」画面を開いてもキャプチャした画像が自動的に読み込まれない。手動でフォルダを選び直す必要がある。
   - **調査**:
     - フロントエンド側のデータフロー（`CaptureView` → `captureStore` → `TrimView`）に問題はないことを確認
@@ -1153,15 +1153,15 @@
 
 ---
 
-## 004002 — Before/After プレビュー表示
+## LA004002 — Before/After プレビュー表示
 
 ### 【実施予定】
 
 - 日時: 2026-08-18
 - 目的: オリジナル画像とトリミング後画像を左右に並列表示する
 - 前提:
-  - feature/004001-trim-thumbnails ブランチ上で実施
-  - 004001（画像フォルダ読み込み・サムネイル一覧 UI）が完了していること
+  - feature/LA004001-trim-thumbnails ブランチ上で実施
+  - LA004001（画像フォルダ読み込み・サムネイル一覧 UI）が完了していること
 - 変更内容:
   1. `localapp/src/store/trimStore.ts` — `originalPreviewImage` state を追加
      - `loadPreview()`: `Promise.all` で `get_capture_image`（元画像）と `apply_crop_preview`（トリミング後）を並列取得
@@ -1205,20 +1205,20 @@
   - `commands::capture::apply_crop_preview` を `invoke_handler` に登録
 - `cargo check`: コンパイル成功（エラー0）
 - `npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
-- ブランチ: `feature/004001-trim-thumbnails`
+- ブランチ: `feature/LA004001-trim-thumbnails`
 
 ---
 
-## 003001〜003002 — PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
+## LA003001〜LA003002 — PDF 読込（PDF 選択・設定 UI + PDF → 画像展開）
 
 ### 【実施予定】
 
 - 日時: 2026-08-19
 - 目的: 外部 PDF を画像化してトリミングタブに引き継ぐ
 - 前提:
-  - feature/003001-pdf-import ブランチを作成済み
-  - `pdfium-render` crate は 001002 で追加済み
-  - `tauri-plugin-dialog` は 005002 で追加済み
+  - feature/LA003001-pdf-import ブランチを作成済み
+  - `pdfium-render` crate は LA001002 で追加済み
+  - `tauri-plugin-dialog` は LA005002 で追加済み
 - 変更内容:
   1. PDFium `.dylib` ダウンロード・配置
      - macOS arm64 用の PDFium バイナリを公式リポジトリまたは `bblanchon/pdfium-binaries` から取得
@@ -1322,20 +1322,20 @@
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（エラー0）
   - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
-- ブランチ: `feature/003001-pdf-import`
+- ブランチ: `feature/LA003001-pdf-import`
 
 ---
 
 ---
 
-## 003003 — PDF 読込 進捗インジケーター表示不具合調査・修正
+## LA003003 — PDF 読込 進捗インジケーター表示不具合調査・修正
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: ユーザーから報告された「PDF を画像化」ボタン押下後に進捗インジケーターが表示されない不具合を調査し、修正する
 - 前提:
-  - 003001〜003002（PDF 読込）の実装は完了している
+  - LA003001〜LA003002（PDF 読込）の実装は完了している
   - ユーザーが `npm run tauri dev` で動作確認中に「インジケータがでません」とフィードバック
 - 調査・変更内容:
   1. `localapp/src-tauri/src/commands/pdf.rs` — 同期コマンドのままでは JavaScript 側がブロッキングされる可能性を確認
@@ -1366,20 +1366,20 @@
   - Rust 側: `extract_pdf_to_images` を async コマンドに変更し、実際の PDF レンダリング処理を `tokio::task::spawn_blocking` でバックグラウンドスレッドに委譲
   - フロントエンド側: `extractPdf()` 内で `invoke` をマイクロタスクに入れて呼び出し、メインスレッドを解放
 - 関連タスク
-  - 003002: PDF → 画像展開（Rust バックエンド）
+  - LA003002: PDF → 画像展開（Rust バックエンド）
 
 ---
 
 ---
 
-## 003004 — PDF 読込 Pdfium 二重初期化エラー修正
+## LA003004 — PDF 読込 Pdfium 二重初期化エラー修正
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: `extract_pdf_to_images` の async 化後に発生した `PdfiumLibraryBindingsAlreadyInitialized` エラーを修正する
 - 前提:
-  - 003003（進捗インジケーター表示不具合調査・修正）で `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更済み
+  - LA003003（進捗インジケーター表示不具合調査・修正）で `extract_pdf_to_images` を async コマンド + `tokio::task::spawn_blocking` に変更済み
   - ユーザーによる動作テストで `PdfiumLibraryBindingsAlreadyInitialized` エラーが発生した
 - 調査・変更内容:
   1. `localapp/src-tauri/src/commands/pdf.rs` — エラー発生箇所の確認
@@ -1408,8 +1408,8 @@
   - async 部では入力ファイル確認・出力フォルダ作成・ライブラリパス解決のみを行う
   - `spawn_blocking` 内で PDFium 初期化 → PDF オープン → ページ数取得 → 進捗 emit(0) → レンダリング・保存 を一貫して実行
 - 関連タスク
-  - 003002: PDF → 画像展開（Rust バックエンド）
-  - 003003: PDF 読込 進捗インジケーター表示不具合調査・修正
+  - LA003002: PDF → 画像展開（Rust バックエンド）
+  - LA003003: PDF 読込 進捗インジケーター表示不具合調査・修正
 
 - ビルド確認
   - `cd localapp/src-tauri && cargo check`: コンパイル成功（error 0、既存の non_snake_case 警告4件のみ）
@@ -1432,14 +1432,14 @@
 
 ---
 
-## 005004 — ZIP 作成進捗インジケーター追加
+## LA005004 — ZIP 作成進捗インジケーター追加
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: 「ZIP作成」タブで、PDF読込画面（PdfImportView）と同じような実行時の進捗インジケーターを追加する
 - 前提:
-  - feature/005004-zip-progress-ui ブランチを作成済み
+  - feature/LA005004-zip-progress-ui ブランチを作成済み
   - Rust 側は既に `zip-progress` イベントで `current` / `total` / `message` を emit している
 - 変更内容:
   1. `localapp/src/store/exportStore.ts`
@@ -1468,7 +1468,7 @@
 - 2026-08-20: ユーザー動作テストで不合格
   - 症状: 「進捗表示はなく、カーソルがクルクルするだけ」
   - 原因: `create_zip_archive` が同期コマンドで、ZIP 作成中にフロントエンドのメインスレッドがブロックされていた
-  - 修正方針: PDF 読込機能（003002）と同様に `async` コマンド + `tokio::task::spawn_blocking` でバックグラウンド実行
+  - 修正方針: PDF 読込機能（LA003002）と同様に `async` コマンド + `tokio::task::spawn_blocking` でバックグラウンド実行
 - 2026-08-20: Rust 側非同期化対応
   - `localapp/src-tauri/src/commands/capture.rs`
     - `create_zip_archive` を `pub async fn` に変更
@@ -1481,8 +1481,8 @@
   - `cargo check`: 成功（non_snake_case 警告のみ）
   - `npm run build`: 成功
 - 2026-08-20: ドキュメント更新
-  - `localapp/docs/tasks.md` に 005004 を追加し、完了日付を 2026-08-20 に記録
-  - `localapp/docs/caveats.md` に「Tauri 同期コマンドのイベント配信制限（005004）」を追記
+  - `localapp/docs/tasks.md` に LA005004 を追加し、完了日付を 2026-08-20 に記録
+  - `localapp/docs/caveats.md` に「Tauri 同期コマンドのイベント配信制限（LA005004）」を追記
   - 注意: 作業ログを更新する際、`write_to_file` で誤って既存内容を上書きしてしまった。Git 履歴のコミット `6732fc1` から復元し、`replace_in_file` で追記する方式で修正した
 - 実施コマンド:
   1. `cd localapp/src-tauri && cargo check`
@@ -1500,14 +1500,14 @@
 
 ---
 
-## 003005 — PDF 画面の出力フォルダ自動設定と完了後表示改善
+## LA003005 — PDF 画面の出力フォルダ自動設定と完了後表示改善
 
 ### 【実施予定】
 
 - 日時: 2026-08-21
 - 目的: 「PDF」画面の出力フォルダを「電子書籍」と同様に自動設定し、取り込み完了後も「フォルダを開く」「トリミングに進む」ボタンを表示する
 - 前提:
-  - feature/003003-pdf-output-default ブランチを作成済み
+  - feature/LA003003-pdf-output-default ブランチを作成済み
   - `dirs` crate / `open_capture_folder` コマンド / `CaptureResultGallery` コンポーネントは既存で利用可能
 - 変更内容:
   1. `localapp/src-tauri/src/commands/pdf.rs`: `get_pdf_default_output_folder` コマンドを新規追加
@@ -1554,12 +1554,12 @@
     - `cd localapp && npm run build`: ビルド成功
   - ユーザーテスト: 合格判定を取得
 
-## 008001 — バグ修正：PDF作成ボタン押下後インジケータが一瞬で消える
+## LA008001 — バグ修正：PDF作成ボタン押下後インジケータが一瞬で消える
 
 ### 実施予定
 - 日時: 2026-08-22
 - 目的: PDF作成画面で「PDF作成」ボタンを押下後、インジケータが約0.01秒で消えて処理が進まないバグを修正
-- 前提条件: feature/008001-pdf-creation ブランチ
+- 前提条件: feature/LA008001-pdf-creation ブランチ
 - 想定される原因: Tauri invoke の引数名不一致（camelCase vs snake_case）
 - 実施予定のコマンド
   - `cargo check` でコンパイル確認
@@ -1581,12 +1581,12 @@
 
 ---
 
-## 008001〜008005 — localapp → backend API 連携（003006）
+## LA008001〜LA008005 — localapp → backend API 連携（LA003006）
 
 ### 実施予定
 - 日時: 2026-09-01
 - 目的: localapp から backend API（FastAPI）を経由して OCR 処理を実行し、検索可能 PDF を取得する機能を実装
-- 前提条件: feature/003006-backend-api-integration ブランチ
+- 前提条件: feature/LA003006-backend-api-integration ブランチ
 - 実施予定の内容
   - Rust 側に `run_backend_ocr` コマンドを実装
     - 画像フォルダを一時 ZIP に圧縮
@@ -1634,7 +1634,7 @@
   - ドキュメント更新
     - `localapp/docs/localapp-spec.md` に backend API 連携の責務・フローを追記
     - `localapp/docs/caveats.md` に `tauri-plugin-http` の feature 指定と `settings.json` の snake_case 化に関する注意事項を追記
-    - `localapp/docs/tasks.md` の 008001〜008005 に【実施結果】を追記し、タスク完了日付を 2026-09-01 に更新
+    - `localapp/docs/tasks.md` の LA008001〜LA008005 に【実施結果】を追記し、タスク完了日付を 2026-09-01 に更新
 - 変更ファイル
   - `localapp/src-tauri/src/commands/backend_api.rs`
   - `localapp/src-tauri/src/commands/mod.rs`
@@ -1652,7 +1652,7 @@
 
 ---
 
-## 003006 — backend `/ocr` 非同期化と localapp 連携の検証
+## LA003006 — backend `/ocr` 非同期化と localapp 連携の検証
 
 ### 【実施予定】
 
@@ -1695,7 +1695,7 @@
   - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
   - `cd localapp && npx tsc --noEmit`: 成功
 - 2026-09-03: ドキュメント更新
-  - `localapp/docs/tasks.md` の 003006 に【計画】【実施結果】を追記、タスク完了日付を 2026-09-03 に更新
+  - `localapp/docs/tasks.md` の LA003006 に【計画】【実施結果】を追記、タスク完了日付を 2026-09-03 に更新
   - `localapp/docs/work_log.md` に本エントリを追記
 
 ### 【実施予定との差分】
@@ -1707,7 +1707,7 @@
 
 ---
 
-## 003006-1 — `run_backend_ocr` のテスタブルコア分離
+## LA003006-1 — `run_backend_ocr` のテスタブルコア分離
 
 ### 【実施予定】
 
@@ -1751,10 +1751,10 @@
   - `cd localapp/src-tauri && cargo test backend_api_impl -- --nocapture`: 成功（1 passed）
   - `cd localapp && npx tsc --noEmit`: 成功
 - 2026-09-03: ドキュメント更新
-  - `localapp/docs/tasks.md` の 003006 に【実施結果】を追記
+  - `localapp/docs/tasks.md` の LA003006 に【実施結果】を追記
   - `localapp/docs/work_log.md` に本エントリを追記
 - 2026-09-03: テスト結果ドキュメントの整理
-  - `e2e-runtime-steps.md` を `localapp/test-results/003006-backend-ocr-test/README.md` に統合
+  - `e2e-runtime-steps.md` を `localapp/test-results/LA003006-backend-ocr-test/README.md` に統合
   - 重複ファイルを削除し、`.clinerules` 第 2.6 章に準拠した配置に整理
 - 2026-09-03: Python 3.13 互換性修正
   - `localapp/src-tauri/tests/mock_backend_server.py` で削除された `cgi.parse_header` を使用していた箇所を、自己完結の `_parse_content_type` に置換
@@ -1769,14 +1769,14 @@
 
 ---
 
-## 2026-09-03 008008 localapp 単体PDF生成処理実装
+## 2026-09-03 LA008008 localapp 単体PDF生成処理実装
 
 ### 【実施予定】
 
 - **日時**: 2026-09-03
 - **目的**: localapp 単体で画像フォルダ/ZIP から PDF を生成する機能を実装する
 - **前提条件**:
-  - 008007 の OCR 技術選定は未完了だが、「OCR なしの画像結合 PDF」は先行実装可能
+  - LA008007 の OCR 技術選定は未完了だが、「OCR なしの画像結合 PDF」は先行実装可能
   - 既存の `image` crate が localapp の依存に含まれていることを確認
 - **実施予定のコマンド**:
   - `cargo check` — Rust コンパイル確認
@@ -1788,12 +1788,12 @@
 
 ### 【実施実績】
 
-- 2026-09-03: 008007/008008 を再構成。旧タスク「localapp OCR機能実装」「localapp 単体PDF生成処理実装」を 4 タスクに分割
-  - **008007（新）**: localapp 単体生成 技術調査・選定（PDF crate + OCRエンジン選定）
-  - **008008**: 画像結合PDF生成の実装（OCRなし）（基盤実装）
-  - **008009**: OCRエンジン統合・検索可能PDF生成の実装（OCR統合）
-  - **008010**: Tauri invoke 引数修正・エンドツーエンド動作確認（UI 連携・統合テスト）
-- 2026-09-04: 008008 実装完了
+- 2026-09-03: LA008007/LA008008 を再構成。旧タスク「localapp OCR機能実装」「localapp 単体PDF生成処理実装」を 4 タスクに分割
+  - **LA008007（新）**: localapp 単体生成 技術調査・選定（PDF crate + OCRエンジン選定）
+  - **LA008008**: 画像結合PDF生成の実装（OCRなし）（基盤実装）
+  - **LA008009**: OCRエンジン統合・検索可能PDF生成の実装（OCR統合）
+  - **LA008010**: Tauri invoke 引数修正・エンドツーエンド動作確認（UI 連携・統合テスト）
+- 2026-09-04: LA008008 実装完了
   - `localapp/src-tauri/Cargo.toml` に `printpdf = "0.7"`（`embedded_images` feature）と `image_crate`（`image` 0.24.x 別名）を追加
   - `localapp/src-tauri/src/commands/pdf_generation.rs` を新規作成
     - `generate_image_pdf` コマンド：入力フォルダ/ZIP → 画像収集（001-999 ソート）→ A4 PDF 生成
@@ -1821,19 +1821,19 @@
   - **2026-09-04（自動テスト実装）**: Rust 単体テスト 5ケースすべて PASS
     - `Cargo.toml` の `[dev-dependencies]` に `lopdf = "0.34"` を追加（PDF ページ数・構造検証用）
     - `pdf_generation.rs` に `#[cfg(test)]` モジュールを追加し、以下の5テストを実装:
-      1. `test_collect_images_sorted_with_existing_data` — `test_cases/testdata/localapp/003006-backend-ocr-test/` の3枚を正しく昇順ソート
+      1. `test_collect_images_sorted_with_existing_data` — `test_cases/testdata/localapp/LA003006-backend-ocr-test/` の3枚を正しく昇順ソート
       2. `test_collect_images_sorted_empty` — 空フォルダで `Err` 返却確認
       3. `test_uuid_v4_unique` — 100回連続呼び出しで全て一意（`AtomicU64` カウンター追加）
       4. `test_create_image_pdf_impl_page_count` — `lopdf` でページ数3を検証
       5. `test_create_image_pdf_impl_file_size` — 生成PDFが1KB以上であることを確認
     - `cargo test pdf_generation`: **5 passed; 0 failed; finished in 0.12s**
     - `uuid_v4()` の実装を修正: ナノ秒タイムスタンプ + アトミックカウンターで高速連続呼び出しでも一意性を保証
-    - テスト結果レポート: `localapp/test-results/008008-image-pdf-test/README.md` を作成
+    - テスト結果レポート: `localapp/test-results/LA008008-image-pdf-test/README.md` を作成
     - localapp フロントエンド（React/Zustand）自動テスト: vitest/jest 未導入のため未実施。今後基盤構築時に追加検討
 
 ---
 
-## 008009 OCRエンジン統合・検索可能PDF生成の実装
+## LA008009 OCRエンジン統合・検索可能PDF生成の実装
 
 ### 【実施予定】
 
@@ -1841,8 +1841,8 @@
 - 目的: `leptess`（Tesseract Rust ラッパー）を統合し、画像→OCR→テキストレイヤーPDF生成の一気通貫パイプラインを実装する
 - 前提条件:
   - `tesseract` 5.5.2 + `jpn.traineddata` は `/opt/homebrew/share/tessdata/` に既にインストール済み
-  - `printpdf` 0.7.0 は 008008 で動作確認済み
-  - ブランチ: `feature/008009-searchable-pdf`（main から作成済み）
+  - `printpdf` 0.7.0 は LA008008 で動作確認済み
+  - ブランチ: `feature/LA008009-searchable-pdf`（main から作成済み）
 - 実施予定の手順:
   1. `cargo add leptess` + `cargo check` でビルド検証
   2. `src/commands/pdf_searchable.rs` を新規作成（`generate_searchable_pdf` コマンド）
@@ -1874,23 +1874,23 @@
   5. `pdfCreationStore.ts` の `createPdf` アクションを `invoke('create_searchable_pdf', { sourcePath, sourceType, outputPath })` に修正
   6. 単体・統合テストを実装
      - `test_parse_hocr_words`, `test_collect_images_sorted_*`, `test_uuid_v4_unique` が pass
-     - `test_create_searchable_pdf_impl_integration`（`#[ignore]`）を `--ignored` で実行し、`test_cases/testdata/localapp/003006-backend-ocr-test` の 3 PNG から 15MB/3ページの PDF を生成
+     - `test_create_searchable_pdf_impl_integration`（`#[ignore]`）を `--ignored` で実行し、`test_cases/testdata/localapp/LA003006-backend-ocr-test` の 3 PNG から 15MB/3ページの PDF を生成
      - PyMuPDF でテキスト抽出でき、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
   7. `cargo check`, `cargo test --lib pdf_searchable`, `npm run build` を実施し、すべて成功
-- 結果: タスク 008009 の実装・テスト・フロントエンド連携が完了。検索可能 PDF 生成パイプラインが localapp 単体で動作するようになった
-- 次のステップ: 008010 Tauri invoke 引数修正・エンドツーエンド動作確認で、引数の統一と UI 連携の最終確認を実施
+- 結果: タスク LA008009 の実装・テスト・フロントエンド連携が完了。検索可能 PDF 生成パイプラインが localapp 単体で動作するようになった
+- 次のステップ: LA008010 Tauri invoke 引数修正・エンドツーエンド動作確認で、引数の統一と UI 連携の最終確認を実施
 
 ---
 
-## 008010 Tauri invoke 引数修正・エンドツーエンド動作確認
+## LA008010 Tauri invoke 引数修正・エンドツーエンド動作確認
 
 ### 【実施予定】
 
 - 日時: 2026-09-04
 - 目的: 検索可能 PDF 生成機能の UI 統合を完了し、実機でのエンドツーエンド動作を確認する
 - 前提条件:
-  - 008009 の `create_searchable_pdf` 実装が完了している
-  - `feature/008010-...` ブランチを main から作成済み
+  - LA008009 の `create_searchable_pdf` 実装が完了している
+  - `feature/LA008010-...` ブランチを main から作成済み
 - 実施予定の手順:
   1. `create_searchable_pdf` の Tauri 引数を camelCase に統一
   2. フロントエンドからの `invoke` 呼び出しでエラーが出ないことを確認
@@ -1910,15 +1910,15 @@
   1. `src-tauri/src/commands/pdf_searchable.rs` の引数名を `sourcePath`, `sourceType`, `outputPath` に変更（camelCase 化）
   2. `PdfCreationView.tsx` / `pdfCreationStore.ts` 側の呼び出しと整合性を確認
   3. `cargo check` / `npm run build` を実施し、ビルド成功
-  4. 実機で `test_cases/testdata/localapp/003006-backend-ocr-test` の 3 枚 PNG から検索可能 PDF を生成
+  4. 実機で `test_cases/testdata/localapp/LA003006-backend-ocr-test` の 3 枚 PNG から検索可能 PDF を生成
      - 出力サイズ: 約 14.5 MB
      - ページ数: 3 ページ
      - テキスト選択・検索が機能することを目視確認
   5. Git 作業
-     - `test_cases/testdata/localapp/003006-backend-ocr-test/002.png`, `003.png`, `004.png` の意図しない変更を `git checkout` で revert
-     - `test_cases/testdata/localapp/003008-backend-ocr-test.pdf`, `test_cases/testdata/localapp/003009-backend-ocr-test.pdf` の未追跡ファイルを削除
+     - `test_cases/testdata/localapp/LA003006-backend-ocr-test/002.png`, `003.png`, `004.png` の意図しない変更を `git checkout` で revert
+     - `test_cases/testdata/localapp/LA003008-backend-ocr-test.pdf`, `test_cases/testdata/localapp/LA003009-backend-ocr-test.pdf` の未追跡ファイルを削除
      - 古い `index.lock` を削除して git 操作を復旧
-     - main ブランチにコミット: `008010: fix create_searchable_pdf argument names to camelCase for Tauri invoke`
-- 結果: タスク 008010 完了。検索可能 PDF 機能が localapp 上でエンドツーエンド動作する
-- 次のステップ: 008011（OCR 精度向上）、008012（透明テキストレイヤー・座標補正）に進む
+     - main ブランチにコミット: `LA008010: fix create_searchable_pdf argument names to camelCase for Tauri invoke`
+- 結果: タスク LA008010 完了。検索可能 PDF 機能が localapp 上でエンドツーエンド動作する
+- 次のステップ: LA008011（OCR 精度向上）、LA008012（透明テキストレイヤー・座標補正）に進む
 

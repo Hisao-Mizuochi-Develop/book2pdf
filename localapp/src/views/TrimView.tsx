@@ -62,7 +62,7 @@ import {
  * @returns トリミング画面の JSX
  */
 export function TrimView() {
-  // captureStore から最後のキャプチャ結果を取得（002004 連携用）
+  // captureStore から最後のキャプチャ結果を取得（LA002004 連携用）
   const lastCaptureFolder = useCaptureStore((state) => state.lastCaptureFolder);
 
   // trimStore からトリミング画面の状態を取得
@@ -86,7 +86,7 @@ export function TrimView() {
   const effectiveFolderPath = folderPath || lastCaptureFolder;
 
   /**
-   * 002004 連携: captureStore.lastCaptureFolder の変更を監視し、
+   * LA002004 連携: captureStore.lastCaptureFolder の変更を監視し、
    * trimStore に自動反映する。
    *
    * lastCaptureFolder が存在し、かつ trimStore の folderPath と異なる場合のみ

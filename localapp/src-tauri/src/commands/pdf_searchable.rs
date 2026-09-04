@@ -1,4 +1,4 @@
-/// 検索可能 PDF 生成コマンド（ユースケース 008009 — OCR 付きテキストレイヤー PDF）
+/// 検索可能 PDF 生成コマンド（ユースケース LA008009 — OCR 付きテキストレイヤー PDF）
 ///
 /// `generate_searchable_pdf` コマンドで以下の処理を行う：
 /// 1. 入力（フォルダ or ZIP）から画像ファイル（001-999.png/jpg）を収集・ソート
@@ -9,7 +9,7 @@
 ///
 /// 【OCR エンジンについて】
 /// `leptess` 0.14.0（Tesseract 5.x + Leptonica）を使用。
-/// 008007 で選定。精度は backend の ndlocr_cli（深層学習ベース）に劣るが、
+/// LA008007 で選定。精度は backend の ndlocr_cli（深層学習ベース）に劣るが、
 /// ローカル完結・オフライン動作・追加サーバー不要という利点がある。
 ///
 /// 【座標変換の設計】
@@ -23,7 +23,7 @@
 /// 【フォントについて】
 /// POC 段階では macOS システムフォント「ヒラギノ角ゴシック W3」を使用。
 /// TTC（TrueType Collection）形式のため、`printpdf` の対応状況により
-/// 後続タスク（008010）で Noto Sans JP（TTF・オープンソース）への切り替えを検討。
+/// 後続タスク（LA008010）で Noto Sans JP（TTF・オープンソース）への切り替えを検討。
 
 // ファイルパス操作用の標準ライブラリ
 // 入力フォルダ・画像ファイル・出力先パスの検証・操作用
@@ -35,18 +35,18 @@ use std::fs::File;
 // PDF バイナリの書き出し時に使用
 use std::io::BufWriter;
 
-// PDF 生成ライブラリ（008007 で選定、008008 で実装済み）
+// PDF 生成ライブラリ（LA008007 で選定、LA008008 で実装済み）
 // A4 ドキュメント作成・画像埋め込み・テキスト描画・レイヤー操作用
 use printpdf::*;
 // Tauri のイベント発射（emit）トレイト
 // `AppHandle<R>::emit()` を呼び出すためにトレイトをスコープに入れる
 use tauri::Emitter;
 
-// leptess: Tesseract 5.x + Leptonica の Rust ラッパー（008007 で選定）
+// leptess: Tesseract 5.x + Leptonica の Rust ラッパー（LA008007 で選定）
 // 画像→OCR→(テキスト, バウンディングボックス) の直接取得用
 use leptess::LepTess;
 // regex: HOCR テキストから bbox + テキストを抽出するための正規表現ライブラリ
-// 008009: leptess の get_component_boxes はテキスト情報を返さないため、
+// LA008009: leptess の get_component_boxes はテキスト情報を返さないため、
 // get_hocr_text で HOCR HTML を取得し、正規表現で word レベルのテキストと座標をパースする
 use regex::Regex;
 
@@ -65,7 +65,7 @@ pub struct SearchablePdfProgressPayload {
     pub message: String,
 }
 
-// === 定数（008008 の pdf_generation.rs と同一値） ===
+// === 定数（LA008008 の pdf_generation.rs と同一値） ===
 
 /// A4 用紙の幅（ISO 216 規格）
 const A4_WIDTH_MM: f64 = 210.0;
@@ -82,7 +82,7 @@ const MM_PER_INCH: f64 = 25.4;
 ///
 /// ヒラギノ角ゴシック W3 は日本語表示に対応したゴシック体フォント。
 /// TTC（TrueType Collection）形式のため、`printpdf` のフォントパーサーが
-/// 対応していない場合は 008010 で Noto Sans JP TTF への切り替えが必要。
+/// 対応していない場合は LA008010 で Noto Sans JP TTF への切り替えが必要。
 const FONT_PATH: &str = "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc";
 
 /// Tesseract 言語設定（日本語）
@@ -224,7 +224,7 @@ fn create_searchable_pdf_impl<R: tauri::Runtime>(
             );
         let layer = doc.get_page(page_idx).get_layer(layer_idx);
 
-        // --- 画像配置（008008 と同じロジック） ---
+        // --- 画像配置（LA008008 と同じロジック） ---
         let img_w_mm = img_width_mm * scale;
         let img_h_mm = img_height_mm * scale;
         let offset_x = (A4_WIDTH_MM - img_w_mm) / 2.0;
@@ -293,7 +293,7 @@ fn create_searchable_pdf_impl<R: tauri::Runtime>(
 }
 
 // =============================================================================
-// ヘルパー関数（008008 pdf_generation.rs と同一・類似実装）
+// ヘルパー関数（LA008008 pdf_generation.rs と同一・類似実装）
 // =============================================================================
 
 /// 指定フォルダ内の画像ファイル（001-999.png/jpg）を収集し、ファイル名の数字順で昇順ソートして返す
@@ -442,7 +442,7 @@ mod tests {
     fn test_collect_images_sorted_existing_data() {
         // cargo test は src-tauri ディレクトリから実行されるため、
         // プロジェクトルート（localapp）からの相対パスでテストデータにアクセスする
-        let folder = Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test");
+        let folder = Path::new("../../test_cases/testdata/localapp/LA003006-backend-ocr-test");
         let images = collect_images_sorted(folder).unwrap();
         assert_eq!(images.len(), 3);
         let stems: Vec<_> = images
@@ -455,7 +455,7 @@ mod tests {
     /// 空フォルダで `collect_images_sorted` がエラーを返すことを確認
     #[test]
     fn test_collect_images_sorted_empty() {
-        let empty = Path::new("../../test_cases/testdata/localapp/does-not-exist-008009");
+        let empty = Path::new("../../test_cases/testdata/localapp/does-not-exist-LA008009");
         let result = collect_images_sorted(empty);
         assert!(result.is_err());
     }
@@ -494,7 +494,7 @@ mod tests {
 
         // cargo test は src-tauri ディレクトリから実行されるため、
         // プロジェクトルート（localapp）からの相対パスでテストデータにアクセスする
-        let input_dir = Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test");
+        let input_dir = Path::new("../../test_cases/testdata/localapp/LA003006-backend-ocr-test");
         let images = collect_images_sorted(input_dir).expect("画像収集に失敗");
         assert!(!images.is_empty(), "テスト画像が見つかりません");
 

@@ -56,7 +56,7 @@ def create_object_dict(cfg: DictConfig) -> dict:
 
 
 def infer(object_dict: dict, input_data: Dict[str, Any]) -> Dict[str, Any]:
-    # FIX(005001): input_data のディープコピーを避け、メモリ使用量を削減します
+    # FIX(OW004001): input_data のディープコピーを避け、メモリ使用量を削減します
     # 画像データは大きいため input_data と共有し、xml ツリーだけ独立した deep copy を保持します
     # 後続で output_data['xml'] の要素属性を変更するため、input_data への副作用を避ける必要があります
     output_data = input_data.copy()
@@ -74,7 +74,7 @@ def infer(object_dict: dict, input_data: Dict[str, Any]) -> Dict[str, Any]:
     preds = trainer.predict(model=model, datamodule=datamodule, ckpt_path=cfg.ckpt_path)
     log.info("Done predict!")
 
-    # FIX(005001): predict() 後に Trainer の DataLoader 参照をクリア
+    # FIX(OW004001): predict() 後に Trainer の DataLoader 参照をクリア
     # 同じ Trainer をページごとに使い回す場合、DataLoader や内部ループの状態が累積するため
     # 明示的に参照を切ります。属性が存在しない場合は無視します
     try:

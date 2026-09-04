@@ -95,7 +95,7 @@ class LineOcrProcess(BaseInferenceProcess):
         output_data = self._run_submodule_inference(self._object_dict, input_data)
         result.append(output_data)
 
-        # FIX(005001): PyTorch Lightning Trainer の predict 後に不要な参照をクリア
+        # FIX(OW004001): PyTorch Lightning Trainer の predict 後に不要な参照をクリア
         # 同じ Trainer インスタンスでページごとに predict() を繰り返すと、
         # DataLoader や内部ループの状態が累積してメモリリークするため、明示的に解放します
         try:

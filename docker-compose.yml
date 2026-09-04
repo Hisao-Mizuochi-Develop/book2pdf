@@ -66,9 +66,9 @@ services:
     environment:
       # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
       - LOG_LEVEL=DEBUG
-      # 003006: 入力画像前処理（sharpen_light_upscale_2x）の ON/OFF 制御です
+      # OW003006: 入力画像前処理（sharpen_light_upscale_2x）の ON/OFF 制御です
       # false に設定すると、前処理なしで OCR を実行します
-      # 003007: 追加前処理効果検証のため、スクリプト側で前処理を行う前提で一時的に OFF にする
+      # OW003007: 追加前処理効果検証のため、スクリプト側で前処理を行う前提で一時的に OFF にする
       - PREPROCESS_ENABLED=false
     # Dockerfile の CMD で FastAPI サーバーを起動します
 

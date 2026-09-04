@@ -47,7 +47,7 @@ import { useNavigationStore } from "@/store/navigationStore";
 /**
  * 画面キャプチャ機能のメインビュー
  *
- * 【002002: プロファイル管理統合版】
+ * 【LA002002: プロファイル管理統合版】
  * 画面上段にプロファイル選択・編集パネル、下段に連続キャプチャUIを配置。
  * 起動時に Rust 側からビルトインプロファイル一覧を取得し、
  * Zustand ストアに保存してセレクタとエディタで利用する。
@@ -97,8 +97,8 @@ export function CaptureView() {
   /**
    * コンポーネントマウント時: ビルトインプロファイルを Rust 側から取得
    *
-   * 002002 ではメモリ内のみ保持。ブラウザリロードでリセットされる。
-   * 将来の 007001 で永続化を実装予定。
+   * LA002002 ではメモリ内のみ保持。ブラウザリロードでリセットされる。
+   * 将来の LA007001 で永続化を実装予定。
    */
   useEffect(() => {
     fetchProfiles();
@@ -226,7 +226,7 @@ export function CaptureView() {
           />
         </div>
 
-        {/* 出力先フォルダ選択フィールド（002009） */}
+        {/* 出力先フォルダ選択フィールド（LA002009） */}
         <div className="space-y-2">
           <label htmlFor="output-folder" className="text-sm font-medium">
             出力先フォルダ
@@ -309,7 +309,7 @@ export function CaptureView() {
 
       </section>
 
-      {/* ── キャプチャ結果セクション（002004）──────────────────────── */}
+      {/* ── キャプチャ結果セクション（LA002004）──────────────────────── */}
       {lastCaptureFolder && !isContinuousCapturing && (
         <section className="space-y-4 rounded-lg border bg-card p-5 shadow-sm">
           <div>

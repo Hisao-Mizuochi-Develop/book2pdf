@@ -8,8 +8,8 @@ feature/<タスクNo>-<内容の短縮名>
 
 ## 例
 
-- `feature/001001-scaffold`
-- `feature/002001-screenshot-research`
+- `feature/OT001001-scaffold`
+- `feature/OT002001-screenshot-research`
 
 ## ブランチ運用手順
 

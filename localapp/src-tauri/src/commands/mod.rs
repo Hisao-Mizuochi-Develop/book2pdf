@@ -14,10 +14,10 @@
 pub mod capture;
 // 003: PDF 読込コマンド
 pub mod pdf;
-// 008008: 画像結合 PDF 生成コマンド（OCR なし）
+// LA008008: 画像結合 PDF 生成コマンド（OCR なし）
 pub mod pdf_generation;
-// 008009: OCR 付き検索可能 PDF 生成コマンド
+// LA008009: OCR 付き検索可能 PDF 生成コマンド
 // 006 のダミー実装を統合し、本モジュールが正式な検索可能 PDF 生成を担う
 pub mod pdf_searchable;
-// 003006: localapp → backend API 連携コマンド
+// LA003006: localapp → backend API 連携コマンド
 pub mod backend_api;

@@ -210,7 +210,7 @@ def _preprocess_image(src_path: Path, dst_path: Path) -> None:
         img = img.resize(new_size, Image.Resampling.LANCZOS)
 
         # 軽度シャープニング
-        # 003003 で最も効果的だったパラメータです
+        # OW003003 で最も効果的だったパラメータです
         img = img.filter(
             ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)
         )

@@ -335,11 +335,11 @@ PDF ダウンロード時間,0.045
   - `scripts/benchmark_ocr.sh` の backend ログ抽出パターンが実際のログ形式と一致していないため、ZIP 解凍時間と PDF 生成時間が `N/A` となっていた問題
   - `docker compose logs` が ocr-worker の全ログを対象としていたため、1 ページごとの OCR 処理時間に過去の実行分が混在していた問題
 
-#### 2026-09-01 実施結果（005001 メモリ最適化パッチ適用後）
+#### 2026-09-01 実施結果（BE005001 メモリ最適化パッチ適用後）
 
 - 日時: 2026-09-01
 - 実行方式: Docker Compose（backend / ocr-worker 分離、CPU 実行）
-- ブランチ: `feature/004003-ocr-performance-test`
+- ブランチ: `feature/BE004003-ocr-performance-test`
 - 入力データ: 3 ページ（`test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`）
 
 | 項目 | 時間（秒） |
@@ -355,8 +355,8 @@ PDF ダウンロード時間,0.045
 | 合計処理時間 | 396.914 |
 
 - 個別ページの OCR 処理時間：122.762 秒、110.116 秒、144.009 秒
-- 詳細は [backend/test-results/benchmark-004003/performance-test-report-004003.md](../backend/test-results/benchmark-004003/performance-test-report-004003.md) を参照
-- 注：本タスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです
+- 詳細は [backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md](../backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md) を参照
+- 注：本タスク BE004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです
 
 ## 8. 終了処理
 

@@ -643,13 +643,13 @@ class InferencerWithCLI:
         config = conf_dict['config_path']
         checkpoint = conf_dict['checkpoint_path']
         device = conf_dict['device']
-        # FIX(003005): config.yml の score_thr を実際に参照するように修正
+        # FIX(OW003005): config.yml の score_thr を実際に参照するように修正
         self.score_thr = conf_dict.get('score_thr', 0.3)
         self.detector = LayoutDetector(config, checkpoint, device)
 
     def inference_with_cli(self, img, img_path,
                            score_thr: float = None, dump: bool = False):
-        # FIX(003005): 未指定時は config.yml の値を使用
+        # FIX(OW003005): 未指定時は config.yml の値を使用
         if score_thr is None:
             score_thr = self.score_thr
 

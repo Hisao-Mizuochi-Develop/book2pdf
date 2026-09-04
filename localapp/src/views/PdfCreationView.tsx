@@ -11,7 +11,7 @@
  * 【技術仕様】
  * - `tauri-plugin-dialog` の `open()` でフォルダ/ZIP を選択
  * - `invoke("create_searchable_pdf")` でローカル OCR を実行
- * - `invoke("run_backend_ocr")` で backend API 経由の OCR を実行（003006）
+ * - `invoke("run_backend_ocr")` で backend API 経由の OCR を実行（LA003006）
  * - `listen("pdf-creation-progress")` / `listen("ocr-progress")` で進捗イベントを受信
  * - `exportStore` と同様の UI パターンで統一感を持たせる
  */
@@ -172,7 +172,7 @@ export function PdfCreationView() {
   };
 
   /**
-   * ローカル OCR 付き検索可能 PDF 生成ボタンクリックハンドラ（008009）
+   * ローカル OCR 付き検索可能 PDF 生成ボタンクリックハンドラ（LA008009）
    *
    * `pdfCreationStore.createPdf()` を呼び出し、Rust 側の
    * `create_searchable_pdf` コマンドを実行する。
@@ -374,7 +374,7 @@ export function PdfCreationView() {
         </div>
       </section>
 
-      {/* ─── 一時的デバッグ表示（003006 disabled 原因調査用） ─── */}
+      {/* ─── 一時的デバッグ表示（LA003006 disabled 原因調査用） ─── */}
       <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-xs text-yellow-900">
         <div className="font-semibold">デバッグ情報</div>
         <div>sourcePath: {sourcePath ?? "null"}</div>
@@ -396,7 +396,7 @@ export function PdfCreationView() {
       {/* ─── アクションエリア ─── */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
-          {/* 008009: ローカル OCR 付き検索可能 PDF 作成（メインアクション） */}
+          {/* LA008009: ローカル OCR 付き検索可能 PDF 作成（メインアクション） */}
           <Button
             className="w-full"
             onClick={handleCreateSearchablePdf}
@@ -407,7 +407,7 @@ export function PdfCreationView() {
             {isProcessing ? "OCR 付き PDF 作成中..." : "アプリケーションで OCR 付き PDF 作成"}
           </Button>
 
-          {/* 008008: OCR なし画像結合 PDF 作成（サブアクション） */}
+          {/* LA008008: OCR なし画像結合 PDF 作成（サブアクション） */}
           <Button
             className="w-full"
             variant="outline"
@@ -419,7 +419,7 @@ export function PdfCreationView() {
             {isProcessing ? "PDF 作成中..." : "OCR なし画像 PDF 作成"}
           </Button>
 
-          {/* 003006: backend API 経由 OCR PDF 作成 */}
+          {/* LA003006: backend API 経由 OCR PDF 作成 */}
           <Button
             className="w-full"
             variant="outline"

@@ -83,7 +83,7 @@ StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprec
 ### 備考
 
 - 現時点ではプロセス再起動で一時ディレクトリとジョブ状態が失われる
-- ジョブ状態の SQLite 永続化（004001）に合わせて、ファイルパスの永続化や共有ストレージの検討が必要
+- ジョブ状態の SQLite 永続化（BE004001）に合わせて、ファイルパスの永続化や共有ストレージの検討が必要
 
 ---
 
@@ -224,7 +224,7 @@ _PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
 
 - SSE は `fastapi.responses.StreamingResponse`（`media_type="text/event-stream"`）を使用して実装した
 - プロキシ環境やタイムアウト設定によって SSE が不安定になる場合は、
-  別途ポーリング方式（005001）への切り替えを検討する
+  別途ポーリング方式（BE005001）への切り替えを検討する
 - フロントエンドでの進捗バー表示は、タスク002002 として別途対応する
 
 ---
@@ -298,7 +298,7 @@ docker compose up -d --build backend
 - コード変更後は `--build` を使うか、イメージを削除してから再作成する必要がある
   - `docker compose rm -f backend && docker compose up -d --build backend`
 - backend のジョブ状態は現在メモリ内で管理されているため、再起動後は過去のジョブにアクセスできなくなる
-  - 永続化は別タスク（004001）で対応予定
+  - 永続化は別タスク（BE004001）で対応予定
 
 ---
 
@@ -401,9 +401,9 @@ PDF 白紙問題を修正した後、3 ページのうち Page 2, 3 の透明テ
 
 以下のタスクとして切り出し、別途調査・修正を実施予定。
 
-- 003004: PDF 透明テキスト配置ズレの調査
-- 003005: OCR 結果 XML の可視化検証
-- 003006: 縦書き・特殊文字の PDF 描画対応
+- BE003004: PDF 透明テキスト配置ズレの調査
+- BE003005: OCR 結果 XML の可視化検証
+- BE003006: 縦書き・特殊文字の PDF 描画対応
 
 ### 備考
 
@@ -446,7 +446,7 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 
 ### 対応
 
-- 配置ズレについてはタスク 003007 で XML → PDF の座標スケーリングを実装する
+- 配置ズレについてはタスク BE003007 で XML → PDF の座標スケーリングを実装する
 - OCR 認識精度については、ndlocr_cli 側のモデル・前処理・推論パラメータを調査し、別途改善策を検討する
 
 ### 備考
@@ -462,11 +462,11 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 
 ---
 
-## 2026-08-12 003007 XML → PDF 座標スケーリング実装後の確認と留意点
+## 2026-08-12 BE003007 XML → PDF 座標スケーリング実装後の確認と留意点
 
 ### 事象
 
-タスク 003007 で `xml_parser.py` / `pdf_generator.py` に座標スケーリングを実装した後、以下を確認した。
+タスク BE003007 で `xml_parser.py` / `pdf_generator.py` に座標スケーリングを実装した後、以下を確認した。
 
 1. PDF ページサイズは元画像サイズ（664×942）と一致
 2. PyMuPDF で抽出したテキスト bbox の x 座標は、XML 座標 × `scale_x`（= pdf_width / xml_width）と一致
@@ -498,18 +498,18 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - OCR 認識ミス（`RAG` → `RAC`、`Improving` → `mproving`、`GPT-4` → `〓PT-4` など）は OCR エンジン側の問題であり、backend 側の修正では解消できない
 - 認識精度改善は `ocr-worker` 側のモデル・前処理・推論パラメータ調整が必要
 
-## 14. OCR 性能計測に関する注意事項（004003）
+## 14. OCR 性能計測に関する注意事項（BE004003）
 
 - `scripts/benchmark_ocr.sh` の `SAMPLE_DIR` は `PROJECT_ROOT` と結合して使用されるため、絶対パスを指定するとパスが二重になる
 - 2026-09-01 に `BENCHMARK_SAMPLE_DIR` 環境変数で上書き可能にしたが、相対パス（`sample-png/...`）を指定することを推奨する
 - 3 ページの OCR 処理でも約 6 分半（396 秒）かかるため、テスト時の HTTP タイムアウト設定に注意する
 - 性能計測スクリプトは実行完了後に `/data/extracted/{job_id}` と `/data/ocr_output/{job_id}` を削除するが、`/data/pdfs/{job_id}.pdf` は削除しない
-- 詳細は `backend/test-results/benchmark-004003/performance-test-report-004003.md` を参照
-- 注：本タスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです
+- 詳細は `backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md` を参照
+- 注：本タスク BE004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです
 
 ---
 
-## 15. `/ocr` エンドポイントの非同期化に関する注意事項（003012）
+## 15. `/ocr` エンドポイントの非同期化に関する注意事項（BE003012）
 
 ### 事象
 
@@ -531,7 +531,7 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 ### 注意点
 
 - `/ocr` は即座に返るようになったが、実際の OCR 完了までは数十分かかる
-- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（005001 SQLite 永続化完了後に解消予定）
+- バックグラウンドタスク実行中に backend コンテナが再起動すると、ジョブ状態は失われる（BE005001 SQLite 永続化完了後に解消予定）
 - テスト用 curl で ZIP アップロードする際は、`-F "file=@...;type=application/zip"` のように Content-Type を明示しないと、backend が ZIP 以外として拒否する
 - localapp 側の reqwest クライアントは `/ocr` 受付までのタイムアウトを短く（60 秒）設定し、完了まではポーリングで待つ
 

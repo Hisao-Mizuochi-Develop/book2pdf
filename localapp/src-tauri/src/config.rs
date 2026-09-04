@@ -1,4 +1,4 @@
-/// 003006: localapp の実行時設定を管理するモジュール
+/// LA003006: localapp の実行時設定を管理するモジュール
 ///
 /// `~/.config/book2pdf/settings.json`（macOS では `~/Library/Application Support/book2pdf/settings.json`）
 /// に backend API 接続先やタイムアウト値を永続化する。
