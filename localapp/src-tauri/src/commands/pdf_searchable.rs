@@ -99,28 +99,34 @@ const TESS_LANG: &str = "jpn";
 ///
 /// # 引数
 /// - `app` — Tauri のAppHandle（イベント emit に使用）
-/// - `source_path` — 画像フォルダまたは ZIP ファイルのパス
-/// - `source_type` — `"folder"` または `"zip"`
-/// - `output_path` — 生成PDFの出力先ファイルパス（フルパス）
+/// - `sourcePath` — 画像フォルダまたは ZIP ファイルのパス
+/// - `sourceType` — `"folder"` または `"zip"`
+/// - `outputPath` — 生成PDFの出力先ファイルパス（フルパス）
+///
+/// # 命名について
+/// Tauri v2 の `invoke()` は JS 側のキー名と Rust 側の引数名を完全一致で紐付ける。
+/// フロントエンドが camelCase (`sourcePath`, `sourceType`, `outputPath`) で送信するため、
+/// Rust 側も同じ名前を使用する。`#[allow(non_snake_case)]` で命名規約警告を抑制する。
 ///
 /// # 戻り値
 /// - `Ok(String)` — 生成されたPDFファイルのフルパス
 /// - `Err(String)` — エラーメッセージ
+#[allow(non_snake_case)]
 #[tauri::command]
 pub async fn create_searchable_pdf(
     app: tauri::AppHandle,
-    source_path: String,
-    source_type: String,
-    output_path: String,
+    sourcePath: String,
+    sourceType: String,
+    outputPath: String,
 ) -> Result<String, String> {
-    let input = Path::new(&source_path);
-    let out_path = Path::new(&output_path);
+    let input = Path::new(&sourcePath);
+    let out_path = Path::new(&outputPath);
 
     // ZIP の場合は一時フォルダに展開
     let temp_dir: Option<PathBuf>;
     let source_folder: PathBuf;
 
-    if source_type.to_lowercase() == "zip" ||
+    if sourceType.to_lowercase() == "zip" ||
         input.extension().map(|e| e == "zip").unwrap_or(false)
     {
         temp_dir = Some(extract_zip_to_temp(input).map_err(|e| e.to_string())?);
