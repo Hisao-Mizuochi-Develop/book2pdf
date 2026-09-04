@@ -13,7 +13,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 ## Project Context
 - Modules: backend/, frontend/, localapp/, ocr-worker/
 - CPU-only execution; no GPU required.
-- For detailed rules, load skills from .agentskills/ as needed.
+- For detailed rules, load skills from .cline/skills/ as needed.
 
 ## Approval Required
 - All docs/ changes require user approval.
