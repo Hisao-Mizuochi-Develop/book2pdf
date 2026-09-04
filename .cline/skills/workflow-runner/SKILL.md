@@ -18,12 +18,16 @@ metadata:
 
 ### Phase 1: Pre-work
 
-1. `git status` で working tree clean を確認
-2. `git checkout main && git pull` で main ブランチを最新化
-3. `git checkout -b feature/<タスクNo>-<短縮名>` でブランチ作成
-4. `<module>/docs/tasks.md` の【計画】に実施手順を記載
-5. `<module>/docs/work_log.md` に【実施予定】エントリを作成
-6. **ユーザーに計画を提示し、承認を取得**
+1. `.clinerules` を `read_file` で読み込み、プロジェクトルールを確認する
+2. `git status` で working tree clean を確認
+3. `git checkout main && git pull` で main ブランチを最新化
+4. `git checkout -b feature/<タスクNo>-<短縮名>` でブランチ作成
+5. `<module>/docs/tasks.md` の【計画】に実施手順を記載
+6. `<module>/docs/work_log.md` に【実施予定】エントリを作成
+   - 日時・目的・前提条件
+   - 実施予定コマンド
+   - 想定される結果や注意点
+7. **ユーザーに計画を提示し、承認を取得**
 
 ### Phase 2: Execution
 
@@ -33,14 +37,20 @@ metadata:
 
 ### Phase 3: Post-work
 
-1. **ドキュメント更新**（実装完了後）:
+1. **コミット前の必須チェック**
+   - ユーザー動作テストの実施結果を確認
+   - 「合格」の明示的な判定を記録
+   - `docs/` 配下の変更がある場合はユーザー承認を取得
+2. **ドキュメント更新**（実装完了後）:
    - `tasks.md` の【実施結果】に追記
    - `work_log.md` に【実施実績】セクションを追記
    - `caveats.md` に注意事項を追記
-2. `git add -A && git commit -m "<タスクNo>: <内容>"`
-3. `git checkout main && git merge feature/<タスクNo>-<xxx>`
-4. `tasks.md` に完了日付を記載
-5. ユーザーにタスク完了を報告
+   - 評価・テストを含むタスクはレポートを作成し、`tasks.md` にリンクを追加
+   - 仕様書ドキュメントの「フォルダ・ファイル構成」セクションを更新した場合は反映を確認
+3. `git add -A && git commit -m "<タスクNo>: <内容>"`
+4. `git checkout main && git merge feature/<タスクNo>-<xxx>`
+5. `tasks.md` に完了日付を記載
+6. ユーザーにタスク完了を報告
 
 ## Common Edge Cases
 - 未コミットの変更がある場合は先にコミットまたは stash する

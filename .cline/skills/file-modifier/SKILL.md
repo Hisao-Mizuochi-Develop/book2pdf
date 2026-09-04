@@ -14,7 +14,7 @@ metadata:
 # file-modifier
 
 ## Overview
-本スキルは、既存ドキュメントの更新時に **replace_in_file のみ**を使用することを強制します。
+本スキルは、既存ドキュメント（`.clinerules` 自身も含む）の更新時に **replace_in_file のみ**を使用することを強制します。
 
 ## Step-by-step Instructions
 
@@ -29,6 +29,9 @@ metadata:
 3. **禁止事項**
    - `write_to_file` で既存ファイルを上書きしない
    - `sed -i` などの直接ファイル書き換えを使わない
+
+4. **`.clinerules` 自身も対象**
+    - `.clinerules` を更新する場合も、必ず `replace_in_file` を使用する
 
 ## Common Edge Cases
 - 文末に追記する場合: 既存の `---` や `##` 見出しを SEARCH に含める

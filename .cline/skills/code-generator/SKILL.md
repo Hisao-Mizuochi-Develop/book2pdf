@@ -22,6 +22,8 @@ metadata:
    - Local app: Tauri v2 + Rust + React + Vite
    - OCR: ndlocr_cli
    - PDF: PyMuPDF
+   - 基盤: Docker + Docker Compose
+   - アーキテクチャ: FastAPI と ndlocr_cli は別コンテナとして分離
 
 2. **コメント必須**
    - 各関数・クラス・複雑なロジックに JSDoc / docstring / Rust doc comments を付ける
