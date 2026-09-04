@@ -4,12 +4,35 @@
 // コンテナ外の開発時は環境変数が未定義の場合 localhost:8000 を使用します
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+// API 呼び出しのデフォルトタイムアウト（ミリ秒）です
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+/**
+ * fetch にタイムアウトを付与して実行します
+ * @param input リクエスト URL
+ * @param init fetch オプション
+ * @returns Response
+ */
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 /**
  * 新しい OCR ジョブを作成します
  * @returns 作成されたジョブの ID
  */
 export async function createJob(): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/api/jobs/`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/`, {
     method: "POST",
   });
   if (!response.ok) {
@@ -29,7 +52,7 @@ export async function uploadZip(jobId: string, file: File): Promise<string[]> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/upload`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/upload`, {
     method: "POST",
     body: formData,
   });
@@ -46,7 +69,7 @@ export async function uploadZip(jobId: string, file: File): Promise<string[]> {
  * @returns OCR 結果
  */
 export async function runOcr(jobId: string): Promise<unknown> {
-  const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/ocr`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/ocr`, {
     method: "POST",
   });
   if (!response.ok) {
@@ -104,7 +127,7 @@ export function getPdfDownloadUrl(jobId: string): string {
  * @param filename 保存するファイル名（省略時は {jobId}.pdf）
  */
 export async function downloadPdf(jobId: string, filename?: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
   if (!response.ok) {
     throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
   }
