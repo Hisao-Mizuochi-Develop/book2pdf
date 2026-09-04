@@ -43,8 +43,14 @@ tauri-plugin-dialog = "2"
 tauri-plugin-http = { version = "2.6.0", features = ["multipart", "json"] }
 # 003006: 一時 ZIP 出力先の一意なフォルダ名生成用
 uuid = { version = "1", features = ["v4"] }
+leptess = "0.14.0"
+# 008009: HOCR テキストから bbox + テキストを抽出するための正規表現ライブラリ
+regex = "1"
 
 [dev-dependencies]
 # 008008: 自動テストで生成した PDF のページ数・構造を検証するためのライブラリ
 # printpdf で生成した PDF の整合性を確認するために使用
 lopdf = "0.34"
+# 008009: cargo test 内で `tauri::test::mock_app()` を使用するための test feature
+# 統合テストで AppHandle をモック化するために必要
+tauri = { version = "2", features = ["test"] }

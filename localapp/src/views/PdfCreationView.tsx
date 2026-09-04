@@ -75,6 +75,7 @@ export function PdfCreationView() {
     setOutputName,
     setOutputFolder,
     setImageCount,
+    createPdf,
     generateImagePdf,
     reset,
   } = usePdfCreationStore();
@@ -167,6 +168,20 @@ export function PdfCreationView() {
       }
     } catch (err) {
       console.error("出力先選択エラー:", err);
+    }
+  };
+
+  /**
+   * ローカル OCR 付き検索可能 PDF 生成ボタンクリックハンドラ（008009）
+   *
+   * `pdfCreationStore.createPdf()` を呼び出し、Rust 側の
+   * `create_searchable_pdf` コマンドを実行する。
+   */
+  const handleCreateSearchablePdf = async () => {
+    try {
+      await createPdf();
+    } catch {
+      // エラーは store 内で progressMessage に設定されている
     }
   };
 
@@ -381,24 +396,39 @@ export function PdfCreationView() {
       {/* ─── アクションエリア ─── */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
+          {/* 008009: ローカル OCR 付き検索可能 PDF 作成（メインアクション） */}
           <Button
             className="w-full"
+            onClick={handleCreateSearchablePdf}
+            disabled={!sourcePath || !outputFolder || anyProcessing}
+            size="lg"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {isProcessing ? "OCR 付き PDF 作成中..." : "アプリケーションで OCR 付き PDF 作成"}
+          </Button>
+
+          {/* 008008: OCR なし画像結合 PDF 作成（サブアクション） */}
+          <Button
+            className="w-full"
+            variant="outline"
             onClick={handleGenerateImagePdf}
             disabled={!sourcePath || !outputFolder || anyProcessing}
             size="lg"
           >
             <FileText className="mr-2 h-4 w-4" />
-            {isProcessing ? "PDF 作成中..." : "アプリケーションでPDF作成（仮：OCRなし）"}
+            {isProcessing ? "PDF 作成中..." : "OCR なし画像 PDF 作成"}
           </Button>
 
+          {/* 003006: backend API 経由 OCR PDF 作成 */}
           <Button
             className="w-full"
+            variant="outline"
             onClick={handleBackendOcr}
             disabled={!sourcePath || !sourceType || anyProcessing}
             size="lg"
           >
             <Cloud className="mr-2 h-4 w-4" />
-            {backendIsProcessing ? "PDF 作成中..." : "ウェブサイトで PDF作成"}
+            {backendIsProcessing ? "PDF 作成中..." : "ウェブサイトで PDF 作成"}
           </Button>
         </div>
 

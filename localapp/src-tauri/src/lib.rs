@@ -60,8 +60,9 @@ pub fn run() {
             commands::pdf::extract_pdf_to_images,
             // 003003: PDF 出力フォルダ自動設定
             commands::pdf::get_pdf_default_output_folder,
-            // 006001: OCR 済み PDF 作成
-            commands::pdf_creation::create_searchable_pdf,
+            // 008009: OCR 付き検索可能 PDF 生成（ローカル完結）
+            // 006001 のダミー実装は統合され、本コマンドが正式な検索可能 PDF 生成を担う
+            commands::pdf_searchable::create_searchable_pdf,
             // 008008: 画像結合 PDF 生成（OCR なし）
             commands::pdf_generation::generate_image_pdf,
             // 003006: backend API 連携（設定読み書き + OCR 実行）

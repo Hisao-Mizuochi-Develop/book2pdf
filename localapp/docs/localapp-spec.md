@@ -151,12 +151,52 @@ OS の外観モードがダークの場合、`main.tsx` の `initTheme()` が `h
 
 ```
 localapp/                         # ローカルアプリルート
-└── docs/                         # localapp 専用ドキュメント
-    ├── localapp-spec.md          # 本仕様書
-    ├── setup-log.md              # 環境構築ログ
-    ├── tasks.md                  # タスク管理表
-    ├── caveats.md                # 注意事項
-    └── work_log.md               # 作業ログ
+├── docs/                         # localapp 専用ドキュメント
+│   ├── localapp-spec.md          # 本仕様書
+│   ├── setup-log.md              # 環境構築ログ
+│   ├── tasks.md                  # タスク管理表
+│   ├── caveats.md                # 注意事項
+│   └── work_log.md               # 作業ログ
+├── src/                          # フロントエンドコード（React + Vite）
+│   ├── App.tsx                   # メインアプリケーションコンポーネント
+│   ├── main.tsx                  # React エントリポイント
+│   ├── index.css                 # グローバルスタイル
+│   ├── components/               # 共通的・再利用可能な React コンポーネント
+│   ├── stores/                   # Zustand 状態管理
+│   │   ├── pdfCreationStore.ts   # PDF 作成（ローカル OCR・画像結合）状態管理
+│   │   ├── exportStore.ts        # ZIP エクスポート状態管理
+│   │   └── ...
+│   ├── views/                    # 各機能画面
+│   │   ├── PdfCreationView.tsx   # PDF 作成画面（backend OCR / 画像結合 PDF / 検索可能 PDF）
+│   │   └── ...
+│   ├── hooks/                    # カスタム React Hooks
+│   ├── lib/                      # ユーティリティ関数
+│   └── types/                    # TypeScript 型定義
+├── src-tauri/                    # Tauri / Rust コード
+│   ├── Cargo.toml                # Rust 依存定義
+│   ├── tauri.conf.json           # Tauri 設定
+│   ├── capabilities/             # Tauri v2 権限設定
+│   ├── icons/                    # アプリアイコン
+│   └── src/                      # Rust ソースコード
+│       ├── main.rs               # Rust エントリポイント
+│       ├── lib.rs                # コマンド登録等
+│       ├── commands/             # Tauri コマンド
+│       │   ├── capture.rs        # 画面キャプチャ・連続キャプチャ
+│       │   ├── pdf.rs            # PDF 読み込み・デフォルト出力フォルダ
+│       │   ├── pdf_generation.rs # 画像結合 PDF 生成（OCR なし）
+│       │   ├── pdf_searchable.rs # OCR 付き検索可能 PDF 生成（008009）
+│       │   ├── trim.rs           # 画像トリミング
+│       │   ├── zip.rs            # ZIP エクスポート
+│       │   ├── config.rs         # 設定ファイル読み書き
+│       │   ├── backend_api.rs    # backend API 連携コマンド
+│       │   └── backend_api/      # backend API 連携の実装詳細
+│       │       └── backend_api_impl.rs
+│       └── ...
+├── package.json                  # Node.js 依存定義
+├── vite.config.ts                # Vite 設定
+├── tsconfig.json                 # TypeScript 設定
+├── components.json               # shadcn/ui 設定
+└── index.html                    # HTML エントリポイント
 ```
 
 ### 将来の構成案

@@ -1487,7 +1487,7 @@
 | 008006 | backend OCR 連携機能統合テスト | 2026-08-22 |  | 実装 |
 | 008007 | localapp 単体生成 技術調査・選定 | 2026-09-03 |  | 調査 / 設計 |
 | 008008 | 画像結合PDF生成の実装（OCRなし） | 2026-09-03 | 2026-09-04 | 実装 |
-| 008009 | OCRエンジン統合・検索可能PDF生成の実装 | 2026-09-03 |  | 実装 |
+| 008009 | OCRエンジン統合・検索可能PDF生成の実装 | 2026-09-03 | 2026-09-04 | 実装 |
 | 008010 | UI統合・使い分けガイド・収束 | 2026-09-03 |  | 実装 / 統合テスト |
 
 ### 008001 ローカル画像収集・ZIPアーカイブ化コマンド
@@ -1671,20 +1671,45 @@
 
 【計画】
 1. **前提：008007 の OCR エンジン選定完了**
-2. **Rust 実装**
-   - 008007 で選定した OCR エンジンを Rust から呼び出し（FFI or CLI）
-   - 各ページの認識結果を取得し、テキストレイヤーとして PDF に埋め込む
-   - 画像の下に透明テキストを配置（位置合わせ用の座標計算）
-3. **テキストレイヤー PDF 生成**
-   - `printpdf` でテキスト描画（フォント設定、座標指定）
-   - OCR 認識座標と PDF 座標系の変換ロジック
-4. **UI 更新**
-   - 「検索可能 PDF 生成」ボタンを有効化
-   - OCR 処理中の進捗通知統合
-5. **テスト**
-   - 検索可能 PDF の目視確認（PDF リーダーでのテキスト選択を確認）
+   - OCR エンジン: `leptess` 0.14.0（Tesseract 5.x + Leptonica の Rust ラッパー）
+   - PDF 生成: `printpdf` 0.7.0（008008 で実装済み）
+   - 座標変換: Tesseract 左上原点(px) → printpdf 左下原点(mm)
+2. **環境・依存関係準備**
+   - `leptess` crate を `Cargo.toml` に追加
+   - `tesseract` 5.5.2 + `jpn.traineddata` は既にインストール済み（brew不要）
+   - リンカパス確認: `/opt/homebrew/lib/libtesseract.dylib`
+3. **Rust 実装**
+   - `src/commands/pdf_searchable.rs` を新規作成（または `pdf_generation.rs` に追加）
+   - `generate_searchable_pdf` コマンドを実装
+   - フロー: 画像読み込み → `leptess` OCR → `(text, x, y, w, h)[]` 取得 → `printpdf` でテキストレイヤー描画
+   - フォント: POC段階ではシステムフォント（ヒラギノ角ゴシック W3）を使用
+   - 進捗イベント: `searchable-pdf-progress` を emit（OCR進捗 + PDF生成進捗）
+4. **座標変換ロジック**
+   - Tesseract bbox (px, 左上原点) → mm 変換
+   - printpdf 左下原点へ変換: `pdf_y = page_height_mm - (ocr_y_px / dpi * 25.4) - text_height_mm`
+   - A4 へのスケーリング係数を考慮（画像fitスケールと同じ係数を適用）
+5. **UI 更新**
+   - `PdfCreationView.tsx`: 「検索可能PDF生成（ローカルOCR）」ボタンを有効化
+   - `pdfCreationStore.ts`: `generateSearchablePdf` アクション追加
+   - 進捗表示: OCR処理中のメッセージ（「OCR処理中: 1/3ページ...」）
+6. **テスト**
+   - Rust 単体テスト: `leptess` での OCR 結果取得確認
+   - PDF 検証: `lopdf` でテキストオブジェクトの存在確認
+   - 目視確認: Preview.app以外のビューアでテキスト選択・検索可能か確認
 
 【実施結果】
+- 2026-09-04: `cargo add leptess regex` を実行し、OCR エンジンと HOCR パース用正規表現ライブラリを追加
+- 2026-09-04: `src/commands/pdf_searchable.rs` を新規作成。コマンド名を `create_searchable_pdf` とし、フロントエンド命名規約に合わせた引数 (`sourcePath`, `sourceType`, `outputPath`) に統一
+- 2026-09-04: `leptess::get_component_boxes` はテキスト情報を返さないため、`get_hocr_text(0)` で HOCR HTML を取得し、正規表現で word レベルの bbox + テキストを抽出する `parse_hocr_words` を実装
+- 2026-09-04: 座標変換パイプラインを実装: Tesseract px（左上原点）→ mm（DPI=300）→ A4 fit スケーリング → printpdf 左下原点フリップ（`pdf_y = A4_HEIGHT_MM - margin - offset_y - y2_mm`）
+- 2026-09-04: テキストレイヤーは黒色（`PdfColor::RGB(0,0,0)`）で描画し、PDF ビューア側の「テキスト表示」設定で可視化可能に。透明色指定は printpdf 0.7.0 の挙動が不安定なため当面黒色で統一
+- 2026-09-04: 進捗イベント名を既存フロントエンドリスナーと統一し、`pdf-creation-progress` を emit（`current`, `total`, `message`）
+- 2026-09-04: 旧 006001 のダミー実装 `pdf_creation.rs` を削除し、`commands/mod.rs` と `lib.rs` からの登録を除去。008009 の `pdf_searchable.rs` を正式な検索可能 PDF 生成モジュールとした
+- 2026-09-04: `PdfCreationView.tsx` に「アプリケーションで OCR 付き PDF 作成」ボタンを追加し、`pdfCreationStore.createPdf()` を呼び出す `handleCreateSearchablePdf` ハンドラを実装
+- 2026-09-04: `pdfCreationStore.ts` の `createPdf` アクションを `invoke('create_searchable_pdf', ...)` で呼び出すよう修正
+- 2026-09-04: `cargo check` / `cargo test --lib pdf_searchable` / `npm run build` を実施。HOCR パース・画像収集・UUID 生成の単体テストが pass
+- 2026-09-04: `cargo test --lib pdf_searchable -- --ignored` で統合テストを実行。`testdata/003006-backend-ocr-test` の 3 枚の PNG から 15MB/3ページの検索可能 PDF を生成。PyMuPDF でテキスト抽出し、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
+- 2026-09-04: タスク完了日を 2026-09-04 に設定
 
 ### 008010 UI統合・使い分けガイド・収束
 

@@ -38,6 +38,54 @@ for attempt in 0..3 {
 
 - 1回目で成功する場合がほとんど
 - 2回目以降のリトライは最前面化直後の一過性エラーを吸収する
+
+---
+
+## 008009 — leptess / printpdf での検索可能 PDF 生成
+
+### 事象 1: `leptess::get_component_boxes` からテキストが取れない
+
+### 原因
+`leptess::LepTess::get_component_boxes()` は文字領域（bbox）のリストを返すが、認識テキストそのものは含まれていない。word/line レベルのテキストと座標を同時に取得するには HOCR 出力を使う必要がある。
+
+### 対応策
+`get_hocr_text(0)` でページ全体の HOCR HTML を取得し、正規表現で `<span class='ocrx_word' title='bbox x1 y1 x2 y2'>text</span>` をパースする。
+
+```rust
+let hocr = lt.get_hocr_text(0)?;
+let re = Regex::new(r#"<span[^>]*class='ocrx_word'[^>]*title='bbox (\d+) (\d+) (\d+) (\d+)[^']*'[^>]*>([^<]+)</span>"#)?;
+for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
+```
+
+---
+
+### 事象 2: printpdf 0.7.0 で透明色指定が反映されない
+
+### 原因
+`printpdf::PdfColor::CMYK` / `RGB` の透明度引数を指定しても、生成 PDF のテキストが透明にならず黒く表示されるケースがあった。printpdf 0.7.0 の内部実装・PDF プロデューサー（OP 系命令）の扱いに依存する。
+
+### 対応策
+当面は黒色（`PdfColor::RGB(0,0,0)`）でテキストレイヤーを描画する。視認したくない場合は PDF ビューアの「テキスト表示」設定で切り替えるか、後続タスクで PyMuPDF 等を使った事後透明化を検討する。
+
+---
+
+### 事象 3: `tauri::test::mock_app()` を使ったテストで `tauri::test` が見つからない
+
+### 原因
+`tauri` crate の `test` モジュールは `cfg(any(test, feature = "test"))` でゲートされており、デフォルトでは無効。
+
+### 対応策
+`Cargo.toml` の `[dev-dependencies]` に `tauri = { version = "2", features = ["test"] }` を追加する。重複定義は dev-dependencies 側で拡張される。
+
+---
+
+### 事象 4: `cargo test` 実行時にテストデータへの相対パスが解決できない
+
+### 原因
+`cargo test --lib` は `src-tauri` ディレクトリをカレントディレクトリとして実行される。`localapp/testdata/` へのパスは `../testdata/...` とする必要がある。
+
+### 対応策
+テストコード内で `Path::new("../testdata/003006-backend-ocr-test")` のように、`src-tauri` から `localapp` ルートへの相対パスを使用する。
 - 3回連続で失敗した場合のみエラーを返す
 
 ### 関連タスク

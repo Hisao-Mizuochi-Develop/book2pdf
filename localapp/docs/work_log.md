@@ -1831,3 +1831,52 @@
     - テスト結果レポート: `localapp/test-results/008008-image-pdf-test/README.md` を作成
     - localapp フロントエンド（React/Zustand）自動テスト: vitest/jest 未導入のため未実施。今後基盤構築時に追加検討
 
+---
+
+## 008009 OCRエンジン統合・検索可能PDF生成の実装
+
+### 【実施予定】
+
+- 日時: 2026-09-04
+- 目的: `leptess`（Tesseract Rust ラッパー）を統合し、画像→OCR→テキストレイヤーPDF生成の一気通貫パイプラインを実装する
+- 前提条件:
+  - `tesseract` 5.5.2 + `jpn.traineddata` は `/opt/homebrew/share/tessdata/` に既にインストール済み
+  - `printpdf` 0.7.0 は 008008 で動作確認済み
+  - ブランチ: `feature/008009-searchable-pdf`（main から作成済み）
+- 実施予定の手順:
+  1. `cargo add leptess` + `cargo check` でビルド検証
+  2. `src/commands/pdf_searchable.rs` を新規作成（`generate_searchable_pdf` コマンド）
+  3. OCR 処理: `leptess::LepTess::new(None, "jpn")` → `set_image` → `get_component_boxes` で word/line レベルの bbox を取得
+  4. 座標変換: Tesseract 左上原点(px) → printpdf 左下原点(mm) → A4 fit スケーリング適用
+  5. テキストレイヤー描画: `printpdf` でフォント埋め込み（システムフォント: ヒラギノ角ゴシック W3）+ 透明テキスト配置
+  6. 進捗イベント: `searchable-pdf-progress` を emit（OCRページ進捗 + PDF生成進捗）
+  7. UI統合: `PdfCreationView.tsx` にボタン有効化、`pdfCreationStore.ts` にアクション追加
+  8. Rust 単体テスト: OCR 結果取得確認 + `lopdf` でテキストオブジェクト存在確認
+  9. 目視確認: Preview.app以外のビューアでテキスト選択・検索が可能か確認
+- 想定される結果や注意点:
+  - `leptess` のビルド時にリンカが `/opt/homebrew/lib/libtesseract.dylib` を見つけられない可能性 → `PKG_CONFIG_PATH` 設定で対応
+  - TTCフォント（ヒラギノ角ゴシック）の扱い: `printpdf` が TTC に未対応の場合、TTF 抽出 or 別フォントに切り替え
+  - 透明テキストの表現: `printpdf` の文字色指定 API で RGBA（透明度付き）が使えるか要確認
+  - OCR精度: Tesseract（古典的OCR）vs backend ndlocr_cli（深層学習）で精度差が出る可能性。008010で比較評価予定
+
+### 【実施実績】
+
+- 日時: 2026-09-04
+- 実施内容:
+  1. `cargo add leptess regex` により OCR エンジン・HOCR パース用クレートを追加
+  2. `src/commands/pdf_searchable.rs` を新規作成し、`create_searchable_pdf` コマンドを実装
+     - `leptess::get_component_boxes` はテキストを返さないため、`get_hocr_text(0)` + regex で word レベルの `(x1,y1,x2,y2,text)` を抽出
+     - 座標変換: px → mm（DPI=300）→ A4 fit スケール → printpdf 左下原点フリップ
+     - テキストレイヤーは黒色で描画（printpdf 0.7.0 の透明色が不安定なため当面黒色）
+     - 進捗イベント `pdf-creation-progress` を emit
+  3. 旧ダミー `pdf_creation.rs` を削除し、`commands/mod.rs` / `lib.rs` から登録を除去
+  4. `PdfCreationView.tsx` に「アプリケーションで OCR 付き PDF 作成」ボタンを追加し、`handleCreateSearchablePdf` → `createPdf()` を呼び出し
+  5. `pdfCreationStore.ts` の `createPdf` アクションを `invoke('create_searchable_pdf', { sourcePath, sourceType, outputPath })` に修正
+  6. 単体・統合テストを実装
+     - `test_parse_hocr_words`, `test_collect_images_sorted_*`, `test_uuid_v4_unique` が pass
+     - `test_create_searchable_pdf_impl_integration`（`#[ignore]`）を `--ignored` で実行し、`testdata/003006-backend-ocr-test` の 3 PNG から 15MB/3ページの PDF を生成
+     - PyMuPDF でテキスト抽出でき、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
+  7. `cargo check`, `cargo test --lib pdf_searchable`, `npm run build` を実施し、すべて成功
+- 結果: タスク 008009 の実装・テスト・フロントエンド連携が完了。検索可能 PDF 生成パイプラインが localapp 単体で動作するようになった
+- 次のステップ: 008010 UI統合・使い分けガイド・収束で、ボタン配置の整理・比較表・目視確認を実施
+
