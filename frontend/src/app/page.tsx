@@ -80,6 +80,7 @@ export default function Home() {
         },
         (err) => {
           // EventSource のエラーは一時的な切断も含むため、OCR 結果を待つ形にします
+          console.error("進捗通知の接続でエラーが発生しました:", err);
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
