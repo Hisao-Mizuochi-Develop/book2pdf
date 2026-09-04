@@ -501,7 +501,7 @@ mod tests {
     const MOCK_PORT: u16 = 18001;
     const MOCK_SERVER_SCRIPT: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../testdata/mock_backend_server.py"
+        "/tests/mock_backend_server.py"
     );
 
     /// 結合テスト用のモック backend サーバーを起動する。
@@ -509,10 +509,17 @@ mod tests {
     /// # Panics
     /// サーバーが 10 秒以内に応答しない場合は panic する。
     fn start_mock_server() -> Child {
+        let pdf_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../test_cases/testdata/localapp/mock_backend.pdf")
+            .canonicalize()
+            .expect("モック backend 用 PDF が見つかりません");
+
         let child = Command::new("python3")
             .arg(MOCK_SERVER_SCRIPT)
             .arg("--port")
             .arg(MOCK_PORT.to_string())
+            .arg("--pdf-path")
+            .arg(pdf_path)
             .spawn()
             .expect("モック backend サーバーの起動に失敗しました");
 

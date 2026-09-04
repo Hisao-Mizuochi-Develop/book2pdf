@@ -442,7 +442,7 @@ mod tests {
     fn test_collect_images_sorted_existing_data() {
         // cargo test は src-tauri ディレクトリから実行されるため、
         // プロジェクトルート（localapp）からの相対パスでテストデータにアクセスする
-        let folder = Path::new("../testdata/003006-backend-ocr-test");
+        let folder = Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test");
         let images = collect_images_sorted(folder).unwrap();
         assert_eq!(images.len(), 3);
         let stems: Vec<_> = images
@@ -455,7 +455,7 @@ mod tests {
     /// 空フォルダで `collect_images_sorted` がエラーを返すことを確認
     #[test]
     fn test_collect_images_sorted_empty() {
-        let empty = Path::new("testdata/does-not-exist-008009");
+        let empty = Path::new("../../test_cases/testdata/localapp/does-not-exist-008009");
         let result = collect_images_sorted(empty);
         assert!(result.is_err());
     }
@@ -494,7 +494,7 @@ mod tests {
 
         // cargo test は src-tauri ディレクトリから実行されるため、
         // プロジェクトルート（localapp）からの相対パスでテストデータにアクセスする
-        let input_dir = Path::new("../testdata/003006-backend-ocr-test");
+        let input_dir = Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test");
         let images = collect_images_sorted(input_dir).expect("画像収集に失敗");
         assert!(!images.is_empty(), "テスト画像が見つかりません");
 

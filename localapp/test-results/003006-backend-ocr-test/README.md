@@ -11,7 +11,7 @@
 
 ## 使用したテストデータ
 
-- パス: `localapp/testdata/003006-backend-ocr-test/`
+- パス: `test_cases/testdata/localapp/003006-backend-ocr-test/`
 - ファイル:
   - `002.png`
   - `003.png`
@@ -22,11 +22,11 @@
 1. `npm run tauri dev` で localapp を起動
 2. 左サイドバーから **「PDF作成」** を選択
 3. 「入力設定」で **「フォルダを選択」** をクリック
-4. `localapp/testdata/003006-backend-ocr-test/` を選択
+4. `test_cases/testdata/localapp/003006-backend-ocr-test/` を選択
 5. 「出力ファイル名」に `003006-backend-ocr-test-09030008` を入力
-6. 「出力先フォルダ」に `/Users/hisao/Documents/work4/sakura/book2pdf/localapp/testdata` を選択
+6. 「出力先フォルダ」に `/Users/hisao/Documents/work4/sakura/book2pdf/test_cases/testdata/localapp` を選択
 7. **「backend OCR で PDF 作成」** ボタンをクリック
-8. 保存ダイアログで `localapp/testdata/003006-backend-ocr-test-09030008.pdf` を指定
+8. 保存ダイアログで `test_cases/testdata/localapp/003006-backend-ocr-test-09030008.pdf` を指定
 9. 進捗表示が `completed` になるまで待機
 10. DevTools Console (`Cmd + Shift + I` / `Cmd + Option + I`) でエラーを確認
 
@@ -36,7 +36,7 @@
 - 進捗バーが `preparing → uploading → ocr → polling → downloading → completed` と進む
 - `/ocr` リクエストは 60 秒以内に `processing` 状態を返す
 - ポーリング中に `processing` 状態が維持される
-- `localapp/testdata/003006-backend-ocr-test-09030008.pdf` が作成される
+- `test_cases/testdata/localapp/003006-backend-ocr-test-09030008.pdf` が作成される
 - 生成された PDF はテキスト検索可能（例：「Improving」「RAG」などで検索）
 - DevTools Console に赤いエラーが表示されない
 

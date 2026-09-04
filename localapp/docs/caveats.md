@@ -82,10 +82,10 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
 ### 事象 4: `cargo test` 実行時にテストデータへの相対パスが解決できない
 
 ### 原因
-`cargo test --lib` は `src-tauri` ディレクトリをカレントディレクトリとして実行される。`localapp/testdata/` へのパスは `../testdata/...` とする必要がある。
+`cargo test --lib` は `src-tauri` ディレクトリをカレントディレクトリとして実行される。テストデータは `test_cases/testdata/localapp/` へ統合したため、`src-tauri` からは `../../test_cases/testdata/localapp/...` とする必要がある。
 
 ### 対応策
-テストコード内で `Path::new("../testdata/003006-backend-ocr-test")` のように、`src-tauri` から `localapp` ルートへの相対パスを使用する。
+テストコード内で `Path::new("../../test_cases/testdata/localapp/003006-backend-ocr-test")` のように、`src-tauri` からリポジトリルート経由の相対パスを使用する。
 - 3回連続で失敗した場合のみエラーを返す
 
 ### 関連タスク
@@ -903,7 +903,7 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 
 ### テストデータの再利用
 
-- `localapp/testdata/003006-backend-ocr-test/` の画像データ（`002.png`, `003.png`, `004.png`）を 008008 の自動テストに流用済み
+- `test_cases/testdata/localapp/003006-backend-ocr-test/` の画像データ（`002.png`, `003.png`, `004.png`）を 008008 の自動テストに流用済み
 - `testdata` 配下のファイルは `.gitignore` の対象外であり、Git 管理対象として運用する（`.clinerules` 2.6 節準拠）
 
 ### `uuid_v4()` の実装に関する注意

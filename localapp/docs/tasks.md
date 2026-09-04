@@ -870,8 +870,8 @@
     - Tauri 固有の `AppHandle` / 進捗 emit を薄いラッパーに留める
     - `backend_api_impl::run_backend_ocr_inner` を呼び出すのみ
   - モック backend による結合テストを追加
-    - `localapp/testdata/mock_backend_server.py`（軽量 Python モックサーバー）
-    - `localapp/testdata/mock_backend.pdf`（テスト用 PDF）
+    - `localapp/src-tauri/tests/mock_backend_server.py`（軽量 Python モックサーバー）
+    - `test_cases/testdata/localapp/mock_backend.pdf`（テスト用 PDF）
     - `cargo test backend_api_impl -- --nocapture`: 成功
       - `preparing` → `creating` → `uploading` → `ocr` → `polling` → `downloading` → `completed` の各イベントを確認
       - 出力 PDF ファイルが作成され、内容が空でないことを確認
@@ -879,7 +879,7 @@
   - `e2e-runtime-steps.md` の内容を `localapp/test-results/003006-backend-ocr-test/README.md` に統合
   - 重複ファイルは削除し、`.clinerules` 第 2.6 章のテスト結果配置ルールに準拠
 - 2026-09-03: Python 3.13 互換性修正
-  - `localapp/testdata/mock_backend_server.py` から削除された `cgi.parse_header` を除去
+  - `localapp/src-tauri/tests/mock_backend_server.py` から削除された `cgi.parse_header` を除去
   - 同機能を持つ `_parse_content_type` を自己完結で実装
   - `cargo test backend_api_impl -- --nocapture` で再合格を確認
 
@@ -1651,7 +1651,7 @@
       - `ImageTransform` 各フィールド → PDF 座標系（左下原点）の説明
     - コンパイル確認: `cargo check` 成功（エラー0）
   - **2026-09-04（自動テスト実装）**: Rust 単体テスト 5ケースすべて PASS
-    - テストデータ: `localapp/testdata/003006-backend-ocr-test/`（`002.png`, `003.png`, `004.png`）を流用
+    - テストデータ: `test_cases/testdata/localapp/003006-backend-ocr-test/`（`002.png`, `003.png`, `004.png`）を流用
     - テストケース:
       1. `collect_images_sorted` — 既存データから画像を正しく昇順ソート
       2. `collect_images_sorted_empty` — 空フォルダでエラー返却
@@ -1710,7 +1710,7 @@
 - 2026-09-04: `PdfCreationView.tsx` に「アプリケーションで OCR 付き PDF 作成」ボタンを追加し、`pdfCreationStore.createPdf()` を呼び出す `handleCreateSearchablePdf` ハンドラを実装
 - 2026-09-04: `pdfCreationStore.ts` の `createPdf` アクションを `invoke('create_searchable_pdf', ...)` で呼び出すよう修正
 - 2026-09-04: `cargo check` / `cargo test --lib pdf_searchable` / `npm run build` を実施。HOCR パース・画像収集・UUID 生成の単体テストが pass
-- 2026-09-04: `cargo test --lib pdf_searchable -- --ignored` で統合テストを実行。`testdata/003006-backend-ocr-test` の 3 枚の PNG から 15MB/3ページの検索可能 PDF を生成。PyMuPDF でテキスト抽出し、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
+- 2026-09-04: `cargo test --lib pdf_searchable -- --ignored` で統合テストを実行。`test_cases/testdata/localapp/003006-backend-ocr-test` の 3 枚の PNG から 15MB/3ページの検索可能 PDF を生成。PyMuPDF でテキスト抽出し、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
 - 2026-09-04: タスク完了日を 2026-09-04 に設定
 
 ### 008010 Tauri invoke 引数修正・エンドツーエンド動作確認

@@ -80,7 +80,7 @@
 
 テスト・検証系タスクのフローと成果物の扱いを定めます。
 
-- テストデータは `test_cases/benchmarks/` または `<module>/testdata/<タスクNo>-<概要>/` に配置する
+- テストデータは `test_cases/benchmarks/` または `test_cases/testdata/<module>/<タスクNo>-<概要>/` に配置する
 - レポートは `test_cases/ocr-results-<タスクNo>/<report-name>-<タスクNo>.md` 形式で作成する
 - レポートには以下を含める:
   - タスク名・実施日・目的

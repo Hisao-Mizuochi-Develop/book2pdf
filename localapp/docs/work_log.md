@@ -1737,10 +1737,10 @@
     - 60 秒タイムアウトの reqwest クライアントを構築
     - `backend_api_impl::run_backend_ocr_inner` を呼び出し、進捗コールバックで `ocr-progress` イベントを emit
 - 2026-09-03: モック backend による結合テストを追加
-  - `localapp/testdata/mock_backend_server.py` を新規作成
+  - `localapp/src-tauri/tests/mock_backend_server.py` を新規作成
     - `POST /api/jobs/`、`POST .../upload`、`POST .../ocr`、`GET .../pdf`、`GET .../jobs/{id}` を実装
     - 規定回数のポーリング後に `completed` を返す
-  - `localapp/testdata/mock_backend.pdf` を新規作成（テスト用ダミー PDF）
+  - `test_cases/testdata/localapp/mock_backend.pdf` を新規作成（テスト用ダミー PDF）
   - `backend_api_impl.rs` の `tests` モジュールを新規作成
     - Python モックサーバーを子プロセスで起動
     - ダミー画像フォルダを作成し `run_backend_ocr_inner` を実行
@@ -1757,7 +1757,7 @@
   - `e2e-runtime-steps.md` を `localapp/test-results/003006-backend-ocr-test/README.md` に統合
   - 重複ファイルを削除し、`.clinerules` 第 2.6 章に準拠した配置に整理
 - 2026-09-03: Python 3.13 互換性修正
-  - `localapp/testdata/mock_backend_server.py` で削除された `cgi.parse_header` を使用していた箇所を、自己完結の `_parse_content_type` に置換
+  - `localapp/src-tauri/tests/mock_backend_server.py` で削除された `cgi.parse_header` を使用していた箇所を、自己完結の `_parse_content_type` に置換
   - `cargo test backend_api_impl -- --nocapture` で再合格を確認
   - `mock_backend.pdf` はテスト実行中に上書きされていたため `git restore` で元に戻し、テスト用固定データとして管理し続ける
 
@@ -1821,7 +1821,7 @@
   - **2026-09-04（自動テスト実装）**: Rust 単体テスト 5ケースすべて PASS
     - `Cargo.toml` の `[dev-dependencies]` に `lopdf = "0.34"` を追加（PDF ページ数・構造検証用）
     - `pdf_generation.rs` に `#[cfg(test)]` モジュールを追加し、以下の5テストを実装:
-      1. `test_collect_images_sorted_with_existing_data` — `testdata/003006-backend-ocr-test/` の3枚を正しく昇順ソート
+      1. `test_collect_images_sorted_with_existing_data` — `test_cases/testdata/localapp/003006-backend-ocr-test/` の3枚を正しく昇順ソート
       2. `test_collect_images_sorted_empty` — 空フォルダで `Err` 返却確認
       3. `test_uuid_v4_unique` — 100回連続呼び出しで全て一意（`AtomicU64` カウンター追加）
       4. `test_create_image_pdf_impl_page_count` — `lopdf` でページ数3を検証
@@ -1874,7 +1874,7 @@
   5. `pdfCreationStore.ts` の `createPdf` アクションを `invoke('create_searchable_pdf', { sourcePath, sourceType, outputPath })` に修正
   6. 単体・統合テストを実装
      - `test_parse_hocr_words`, `test_collect_images_sorted_*`, `test_uuid_v4_unique` が pass
-     - `test_create_searchable_pdf_impl_integration`（`#[ignore]`）を `--ignored` で実行し、`testdata/003006-backend-ocr-test` の 3 PNG から 15MB/3ページの PDF を生成
+     - `test_create_searchable_pdf_impl_integration`（`#[ignore]`）を `--ignored` で実行し、`test_cases/testdata/localapp/003006-backend-ocr-test` の 3 PNG から 15MB/3ページの PDF を生成
      - PyMuPDF でテキスト抽出でき、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
   7. `cargo check`, `cargo test --lib pdf_searchable`, `npm run build` を実施し、すべて成功
 - 結果: タスク 008009 の実装・テスト・フロントエンド連携が完了。検索可能 PDF 生成パイプラインが localapp 単体で動作するようになった
@@ -1896,7 +1896,7 @@
   2. フロントエンドからの `invoke` 呼び出しでエラーが出ないことを確認
   3. 実機で 3 ページの検索可能 PDF を生成
   4. PDF ビューアでテキスト選択・検索を目視確認
-  5. `testdata/` の意図しない変更を revert、不要なテスト PDF を削除
+  5. `test_cases/testdata/localapp/` の意図しない変更を revert、不要なテスト PDF を削除
   6. Git コミット・main マージ
 - 想定される結果や注意点:
   - Tauri invoke は引数名を camelCase にする必要がある
@@ -1910,13 +1910,13 @@
   1. `src-tauri/src/commands/pdf_searchable.rs` の引数名を `sourcePath`, `sourceType`, `outputPath` に変更（camelCase 化）
   2. `PdfCreationView.tsx` / `pdfCreationStore.ts` 側の呼び出しと整合性を確認
   3. `cargo check` / `npm run build` を実施し、ビルド成功
-  4. 実機で `testdata/003006-backend-ocr-test` の 3 枚 PNG から検索可能 PDF を生成
+  4. 実機で `test_cases/testdata/localapp/003006-backend-ocr-test` の 3 枚 PNG から検索可能 PDF を生成
      - 出力サイズ: 約 14.5 MB
      - ページ数: 3 ページ
      - テキスト選択・検索が機能することを目視確認
   5. Git 作業
-     - `testdata/003006-backend-ocr-test/002.png`, `003.png`, `004.png` の意図しない変更を `git checkout` で revert
-     - `testdata/003008-backend-ocr-test.pdf`, `testdata/003009-backend-ocr-test.pdf` の未追跡ファイルを削除
+     - `test_cases/testdata/localapp/003006-backend-ocr-test/002.png`, `003.png`, `004.png` の意図しない変更を `git checkout` で revert
+     - `test_cases/testdata/localapp/003008-backend-ocr-test.pdf`, `test_cases/testdata/localapp/003009-backend-ocr-test.pdf` の未追跡ファイルを削除
      - 古い `index.lock` を削除して git 操作を復旧
      - main ブランチにコミット: `008010: fix create_searchable_pdf argument names to camelCase for Tauri invoke`
 - 結果: タスク 008010 完了。検索可能 PDF 機能が localapp 上でエンドツーエンド動作する

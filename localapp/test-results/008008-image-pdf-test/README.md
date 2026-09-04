@@ -8,7 +8,7 @@
 | タスク名 | 画像結合PDF生成の実装（OCRなし） |
 | 実施日 | 2026-09-04 |
 | 目的 | `pdf_generation.rs` の各種関数が正しく動作することを自動検証する |
-| 使用テストデータ | `localapp/testdata/003006-backend-ocr-test/`（`002.png`, `003.png`, `004.png`） |
+| 使用テストデータ | `test_cases/testdata/localapp/003006-backend-ocr-test/`（`002.png`, `003.png`, `004.png`） |
 | OCR エンジン | なし（画像結合のみ） |
 | 評価指標 | テストケースの PASS/FAIL 数、PDF ページ数、ファイルサイズ |
 

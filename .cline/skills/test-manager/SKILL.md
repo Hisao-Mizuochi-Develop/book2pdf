@@ -28,11 +28,11 @@ metadata:
 ## Step-by-step Instructions
 
 1. **テストデータの配置**
-   - 各モジュール固有 → `<module>/testdata/<タスクNo>-<概要>/`
+   - 各モジュール固有 → `test_cases/testdata/<module>/<タスクNo>-<概要>/`
    - 各モジュール固有の結果レポート → `<module>/test-results/<タスクNo>-<概要>/README.md`
    - プロジェクト全体共有 → `test_cases/`
    - `test_cases/` 内のファイルを参照する場合は、原則として `test_cases/` からの相対パスで統一する
-   - `testdata/` は Git 管理対象（.gitignore で除外しない）
+   - `test_cases/testdata/` は Git 管理対象（.gitignore で除外しない）
    - root 直下に `ocr-results-*` フォルダを作成しない
 
 2. **backend API 経由のフルフロー実行（原則）**

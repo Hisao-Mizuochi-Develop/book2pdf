@@ -437,10 +437,16 @@ mod tests {
     /// テスト用データフォルダのパスを取得する
     ///
     /// `CARGO_MANIFEST_DIR`（Cargo.toml のあるディレクトリ）から
-    /// `../testdata/003006-backend-ocr-test/` への絶対パスを返す。
+    /// `../../test_cases/testdata/localapp/003006-backend-ocr-test/` への絶対パスを返す。
     fn test_data_dir() -> PathBuf {
         let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        manifest_dir.join("..").join("testdata").join("003006-backend-ocr-test")
+        manifest_dir
+            .join("..")
+            .join("..")
+            .join("test_cases")
+            .join("testdata")
+            .join("localapp")
+            .join("003006-backend-ocr-test")
     }
 
     /// 【テスト1】既存テストデータから画像を正しく収集・ソートできること
