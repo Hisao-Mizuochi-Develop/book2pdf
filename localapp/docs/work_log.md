@@ -1792,7 +1792,7 @@
   - **008007（新）**: localapp 単体生成 技術調査・選定（PDF crate + OCRエンジン選定）
   - **008008**: 画像結合PDF生成の実装（OCRなし）（基盤実装）
   - **008009**: OCRエンジン統合・検索可能PDF生成の実装（OCR統合）
-  - **008010**: UI統合・使い分けガイド・収束（UI統合・収束）
+  - **008010**: Tauri invoke 引数修正・エンドツーエンド動作確認（UI 連携・統合テスト）
 - 2026-09-04: 008008 実装完了
   - `localapp/src-tauri/Cargo.toml` に `printpdf = "0.7"`（`embedded_images` feature）と `image_crate`（`image` 0.24.x 別名）を追加
   - `localapp/src-tauri/src/commands/pdf_generation.rs` を新規作成
@@ -1878,5 +1878,47 @@
      - PyMuPDF でテキスト抽出でき、各ページにテキストレイヤーが埋め込まれていることを確認（Page 1: 74 chars, Page 2: 567 chars, Page 3: 945 chars）
   7. `cargo check`, `cargo test --lib pdf_searchable`, `npm run build` を実施し、すべて成功
 - 結果: タスク 008009 の実装・テスト・フロントエンド連携が完了。検索可能 PDF 生成パイプラインが localapp 単体で動作するようになった
-- 次のステップ: 008010 UI統合・使い分けガイド・収束で、ボタン配置の整理・比較表・目視確認を実施
+- 次のステップ: 008010 Tauri invoke 引数修正・エンドツーエンド動作確認で、引数の統一と UI 連携の最終確認を実施
+
+---
+
+## 008010 Tauri invoke 引数修正・エンドツーエンド動作確認
+
+### 【実施予定】
+
+- 日時: 2026-09-04
+- 目的: 検索可能 PDF 生成機能の UI 統合を完了し、実機でのエンドツーエンド動作を確認する
+- 前提条件:
+  - 008009 の `create_searchable_pdf` 実装が完了している
+  - `feature/008010-...` ブランチを main から作成済み
+- 実施予定の手順:
+  1. `create_searchable_pdf` の Tauri 引数を camelCase に統一
+  2. フロントエンドからの `invoke` 呼び出しでエラーが出ないことを確認
+  3. 実機で 3 ページの検索可能 PDF を生成
+  4. PDF ビューアでテキスト選択・検索を目視確認
+  5. `testdata/` の意図しない変更を revert、不要なテスト PDF を削除
+  6. Git コミット・main マージ
+- 想定される結果や注意点:
+  - Tauri invoke は引数名を camelCase にする必要がある
+  - 生成 PDF は 14 MB 前後になる見込み
+  - テストデータの差分に注意
+
+### 【実施実績】
+
+- 日時: 2026-09-04
+- 実施内容:
+  1. `src-tauri/src/commands/pdf_searchable.rs` の引数名を `sourcePath`, `sourceType`, `outputPath` に変更（camelCase 化）
+  2. `PdfCreationView.tsx` / `pdfCreationStore.ts` 側の呼び出しと整合性を確認
+  3. `cargo check` / `npm run build` を実施し、ビルド成功
+  4. 実機で `testdata/003006-backend-ocr-test` の 3 枚 PNG から検索可能 PDF を生成
+     - 出力サイズ: 約 14.5 MB
+     - ページ数: 3 ページ
+     - テキスト選択・検索が機能することを目視確認
+  5. Git 作業
+     - `testdata/003006-backend-ocr-test/002.png`, `003.png`, `004.png` の意図しない変更を `git checkout` で revert
+     - `testdata/003008-backend-ocr-test.pdf`, `testdata/003009-backend-ocr-test.pdf` の未追跡ファイルを削除
+     - 古い `index.lock` を削除して git 操作を復旧
+     - main ブランチにコミット: `008010: fix create_searchable_pdf argument names to camelCase for Tauri invoke`
+- 結果: タスク 008010 完了。検索可能 PDF 機能が localapp 上でエンドツーエンド動作する
+- 次のステップ: 008011（OCR 精度向上）、008012（透明テキストレイヤー・座標補正）に進む
 
