@@ -374,7 +374,8 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 2026-09-01: ユーザー指示により本計測を実施。テスト画像は `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`（3 ページ）を使用 |  |  |  |
 |  | 2026-09-01: `feature/004003-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行 |  |  |  |
 |  | 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測 |  |  |  |
-|  | 2026-09-01: 精度比較レポート [test_cases/ocr-results-004003/performance-test-report-004003.md](../test_cases/ocr-results-004003/performance-test-report-004003.md) を作成 |  |  |  |
+|  | 2026-09-01: 精度比較レポート [backend/test-results/benchmark-004003/performance-test-report-004003.md](../test-results/benchmark-004003/performance-test-report-004003.md) を作成
+- 注：本タスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです |  |  |  |
 |  | 2026-09-01: `docs/integration-test-guide.md` の性能テスト結果セクションを更新 |  |  |  |
 |  | 004004 | backend PDF 作成時間チューニング | 2026-09-03 |  | 性能改善 |
 |  |  | タスク詳細 |  |  |  |

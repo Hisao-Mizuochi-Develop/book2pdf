@@ -1242,7 +1242,7 @@ bash -n scripts/benchmark_ocr.sh
 - 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-004003/` にコピー
 - 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-004003 ./scripts/benchmark_ocr.sh` を実行
 - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
-- 2026-09-01: 検証結果レポート `test_cases/ocr-results-004003/performance-test-report-004003.md` を作成
+- 2026-09-01: 検証結果レポート `backend/test-results/benchmark-004003/performance-test-report-004003.md` を作成
 - 2026-09-01: `backend/docs/tasks.md` に実施結果とレポートリンクを追記
 
 ---

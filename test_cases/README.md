@@ -13,9 +13,12 @@ test_cases/
 ├── README.md                      ← 本ファイル
 ├── benchmarks/                    ← ベンチマーク用画像 ZIP ファイル群
 ├── results/                       ← OCR 精度比較・検証レポート（003002〜003007）
-├── ocr-results-003008/            ← 適応的前処理検討レポート
-├── ocr-results-004003/            ← OCR 処理性能計測レポート
 └── AI ・LLMの実務でつかえるRAG精度改善/  ← テスト対象書籍のキャプチャ画像
+
+> **モジュール固有のテスト結果について**:
+> 以下のレポートは各モジュールの `test-results/` に移動しています。
+> - `ocr-results-003008/` → [`../ocr-worker/test-results/ocr-results-003008/`](../ocr-worker/test-results/ocr-results-003008/)
+> - `ocr-results-004003/` → [`../backend/test-results/benchmark-004003/`](../backend/test-results/benchmark-004003/)
 ```
 
 ---
@@ -58,11 +61,11 @@ test_cases/
 
 ---
 
-## 3. ocr-results-003008/ — 適応的前処理検討レポート
+## 3. ocr-results-003008/ — 適応的前処理検討レポート（ocr-worker/test-results へ移動）
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論 |
 |---|---|---|---|---|
-| [adaptive-preprocess-report-003008.md](ocr-results-003008/adaptive-preprocess-report-003008.md) | [003008](../ocr-worker/docs/tasks.md) | 2026-09-01 | ページタイプ別（表紙/目次/本文）に最適な前処理パラメータを切り替える方式の検討 | 実装コストに対する効果が不明確。OCR 後処理や UI 手動補正を優先し、本対応は**保留** |
+| [adaptive-preprocess-report-003008.md](../ocr-worker/test-results/ocr-results-003008/adaptive-preprocess-report-003008.md) | [003008](../ocr-worker/docs/tasks.md) | 2026-09-01 | ページタイプ別（表紙/目次/本文）に最適な前処理パラメータを切り替える方式の検討 | 実装コストに対する効果が不明確。OCR 後処理や UI 手動補正を優先し、本対応は**保留** |
 
 **検討した方式**:
 1. ページ分類ベース（表紙/目次/本文の自動判定）
@@ -71,11 +74,13 @@ test_cases/
 
 ---
 
-## 4. ocr-results-004003/ — OCR 処理性能計測レポート
+## 4. benchmark-004003/ — OCR 処理性能計測レポート（backend/test-results へ移動）
+
+> **注意**: 本レポートのタスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです。
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論 |
 |---|---|---|---|---|
-| [performance-test-report-004003.md](ocr-results-004003/performance-test-report-004003.md) | [004003](../backend/docs/tasks.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
+| [performance-test-report-004003.md](../backend/test-results/benchmark-004003/performance-test-report-004003.md) | [004003](../backend/docs/tasks.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
 
 **測定対象工程**:
 - Docker Compose 起動時間

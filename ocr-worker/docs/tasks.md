@@ -421,7 +421,7 @@ OCR精度向上に関する今後の要検討対応・技術的負債・改善�
 |  | - 技術書の表紙は1ページのみのため、一律前処理を選ぶ方がシンプルな可能性 |  |  |  |
 |  | 【結論】 |  |  |  |
 |  | 現状はコストパフォーマンスが不明確。OCR後処理（辞書補正）やUIでの手動補正を優先し、本対応は将来の検討事項として保留とする。 |  |  |  |
-|  | 2026-09-01: 検討レポート [test_cases/ocr-results-003008/adaptive-preprocess-report-003008.md](../test_cases/ocr-results-003008/adaptive-preprocess-report-003008.md) を作成し、上記結論を維持 |  |  |  |
+|  | 2026-09-01: 検討レポート [ocr-worker/test-results/ocr-results-003008/adaptive-preprocess-report-003008.md](../test-results/ocr-results-003008/adaptive-preprocess-report-003008.md) を作成し、上記結論を維持 |  |  |  |
 
 ---
 

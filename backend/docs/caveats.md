@@ -504,7 +504,8 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - 2026-09-01 に `BENCHMARK_SAMPLE_DIR` 環境変数で上書き可能にしたが、相対パス（`sample-png/...`）を指定することを推奨する
 - 3 ページの OCR 処理でも約 6 分半（396 秒）かかるため、テスト時の HTTP タイムアウト設定に注意する
 - 性能計測スクリプトは実行完了後に `/data/extracted/{job_id}` と `/data/ocr_output/{job_id}` を削除するが、`/data/pdfs/{job_id}.pdf` は削除しない
-- 詳細は `test_cases/ocr-results-004003/performance-test-report-004003.md` を参照
+- 詳細は `backend/test-results/benchmark-004003/performance-test-report-004003.md` を参照
+- 注：本タスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです
 
 ---
 

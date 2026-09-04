@@ -355,7 +355,8 @@ PDF ダウンロード時間,0.045
 | 合計処理時間 | 396.914 |
 
 - 個別ページの OCR 処理時間：122.762 秒、110.116 秒、144.009 秒
-- 詳細は [test_cases/ocr-results-004003/performance-test-report-004003.md](../test_cases/ocr-results-004003/performance-test-report-004003.md) を参照
+- 詳細は [backend/test-results/benchmark-004003/performance-test-report-004003.md](../backend/test-results/benchmark-004003/performance-test-report-004003.md) を参照
+- 注：本タスク 004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（004003）」とは別タスクです
 
 ## 8. 終了処理
 
