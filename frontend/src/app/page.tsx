@@ -16,6 +16,7 @@ import {
   subscribeJobProgress,
   downloadPdf,
 } from "@/lib/api";
+import type { ProgressEvent } from "@/types";
 
 export default function Home() {
   // 選択された ZIP ファイルを保持する state です
@@ -24,8 +25,10 @@ export default function Home() {
   const [jobId, setJobId] = useState<string | null>(null);
   // アップロードされた画像ファイル一覧を保持する state です
   const [files, setFiles] = useState<string[]>([]);
-  // 進捗メッセージを保持する state です
-  const [progress, setProgress] = useState<string>("");
+  // 最新の進捗イベントを保持する state です
+  const [latestProgress, setLatestProgress] = useState<ProgressEvent | null>(null);
+  // 時系列順の進捗メッセージログを保持する state です
+  const [progressLog, setProgressLog] = useState<string[]>([]);
   // OCR 完了後の結果メッセージを保持する state です
   const [result, setResult] = useState<string>("");
   // エラーメッセージを保持する state です
@@ -57,7 +60,8 @@ export default function Home() {
 
     setIsLoading(true);
     setError("");
-    setProgress("");
+    setLatestProgress(null);
+    setProgressLog([]);
     setResult("");
     setDownloadableJobId(null);
 
@@ -65,29 +69,55 @@ export default function Home() {
       // ジョブを作成します
       const newJobId = await createJob();
       setJobId(newJobId);
-      setProgress(`ジョブを作成しました: ${newJobId}`);
+      setProgressLog((prev) => [...prev, `ジョブを作成しました: ${newJobId}`]);
 
       // ZIP ファイルをアップロードします
       const uploadedFiles = await uploadZip(newJobId, file);
       setFiles(uploadedFiles);
-      setProgress((prev) => `${prev}\n画像を ${uploadedFiles.length} 枚検出しました`);
+      setProgressLog((prev) => [...prev, `画像を ${uploadedFiles.length} 枚検出しました`]);
 
       // 進捗通知を購読します
       eventSourceRef.current = subscribeJobProgress(
         newJobId,
         (message) => {
-          setProgress((prev) => `${prev}\n${message}`);
+          // バックエンドからの JSON イベントをパースして表示します
+          let event: ProgressEvent | null = null;
+          try {
+            const parsed = JSON.parse(message) as unknown;
+            if (
+              parsed !== null &&
+              typeof parsed === "object" &&
+              "job_id" in parsed &&
+              "status" in parsed &&
+              "progress" in parsed
+            ) {
+              event = parsed as ProgressEvent;
+            }
+          } catch {
+            // JSON でないメッセージはそのままテキストとして扱います
+          }
+
+          if (event) {
+            setLatestProgress(event);
+            const text =
+              event.message ??
+              `${event.status} - ${event.progress}% (${event.current_page}/${event.total_pages})`;
+            setProgressLog((prev) => [...prev, text]);
+          } else {
+            setProgressLog((prev) => [...prev, message]);
+          }
         },
         (err) => {
           // EventSource のエラーは一時的な切断も含むため、OCR 結果を待つ形にします
           console.error("進捗通知の接続でエラーが発生しました:", err);
+          setProgressLog((prev) => [...prev, "進捗通知の接続でエラーが発生しました"]);
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
           }
         },
         () => {
-          setProgress((prev) => `${prev}\n進捗通知が完了しました`);
+          setProgressLog((prev) => [...prev, "進捗通知が完了しました"]);
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
@@ -99,7 +129,7 @@ export default function Home() {
       const ocrResult = await runOcr(newJobId);
       setResult(JSON.stringify(ocrResult, null, 2));
       setDownloadableJobId(newJobId);
-      setProgress((prev) => `${prev}\nOCR 処理が完了しました`);
+      setProgressLog((prev) => [...prev, "OCR 処理が完了しました"]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
     } finally {
@@ -174,12 +204,35 @@ export default function Home() {
           </div>
         )}
 
-        {progress && (
+        {(latestProgress || progressLog.length > 0) && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-card-foreground">進捗</h2>
-            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm text-foreground">
-              {progress}
-            </pre>
+            {latestProgress && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between text-sm text-card-foreground">
+                  <span>状態: {latestProgress.status}</span>
+                  <span>
+                    {latestProgress.current_page} / {latestProgress.total_pages} ページ
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-out"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, latestProgress.progress))}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {latestProgress.progress}%
+                </p>
+              </div>
+            )}
+            {progressLog.length > 0 && (
+              <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm text-foreground">
+                {progressLog.join("\n")}
+              </pre>
+            )}
           </div>
         )}
 

@@ -1,5 +1,10 @@
 // FastAPI バックエンドとの通信を行うクライアント関数群です
 
+import type {
+  JobCreateResponse,
+  JobUploadResponse,
+} from "@/types";
+
 // ブラウザからアクセスする backend API のベース URL です
 // コンテナ外の開発時は環境変数が未定義の場合 localhost:8000 を使用します
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -38,8 +43,8 @@ export async function createJob(): Promise<string> {
   if (!response.ok) {
     throw new Error(`ジョブの作成に失敗しました: ${response.status} ${response.statusText}`);
   }
-  const data = await response.json();
-  return data.job_id as string;
+  const data = (await response.json()) as JobCreateResponse;
+  return data.job_id;
 }
 
 /**
@@ -59,8 +64,8 @@ export async function uploadZip(jobId: string, file: File): Promise<string[]> {
   if (!response.ok) {
     throw new Error(`ZIP アップロードに失敗しました: ${response.status} ${response.statusText}`);
   }
-  const data = await response.json();
-  return data.files as string[];
+  const data = (await response.json()) as JobUploadResponse;
+  return data.files ?? [];
 }
 
 /**
