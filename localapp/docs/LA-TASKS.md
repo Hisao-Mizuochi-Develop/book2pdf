@@ -1362,7 +1362,7 @@
    - 各 variant（default, outline, secondary, ghost, destructive, link）に JSDoc コメント
    - 各 size（default, xs, sm, lg, icon...）に JSDoc コメント
    - `buttonVariants` 関数と `Button` コンポーネントにも概要コメント
-3. `localapp/docs/localapp-spec.md` のデザイン仕様更新
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` のデザイン仕様更新
    - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
    - フォントに `Geist Variable` を明記
    - タイポグラフィのサイズ指定を rem で明記
@@ -1373,7 +1373,7 @@
 【実施結果】
 - `localapp/src/index.css` を Apple HIG 風カラーパレットに変更し、各変数に「用途 + 理由」のコメントを付加
 - `localapp/src/components/ui/button.tsx` の各 variant・size に詳細な JSDoc コメントを付加
-- `localapp/docs/localapp-spec.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
+- `localapp/docs/LA-LOCALAPP-SPEC.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
 - `.clinerules` 第8章に「初学者向け詳細コメント」ルールを加筆
 - `npm run build` でビルド成功
 - `npm run tauri dev` で起動確認完了
@@ -1417,7 +1417,7 @@
    - `window.matchMedia('(prefers-color-scheme: dark)')` を監視
    - 変更時に `document.documentElement.setAttribute('data-theme', ...)` を設定
    - 将来的に手動切り替えを入れる際の土台とする
-3. `localapp/docs/localapp-spec.md` にテーマ仕様を追記
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` にテーマ仕様を追記
    - ライト/ダークモードのカラーパレット表
 4. ビルド・起動確認
 
@@ -1589,7 +1589,7 @@
    - A4（210mm × 297mm）に統一し、アスペクト比維持で fit
    - 将来的に「元画像サイズ維持」オプションも追加可能な設計
 4. **調査結果のドキュメント化**
-   - `localapp/docs/ocr-technology-survey-LA008007.md` に調査レポートを作成
+   - `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` に調査レポートを作成
    - 各候補の評価スコア、採用理由、POC 結果を記載
 
 【実施結果】
@@ -1598,7 +1598,7 @@
 - A4 フィットロジックを確立：10mm マージン、300 DPI px→mm 変換、`ImageTransform` でのセンタリング＋スケーリング
 - `tesseract` crate 0.15.2 と `leptess` 0.14.0 を調査し、`leptess` を採用（`get_component_boxes()` で word/line bbox を直接取得可能、hOCR/TSV パース不要）
 - backend + ocr-worker 実装との差異を調査・分析。OCR エンジン（ndlocr_cli vs Tesseract）、PDF 生成ライブラリ（PyMuPDF vs printpdf）、座標系処理、アーキテクチャの 4 面で根本的な違いがあることを確認
-- 調査レポート `localapp/docs/ocr-technology-survey-LA008007.md` を作成
+- 調査レポート `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` を作成
 - 残課題：
   - `image` crate 0.25.x と `printpdf` 内部の 0.24.x とのデュアルバージョン対応（LA008008 で対応方針確定）
   - LA008009 で `leptess` 統合 POC（画像→OCR→テキストレイヤーPDF）を実施
@@ -1726,8 +1726,8 @@
    - 各生成パターンのエンドツーエンドテスト
    - ユーザー動作テスト実施・合格判定
 4. **ドキュメント更新**
-   - `localapp/docs/tasks.md` 各タスクの完了日付を記入
-   - `localapp/docs/work_log.md` に実施実績を追記
+   - `localapp/docs/LA-TASKS.md` 各タスクの完了日付を記入
+   - `localapp/docs/LA-WORK-LOG.md` に実施実績を追記
 
 【実施結果】
 - 2026-09-04: `create_searchable_pdf` の引数名を camelCase（`sourcePath`, `sourceType`, `outputPath`）に修正。Tauri `invoke` 経由でフロントエンドから正しくパラメータが渡されるようになった
@@ -1754,7 +1754,7 @@
 - Tesseract 単体 OCR の認識率を向上させるため、画像前処理（二値化 / ノイズ除去 / 解像度調整）の効果を検証する
 - `jpn.traineddata` 以外の学習済みモデル（`jpn_vert`、`best`/`fast` モデル等）との比較を実施する
 - backend ndlocr_cli との精度差を定量的に評価し、localapp OCR の使い所を再定義する
-- 前処理パラメータとモデルの選定結果を `localapp/docs/caveats.md` に追記する
+- 前処理パラメータとモデルの選定結果を `localapp/docs/LA-CAVEATS.md` に追記する
 
 【実施結果】
 

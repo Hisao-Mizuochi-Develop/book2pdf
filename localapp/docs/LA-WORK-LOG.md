@@ -52,7 +52,7 @@
      - A4（210mm × 297mm）に統一し、アスペクト比維持で fit
      - 将来的に「元画像サイズ維持」オプションも追加可能な設計
   4. **調査結果のドキュメント化**
-     - `localapp/docs/ocr-technology-survey-LA008007.md` に調査レポートを作成
+     - `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` に調査レポートを作成
      - 各候補の評価スコア、採用理由、POC 結果を記載
 - 想定される注意点:
   - macOS 環境での Tesseract インストール状態を確認（`brew list tesseract`）
@@ -76,9 +76,9 @@
   - backend は ndlocr_cli + PyMuPDF + XML 中間ファイル。localapp は Tesseract + printpdf + 構造体直接
   - 座標系、ページサイズ扱い、アーキテクチャの差異を文書化（調査レポート §4 参照）
 - 2026-09-04: 調査レポート作成、ドキュメント更新
-  - `localapp/docs/ocr-technology-survey-LA008007.md` を新規作成
-  - `localapp/docs/tasks.md` の LA008007 【実施結果】に追記
-  - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
+  - `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` を新規作成
+  - `localapp/docs/LA-TASKS.md` の LA008007 【実施結果】に追記
+  - `localapp/docs/LA-WORK-LOG.md` に【実施実績】を追記（本エントリ）
 
 ---
 
@@ -203,7 +203,7 @@
    - 各 variant（default, outline, secondary, ghost, destructive, link）に JSDoc コメント
    - 各 size（default, xs, sm, lg, icon...）に JSDoc コメント
    - `buttonVariants` 関数と `Button` コンポーネントにも概要コメント
-3. `localapp/docs/localapp-spec.md` のデザイン仕様更新
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` のデザイン仕様更新
    - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
    - フォントに `Geist Variable` を明記
    - タイポグラフィのサイズ指定を rem で明記
@@ -215,7 +215,7 @@
 
 - `localapp/src/index.css` を Apple HIG 風カラーパレットに変更し、各変数に「用途 + 理由」のコメントを付加
 - `localapp/src/components/ui/button.tsx` の各 variant・size に詳細な JSDoc コメントを付加
-- `localapp/docs/localapp-spec.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
+- `localapp/docs/LA-LOCALAPP-SPEC.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
 - `.clinerules` 第8章に「初学者向け詳細コメント」ルールを加筆
 - `npm run build` でビルド成功
 - `npm run tauri dev` で起動確認完了
@@ -274,7 +274,7 @@
    - `window.matchMedia('(prefers-color-scheme: dark)')` を監視
    - 変更時に `document.documentElement.setAttribute('data-theme', ...)` を設定
    - 将来的に手動切り替えを入れる際の土台とする
-3. `localapp/docs/localapp-spec.md` にテーマ仕様を追記
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` にテーマ仕様を追記
    - ライト/ダークモードのカラーパレット表
 4. ビルド・起動確認
 
@@ -611,7 +611,7 @@
   2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
 - エラー修正は LA002007 として別タスクで対応
 - 2026-09-01: 本タスクは実質的に LA002008 に統合完了したため、完了扱いとする
-  - `localapp/docs/tasks.md` の LA002005「タスク完了日付」を 2026-08-17（LA002008 完了日）に記載
+  - `localapp/docs/LA-TASKS.md` の LA002005「タスク完了日付」を 2026-08-17（LA002008 完了日）に記載
   - `crop_insets` 機能は LA002007 / LA002008 で実装済み
   - ウィンドウ指定キャプチャ機能は LA002008 で実装済み
   - ブランチ: `feature/LA002005-formal-completion`
@@ -676,14 +676,14 @@
 - `npm run tauri dev`: 起動成功
   - 単発キャプチャで Kindle ウィンドウが正しく取得されることを確認
   - プロファイル編集で `window_title_keyword`、`process_name`、`crop_insets` の変更が即座に反映されることを確認
-- 連続キャプチャテスト中に2つのバグを発見（詳細は tasks.md LA002008-1 欄を参照）
+- 連続キャプチャテスト中に2つのバグを発見（詳細は LA-TASKS.md LA002008-1 欄を参照）
   - Bug 1: 連続キャプチャで1ページしかキャプチャできない → `calculate_mse()` が PNG 圧縮バイト列を比較しているため、ウィンドウキャプチャ後の画像サイズ縮小で MSE < 1000.0 と誤判定され「最終ページ到達」と判断される
   - Bug 2: 「キャプチャ前に最前面へ持ってくる」が機能しない → `use_bring_to_top: true` フラグがあるが `run_continuous_capture_loop()` に一切実装がない
 - LA002005 と LA002008 の重複問題の解消
   - LA002005 は「ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング」を目指したが、`screenshots` crate で `Window` struct が使えず実装途中で断念
   - LA002007 でコンパイルエラー修正（全画面キャプチャ + `crop_insets` トリミングに後退）を実施
   - LA002008 で `xcap` crate を採用し、当初 LA002005 で目指した「ウィンドウ指定キャプチャ」を実現
-  - tasks.md の LA002005 【実施結果】に「実装内容は LA002008 に引き継がれた」と明記し、重複を解消
+  - LA-TASKS.md の LA002005 【実施結果】に「実装内容は LA002008 に引き継がれた」と明記し、重複を解消
 - ブランチ: `feature/LA002008-window-capture-xcap`
 
 > **注意**: Git コミットはユーザーの合格確認後に実施すること（ユーザー指示）
@@ -1132,8 +1132,8 @@
   - 指定したフォルダ配下に `<book_title>` サブフォルダが作成され、キャプチャ画像が保存されることを確認
   - キャプチャ完了後、「トリミング」画面を開くと `lastCaptureFolder` 経由で自動的に同じフォルダが読み込まれることを確認
 - 2026-08-21: ドキュメント更新
-  - `localapp/docs/tasks.md` に【実施結果】を追記
-  - `localapp/docs/work_log.md` に【実施実績】を追記（本エントリ）
+  - `localapp/docs/LA-TASKS.md` に【実施結果】を追記
+  - `localapp/docs/LA-WORK-LOG.md` に【実施実績】を追記（本エントリ）
 - 2026-08-21: バグ修正（LA002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
   - **事象**: キャプチャ完了後、「トリミング」画面を開いてもキャプチャした画像が自動的に読み込まれない。手動でフォルダを選び直す必要がある。
   - **調査**:
@@ -1481,8 +1481,8 @@
   - `cargo check`: 成功（non_snake_case 警告のみ）
   - `npm run build`: 成功
 - 2026-08-20: ドキュメント更新
-  - `localapp/docs/tasks.md` に LA005004 を追加し、完了日付を 2026-08-20 に記録
-  - `localapp/docs/caveats.md` に「Tauri 同期コマンドのイベント配信制限（LA005004）」を追記
+  - `localapp/docs/LA-TASKS.md` に LA005004 を追加し、完了日付を 2026-08-20 に記録
+  - `localapp/docs/LA-CAVEATS.md` に「Tauri 同期コマンドのイベント配信制限（LA005004）」を追記
   - 注意: 作業ログを更新する際、`write_to_file` で誤って既存内容を上書きしてしまった。Git 履歴のコミット `6732fc1` から復元し、`replace_in_file` で追記する方式で修正した
 - 実施コマンド:
   1. `cd localapp/src-tauri && cargo check`
@@ -1493,9 +1493,9 @@
   - `localapp/src/views/ExportView.tsx`
   - `localapp/src-tauri/src/commands/capture.rs`
   - `localapp/src-tauri/Cargo.toml`
-  - `localapp/docs/tasks.md`
-  - `localapp/docs/caveats.md`
-  - `localapp/docs/work_log.md`（本エントリ）
+  - `localapp/docs/LA-TASKS.md`
+  - `localapp/docs/LA-CAVEATS.md`
+  - `localapp/docs/LA-WORK-LOG.md`（本エントリ）
 
 
 ---
@@ -1593,7 +1593,7 @@
     - `POST /api/jobs` → `POST /api/jobs/{id}/upload` → `POST /api/jobs/{id}/ocr` → ポーリング → `GET /api/jobs/{id}/pdf`
   - フロントエンド側に backend OCR 用のストア・ボタン・進捗表示を追加
   - 設定ファイル `settings.json` に backend URL 等を追加
-  - ドキュメント更新（localapp-spec.md / caveats.md / tasks.md）
+  - ドキュメント更新（LA-LOCALAPP-SPEC.md / LA-CAVEATS.md / LA-TASKS.md）
 - 実施予定のコマンド
   - `cd localapp/src-tauri && cargo check`
   - `cd localapp && npx tsc --noEmit`
@@ -1632,9 +1632,9 @@
     - `cd localapp/src-tauri && cargo check`: 成功（既存 warning のみ）
     - `cd localapp && npm run build`: Vite の `transforming...` ステップで長時間停止する現象が発生。TypeScript 型チェックは通過済み
   - ドキュメント更新
-    - `localapp/docs/localapp-spec.md` に backend API 連携の責務・フローを追記
-    - `localapp/docs/caveats.md` に `tauri-plugin-http` の feature 指定と `settings.json` の snake_case 化に関する注意事項を追記
-    - `localapp/docs/tasks.md` の LA008001〜LA008005 に【実施結果】を追記し、タスク完了日付を 2026-09-01 に更新
+    - `localapp/docs/LA-LOCALAPP-SPEC.md` に backend API 連携の責務・フローを追記
+    - `localapp/docs/LA-CAVEATS.md` に `tauri-plugin-http` の feature 指定と `settings.json` の snake_case 化に関する注意事項を追記
+    - `localapp/docs/LA-TASKS.md` の LA008001〜LA008005 に【実施結果】を追記し、タスク完了日付を 2026-09-01 に更新
 - 変更ファイル
   - `localapp/src-tauri/src/commands/backend_api.rs`
   - `localapp/src-tauri/src/commands/mod.rs`
@@ -1645,10 +1645,10 @@
   - `localapp/src/store/backendApiStore.ts`
   - `localapp/src/lib/settings.ts`
   - `localapp/src/views/PdfCreationView.tsx`
-  - `localapp/docs/localapp-spec.md`
-  - `localapp/docs/caveats.md`
-  - `localapp/docs/tasks.md`
-  - `localapp/docs/work_log.md`（本エントリ）
+  - `localapp/docs/LA-LOCALAPP-SPEC.md`
+  - `localapp/docs/LA-CAVEATS.md`
+  - `localapp/docs/LA-TASKS.md`
+  - `localapp/docs/LA-WORK-LOG.md`（本エントリ）
 
 ---
 
@@ -1695,8 +1695,8 @@
   - `cd localapp/src-tauri && cargo check`: 成功（既存の non_snake_case 警告のみ）
   - `cd localapp && npx tsc --noEmit`: 成功
 - 2026-09-03: ドキュメント更新
-  - `localapp/docs/tasks.md` の LA003006 に【計画】【実施結果】を追記、タスク完了日付を 2026-09-03 に更新
-  - `localapp/docs/work_log.md` に本エントリを追記
+  - `localapp/docs/LA-TASKS.md` の LA003006 に【計画】【実施結果】を追記、タスク完了日付を 2026-09-03 に更新
+  - `localapp/docs/LA-WORK-LOG.md` に本エントリを追記
 
 ### 【実施予定との差分】
 
@@ -1751,8 +1751,8 @@
   - `cd localapp/src-tauri && cargo test backend_api_impl -- --nocapture`: 成功（1 passed）
   - `cd localapp && npx tsc --noEmit`: 成功
 - 2026-09-03: ドキュメント更新
-  - `localapp/docs/tasks.md` の LA003006 に【実施結果】を追記
-  - `localapp/docs/work_log.md` に本エントリを追記
+  - `localapp/docs/LA-TASKS.md` の LA003006 に【実施結果】を追記
+  - `localapp/docs/LA-WORK-LOG.md` に本エントリを追記
 - 2026-09-03: テスト結果ドキュメントの整理
   - `e2e-runtime-steps.md` を `localapp/test-results/LA003006-backend-ocr-test/README.md` に統合
   - 重複ファイルを削除し、`.clinerules` 第 2.6 章に準拠した配置に整理

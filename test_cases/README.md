@@ -36,12 +36,12 @@ test_cases/
 
 | ファイル名 | タスク | 内容 |
 |---|---|---|
-| `benchmark-ocr-OW003002.zip` | [OW003002](../backend/docs/tasks.md) | OCR 認識精度再測定用ベースライン（3ページ） |
-| `benchmark-ocr-OW003003-sharpen.zip` | [OW003003](../ocr-worker/docs/tasks.md) | シャープニング前処理のみ適用 |
+| `benchmark-ocr-OW003002.zip` | [OW003002](../backend/docs/BE-TASKS.md) | OCR 認識精度再測定用ベースライン（3ページ） |
+| `benchmark-ocr-OW003003-sharpen.zip` | [OW003003](../ocr-worker/docs/OW-TASKS.md) | シャープニング前処理のみ適用 |
 | `benchmark-ocr-OW003003-sharpen-upscale.zip` | OW003003 | シャープニング + 2倍アップスケール |
 | `benchmark-ocr-OW003003-contrast-gamma.zip` | OW003003 | コントラスト強調 + ガンマ補正 |
 | `benchmark-ocr-OW003003-contrast-gamma-sharpen.zip` | OW003003 | コントラスト強調 + ガンマ補正 + シャープニング |
-| `benchmark-ocr-OW003007.zip` | [OW003007](../ocr-worker/docs/tasks.md) | 追加前処理効果検証用ベースライン |
+| `benchmark-ocr-OW003007.zip` | [OW003007](../ocr-worker/docs/OW-TASKS.md) | 追加前処理効果検証用ベースライン |
 | `benchmark-ocr-OW003007-baseline-2x.zip` | OW003007 | 2倍アップスケールベースライン |
 | `benchmark-ocr-OW003007-4x-upscale.zip` | OW003007 | 4倍アップスケール |
 | `benchmark-ocr-OW003007-4x-upscale-sharpen.zip` | OW003007 | 4倍アップスケール + シャープニング |
@@ -58,13 +58,13 @@ test_cases/
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論の概要 |
 |---|---|---|---|---|
-| [OWOW003002/ocr-accuracy-report-OW003002.md](results/OWOW003002/ocr-accuracy-report-OW003002.md) | [OW003002](../backend/docs/tasks.md) | 2026-08-13 | OCR 認識精度再測定（ベースライン） | ベースライン精度の測定 |
-| [OWOW003003/preprocess-comparison-report-OW003003.md](results/OWOW003003/preprocess-comparison-report-OW003003.md) | [OW003003](../ocr-worker/docs/tasks.md) | 2026-08-13 | 入力画像前処理の効果検証 | `sharpen_light_upscale_2x` が最も効果的 |
-| [OWOW003004/config-comparison-report-OW003004.md](results/OWOW003004/config-comparison-report-OW003004.md) | [OW003004](../ocr-worker/docs/tasks.md) | 2026-08-13 | config.yml パラメータ調整効果検証 | パラメータ調整単体では効果限定的 |
-| [OWOW003005/score-thr-comparison-report-OW003005.md](results/OWOW003005/score-thr-comparison-report-OW003005.md) | [OW003005](../ocr-worker/docs/tasks.md) | 2026-08-14 | score_thr 比較（前処理 ON） | `score_thr=0.2` が最適と判断 |
+| [OWOW003002/ocr-accuracy-report-OW003002.md](results/OWOW003002/ocr-accuracy-report-OW003002.md) | [OW003002](../backend/docs/BE-TASKS.md) | 2026-08-13 | OCR 認識精度再測定（ベースライン） | ベースライン精度の測定 |
+| [OWOW003003/preprocess-comparison-report-OW003003.md](results/OWOW003003/preprocess-comparison-report-OW003003.md) | [OW003003](../ocr-worker/docs/OW-TASKS.md) | 2026-08-13 | 入力画像前処理の効果検証 | `sharpen_light_upscale_2x` が最も効果的 |
+| [OWOW003004/config-comparison-report-OW003004.md](results/OWOW003004/config-comparison-report-OW003004.md) | [OW003004](../ocr-worker/docs/OW-TASKS.md) | 2026-08-13 | config.yml パラメータ調整効果検証 | パラメータ調整単体では効果限定的 |
+| [OWOW003005/score-thr-comparison-report-OW003005.md](results/OWOW003005/score-thr-comparison-report-OW003005.md) | [OW003005](../ocr-worker/docs/OW-TASKS.md) | 2026-08-14 | score_thr 比較（前処理 ON） | `score_thr=0.2` が最適と判断 |
 | [OWOW003005/config-comparison-report-OW003005.md](results/OWOW003005/config-comparison-report-OW003005.md) | OW003005 | 2026-08-14 | score_thr 修正後の再検証 | `score_thr=0.2` + `sharpen_light_upscale_2x` の組み合わせで精度向上を確認 |
-| [OWOW003006/preprocess-integration-report-OW003006.md](results/OWOW003006/preprocess-integration-report-OW003006.md) | [OW003006](../ocr-worker/docs/tasks.md) | 2026-08-14 | `sharpen_light_upscale_2x` の ocr-worker 組み込み検証 | ocr-worker 自動前処理として採用決定 |
-| [OWOW003007/additional-preprocess-report-OW003007.md](results/OWOW003007/additional-preprocess-report-OW003007.md) | [OW003007](../ocr-worker/docs/tasks.md) | 2026-09-01 | 追加前処理効果検証 | `sharpen_light_upscale_2x` を超える前処理は見つからず、現状の方式を維持 |
+| [OWOW003006/preprocess-integration-report-OW003006.md](results/OWOW003006/preprocess-integration-report-OW003006.md) | [OW003006](../ocr-worker/docs/OW-TASKS.md) | 2026-08-14 | `sharpen_light_upscale_2x` の ocr-worker 組み込み検証 | ocr-worker 自動前処理として採用決定 |
+| [OWOW003007/additional-preprocess-report-OW003007.md](results/OWOW003007/additional-preprocess-report-OW003007.md) | [OW003007](../ocr-worker/docs/OW-TASKS.md) | 2026-09-01 | 追加前処理効果検証 | `sharpen_light_upscale_2x` を超える前処理は見つからず、現状の方式を維持 |
 
 ---
 
@@ -72,7 +72,7 @@ test_cases/
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論 |
 |---|---|---|---|---|
-| [adaptive-preprocess-report-OW003008.md](../ocr-worker/test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md) | [OW003008](../ocr-worker/docs/tasks.md) | 2026-09-01 | ページタイプ別（表紙/目次/本文）に最適な前処理パラメータを切り替える方式の検討 | 実装コストに対する効果が不明確。OCR 後処理や UI 手動補正を優先し、本対応は**保留** |
+| [adaptive-preprocess-report-OW003008.md](../ocr-worker/test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md) | [OW003008](../ocr-worker/docs/OW-TASKS.md) | 2026-09-01 | ページタイプ別（表紙/目次/本文）に最適な前処理パラメータを切り替える方式の検討 | 実装コストに対する効果が不明確。OCR 後処理や UI 手動補正を優先し、本対応は**保留** |
 
 **検討した方式**:
 1. ページ分類ベース（表紙/目次/本文の自動判定）
@@ -87,7 +87,7 @@ test_cases/
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論 |
 |---|---|---|---|---|
-| [performance-test-report-BE004003.md](../backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md) | [BE004003](../backend/docs/tasks.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
+| [performance-test-report-BE004003.md](../backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md) | [BE004003](../backend/docs/BE-TASKS.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
 
 **測定対象工程**:
 - Docker Compose 起動時間
@@ -134,10 +134,10 @@ AI ・LLMの実務でつかえるRAG精度改善/
 
 ## 関連ドキュメント
 
-- [統合テストガイド](../docs/integration-test-guide.md) — フルフロー手順
-- [backend/docs/tasks.md](../backend/docs/tasks.md) — backend タスク管理表
-- [ocr-worker/docs/tasks.md](../ocr-worker/docs/tasks.md) — ocr-worker タスク管理表
-- [localapp/docs/tasks.md](../localapp/docs/tasks.md) — localapp タスク管理表
+- [統合テストガイド](../docs/OT-INTEGRATION-TEST-GUIDE.md) — フルフロー手順
+- [backend/docs/BE-TASKS.md](../backend/docs/BE-TASKS.md) — backend タスク管理表
+- [ocr-worker/docs/OW-TASKS.md](../ocr-worker/docs/OW-TASKS.md) — ocr-worker タスク管理表
+- [localapp/docs/LA-TASKS.md](../localapp/docs/LA-TASKS.md) — localapp タスク管理表
 
 ---
 

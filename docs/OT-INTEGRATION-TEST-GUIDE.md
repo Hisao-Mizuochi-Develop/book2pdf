@@ -14,9 +14,9 @@
 - `docker compose` コマンドが使用できること
 - テスト用の ZIP ファイルが用意できていること（後述の「3.1 テスト用 ZIP ファイルの作成」を参照）
 - 各モジュールのドキュメントを併せて確認しておくこと
-  - [`backend/docs/backend-system-spec.md`](../backend/docs/backend-system-spec.md)
-  - [`frontend/docs/frontend-system-spec.md`](../frontend/docs/frontend-system-spec.md)
-  - [`ocr-worker/docs/ocr-worker-system-spec.md`](../ocr-worker/docs/ocr-worker-system-spec.md)
+  - [`backend/docs/BE-BACKEND-SYSTEM-SPEC.md`](../backend/docs/BE-BACKEND-SYSTEM-SPEC.md)
+  - [`frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md`](../frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md)
+  - [`ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md`](../ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md)
 
 ## 3. テスト準備
 
@@ -375,9 +375,9 @@ docker compose down -v
 
 ## 9. 関連ドキュメント
 
-- [`backend/docs/backend-system-spec.md`](../backend/docs/backend-system-spec.md)
-- [`backend/docs/caveats.md`](../backend/docs/caveats.md)
-- [`frontend/docs/frontend-system-spec.md`](../frontend/docs/frontend-system-spec.md)
-- [`frontend/docs/work_log.md`](../frontend/docs/work_log.md)
-- [`ocr-worker/docs/ocr-worker-system-spec.md`](../ocr-worker/docs/ocr-worker-system-spec.md)
-- [`ocr-worker/docs/caveats.md`](../ocr-worker/docs/caveats.md)
+- [`backend/docs/BE-BACKEND-SYSTEM-SPEC.md`](../backend/docs/BE-BACKEND-SYSTEM-SPEC.md)
+- [`backend/docs/BE-CAVEATS.md`](../backend/docs/BE-CAVEATS.md)
+- [`frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md`](../frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md)
+- [`frontend/docs/FE-WORK-LOG.md`](../frontend/docs/FE-WORK-LOG.md)
+- [`ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md`](../ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md)
+- [`ocr-worker/docs/OW-CAVEATS.md`](../ocr-worker/docs/OW-CAVEATS.md)

@@ -27,14 +27,14 @@ ndlocr_cli を実行可能な Docker コンテナ（ocr-worker）を構築する
 |  | docker-compose.yml を作成・更新し、backend / ocr-worker コンテナを連携させる |  |  |  |
 |  | コンテナ内で `from cli.core import OcrInferrer` が成功することを確認する |  |  |  |
 |  | サンプル画像で OCR を実行し、XML 出力形式を確認する |  |  |  |
-|  | ocr-worker/docs/work_log.md / caveats.md / ocr-worker-system-spec.md を更新する |  |  |  |
+|  | ocr-worker/docs/OW-WORK-LOG.md / OW-CAVEATS.md / OW-OCR-WORKER-SYSTEM-SPEC.md を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-11: ndlocr_cli リポジトリの構成・submodule・公式 Dockerfile を調査 |  |  |  |
 |  | 2026-08-11: ocr-worker/Dockerfile を新規作成（python:3.10-slim ベース、CPU 実行用） |  |  |  |
 |  | 2026-08-11: プロジェクトルートの docker-compose.yml を新規作成（backend / ocr-worker 連携） |  |  |  |
 |  | 2026-08-11: Docker Desktop の起動を確認（v29.6.2） |  |  |  |
-|  | 2026-08-11: ocr-worker/docs/work_log.md / caveats.md / ocr-worker-system-spec.md を更新 |  |  |  |
-|  | 2026-08-11: backend/docs/backend-system-spec.md を更新 |  |  |  |
+|  | 2026-08-11: ocr-worker/docs/OW-WORK-LOG.md / OW-CAVEATS.md / OW-OCR-WORKER-SYSTEM-SPEC.md を更新 |  |  |  |
+|  | 2026-08-11: backend/docs/BE-BACKEND-SYSTEM-SPEC.md を更新 |  |  |  |
 |  | 2026-08-11: コンテナビルドに成功（`docker compose build ocr-worker`） |  |  |  |
 |  | 2026-08-11: コンテナ内で `from cli.core import OcrInferrer` の import に成功 |  |  |  |
 |  | 2026-08-11: `GutterDetector` 経由で `init_detector` の CPU 動作を確認 |  |  |  |
@@ -48,7 +48,7 @@ ndlocr_cli を実行可能な Docker コンテナ（ocr-worker）を構築する
 |  | `OcrInferrer` を使って OCR を実行し、テキスト・XML パス・成否を返す |  |  |  |
 |  | `ocr-worker/Dockerfile` を更新し、fastapi / uvicorn / httpx をインストールする |  |  |  |
 |  | `docker-compose.yml` で ocr-worker の起動コマンドを FastAPI サーバーに変更する |  |  |  |
-|  | `ocr-worker/docs/work_log.md` / `caveats.md` / `ocr-worker-system-spec.md` を更新する |  |  |  |
+|  | `ocr-worker/docs/OW-WORK-LOG.md` / `OW-CAVEATS.md` / `OW-OCR-WORKER-SYSTEM-SPEC.md` を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-11: `ocr-worker/app/main.py` を新規作成（FastAPI + `POST /ocr` + `GET /health`） |  |  |  |
 |  | 2026-08-11: `ocr-worker/Dockerfile` を更新（fastapi / uvicorn / python-multipart の追加、Uvicorn 起動） |  |  |  |
@@ -59,7 +59,7 @@ ndlocr_cli を実行可能な Docker コンテナ（ocr-worker）を構築する
 |  | 2026-08-11: 結合テストで 2 回目以降の OCR リクエストで `GlobalHydra is already initialized` エラーが発生したことを確認 |  |  |  |
 |  | 2026-08-11: `ocr-worker/app/main.py` の `infer` 関数で `GlobalHydra.instance().is_initialized()` を確認し、初期化済みの場合は `clear()` してから `initialize()` するように修正 |  |  |  |
 |  | 2026-08-11: 修正後の ocr-worker コンテナを再ビルド・再起動し、複数回の OCR リクエストが正常に完了することを確認 |  |  |  |
-|  | 2026-08-11: `ocr-worker/docs/work_log.md` / `caveats.md` / `ocr-worker-system-spec.md` を更新 |  |  |  |
+|  | 2026-08-11: `ocr-worker/docs/OW-WORK-LOG.md` / `OW-CAVEATS.md` / `OW-OCR-WORKER-SYSTEM-SPEC.md` を更新 |  |  |  |
 
 ---
 
@@ -76,18 +76,18 @@ ndlocr_cli を実行可能な Docker コンテナ（ocr-worker）を構築する
 |  | `ocr-worker/app/main.py` に `LOG_LEVEL` 環境変数に応じたロガー設定と、OCR 処理開始・完了の DEBUG ログを追加する |  |  |  |
 |  | OCR 処理全体の所要時間を DEBUG ログで出力する |  |  |  |
 |  | `docker-compose.yml` の ocr-worker サービスに `LOG_LEVEL=DEBUG` を設定する |  |  |  |
-|  | `ocr-worker/docs/work_log.md` に作業内容を記録する |  |  |  |
+|  | `ocr-worker/docs/OW-WORK-LOG.md` に作業内容を記録する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `ocr-worker/app/main.py` に `LOG_LEVEL` 環境変数に応じたロガー設定と、OCR 処理開始・完了・所要時間の DEBUG ログを追加した |  |  |  |
 |  | 2026-08-12: `docker-compose.yml` の ocr-worker サービスに `LOG_LEVEL=DEBUG` を追加した |  |  |  |
-|  | 2026-08-12: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記した |  |  |  |
+|  | 2026-08-12: `ocr-worker/docs/OW-WORK-LOG.md` に本タスクの作業ログを追記した |  |  |  |
 | OW002002 | OCR 処理性能計測の実施 | 2026-08-12 |  | 性能評価 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | サンプル画像 001.png〜010.png を 1 つのアーカイブ `benchmark-input-10pages.zip` にまとめる |  |  |  |
 |  | backend から 1 回のジョブで 10 ページ ZIP の OCR 処理を呼び出し、ndlocr_cli の DEBUG ログからページごとの処理時間を計測する |  |  |  |
 |  | ndlocr_cli の既存ログにページごとの処理時間が出力されていなければ、ソースコードを修正して DEBUG ログを追加する |  |  |  |
-|  | ページごとの OCR 処理時間を `ocr-worker/docs/work_log.md` に記載する |  |  |  |
+|  | ページごとの OCR 処理時間を `ocr-worker/docs/OW-WORK-LOG.md` に記載する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | （性能テスト実行後に記載予定） |  |  |  |
 
@@ -106,7 +106,7 @@ OCR 読み取り精度向上
 |  | OCR 精度向上に取り掛かる前に、Docker 環境で OCR 実行時に 500 エラーが発生していた原因を調査する |  |  |  |
 |  | ndlocr_cli の依存関係・コンテナ設定・推論パイプラインを確認する |  |  |  |
 |  | 必要な修正を実施し、OCR が正常に完了することを検証する |  |  |  |
-|  | 作業内容を `ocr-worker/docs/work_log.md` / `caveats.md` に記録する |  |  |  |
+|  | 作業内容を `ocr-worker/docs/OW-WORK-LOG.md` / `OW-CAVEATS.md` に記録する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-13: Docker 環境の不具合を修正し、OCR 実行時の 500 エラーが解消された |  |  |  |
 |  | 2026-08-13: 本タスクは OCR 精度向上の前段階として必要となった環境整備である |  |  |  |
@@ -120,7 +120,7 @@ OCR 読み取り精度向上
 |  | 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する |  |  |  |
 |  | 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする |  |  |  |
 |  | 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する |  |  |  |
-|  | 7. ドキュメント記録：測定結果を `ocr-worker/docs/work_log.md` / `backend/docs/work_log.md` に記載し、本タスクの【実施結果】欄に追記する |  |  |  |
+|  | 7. ドキュメント記録：測定結果を `ocr-worker/docs/OW-WORK-LOG.md` / `backend/docs/BE-WORK-LOG.md` に記載し、本タスクの【実施結果】欄に追記する |  |  |  |
 |  | ### 詳細実施手順 |  |  |  |
 |  | #### 1. 環境クリーンアップ |  |  |  |
 |  | ```bash |  |  |  |
@@ -160,9 +160,9 @@ OCR 読み取り精度向上
 |  | python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-OW003002.txt --ocr ./ocr-results-OW003002/<job_dir>/txt/<page>_main.txt |  |  |  |
 |  | ``` |  |  |  |
 |  | #### 7. ドキュメント記録 |  |  |  |
-|  | - `ocr-worker/docs/work_log.md` に測定結果を記載 |  |  |  |
-|  | - `ocr-worker/docs/tasks.md` の OW003002【実施結果】欄に追記 |  |  |  |
-|  | - 必要に応じて `backend/docs/work_log.md` にも記載 |  |  |  |
+|  | - `ocr-worker/docs/OW-WORK-LOG.md` に測定結果を記載 |  |  |  |
+|  | - `ocr-worker/docs/OW-TASKS.md` の OW003002【実施結果】欄に追記 |  |  |  |
+|  | - 必要に応じて `backend/docs/BE-WORK-LOG.md` にも記載 |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-13: `benchmark-ocr-OW003002.zip`（002.png, 003.png, 004.png）を使用して再測定を実施 |  |  |  |
 |  | 2026-08-13: ジョブ ID `aca976fb-db10-47f1-847e-97ecf9b38ae5` で OCR を実行し、status: "completed" となったことを確認 |  |  |  |
@@ -173,7 +173,7 @@ OCR 読み取り精度向上
 |  | 2026-08-13: 主要な誤認識パターンとして「英数字頭文字」「記号」「漢字の部品類似」「異体字・旧字体」「語尾・助詞」を特定 |  |  |  |
 |  | 2026-08-13: XML の CONF 値が 0.998〜1.000 と高いにもかかわらず、実際には明らかな誤認識が含まれることを確認 |  |  |  |
 |  | 2026-08-13: 精度向上の方向性として「入力画像前処理」「config.yml パラメータ調整」「推論パイプライン見直し」「後処理」を整理 |  |  |  |
-|  | 2026-08-13: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記 |  |  |  |
+|  | 2026-08-13: `ocr-worker/docs/OW-WORK-LOG.md` に本タスクの作業ログを追記 |  |  |  |
 | OW003003 | 入力画像前処理の効果検証 | 2026-08-13 | 2026-08-13 | 改善調査 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -195,7 +195,7 @@ OCR 読み取り精度向上
 |  | なお、denoise（ノイズ除去）は機械的スキャンでありノイズがない前提で、今回は実施しない |  |  |  |
 |  | 各パターンで OCR を実行し、結果を `ocr-results-OW003003/` に保存する（baseline は OW003002 の結果を流用） |  |  |  |
 |  | 各ステップごとに結果を報告し、次のパターンを実施するかを確認する |  |  |  |
-|  | 最も効果的な前処理パターンを選定し、`ocr-worker/docs/work_log.md` / `ocr-worker/docs/tasks.md` に記録する |  |  |  |
+|  | 最も効果的な前処理パターンを選定し、`ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-TASKS.md` に記録する |  |  |  |
 |  | ### 詳細実施手順 |  |  |  |
 |  | #### 1. 前処理スクリプトの作成 |  |  |  |
 |  | `scripts/preprocess_image.py` を新規作成し、ZIP 内画像に対して以下の前処理を適用できるようにする |  |  |  |
@@ -221,8 +221,8 @@ OCR 読み取り精度向上
 |  | - 主な誤認識箇所（RAG→RAC、GPT-4→〓PT-4、LLM→lm、商→育 など）の改善状況を確認する |  |  |  |
 |  | - 「〓」出現数、明らかな誤認識箇所数、推定 CER を集計する |  |  |  |
 |  | #### 5. ドキュメント記録 |  |  |  |
-|  | - `ocr-worker/docs/work_log.md` に作業ログを追記する |  |  |  |
-|  | - `ocr-worker/docs/tasks.md` の OW003003【実施結果】欄に結果を追記する |  |  |  |
+|  | - `ocr-worker/docs/OW-WORK-LOG.md` に作業ログを追記する |  |  |  |
+|  | - `ocr-worker/docs/OW-TASKS.md` の OW003003【実施結果】欄に結果を追記する |  |  |  |
 |  | - 精度比較レポートを `ocr-results-OW003003/preprocess-comparison-report-OW003003.md` に作成する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-13: 5 パターンの入力画像前処理を適用し、OCR 精度を比較した（baseline は OW003002 の結果を流用） |  |  |  |
@@ -261,8 +261,8 @@ OCR 読み取り精度向上
 |  | 各パターンの OCR 結果と baseline を比較する |  |  |  |
 |  | 「〓」出現数、明らかな誤認識箇所数を集計する |  |  |  |
 |  | #### 5. ドキュメント記録 |  |  |  |
-|  | `ocr-worker/docs/work_log.md` に作業ログを追記する |  |  |  |
-|  | `ocr-worker/docs/tasks.md` の OW003004【実施結果】欄に結果を追記する |  |  |  |
+|  | `ocr-worker/docs/OW-WORK-LOG.md` に作業ログを追記する |  |  |  |
+|  | `ocr-worker/docs/OW-TASKS.md` の OW003004【実施結果】欄に結果を追記する |  |  |  |
 |  | 精度比較レポートを `ocr-results-OW003004/config-comparison-report-OW003004.md` に作成する |  |  |  |
 |  | ### 注意事項・リスク |  |  |  |
 |  | `score_thr` を下げすぎると、ノイズや見出し線まで文字として認識する可能性がある |  |  |  |
@@ -274,7 +274,7 @@ OCR 読み取り精度向上
 |  | 2026-08-13: すべてのパターンで baseline（sharpen_light_upscale_2x、〓 3 個）と同一の結果となり、config.yml パラメータ調整に効果なしと判断 |  |  |  |
 |  | 2026-08-13: **※後述の OW003005 で判明：ndl_layout submodule の `process_textblock.py` / `process.py` に `score_thr: float = 0.3` がハードコードされており、config.yml の値が無視されていたため、本タスクのパラメータ変更は実質的に検証になっていなかった** |  |  |  |
 |  | 2026-08-13: 精度比較レポート [ocr-results-OW003004/config-comparison-report-OW003004.md](ocr-results-OW003004/config-comparison-report-OW003004.md) を作成した |  |  |  |
-|  | 2026-08-13: `ocr-worker/docs/work_log.md` に本タスクの作業ログを追記した |  |  |  |
+|  | 2026-08-13: `ocr-worker/docs/OW-WORK-LOG.md` に本タスクの作業ログを追記した |  |  |  |
 |  | 2026-08-13: タスク完了日付を記載 |  |  |  |
 | OW003005 | OCR精度向上の統合検討と実装修正（config.yml score_thr 無視問題の修正と再検証） | 2026-08-13 | 2026-08-14 | 不具合修正 |
 |  | タスク詳細 |  |  |  |
@@ -288,7 +288,7 @@ OCR 読み取り精度向上
 |  | 5. ocr-worker 出力（XML / txt）もあわせて取得し、`./ocr-results-OW003005/<pattern>/` に保存する |  |  |  |
 |  | 6. 3 パターン分の PDF を目視確認し、レイアウト・文字認識・欠落行の違いを比較する |  |  |  |
 |  | 7. `ocr-results-OW003005/config-comparison-report-OW003005.md` を作成する |  |  |  |
-|  | 8. tasks.md の【実施結果】欩末にレポートリンクを追加し、タスク完了日付を記載する |  |  |  |
+|  | 8. OW-TASKS.md の【実施結果】欩末にレポートリンクを追加し、タスク完了日付を記載する |  |  |  |
 |  | ※前提：OW003003 で sharpen_light_upscale_2x が最も効果的、OW003004 で config.yml 調整に効果なし（ハードコーディングが原因と判明） |  |  |  |
 |  |  |  |  |  |
 |  | 1. config.yml パラメータ無視の原因調査と修正： |  |  |  |
@@ -321,7 +321,7 @@ OCR 読み取り精度向上
 |  | 2026-08-14: pattern-A/B/C を backend API 経由フルフローで再実行し、生成 PDF を取得して目視確認を実施
 |  | 2026-08-14: 精度比較レポート [ocr-results-OW003005/config-comparison-report-OW003005.md](ocr-results-OW003005/config-comparison-report-OW003005.md) を作成した |  |  |  |
 |  | 2026-08-14: 自動前処理統合（sharpen_light_upscale_2x）と表紙ページの残存誤認識対策は、本タスクでは score_thr 修正・再検証にスコープを絞り、今後のタスクとして保留とする |  |  |  |
-|  | 2026-08-14: `ocr-worker/docs/work_log.md` / `ocr-worker/docs/caveats.md` を更新
+|  | 2026-08-14: `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-CAVEATS.md` を更新
 |  | 2026-08-14: タスク完了日付を記載 |  |  |  |
 | OW003006 | sharpen_light_upscale_2x 自動前処理の ocr-worker 組み込み | 2026-08-14 | 2026-08-14 | 機能実装 |
 |  | タスク詳細 |  |  |  |
@@ -349,9 +349,9 @@ OCR 読み取り精度向上
 |  |    - 前処理 ON/OFF の「〓」出現数・誤認識箇所数を比較し、OW003003 と同等の効果を確認する |  |  |  |
 |  |    - 生成 PDF を `docker compose cp` で取得し、必要に応じて目視確認する |  |  |  |
 |  | 7. ドキュメントを更新する |  |  |  |
-|  |    - `ocr-worker/docs/work_log.md` に【実施予定】・【実施実績】を記載する |  |  |  |
-|  |    - `ocr-worker/docs/caveats.md` に前処理に関する注意事項を追記する |  |  |  |
-|  |    - 必要に応じて `ocr-worker/docs/ocr-worker-system-spec.md` を更新する |  |  |  |
+|  |    - `ocr-worker/docs/OW-WORK-LOG.md` に【実施予定】・【実施実績】を記載する |  |  |  |
+|  |    - `ocr-worker/docs/OW-CAVEATS.md` に前処理に関する注意事項を追記する |  |  |  |
+|  |    - 必要に応じて `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-14: `ocr-worker/app/main.py` に前処理関数 `_preprocess_image()` / `_preprocess_input_root()` を追加し、2倍アップスケール（LANCZOS）+ 軽度シャープニング（UnsharpMask radius=2, percent=80, threshold=3）を実装した |  |  |  |
 |  | 2026-08-14: 環境変数 `PREPROCESS_ENABLED`（デフォルト true）により前処理の ON/OFF を制御する機能を追加した |  |  |  |
@@ -362,7 +362,7 @@ OCR 読み取り精度向上
 |  | 2026-08-14: 前処理 ON のジョブ `ec9acd66-563f-41e0-8410-08619208e6e9` は status: completed となり、「〓」出現数が baseline（5個）から 3個に減少し、003.png・004.png でほぼ完全な認識を確認した |  |  |  |
 |  | 2026-08-14: 前処理 OFF のジョブ `e07faa8c-195b-4d36-bc7c-d44e0aa28582` は status: completed となり、OW003002 baseline と同等の「〓」出現数 5個を確認した |  |  |  |
 |  | 2026-08-14: 精度比較レポート [ocr-results-OW003006/preprocess-integration-report-OW003006.md](ocr-results-OW003006/preprocess-integration-report-OW003006.md) を作成した |  |  |  |
-|  | 2026-08-14: `ocr-worker/docs/work_log.md` / `ocr-worker/docs/caveats.md` / `ocr-worker/docs/ocr-worker-system-spec.md` を更新した |  |  |  |
+|  | 2026-08-14: `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-CAVEATS.md` / `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新した |  |  |  |
 
 | OW003007 | 追加前処理（4x アップスケール、局所的二値化、コントラスト強調など）の効果検証 | 2026-08-14 | 2026-08-15 | 改善調査 |
 |  | タスク詳細 |  |  |  |
@@ -377,7 +377,7 @@ OCR 読み取り精度向上
 |  | 5. `docker compose cp` で各ジョブの PDF および ocr-worker 出力（XML / txt）を `ocr-results-OW003007/<pattern>/` に取得する |  |  |  |
 |  | 6. 各パターンの「〓」出現数、明らかな誤認識箇所数、目視確認結果を集計する |  |  |  |
 |  | 7. 精度比較レポート `ocr-results-OW003007/additional-preprocess-report-OW003007.md` を作成する |  |  |  |
-|  | 8. `ocr-worker/docs/work_log.md` と `ocr-worker/docs/tasks.md` の本タスク欄に実施結果を追記する |  |  |  |
+|  | 8. `ocr-worker/docs/OW-WORK-LOG.md` と `ocr-worker/docs/OW-TASKS.md` の本タスク欄に実施結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-14: `scripts/preprocess_image.py` に 6 パターンの前処理を追加した（4x_upscale / 4x_upscale_sharpen / local_binarization / local_binarization_sharpen / contrast_strong / contrast_strong_4x） |  |  |  |
 |  | 2026-08-14: `local_binarization` は OpenCV 非依存で PIL/numpy/scipy なしの純粋 numpy 畳み込みで実装した |  |  |  |
@@ -393,7 +393,7 @@ OCR 読み取り精度向上
 |  | 2026-08-15: ジョブID: baseline_2x=`10ddd822-8aad-43ea-a38d-1f67048fa3c9`, 4x_upscale=`9da8bd3f-5751-4cac-9b88-47384c5be083`, 4x_upscale_sharpen=`88828d53-b030-494f-b187-36e32e553649`, local_binarization=`904148bd-6aae-4e2b-a575-e890a3110230`, local_binarization_sharpen=`5dfd249c-6046-4411-916b-af914fc50750`, contrast_strong=`74048f6b-37ec-498c-99ac-cfcc6483f478`, contrast_strong_4x=`76f20761-8c17-4fd4-9823-42362cebffca` |  |  |  |
 |  | 2026-08-15: 各パターン・ページごとの「〓」出現数を集計する `scripts/count_fui_per_page_003007.py` を作成した |  |  |  |
 |  | 2026-08-15: 精度比較レポート [ocr-results-OW003007/additional-preprocess-report-OW003007.md](ocr-results-OW003007/additional-preprocess-report-OW003007.md) を作成した |  |  |  |
-|  | 2026-08-15: `ocr-worker/docs/work_log.md` に OW003007 の実施実績を追記した |  |  |  |
+|  | 2026-08-15: `ocr-worker/docs/OW-WORK-LOG.md` に OW003007 の実施実績を追記した |  |  |  |
 |  | 主な結果：「〓」出現数（全 txt 合計）は local_binarization/local_binarization_sharpen=135、contrast_strong=160、4x_upscale_sharpen=178、contrast_strong_4x=176、baseline_2x=194、4x_upscale=202 だった |  |  |  |
 |  | 主な結果：local_binarization 系は文字潰れによる誤認識が増加し、contrast_strong は認識欠落が多かった |  |  |  |
 |  | 結論：今回試した追加前処理（4x アップスケール、局所的二値化、強コントラスト）は、OW003006 で採用済みの 2x アップスケール＋軽度シャープニングを超える明確な改善は確認できず、新たな前処理として追加導入することは推奨されない |  |  |  |
@@ -442,7 +442,7 @@ OCR 処理の安定性・スケーラビリティ向上（ページ数に依存�
 |  | `ocr-worker/ndlocr_cli_patches/inference.py` のページループに `gc.collect()` と `torch.cuda.empty_cache()` を追加する |  |  |  |
 |  | コンテナをビルド・再起動し、`/health` が正常に返ることを確認する |  |  |  |
 |  | 多ページジョブ（50/100/200/500/999 ページ）でメモリ使用量をモニタリングし、OOM が解消されることを検証する |  |  |  |
-|  | `ocr-worker/docs/tasks.md` / `work_log.md` / `caveats.md` を更新する |  |  |  |
+|  | `ocr-worker/docs/OW-TASKS.md` / `OW-WORK-LOG.md` / `OW-CAVEATS.md` を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-27: 原因調査を実施。257 ページジョブで page 3 付近で OOM（Exit code 137）が発生していた |  |  |  |
 |  | 2026-08-27: `ndlocr_cli` 内で `copy.deepcopy(input_data)` による画像データのディープコピー、`Trainer.predict()` の繰り返し呼び出しによる DataLoader / テンソル累積、ページループでのガベージコレクション不足が複合していると特定 |  |  |  |
@@ -456,7 +456,7 @@ OCR 処理の安定性・スケーラビリティ向上（ページ数に依存�
 |  | 2026-08-27: 3 ページジョブで backend API 経由の OCR フルフローが `completed` になることを確認 |  |  |  |
 |  | 2026-08-27: 50 ページジョブを開始し、`docker stats` でメモリ使用量をモニタリング。page 14 時点までに OOM は発生せず、メモリ使用量は 4.3GiB〜4.9GiB / 7.75GiB の範囲で推移し、明らかな増加傾向は見られなかった |  |  |  |
 |  | 2026-08-27: 999 ページまでのフルスケールテストは処理時間（1 ページあたり約 80〜120 秒）のため今回は実施せず、別途長時間実行テストとして予定 |  |  |  |
-|  | 2026-08-27: `ocr-worker/docs/work_log.md` / `caveats.md` / 本ファイルを更新 |  |  |  |
+|  | 2026-08-27: `ocr-worker/docs/OW-WORK-LOG.md` / `OW-CAVEATS.md` / 本ファイルを更新 |  |  |  |
 
 ---
 

@@ -152,11 +152,11 @@ OS の外観モードがダークの場合、`main.tsx` の `initTheme()` が `h
 ```
 localapp/                         # ローカルアプリルート
 ├── docs/                         # localapp 専用ドキュメント
-│   ├── localapp-spec.md          # 本仕様書
+│   ├── LA-LOCALAPP-SPEC.md          # 本仕様書
 │   ├── setup-log.md              # 環境構築ログ
-│   ├── tasks.md                  # タスク管理表
-│   ├── caveats.md                # 注意事項
-│   └── work_log.md               # 作業ログ
+│   ├── LA-TASKS.md                  # タスク管理表
+│   ├── LA-CAVEATS.md                # 注意事項
+│   └── LA-WORK-LOG.md               # 作業ログ
 ├── src/                          # フロントエンドコード（React + Vite）
 │   ├── App.tsx                   # メインアプリケーションコンポーネント
 │   ├── main.tsx                  # React エントリポイント
@@ -204,11 +204,11 @@ localapp/                         # ローカルアプリルート
 ```
 localapp/                         # ローカルアプリルート
 ├── docs/                         # localapp 専用ドキュメント
-│   ├── localapp-spec.md          # 本仕様書
+│   ├── LA-LOCALAPP-SPEC.md          # 本仕様書
 │   ├── setup-log.md              # 環境構築ログ
-│   ├── tasks.md                  # タスク管理表
-│   ├── caveats.md                # 注意事項
-│   └── work_log.md               # 作業ログ
+│   ├── LA-TASKS.md                  # タスク管理表
+│   ├── LA-CAVEATS.md                # 注意事項
+│   └── LA-WORK-LOG.md               # 作業ログ
 ├── src/                          # フロントエンドコード（React + Vite）
 │   ├── App.tsx                   # メインアプリケーションコンポーネント
 │   ├── main.tsx                  # React エントリポイント
@@ -257,5 +257,5 @@ localapp/                         # ローカルアプリルート
 
 ## 8. 注意事項
 
-- 各モジュール共通の注意事項は [../../docs/caveats.md](../../docs/caveats.md) を参照
-- ローカルアプリ固有の注意事項は [./caveats.md](./caveats.md) を参照
+- 各モジュール共通の注意事項は [../../docs/OT-CAVEATS.md](../../docs/OT-CAVEATS.md) を参照
+- ローカルアプリ固有の注意事項は [./LA-CAVEATS.md](./LA-CAVEATS.md) を参照

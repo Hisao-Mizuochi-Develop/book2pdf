@@ -19,7 +19,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Modules: backend/, frontend/, localapp/, ocr-worker/
 - CPU-only execution; no GPU required.
 - For detailed rules, load skills from .cline/skills/ as needed.
-- See docs/agent-skills-guide.md for the AgentSkills overview.
+- See docs/OT-AGENT-SKILLS-GUIDE.md for the AgentSkills overview.
 
 ## Approval Required
 - All docs/ changes require user approval.

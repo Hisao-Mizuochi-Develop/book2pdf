@@ -35,7 +35,7 @@ metadata:
 3. **記録場所**
    - タスク管理表 → `<module>/docs/tasks.md`
    - 作業ログ → `<module>/docs/work_log.md`
-   - 全体横断 → `./docs/work_log.md`, `./docs/tasks.md`
+   - 全体横断 → `./docs/OT-WORK-LOG.md`, `./docs/OT-TASKS.md`
     - 作業の記録はタスク詳細欄に箇条書きで記載する
 
 4. **計画の変更**

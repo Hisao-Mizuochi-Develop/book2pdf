@@ -17,7 +17,7 @@
 | ローカルスタンドアローンアプリ | 電子書籍画面のキャプチャ＋不要部分のトリミング | Tauri v2 + Rust + React + Vite |
 | Web OCR/PDF システム | ZIP 画像 → OCR → 検索可能 PDF 生成 | Next.js 15 + FastAPI + Docker + ndlocr_cli |
 
-各システムの選定理由や非機能要件などの詳細は `docs/design-decisions.md` を参照してください。
+各システムの選定理由や非機能要件などの詳細は `docs/SY-DESIGN-DECISIONS.md` を参照してください。
 
 ## 3. Web システムの技術選定
 
@@ -156,10 +156,10 @@ backend/
 │       ├── zip_extractor.py      # ZIP 展開・画像抽出
 │       └── ocr_engine.py         # ndlocr_cli ラッパー・OCR 実行
 ├── docs/                         # backend 専用ドキュメント
-│   ├── backend-system-spec.md    # 本仕様書
-│   ├── caveats.md                # タスク実施中の注意事項
-│   ├── work_log.md               # タスク作業ログ
-│   └── tasks.md                  # タスク管理表
+│   ├── BE-BACKEND-SYSTEM-SPEC.md    # 本仕様書
+│   ├── BE-CAVEATS.md                # タスク実施中の注意事項
+│   ├── BE-WORK-LOG.md               # タスク作業ログ
+│   └── BE-TASKS.md                  # タスク管理表
 └── tests/                        # テストコード
     ├── __init__.py               # tests パッケージの初期化
     ├── conftest.py               # pytest 用共通設定（EXTRACT_BASE_DIR 上書きなど）
@@ -224,10 +224,10 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf
 ## 12. 注意事項
 
 - ndlocr_cli は公式 Docker スクリプトがあるが、今回は自分で Dockerfile を組み立てる
-  - `ocr-worker` 用 Dockerfile の詳細は `../ocr-worker/docs/caveats.md` を参照
+  - `ocr-worker` 用 Dockerfile の詳細は `../ocr-worker/docs/OW-CAVEATS.md` を参照
 - CPU 実行のため、OCR 処理には時間がかかることを想定
 - ndlocr_cli の import パスや関数 signature はリポジトリの実際のコードを確認する必要がある
 - 縦書き PDF 生成は高度な処理となるため、まず横書きで動作確認してから段階的に対応する
-- タスク実施中に発生した注意すべき事象は [`caveats.md`](./caveats.md) に記録している。随時参照すること。
+- タスク実施中に発生した注意すべき事象は [`BE-CAVEATS.md`](./BE-CAVEATS.md) に記録している。随時参照すること。
 - 2026-08-11: `ocr-worker` コンテナのビルドとサンプル画像での OCR 実行に成功した
-  - 詳細は `../ocr-worker/docs/work_log.md` および `../ocr-worker/docs/caveats.md` を参照
+  - 詳細は `../ocr-worker/docs/OW-WORK-LOG.md` および `../ocr-worker/docs/OW-CAVEATS.md` を参照

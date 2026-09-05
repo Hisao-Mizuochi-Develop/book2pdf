@@ -46,9 +46,9 @@
 ```
 frontend/                         # フロントエンドルート
 ├── docs/                         # frontend 専用ドキュメント
-│   ├── frontend-system-spec.md   # 本仕様書
-│   ├── work_log.md               # 作業ログ
-│   └── tasks.md                  # タスク管理表
+│   ├── FE-FRONTEND-SYSTEM-SPEC.md   # 本仕様書
+│   ├── FE-WORK-LOG.md               # 作業ログ
+│   └── FE-TASKS.md                  # タスク管理表
 ├── src/                          # アプリケーションコード
 │   ├── app/                      # App Router ページディレクトリ
 │   │   ├── page.tsx              # ZIP アップロード画面（トップページ）
@@ -71,9 +71,9 @@ frontend/                         # フロントエンドルート
 ```
 frontend/                         # フロントエンドルート
 ├── docs/                         # frontend 専用ドキュメント
-│   ├── frontend-system-spec.md   # 本仕様書
+│   ├── FE-FRONTEND-SYSTEM-SPEC.md   # 本仕様書
 │   ├── setup-log.md              # 環境構築ログ
-│   └── tasks.md                  # タスク管理表
+│   └── FE-TASKS.md                  # タスク管理表
 ├── src/                          # アプリケーションコード
 │   ├── app/                      # App Router ページディレクトリ
 │   │   ├── page.tsx              # ZIP アップロード画面（トップページ）

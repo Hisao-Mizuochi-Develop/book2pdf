@@ -15,4 +15,4 @@
 - `GET /api/jobs/{job_id}` の接続に失敗した場合は、最大 3 回まで 1 秒 / 2 秒 / 4 秒の指数関数的バックオフでリトライする
 - リトライ前には「ジョブ状態の取得を再試行します」という進捗メッセージを UI に通知し、ユーザーに一過性の通信エラーであることを伝える
 - バックエンド側の進捗通知は現状 `JobResponse` の拡張で対応しており、将来的に専用の `/progress` エンドポイントを検討してもよい
-- 詳細なプロトコルやペイロード形式は [`docs/progress-notification-spec.md`](progress-notification-spec.md) を参照
+- 詳細なプロトコルやペイロード形式は [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md) を参照

@@ -23,7 +23,7 @@ metadata:
 2. **実施前のルール確認**
     - `.clinerules` を `read_file` で読み込み確認する
     - `<module>/docs/tasks.md` でタスク種別を確認する
-    - テスト・検証・調査系タスクの場合は `docs/integration-test-guide.md` を読み込む
+    - テスト・検証・調査系タスクの場合は `docs/OT-INTEGRATION-TEST-GUIDE.md` を読み込む
 
 ## Step-by-step Instructions
 
