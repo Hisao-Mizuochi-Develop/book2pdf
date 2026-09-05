@@ -14,6 +14,16 @@ metadata:
 ## Overview
 本スキルは、タスクの実行を「前処理・処理・後処理」の3フェーズで統一し、Git 運用と合わせて定めます。
 
+## モジュール識別子
+本スキルで参照するモジュール識別子（2文字）とその対応は以下の通りです。
+
+- `SY` … System/全体設計・仕様、全体基盤、結合試験、性能試験、等
+- `BE` … backend
+- `FE` … frontend
+- `OW` … ocr-worker
+- `LA` … localapp
+- `OT` … 横断・その他（other）
+
 ## Step-by-step Instructions
 
 ### Phase 1: Pre-work
