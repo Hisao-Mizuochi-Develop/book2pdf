@@ -100,5 +100,6 @@
 |  | 2026-09-06: `.cline/skills/workflow-runner/SKILL.md` に「タスク着手時確認テンプレート」を追加した |  |  |  |
 |  | 2026-09-06: Phase 1 Gate 1 / Phase 2 Gate 2 でテンプレートを参照するよう更新した |  |  |  |
 |  | 2026-09-06: `.clinerules` の識別子選択基準と `workflow-runner` 利用ルールを整備した |  |  |  |
+|  | 2026-09-06: コミット `f3a18b34` として `.clinerules`, `.cline/skills/workflow-runner/SKILL.md`, `docs/SY-TASKS.md` を一括コミットした |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | `.clinerules` の変更は元々 `SY007001` の一環として実施されたものだが、当時未コミットのまま残っていたため、本タスクでまとめてコミットした |  |  |  |
