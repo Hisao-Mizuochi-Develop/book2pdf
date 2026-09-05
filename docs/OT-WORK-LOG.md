@@ -2,6 +2,33 @@
 
 本ドキュメントは、book2pdf プロジェクトの複数モジュールにまたがる全体横断の作業ログです。
 
+## 2026-09-06 OT002003 `docs/OT-CAVEATS.md` の内容を各モジュール `*-CAVEATS.md` に再配布し、`OT-CAVEATS.md` を削除する
+
+### 目的
+
+`docs/OT-CAVEATS.md` にまとめられていたモジュール横断の注意事項を、各モジュール固有の内容は各モジュールの `*-CAVEATS.md` に、横断的な参照は `docs/SY-CAVEATS.md` に集約し、重複管理を解消する。
+
+### 実施内容
+
+- `docs/OT-CAVEATS.md` に記載されていた backend / localapp / ocr-worker 固有の注意事項を、それぞれ `backend/docs/BE-CAVEATS.md` / `localapp/docs/LA-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` に移動
+- frontend で既存の `frontend/docs/FE-CAVEATS.md` 等でカバーされていた項目は `docs/OT-CAVEATS.md` から削除
+- モジュール横断の参照を `docs/SY-CAVEATS.md` に新規作成して集約
+- `docs/OT-TASKS.md` に `OT002003` を完了として追記
+- `docs/OT-CAVEATS.md` を削除
+
+### 結果
+
+- 各モジュールの `*-CAVEATS.md` が自モジュール固有の注意事項を保持するようになった
+- 横断的な注意事項は `docs/SY-CAVEATS.md` に集約された
+- `docs/OT-CAVEATS.md` が削除され、重複した注意事項の一元管理が解消された
+
+### コミット
+
+`634f33af` — OT002003: Redistribute OT-CAVEATS.md items into per-module CAVEATS.md
+
+---
+
+
 ## 2026-09-04 .clinerules §8 import/use/from コメント追加（全モジュール横断）
 
 ### 目的
