@@ -10,6 +10,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Never use write_to_file for existing documents; use replace_in_file instead.
 - Always propose changes before implementing.
 - Maintain working tree clean before starting a task.
+- **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
 
 ## User Communication
 - When asking the user for decisions, use free-form questions rather than multiple-choice options.
