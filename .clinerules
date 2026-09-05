@@ -115,3 +115,4 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Plan モード・Act モードのいずれの場合も、上記承認ゲートをスキップしない
 - タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 / Gate 2 を取得する
 - Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
+- When reading a skill file, always use the actual file via `read_files`; never rely on recalled or summarized content from memory.

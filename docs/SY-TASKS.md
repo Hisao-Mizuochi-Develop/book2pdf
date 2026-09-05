@@ -103,3 +103,15 @@
 |  | 2026-09-06: コミット `f3a18b34` として `.clinerules`, `.cline/skills/workflow-runner/SKILL.md`, `docs/SY-TASKS.md` を一括コミットした |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | `.clinerules` の変更は元々 `SY007001` の一環として実施されたものだが、当時未コミットのまま残っていたため、本タスクでまとめてコミットした |  |  |  |
+| SY007003 | スキル読み込み時の `read_files` 必須ルールを `.clinerules` と `workflow-runner/SKILL.md` に追加する | 2026-09-06 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` の **Workflow Runner Usage** に、スキルファイル読み込み時は必ず `read_files` で実ファイルを開く規則を追加する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の **選択的スキル読込ルール** に、同様の `read_files` 必須規則を追加する |  |  |  |
+|  | `docs/SY-TASKS.md` に本タスクを起票する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-06: `.clinerules` に「スキルファイル読み込みは `read_files` で実ファイルを開く」ルールを追加した |  |  |  |
+|  | 2026-09-06: `.cline/skills/workflow-runner/SKILL.md` に「スキルファイル読み込みは `read_files` で実ファイルを開く」ルールを追加した |  |  |  |
+|  | 2026-09-06: `docs/SY-TASKS.md` に `SY007003` を起票した |  |  |  |
+|  | 【移行履歴】 |  |  |  |
+|  | 元々 `SY007001` / `SY007002` の整備作業中に指摘された運用漏れであり、個別の修正タスクとして分離した |  |  |  |
