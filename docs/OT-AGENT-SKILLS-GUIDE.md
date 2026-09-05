@@ -71,10 +71,10 @@
 
 タスク管理の基本単位と記録ルールを定めます。
 
-- タスク No は「モジュール接頭辞（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」の計8文字とする（例：`OW003001`）
-  - 接頭辞: `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
+- タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」の計8文字とする（例：`OW003001`）
+  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
 - タスク粒度は数時間〜1日以内で完了できる単位とする
-- 記録は `<module>/docs/tasks.md` と `<module>/docs/work_log.md` に行う
+- 記録は `<module>/docs/<モジュール識別子>-TASKS.md` と `<module>/docs/<モジュール識別子>-WORK-LOG.md` に行う
 - 【計画】欄に記載した事柄は削除せず、実施しない場合は理由を追記する
 
 ### 3.4 `test-manager`
@@ -92,7 +92,7 @@
   - 考察・結論・今後の検討事項
 - 付属データ（CSV、テキスト、画像、比較用 PDF 等）はレポートと同じディレクトリに配置する
 - PDF 目視確認時は `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/results/ocr-results-<タスクNo>/<パターン名>/pdfs/` で取得する
-- 作成後は必ず `test_cases/README.md` のインデックスと `<module>/docs/tasks.md` の【実施結果】にリンクを追加する
+- 作成後は必ず `test_cases/README.md` のインデックスと `<module>/docs/<モジュール識別子>-TASKS.md` の【実施結果】にリンクを追加する
 
 詳細な配置ルールは `.cline/skills/test-manager/references/testdata-locations.md` を参照。
 

@@ -508,7 +508,7 @@ git status --short
 
 ### 注意事項
 
-- 横断的なタスクは原則 `./docs/OT-TASKS.md` で管理し、`<module>/docs/tasks.md` にはそのモジュール固有のタスクのみを記載する
+- 横断的なタスクは原則 `./docs/OT-TASKS.md` で管理し、`<module>/docs/<モジュール識別子>-TASKS.md` にはそのモジュール固有のタスクのみを記載する
 - 今後 `./docs/` 配下を変更する際は `.clinerules` に基づき、ユーザーに変更箇所を提案・許可を得てから実施する
 
 ---

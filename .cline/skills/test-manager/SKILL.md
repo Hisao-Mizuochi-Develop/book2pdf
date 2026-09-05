@@ -22,7 +22,7 @@ metadata:
 
 2. **実施前のルール確認**
     - `.clinerules` を `read_file` で読み込み確認する
-    - `<module>/docs/tasks.md` でタスク種別を確認する
+    - `<module>/docs/<モジュール識別子>-TASKS.md` でタスク種別を確認する
     - テスト・検証・調査系タスクの場合は `docs/OT-INTEGRATION-TEST-GUIDE.md` を読み込む
 
 ## Step-by-step Instructions
@@ -45,7 +45,7 @@ metadata:
    - `docker compose cp` で成果物をホスト側にコピー
 
 3. **単体動作確認のみの例外**
-   - `tasks.md` に「単体動作確認（backend 連携なし）」と明記されている場合のみ、ocr-worker を直接実行してよい
+   - `<モジュール識別子>-TASKS.md` に「単体動作確認（backend 連携なし）」と明記されている場合のみ、ocr-worker を直接実行してよい
    - それ以外の検証は必ず backend API 経由で実施する
 
 4. **検証レポートの作成**

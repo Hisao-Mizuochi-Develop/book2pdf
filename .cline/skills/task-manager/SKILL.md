@@ -2,7 +2,7 @@
 name: task-manager
 description: |
   Manage tasks, work logs, and progress tracking for the book2pdf project.
-  Activate when creating or updating tasks.md, work_log.md, or task entries.
+  Activate when creating or updating <MODULE>-TASKS.md, <MODULE>-WORK-LOG.md, or task entries.
 compatibility: VS Code + Cline
 metadata:
   author: book2pdf-team
@@ -17,10 +17,11 @@ metadata:
 ## Step-by-step Instructions
 
 1. **タスクNo体系**
-   - 形式: モジュール接頭辞(2桁) + ユースケースNo(3桁) + 通番(3桁)（計8文字）
-   - 接頭辞:
-     - `BE` … backend
+   - 形式: モジュール識別子(2桁) + ユースケースNo(3桁) + 通番(3桁)（計8文字）
+   - 識別子:
+     - `SY` … System/全体設計・仕様、全体基盤、結合試験、性能試験、等
      - `FE` … frontend
+     - `BE` … backend
      - `OW` … ocr-worker
      - `LA` … localapp
      - `OT` … 横断・その他（other）
@@ -33,8 +34,8 @@ metadata:
     - ただし、達成可能な単位を保ち、細部を無理に別タスクに分けすぎない
 
 3. **記録場所**
-   - タスク管理表 → `<module>/docs/tasks.md`
-   - 作業ログ → `<module>/docs/work_log.md`
+   - タスク管理表 → `<module>/docs/<MODULE>-TASKS.md`
+   - 作業ログ → `<module>/docs/<MODULE>-WORK-LOG.md`
    - 全体横断 → `./docs/OT-WORK-LOG.md`, `./docs/OT-TASKS.md`
     - 作業の記録はタスク詳細欄に箇条書きで記載する
 

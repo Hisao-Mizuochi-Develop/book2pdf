@@ -22,8 +22,8 @@ metadata:
 2. `git status` で working tree clean を確認
 3. `git checkout main && git pull` で main ブランチを最新化
 4. `git checkout -b feature/<タスクNo>-<短縮名>` でブランチ作成
-5. `<module>/docs/tasks.md` の【計画】に実施手順を記載
-6. `<module>/docs/work_log.md` に【実施予定】エントリを作成
+5. `<module>/docs/<モジュール識別子>-TASKS.md` の【計画】に実施手順を記載
+6. `<module>/docs/<モジュール識別子>-WORK-LOG.md` に【実施予定】エントリを作成
    - 日時・目的・前提条件
    - 実施予定コマンド
    - 想定される結果や注意点
@@ -42,14 +42,14 @@ metadata:
    - 「合格」の明示的な判定を記録
    - `docs/` 配下の変更がある場合はユーザー承認を取得
 2. **ドキュメント更新**（実装完了後）:
-   - `tasks.md` の【実施結果】に追記
-   - `work_log.md` に【実施実績】セクションを追記
-   - `caveats.md` に注意事項を追記
-   - 評価・テストを含むタスクはレポートを作成し、`tasks.md` にリンクを追加
+   - `<モジュール識別子>-TASKS.md` の【実施結果】に追記
+   - `<モジュール識別子>-WORK-LOG.md` に【実施実績】セクションを追記
+   - `<モジュール識別子>-CAVEATS.md` に注意事項を追記
+   - 評価・テストを含むタスクはレポートを作成し、`<モジュール識別子>-TASKS.md` にリンクを追加
    - 仕様書ドキュメントの「フォルダ・ファイル構成」セクションを更新した場合は反映を確認
 3. `git add -A && git commit -m "<タスクNo>: <内容>"`
 4. `git checkout main && git merge feature/<タスクNo>-<xxx>`
-5. `tasks.md` に完了日付を記載
+5. `<モジュール識別子>-TASKS.md` に完了日付を記載
 6. ユーザーにタスク完了を報告
 
 ## Common Edge Cases
