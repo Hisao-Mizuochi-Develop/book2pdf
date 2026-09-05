@@ -94,4 +94,26 @@
 |  | 2026-09-03: localapp OCR タイムアウトの原因調査を実施し、タイムアウト値の管理方法（設定ファイル vs ハードコード vs 環境変数）を明確化した — 調査報告書 [localapp/docs/LA-TIMEOUT-INVESTIGATION-REPORT-OT003001.md](../localapp/docs/LA-TIMEOUT-INVESTIGATION-REPORT-OT003001.md) |  |  |  |
 |  | 2026-09-03: `localapp/src-tauri/src/config.rs` に `http_client_timeout_sec` / `upload_timeout_sec` / `ocr_request_timeout_sec` / `poll_request_timeout_sec` を追加し、すべてのタイムアウト値を設定ファイルで一元管理できるようにした |  |  |  |
 |  | 2026-09-03: `localapp/src-tauri/src/commands/backend_api.rs` と `backend_api_impl.rs` のハードコードされたタイムアウト値を、設定ファイルから読み込んだ値を参照するように変更した |  |  |  |
-|  | 2026-09-03: 本タスク完了。タスク完了日付を 2026-09-03 に記入 |  |  |  |
+|  | 2026-09-03: 本タスク完了。タスク完了日付を 2026-09-03 に記入
+
+---
+
+## ユースケースNo | 007
+
+ユースケース
+`OT` に誤分類された System / 全体設計タスクの切り出しと運用ルール整備
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| OT007001 | `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する | 2026-09-05 | 2026-09-05 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `docs/OT-TASKS.md` に本タスク（OT007001）を追記する |  |  |  |
+|  | `docs/SY-TASKS.md` を新規作成し、元 `OT001001` / `OT003001` に含まれていた System / 全体設計・仕様策定部分を `SY` タスクとして移行記録する |  |  |  |
+|  | `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加する |  |  |  |
+|  | `workflow-runner/SKILL.md` v2.0 を新規作成し、4 フェーズワークフローと選択的スキル読込を定義する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-05: `docs/OT-TASKS.md` に本タスク（OT007001）を追記した |  |  |  |
+|  | 2026-09-05: `docs/SY-TASKS.md` を新規作成し、元 `OT001001` / `OT003001` の System / 全体設計・仕様策定部分を `SY` タスクとして分離記録した |  |  |  |
+|  | 2026-09-05: `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加した |  |  |  |
+|  | 2026-09-05: `.cline/skills/workflow-runner/SKILL.md` を v2.0 に更新し、4 フェーズワークフローと選択的スキル読込を定義した |  |  |  |

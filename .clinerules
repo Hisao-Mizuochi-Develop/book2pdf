@@ -24,3 +24,60 @@ Communicate in Japanese. Prioritize user approval over speed.
 ## Approval Required
 - All docs/ changes require user approval.
 - Test data changes require user approval.
+
+## Task Identifier Rules
+
+- `SY` = System / 全体設計・仕様・横断基盤
+  - 対象: システム全体のアーキテクチャ設計、仕様策定、コーディング規約、横断基盤・運用ルールの整備
+  - 成果物: `docs/SY-*.md`, `.clinerules` など全体ルール
+  - タスク管理: `docs/SY-TASKS.md`
+- `BE` = backend / `FE` = frontend / `LA` = localapp / `OW` = ocr-worker
+  - 対象: 各モジュール固有の実装・テスト・ドキュメント
+  - タスク管理: `<module>/docs/<識別子>-TASKS.md`
+- `OT` = 横断・その他
+  - 対象: 複数モジュールにまたがる実装作業、結合テスト、横断的な作業記録の整理
+  - タスク管理: `docs/OT-TASKS.md`
+  - 本来 `SY` に該当する作業が `OT` に含まれている場合は、実施内容を `docs/SY-TASKS.md` に分離記録し、`OT` タスクからは設計・仕様部分を除く
+
+## Skill Selection Matrix (3-layer)
+
+タスク実行時は、以下の 3 層マトリックスを使って必要最小限のスキルセットを選択する。
+
+### Layer 1: モジュール接頭辞
+
+| 接頭辞 | 対象領域 | 必須スキル |
+|---|---|---|
+| `SY` | System / 全体設計・仕様・横断基盤 | `workflow-runner`, `file-modifier` |
+| `BE` | backend | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `FE` | frontend | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `LA` | localapp | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `OW` | ocr-worker | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `OT` | 横断・その他 | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+
+### Layer 2: 活動タイプ
+
+活動に応じて以下のスキルを追加する。
+
+| 活動コード | 活動内容 | 追加スキル |
+|---|---|---|
+| `I` | 調査 / 調べ物 | `search_codebase`, `fetch_web_content` |
+| `D` | 設計 / 仕様作成 | `file-modifier`（ドキュメント編集） |
+| `C` | コーディング / 実装 | `code-generator` |
+| `R` | レビュー / 監査 | `search_codebase`, `test-manager` |
+| `T` | テスト / 検証 | `test-manager` |
+
+### Layer 3: 承認ゲート
+
+以下のフェーズ間ではユーザー承認を得てから進める。
+
+| ゲート | タイミング |
+|---|---|
+| Gate 1 | Phase 1「コンテキスト読込・タスク解析」完了後 |
+| Gate 2 | Phase 2「スキル選択・実行計画」提示後 |
+| Gate 3 | 破壊的変更を含む Phase 4 最終報告前 |
+
+## Workflow Runner Usage
+
+- タスク開始時は必ず `workflow-runner` スキルを最初に読み込む
+- `workflow-runner/SKILL.md` に定義された 4 フェーズワークフローに従う
+- 上記承認ゲートをスキップしない
