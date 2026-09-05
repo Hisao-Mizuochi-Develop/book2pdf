@@ -535,3 +535,17 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - テスト用 curl で ZIP アップロードする際は、`-F "file=@...;type=application/zip"` のように Content-Type を明示しないと、backend が ZIP 以外として拒否する
 - localapp 側の reqwest クライアントは `/ocr` 受付までのタイムアウトを短く（60 秒）設定し、完了まではポーリングで待つ
 
+---
+
+## 16. Docker Compose 結合テストに関する注意事項（OT002003）
+
+### OCR タイムアウト設定
+
+- OCR 実行時は ndlocr_cli のモデル初期化に時間がかかるため、結合テストで cURL などを使う場合は `--max-time 600` など長めのタイムアウトを設定してください
+- 性能テストは `LOG_LEVEL=DEBUG` の設定を前提としています
+
+### 進捗通知
+
+- バックエンド側の進捗通知は現状 `JobResponse` の拡張で対応しており、将来的に専用の `/progress` エンドポイントを検討してもよい
+- 詳細なプロトコルやペイロード形式は [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](../docs/SY-PROGRESS-NOTIFICATION-SPEC.md) を参照
+

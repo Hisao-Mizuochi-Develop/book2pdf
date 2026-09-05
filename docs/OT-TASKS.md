@@ -65,6 +65,19 @@
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `./docs/OT-CAVEATS.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した |  |  |  |
 |  | 2026-08-12: 各モジュール固有の注意事項については `backend/docs/BE-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` へのリンクを設置した |  |  |  |
+| OT002003 | `docs/OT-CAVEATS.md` の内容を各モジュールの `*-CAVEATS.md` に再配布し、OT-CAVEATS.md を削除する | 2026-09-06 | 2026-09-06 | ドキュメント整理 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `docs/OT-CAVEATS.md` に記載されているモジュール固有の注意事項を `backend/docs/BE-CAVEATS.md` / `localapp/docs/LA-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` に移動する |  |  |  |
+|  | `frontend/docs/FE-CAVEATS.md` で既にカバーされている項目は `docs/OT-CAVEATS.md` から削除するのみとする |  |  |  |
+|  | 横断的な参照だけを `docs/SY-CAVEATS.md` に集約し、新規作成する |  |  |  |
+|  | 再配布完了後、`docs/OT-CAVEATS.md` を削除する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-06: `backend/docs/BE-CAVEATS.md` に OCR タイムアウト設定、性能テストの `LOG_LEVEL=DEBUG` 前提、進捗通知の `JobResponse` 拡張と将来の `/progress` エンドポイント方針を追加した |  |  |  |
+|  | 2026-09-06: `localapp/docs/LA-CAVEATS.md` に HTTP ポーリング優先、1 秒間隔 / 10 秒タイムアウト、指数関数的バックオフリトライ、リトライ前の進捗メッセージを追加した |  |  |  |
+|  | 2026-09-06: `ocr-worker/docs/OW-CAVEATS.md` に OCR 呼び出し側の `--max-time 600` タイムアウト設定を追加した |  |  |  |
+|  | 2026-09-06: `docs/SY-CAVEATS.md` を新規作成し、`docs/SY-PROGRESS-NOTIFICATION-SPEC.md` への横断的な参照を集約した |  |  |  |
+|  | 2026-09-06: `docs/OT-CAVEATS.md` を削除した |  |  |  |
 
 ---
 
