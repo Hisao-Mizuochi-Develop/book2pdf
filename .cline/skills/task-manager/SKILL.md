@@ -18,13 +18,14 @@ metadata:
 
 1. **タスクNo体系**
    - 形式: モジュール識別子(2桁) + ユースケースNo(3桁) + 通番(3桁)（計8文字）
-   - 識別子:
-     - `SY` … System/全体設計・仕様、全体基盤、結合試験、性能試験、等
+   - 識別子（簡易対応）:
+     - `SY` … System/全体設計・仕様・横断基盤・横断実装・結合テスト
      - `FE` … frontend
      - `BE` … backend
      - `OW` … ocr-worker
      - `LA` … localapp
-     - `OT` … 横断・その他（other）
+     - `OT` … Other / その他
+   - 詳細な定義、選択基準、具体例は `.clinerules` の **Task Identifier Rules** を参照する
    - 例: ocr-worker のユースケース003の1番目 → `OW003001`
    - 通番は各ユースケース内で 001 から連番
 

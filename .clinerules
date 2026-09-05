@@ -27,17 +27,46 @@ Communicate in Japanese. Prioritize user approval over speed.
 
 ## Task Identifier Rules
 
-- `SY` = System / 全体設計・仕様・横断基盤
+モジュール識別子は以下の 6 つに集約される。
+
+- `SY` = System / 全体設計・仕様・横断基盤・横断実装・結合テスト
   - 対象: システム全体のアーキテクチャ設計、仕様策定、コーディング規約、横断基盤・運用ルールの整備
+  - 横断実装: 複数モジュールにまたがる実装・リファクタリング、共通ライブラリ・ミドルウェア・ビルド基盤の変更
+  - 結合テスト: 複数モジュール間の連携を伴うテスト、性能試験、CI/CD 試験
   - 成果物: `docs/SY-*.md`, `.clinerules` など全体ルール
   - タスク管理: `docs/SY-TASKS.md`
+
 - `BE` = backend / `FE` = frontend / `LA` = localapp / `OW` = ocr-worker
   - 対象: 各モジュール固有の実装・テスト・ドキュメント
   - タスク管理: `<module>/docs/<識別子>-TASKS.md`
-- `OT` = 横断・その他
-  - 対象: 複数モジュールにまたがる実装作業、結合テスト、横断的な作業記録の整理
+
+- `OT` = Other / その他
+  - 対象: 機能・性能・設計に関係しない事務作業、調整、雑務
+  - 原則としてソースコード変更を伴わない
+  - 例: 作業記録の整理のみ、ミーティング議事録作成、既存文書の移動・整理
   - タスク管理: `docs/OT-TASKS.md`
-  - 本来 `SY` に該当する作業が `OT` に含まれている場合は、実施内容を `docs/SY-TASKS.md` に分離記録し、`OT` タスクからは設計・仕様部分を除く
+
+### 識別子選択基準
+
+1. 複数モジュールにまたがる場合は `SY` とする（`OT` ではない）。
+2. 性能試験・結合試験は対象が複数モジュールにまたがるため `SY` とする。
+3. `docs/` 直下の全体ルール変更は `SY` とする。
+4. ソースコード変更を伴う横断実装は `SY` とする。
+5. `OT` はあくまで「その他」のカテゴリで、機能・性能・設計に関係しない事務作業に限る。
+6. どちらの識別子にも該当しない場合、または判断に迷う場合は、必ずユーザーに確認する。
+
+### 具体例
+
+- backend の API エンドポイント追加 → `BE`
+- frontend のコンポーネント追加 → `FE`
+- ocr-worker の前処理ロジック変更 → `OW`
+- localapp の Rust IPC 実装 → `LA`
+- Docker Compose 全体構成の変更 → `SY`
+- backend と ocr-worker をまたぐ API 契約変更 → `SY`
+- 結合テストシナリオの追加・実行 → `SY`
+- `.clinerules` や AgentSkills の更新 → `SY`
+- タスク管理表や作業ログの整理のみ → `OT`
+- プロジェクト運用ミーティングの議事録作成 → `OT`
 
 ## Skill Selection Matrix (3-layer)
 
@@ -52,7 +81,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 | `FE` | frontend | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
 | `LA` | localapp | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
 | `OW` | ocr-worker | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
-| `OT` | 横断・その他 | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `OT` | Other / その他 | `workflow-runner`, `file-modifier` |
 
 ### Layer 2: 活動タイプ
 

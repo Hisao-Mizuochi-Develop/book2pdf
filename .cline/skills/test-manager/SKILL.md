@@ -15,14 +15,17 @@ metadata:
 本スキルは、テストデータの配置、backend API 経由のフルフロー実行、検証レポートの作成とインデックス追加を定めます。
 
 ## モジュール識別子
-本スキルで参照するモジュール識別子（2文字）とその対応は以下の通りです。
+本スキルで参照するモジュール識別子（2文字）とその対応は `.clinerules` の **Task Identifier Rules** を正とします。
+簡易対応は以下の通りです。
 
-- `SY` … System/全体設計・仕様、全体基盤、結合試験、性能試験、等
+- `SY` … System/全体設計・仕様・横断基盤・横断実装・結合テスト
 - `BE` … backend
 - `FE` … frontend
 - `OW` … ocr-worker
 - `LA` … localapp
-- `OT` … 横断・その他（other）
+- `OT` … Other / その他
+
+詳細な定義、選択基準、具体例は `.clinerules` を参照してください。
 
 ## Pre-work
 
