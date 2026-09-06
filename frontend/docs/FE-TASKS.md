@@ -9,7 +9,8 @@
 - 1つのタスクに複数の責務が含まれる場合は分割を検討する
 - 詳細項目を無理に別タスクにせず、達成可能な単位でまとめる
 - 作業の記録はタスク詳細欄に箇条書きで記載する
-- タスク No は「ユースケースNo（3桁）＋ 通番（3桁）」とする
+- タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」とする
+  - 識別子 `FE` は frontend、`SY` は System/全体設計・仕様等を表す
   - 例：ユースケース001の1番目のタスク → `FE001001`
   - 例：ユースケース002の1番目のタスク → `FE002001`
 - 通番は各ユースケース内で 001 から連番で振る
@@ -44,10 +45,10 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | トップページの簡易実装を行う |  |  |  |
 |  | - `frontend/src/app/page.tsx` にファイル選択 input、ジョブ作成・ZIP アップロード・OCR 実行ボタン、進捗表示エリア、PDF ダウンロードリンクを配置する |  |  |  |
 |  | ドキュメントを更新する |  |  |  |
-|  | - `frontend/docs/frontend-system-spec.md` の「フォルダ・ファイル構成」を実態に合わせて更新する |  |  |  |
-|  | - `frontend/docs/tasks.md` に本計画と実施結果を追記する |  |  |  |
-|  | - `frontend/docs/work_log.md` に実行コマンドと結果を記録する |  |  |  |
-|  | - `docs/web-ocr-system-plan.md` の frontend 構成も更新する |  |  |  |
+|  | - `frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md` の「フォルダ・ファイル構成」を実態に合わせて更新する |  |  |  |
+|  | - `frontend/docs/FE-TASKS.md` に本計画と実施結果を追記する |  |  |  |
+|  | - `frontend/docs/FE-WORK-LOG.md` に実行コマンドと結果を記録する |  |  |  |
+|  | - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の frontend 構成も更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-11: `npx create-next-app@latest` で Next.js 16.3.0 + React 19 + Tailwind CSS v4 + TypeScript + App Router 構成のプロジェクトを作成した |  |  |  |
 |  | 2026-08-11: 不要なサンプルファイル（README.md, AGENTS.md, CLAUDE.md, public/*.svg）を削除した |  |  |  |
@@ -59,11 +60,11 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-08-11: `src/app/page.tsx` を新規作成し、ファイル選択から ZIP アップロード、OCR 実行、進捗表示、PDF ダウンロードまでの簡易 UI を実装した |  |  |  |
 |  | 2026-08-11: `npm run build` が成功し、`npm run dev` で開発サーバーが起動することを確認した |  |  |  |
 |  | 2026-08-11: ブラウザで `http://localhost:3000` にアクセスし、トップページが正常に表示されることを確認した |  |  |  |
-|  | 2026-08-11: `frontend/docs/frontend-system-spec.md` / `tasks.md` / `work_log.md`、および `docs/web-ocr-system-plan.md` を更新した |  |  |  |
+|  | 2026-08-11: `frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md` / `FE-TASKS.md` / `FE-WORK-LOG.md`、および `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した |  |  |  |
 |  | 2026-08-11: Docker Compose 上の frontend コンテナが `Up` 状態であり、`curl http://localhost:3000` が HTTP 200 を返すことを確認した |  |  |  |
 |  | 2026-08-11: Puppeteer による自動確認で、`http://localhost:3000` のトップページにタイトル・サブタイトル・ZIP ファイル選択 input・「アップロードして OCR 実行」ボタンが表示されることを確認した |  |  |  |
 |  | 2026-08-11: `GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認（Puppeteer の PDF 直接表示はブラウザ制限で `net::ERR_ABORTED` となるが、API 自体は正常動作） |  |  |  |
-|  | 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/work_log.md` / `backend/docs/caveats.md` に記録 |  |  |  |
+|  | 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/FE-WORK-LOG.md` / `backend/docs/BE-CAVEATS.md` に記録 |  |  |  |
 | FE001002 | ZIP アップロード UI の実装 | 2026-08-11 |  | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |

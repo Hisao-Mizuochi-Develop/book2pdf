@@ -178,11 +178,11 @@ python -m pytest tests/ -v
   - `app/services/zip_extractor.py`：ZIP 展開・画像抽出サービスを新規作成
   - `app/routers/jobs.py`：`POST /api/jobs/{job_id}/upload` エンドポイントを追加
   - `tests/test_jobs.py`：5 件のテストを新規作成
-  - `backend/docs/backend-system-spec.md`：フォルダ・ファイル構成を更新
-  - `backend/docs/tasks.md`：タスク001002 の完了日付と実施結果を追記
+  - `backend/docs/BE-BACKEND-SYSTEM-SPEC.md`：フォルダ・ファイル構成を更新
+  - `backend/docs/BE-TASKS.md`：タスク001002 の完了日付と実施結果を追記
 - `pytest` を実行し、既存テストを含む 8 件すべて pass した
 - フィードバックを受け、各ソースファイルの import 部分に初学者向けのコメントを追加した
-- さらに、docs/coding-conventions.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
+- さらに、docs/OT-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
 - 新ルールに従い、作成済みのすべての backend ソースコードにコメントを追加した
   - 対象ファイル: app/main.py, app/core/config.py, app/models/job.py, app/services/job_manager.py, app/services/zip_extractor.py, app/routers/jobs.py, tests/test_main.py, tests/test_jobs.py
 
@@ -225,8 +225,8 @@ python -m pytest tests/ -v
   - `app/services/job_manager.py`：update_job_with_ocr_result 関数を追加し、COMPLETED / FAILED 状態遷移に対応
   - `app/routers/jobs.py`：POST /api/jobs/{job_id}/ocr エンドポイントを追加
   - `tests/test_ocr.py`：OCR 実行のテストを 5 件新規作成
-  - `backend/docs/backend-system-spec.md`：フォルダ・ファイル構成を更新
-  - `backend/docs/tasks.md`：タスク001003 の完了日付と実施結果を追記
+  - `backend/docs/BE-BACKEND-SYSTEM-SPEC.md`：フォルダ・ファイル構成を更新
+  - `backend/docs/BE-TASKS.md`：タスク001003 の完了日付と実施結果を追記
 - `pytest` を実行し、既存テストを含む 13 件すべて pass した
 
 ### 注意事項
@@ -387,9 +387,9 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
   - `app/routers/jobs.py`：`GET /api/jobs/{job_id}/pdf` エンドポイントを追加し、OCR 成功後に PDF 生成を自動実行する処理を追加
   - `tests/test_pdf.py`：PDF 生成・XML 解析・ダウンロード API の正常系・異常系テストを 7 件新規作成
   - `tests/test_progress.py`：SSE 進捗 generator を直接 `async for` でテストする形に書き換え
-  - `backend/docs/backend-system-spec.md`：フォルダ・ファイル構成と API 一覧を更新
-  - `backend/docs/caveats.md`：`TestClient` 経由の SSE テストの不安定性を追記
-  - `backend/docs/tasks.md`：タスク003001 の完了日付と実施結果を追記
+  - `backend/docs/BE-BACKEND-SYSTEM-SPEC.md`：フォルダ・ファイル構成と API 一覧を更新
+  - `backend/docs/BE-CAVEATS.md`：`TestClient` 経由の SSE テストの不安定性を追記
+  - `backend/docs/BE-TASKS.md`：タスク003001 の完了日付と実施結果を追記
 - `pytest` を実行し、backend の全 23 件のテストが pass した
 
 ### 注意事項
@@ -401,7 +401,7 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
 - `fastapi.testclient.TestClient` 経由の `StreamingResponse` テストは不安定だった
   - 非同期 generator が yield した chunk がクライアント側に確実に届かず、テストが停止・失敗する
   - 対応として `_progress_event_generator` を直接 import して `async for` で検証する形に変更した
-  - 詳細は `backend/docs/caveats.md` の「`fastapi.testclient.TestClient` 経由の SSE テストの不安定性」を参照
+  - 詳細は `backend/docs/BE-CAVEATS.md` の「`fastapi.testclient.TestClient` 経由の SSE テストの不安定性」を参照
 - PDF 生成は OCR 成功後に自動実行されるが、PDF 生成に失敗しても OCR 結果は返す
   - 失敗時はジョブメッセージに「OCR は成功しましたが PDF 生成に失敗しました」と記録する
 
@@ -476,23 +476,23 @@ file /tmp/book2pdf-test/output.pdf
 
 ---
 
-## 2026-08-12 全体横断タスクの管理移行（タスク BE006001 → `./docs/tasks.md`）
+## 2026-08-12 全体横断タスクの管理移行（タスク BE006001 → `./docs/OT-TASKS.md`）
 
 ### 目的
 
-`backend/docs/tasks.md` に誤作成したモジュール横断タスク「結合テスト手順書の作成（タスク BE006001）」を、`.clinerules` で定める `./docs/` 配下のタスク管理表に移行する。
+`backend/docs/BE-TASKS.md` に誤作成したモジュール横断タスク「結合テスト手順書の作成（タスク BE006001）」を、`.clinerules` で定める `./docs/` 配下のタスク管理表に移行する。
 
 ### 前提
 
-- `./docs/tasks.md` / `./docs/work_log.md` / `./docs/caveats.md` を新規作成済み
-- `backend/docs/tasks.md` のユースケース 006 を削除済み
+- `./docs/OT-TASKS.md` / `./docs/OT-WORK-LOG.md` / `./docs/OT-CAVEATS.md` を新規作成済み
+- `backend/docs/BE-TASKS.md` のユースケース 006 を削除済み
 
 ### 実施コマンド
 
 ```bash
-# backend/docs/tasks.md からユースケース 006 を削除
-# backend/docs/work_log.md から BE006001 のエントリを削除
-# ./docs/tasks.md / ./docs/work_log.md に内容を移行
+# backend/docs/BE-TASKS.md からユースケース 006 を削除
+# backend/docs/BE-WORK-LOG.md から BE006001 のエントリを削除
+# ./docs/OT-TASKS.md / ./docs/OT-WORK-LOG.md に内容を移行
 
 # git 状態確認
 cd /Users/hisao/Documents/work4/sakura/book2pdf
@@ -501,14 +501,14 @@ git status --short
 
 ### 結果
 
-- `backend/docs/tasks.md` からユースケース 006「結合テスト・運用ドキュメントの整備」を削除した
-- `backend/docs/work_log.md` から「2026-08-12 結合テスト手順書の作成（タスク BE006001）」のエントリを削除した
-- `./docs/tasks.md` の BE001002 として「結合テスト手順書の作成」を追加した
-- `./docs/work_log.md` の 2026-08-12 エントリとして結合テスト手順書作成を記録した
+- `backend/docs/BE-TASKS.md` からユースケース 006「結合テスト・運用ドキュメントの整備」を削除した
+- `backend/docs/BE-WORK-LOG.md` から「2026-08-12 結合テスト手順書の作成（タスク BE006001）」のエントリを削除した
+- `./docs/OT-TASKS.md` の BE001002 として「結合テスト手順書の作成」を追加した
+- `./docs/OT-WORK-LOG.md` の 2026-08-12 エントリとして結合テスト手順書作成を記録した
 
 ### 注意事項
 
-- 横断的なタスクは原則 `./docs/tasks.md` で管理し、`<module>/docs/tasks.md` にはそのモジュール固有のタスクのみを記載する
+- 横断的なタスクは原則 `./docs/OT-TASKS.md` で管理し、`<module>/docs/<モジュール識別子>-TASKS.md` にはそのモジュール固有のタスクのみを記載する
 - 今後 `./docs/` 配下を変更する際は `.clinerules` に基づき、ユーザーに変更箇所を提案・許可を得てから実施する
 
 ---
@@ -545,8 +545,8 @@ git diff -- docker-compose.yml
   - `backend/app/services/pdf_generator.py`: PDF 生成開始・完了、処理時間を DEBUG ログに出力
   - `backend/app/routers/jobs.py`: OCR エンドポイント全体の処理開始・完了、処理時間を DEBUG ログに出力
 - `docker-compose.yml` の backend サービスに `LOG_LEVEL=DEBUG` を追加した
-- `backend/docs/tasks.md` にタスク BE004001 を追記した
-- `backend/docs/work_log.md` に本エントリを追記した
+- `backend/docs/BE-TASKS.md` にタスク BE004001 を追記した
+- `backend/docs/BE-WORK-LOG.md` に本エントリを追記した
 
 ### 注意事項
 
@@ -1072,7 +1072,7 @@ OCR 結果 XML の座標系と PyMuPDF の `insert_text()` の座標系を調査
    - 各 PDF からテキスト bbox を抽出し、元画像の文字位置と比較
    - 目視確認用 PNG を生成
 4. 正しい変換式を導出し、`backend/app/services/pdf_generator.py` に反映
-5. 調査結果を `backend/docs/work_log.md` に追記
+5. 調査結果を `backend/docs/BE-WORK-LOG.md` に追記
 6. backend のローカルテストを実行
 7. Docker で結合テストし、修正後の PDF を目視確認
 
@@ -1202,8 +1202,8 @@ bash -n scripts/benchmark_ocr.sh
   - `seq 1 92` のハードコードを廃止し、サンプル画像ディレクトリ内の画像ファイルを `find` で自動収集
   - ZIP 内の画像ファイル数を `unzip -Z1 | wc -l` で自動検出し、0 ページの場合はエラー終了
   - ocr-worker ログ抽出の正規表現を `page=N` 付きの新しい DEBUG ログ形式に合わせて更新
-- `backend/docs/tasks.md` の BE004003 タスク詳細に実施結果を追記した
-- `backend/docs/work_log.md` に本エントリを追記した
+- `backend/docs/BE-TASKS.md` の BE004003 タスク詳細に実施結果を追記した
+- `backend/docs/BE-WORK-LOG.md` に本エントリを追記した
 
 ### 注意事項
 
@@ -1243,7 +1243,7 @@ bash -n scripts/benchmark_ocr.sh
 - 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-BE004003 ./scripts/benchmark_ocr.sh` を実行
 - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
 - 2026-09-01: 検証結果レポート `backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md` を作成
-- 2026-09-01: `backend/docs/tasks.md` に実施結果とレポートリンクを追記
+- 2026-09-01: `backend/docs/BE-TASKS.md` に実施結果とレポートリンクを追記
 
 ---
 
@@ -1289,7 +1289,7 @@ done
   - 処理成功時は `COMPLETED`、例外発生時は `FAILED` に状態更新
 - backend コンテナを再起動後、`/ocr` が即座に HTTP 200 で `{"status":"processing"}` を返すことを curl で確認
 - `GET /api/jobs/{job_id}` で 3 分間ポーリングし、`processing` 状態が維持されることを確認
-- `backend/docs/tasks.md` にタスク003012を追加し、`backend/docs/work_log.md` に本エントリを追記
+- `backend/docs/BE-TASKS.md` にタスク003012を追加し、`backend/docs/BE-WORK-LOG.md` に本エントリを追記
 
 ### 注意事項
 

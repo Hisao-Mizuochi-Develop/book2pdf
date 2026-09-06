@@ -199,4 +199,10 @@
 - 将来、対象ドキュメントが雑誌・論文集・表紙・目次が多数含まれるものに変わる場合は再検討する
 - 詳細は `ocr-worker/test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md` を参照
 
+---
+
+## 23. OCR 呼び出し側のタイムアウト設定（OT002003）
+
+- OCR 実行時は ndlocr_cli のモデル初期化に時間がかかるため、backend などの呼び出し側では cURL や HTTP クライアントで `--max-time 600` など長めのタイムアウトを設定する
+
 

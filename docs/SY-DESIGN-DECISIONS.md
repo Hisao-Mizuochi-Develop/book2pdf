@@ -11,7 +11,7 @@
 | ローカルスタンドアローンアプリ | 電子書籍ページの画面キャプチャと外枠トリミング | Tauri v2 + Rust + React + Vite |
 | Web システム | ZIP アーカイブに含まれるページ画像の OCR → 検索可能 PDF 生成 | Next.js 15 + FastAPI + Docker + ndlocr_cli |
 
-Web システムの詳細な構成や実装計画は `backend/docs/backend-web-ocr-system-plan.md` を参照してください。
+Web システムの詳細な構成や実装計画は `backend/docs/backend-SY-WEB-OCR-SYSTEM-PLAN.md` を参照してください。
 
 ## 2. ローカルスタンドアローンアプリ
 
@@ -48,7 +48,7 @@ Web システムの詳細な構成や実装計画は `backend/docs/backend-web-o
 | 進捗通知 | Server-Sent Events (SSE) |
 | コンテナ | Docker + Docker Compose |
 
-コンテナ構成、処理フロー、PDF 仕様、OCR 実行形式などの詳細は `backend/docs/backend-web-ocr-system-plan.md` を参照してください。
+コンテナ構成、処理フロー、PDF 仕様、OCR 実行形式などの詳細は `backend/docs/backend-SY-WEB-OCR-SYSTEM-PLAN.md` を参照してください。
 
 ## 4. 決定事項の変遷
 

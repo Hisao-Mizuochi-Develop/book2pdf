@@ -9,7 +9,8 @@
 - 1つのタスクに複数の責務が含まれる場合は分割を検討する
 - 詳細項目を無理に別タスクにせず、達成可能な単位でまとめる
 - 作業の記録はタスク詳細欄に箇条書きで記載する
-- タスク No は「ユースケースNo（3桁）＋ 通番（3桁）」とする
+- タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」とする
+  - 識別子 `BE` は backend、`SY` は System/全体設計・仕様等を表す
   - 例：ユースケース001の1番目のタスク → `BE001001`
   - 例：ユースケース002の1番目のタスク → `BE002001`
 - 通番は各ユースケース内で 001 から連番で振る
@@ -43,7 +44,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | ZIP 展開機能: app/services/zip_extractor.py を新規作成し、ZIP から画像ファイルを抽出する |  |  |  |
 |  | ルーター更新: app/routers/jobs.py に POST /api/jobs/{job_id}/upload エンドポイントを追加する |  |  |  |
 |  | テスト追加: backend/tests/test_jobs.py を新規作成し、アップロード成功・失敗ケースを確認する |  |  |  |
-|  | ドキュメント更新: tasks.md / work_log.md / caveats.md / backend-system-spec.md を必要に応じて更新する |  |  |  |
+|  | ドキュメント更新: BE-TASKS.md / BE-WORK-LOG.md / BE-CAVEATS.md / BE-BACKEND-SYSTEM-SPEC.md を必要に応じて更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | app/models/job.py に UPLOADED 状態と JobUploadResponse、JobResponse.files を追加した |  |  |  |
 |  | app/services/job_manager.py に files フィールドと temp_dir 保存機能を追加した |  |  |  |
@@ -51,9 +52,9 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | app/routers/jobs.py に POST /api/jobs/{job_id}/upload エンドポイントを追加した |  |  |  |
 |  | backend/tests/test_jobs.py を新規作成し、5 件のテストを追加した |  |  |  |
 |  | pytest を実行し、既存テストを含む 8 件すべて pass した |  |  |  |
-|  | backend/docs/backend-system-spec.md のフォルダ・ファイル構成を更新した |  |  |  |
+|  | backend/docs/BE-BACKEND-SYSTEM-SPEC.md のフォルダ・ファイル構成を更新した |  |  |  |
 |  | 各ソースファイルの import 部分に、初学者向けに「何をインポートし、なぜ必要か」のコメントを追加した |  |  |  |
-|  | docs/coding-conventions.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した |  |  |  |
+|  | docs/OT-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した |  |  |  |
 |  | 作成済みのすべての backend ソースコードに新ルールを適用し、import 行・変数宣言・制御構文・関数呼び出し・return 文などにコメントを追加した |  |  |  |
 | BE001003 | ndlocr_cli 連携の実装 | 2026-08-11 | 2026-08-11 | 機能実装 |
 |  | タスク詳細 |  |  |  |
@@ -66,7 +67,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | app/routers/jobs.py に POST /api/jobs/{job_id}/ocr エンドポイントを追加する |  |  |  |
 |  | backend/tests/test_ocr.py を新規作成し、OCR 実行の正常系・異常系テストを追加する |  |  |  |
 |  | pytest を実行し、すべてのテストが pass することを確認する |  |  |  |
-|  | backend/docs/work_log.md と caveats.md、backend-system-spec.md を更新する |  |  |  |
+|  | backend/docs/BE-WORK-LOG.md と BE-CAVEATS.md、BE-BACKEND-SYSTEM-SPEC.md を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | GitHub 上の ndlocr_cli リポジトリを確認し、OcrInferrer の使い方を調査した |  |  |  |
 |  | app/services/ocr_engine.py を新規作成し、BaseOcrEngine / NdloCrOcrEngine / MockOcrEngine を実装した |  |  |  |
@@ -75,7 +76,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | app/routers/jobs.py に POST /api/jobs/{job_id}/ocr エンドポイントを追加した |  |  |  |
 |  | backend/tests/test_ocr.py を新規作成し、5 件のテストを追加した |  |  |  |
 |  | pytest を実行し、既存テストを含む 13 件すべて pass した |  |  |  |
-|  | backend/docs/caveats.md と work_log.md、backend-system-spec.md を更新した |  |  |  |
+|  | backend/docs/BE-CAVEATS.md と BE-WORK-LOG.md、BE-BACKEND-SYSTEM-SPEC.md を更新した |  |  |  |
 | BE001004 | ocr-worker コンテナ連携の実装 | 2026-08-11 | 2026-08-11 | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -84,7 +85,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | `docker-compose.yml` で backend から ocr-worker への接続と環境変数を設定する |  |  |  |
 |  | `backend/tests/test_ocr.py` を更新し、ocr-worker コンテナを使った実際の OCR 実行を検証する |  |  |  |
 |  | サンプル画像 2〜3 ページ分を使って、backend → ocr-worker → OCR 結果の流れを確認する |  |  |  |
-|  | `backend/docs/work_log.md` / `caveats.md` / `backend-system-spec.md` を更新する |  |  |  |
+|  | `backend/docs/BE-WORK-LOG.md` / `BE-CAVEATS.md` / `BE-BACKEND-SYSTEM-SPEC.md` を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-11: `backend/app/services/ocr_engine.py` に `RemoteNdloCrOcrEngine` を新規作成し、ocr-worker の `POST /ocr` を呼び出す実装を追加した |  |  |  |
 |  | 2026-08-11: `OCR_WORKER_URL` 環境変数に応じて `RemoteNdloCrOcrEngine` / `NdloCrOcrEngine` / `MockOcrEngine` を切り替えるよう `create_ocr_engine()` を更新した |  |  |  |
@@ -93,7 +94,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-08-11: backend のローカル pytest で 13 件すべて pass した |  |  |  |
 |  | 2026-08-11: Docker コンテナをビルド・起動し、両サービスのヘルスチェックが正常に動作することを確認した |  |  |  |
 |  | 2026-08-11: サンプル画像 2 枚を ZIP アップロードし、backend → ocr-worker → OCR 結果の流れでジョブが `completed` になることを確認した |  |  |  |
-|  | 2026-08-11: `backend/docs/work_log.md` / `caveats.md` / `backend-system-spec.md` を更新した |  |  |  |
+|  | 2026-08-11: `backend/docs/BE-WORK-LOG.md` / `BE-CAVEATS.md` / `BE-BACKEND-SYSTEM-SPEC.md` を更新した |  |  |  |
 
 ---
 
@@ -130,7 +131,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 |  | ダウンロード API: `backend/app/routers/jobs.py` に `GET /api/jobs/{job_id}/pdf` を追加し、生成済み PDF を返す（未生成・未完了時は 400/404） |  |  |  |
 |  | OCR 後処理: `POST /api/jobs/{job_id}/ocr` 成功後に PDF 生成を自動実行する |  |  |  |
 |  | テスト追加: `backend/tests/test_pdf.py` を新規作成し、MockOcrEngine + 手動作成 XML で PDF 生成とダウンロード API を検証する |  |  |  |
-|  | ドキュメント更新: `tasks.md` / `work_log.md` / `caveats.md` / `backend-system-spec.md` を更新する |  |  |  |
+|  | ドキュメント更新: `BE-TASKS.md` / `BE-WORK-LOG.md` / `BE-CAVEATS.md` / `BE-BACKEND-SYSTEM-SPEC.md` を更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-11: `backend/app/services/xml_parser.py` を新規作成し、ndlocr_cli の `.sorted.xml` からページ画像パス・テキスト・座標を取得する機能を実装した |  |  |  |
 |  | 2026-08-11: `backend/app/services/pdf_generator.py` を新規作成し、PyMuPDF（fitz）で元画像を背景・認識テキストを透明テキストレイヤーとして配置した検索可能 PDF を生成する機能を実装した |  |  |  |
@@ -140,11 +141,11 @@ OCR 完了後に検索可能 PDF をダウンロードする
 |  | 2026-08-11: `backend/tests/test_pdf.py` を新規作成し、PDF 生成・XML 解析・ダウンロード API の正常系・異常系テストを 7 件追加した |  |  |  |
 |  | 2026-08-11: テスト実行中に `tests/test_progress.py` の SSE ストリーミングテストが停止・失敗する事象が発生した。原因は `fastapi.testclient.TestClient` + `StreamingResponse` + 非同期 generator のタイミング競合。対応として `_progress_event_generator` を直接 `async for` でテストする形に変更し、安定して pass するようになった |  |  |  |
 |  | 2026-08-11: `pytest` を実行し、backend の全 23 件のテストが pass することを確認した |  |  |  |
-|  | 2026-08-11: `backend/docs/backend-system-spec.md` / `caveats.md` / `tasks.md` / `work_log.md` を更新した |  |  |  |
+|  | 2026-08-11: `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` / `BE-CAVEATS.md` / `BE-TASKS.md` / `BE-WORK-LOG.md` を更新した |  |  |  |
 |  | 2026-08-11: 結合テストを実施し、PDF ダウンロード API (`GET /api/jobs/{job_id}/pdf`) が 404 エラーを返す事象を確認 |  |  |  |
 |  | 2026-08-11: 原因は backend コンテナが最新ソースで再ビルドされていなかったこと。`docker compose up -d --build backend` で再ビルド・再起動して解消 |  |  |  |
 |  | 2026-08-11: 再テストで ZIP アップロード → OCR 実行 → PDF ダウンロードが正常に完了することを確認（HTTP 200、Content-Type: application/pdf、2 ページの PDF） |  |  |  |
-|  | 2026-08-11: 結合テストに関する内容を `backend/docs/work_log.md` / `caveats.md` / `tasks.md` に追記 |  |  |  |
+|  | 2026-08-11: 結合テストに関する内容を `backend/docs/BE-WORK-LOG.md` / `BE-CAVEATS.md` / `BE-TASKS.md` に追記 |  |  |  |
 | BE003002 | 縦書き PDF 対応 | 2026-08-11 |  | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -256,7 +257,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | PyMuPDF の `insert_text()` が baseline（文字の下端）を基準に配置することを考慮し、フォントサイズ決定後に `pdf_y` を計算する |  |  |  |
 |  | backend のローカルテストを実行する |  |  |  |
 |  | Docker で結合テストし、修正後の PDF を目視確認する |  |  |  |
-|  | `backend/docs/work_log.md` に作業内容を追記する |  |  |  |
+|  | `backend/docs/BE-WORK-LOG.md` に作業内容を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: 原因を特定：`pdf_y = pdf_height - (xml_y + xml_line_height) * scale_y` では XML の下端を基準に変換していたため、XML で下にある行ほど PDF 上で上に配置されていた |  |  |  |
 |  | 2026-08-12: 修正：`pdf_y = (xml_y * scale_y) + font_size` に変更。XML の上端を基準にスケーリングし、PyMuPDF `insert_text()` の baseline 配置を考慮してフォントサイズ分下げた |  |  |  |
@@ -275,7 +276,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | - baseline補正（font_size分のオフセット）が含まれること |  |  |  |
 |  | backend のローカルテストを実行する |  |  |  |
 |  | Docker で結合テストし、修正後の PDF を目視確認する |  |  |  |
-|  | `backend/docs/work_log.md` に作業内容を追記する |  |  |  |
+|  | `backend/docs/BE-WORK-LOG.md` に作業内容を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `_xml_to_pdf_y()` を `pdf_y = (xml_y * scale_y) + font_size` に修正し、XML 座標系（左上原点）と PDF 座標系（左下原点）の関係を正しく反映 |  |  |  |
 |  | 2026-08-12: `_xml_to_pdf_y()` に座標系と baseline 補正の意図を明記するコメントを追加した |  |  |  |
@@ -339,13 +340,13 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | `backend/app/services/pdf_generator.py` に PDF 生成時間計測用の DEBUG ログを追加する |  |  |  |
 |  | `backend/app/routers/jobs.py` に OCR エンドポイント全体の処理時間計測用 DEBUG ログを追加する |  |  |  |
 |  | `docker-compose.yml` の backend サービスに `LOG_LEVEL=DEBUG` を設定する |  |  |  |
-|  | `backend/docs/work_log.md` に作業内容を記録する |  |  |  |
+|  | `backend/docs/BE-WORK-LOG.md` に作業内容を記録する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `backend/app/services/zip_extractor.py` に `LOG_LEVEL` 環境変数に応じたロガー設定と、ZIP 解凍開始・完了の DEBUG ログを追加した |  |  |  |
 |  | 2026-08-12: `backend/app/services/pdf_generator.py` に `LOG_LEVEL` 環境変数に応じたロガー設定と、PDF 生成開始・完了の DEBUG ログを追加した |  |  |  |
 |  | 2026-08-12: `backend/app/routers/jobs.py` に `LOG_LEVEL` 環境変数に応じたロガー設定と、OCR エンドポイント全体の処理時間 DEBUG ログを追加した |  |  |  |
 |  | 2026-08-12: `docker-compose.yml` の backend サービスに `LOG_LEVEL=DEBUG` を追加した |  |  |  |
-|  | 2026-08-12: `backend/docs/work_log.md` に本タスクの作業ログを追記した |  |  |  |
+|  | 2026-08-12: `backend/docs/BE-WORK-LOG.md` に本タスクの作業ログを追記した |  |  |  |
 | BE004002 | アップロード済みファイルのユーザー明示的破棄機能の追加 | 2026-08-12 |  | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -364,8 +365,8 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | ZIP 解凍時間・PDF 生成時間は `backend/app/services/zip_extractor.py` / `pdf_generator.py` の DEBUG ログから取得する |  |  |  |
 |  | 1 ページごとの OCR 処理時間は `ocr-worker` / `ndlocr_cli` の DEBUG ログから取得する |  |  |  |
 |  | 計測結果を CSV（`/tmp/book2pdf-benchmark/results.csv`）とテキスト（`/tmp/book2pdf-benchmark/results.txt`）に出力する |  |  |  |
-|  | 性能テスト仕様を `backend/docs/backend-system-spec.md` と `docs/integration-test-guide.md` に記載する |  |  |  |
-|  | 結果を `backend/docs/work_log.md` と `ocr-worker/docs/work_log.md` に記載する |  |  |  |
+|  | 性能テスト仕様を `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` と `docs/OT-INTEGRATION-TEST-GUIDE.md` に記載する |  |  |  |
+|  | 結果を `backend/docs/BE-WORK-LOG.md` と `ocr-worker/docs/OW-WORK-LOG.md` に記載する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-13: ユーザー指示により、今回は以下の 2 項目のみ実施 |  |  |  |
 |  | 1. `ocr-worker/ndlocr_cli_patches/inference.py` に 1 ページごとの OCR 処理時間 DEBUG ログを追加（処理開始・完了の両方、page=N を含む形式） |  |  |  |
@@ -376,7 +377,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測 |  |  |  |
 |  | 2026-09-01: 精度比較レポート [backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md](../test-results/benchmark-BE004003/performance-test-report-BE004003.md) を作成
 - 注：本タスク BE004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです |  |  |  |
-|  | 2026-09-01: `docs/integration-test-guide.md` の性能テスト結果セクションを更新 |  |  |  |
+|  | 2026-09-01: `docs/OT-INTEGRATION-TEST-GUIDE.md` の性能テスト結果セクションを更新 |  |  |  |
 |  | BE004004 | backend PDF 作成時間チューニング | 2026-09-03 |  | 性能改善 |
 |  |  | タスク詳細 |  |  |  |
 |  |  | 【計画】 |  |  |  |

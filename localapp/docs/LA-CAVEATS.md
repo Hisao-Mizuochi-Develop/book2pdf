@@ -512,7 +512,7 @@ if let Some(e) = save_error {
 ## write_to_file ツール — 既存ドキュメントの誤上書き事故
 
 ### 事象
-作業ログ（`localapp/docs/work_log.md`）や注意事項（`localapp/docs/caveats.md`）といった既存ドキュメントを `write_to_file` で更新したところ、ファイルの既存内容がすべて失われ、新規作成時のような状態になってしまった。
+作業ログ（`localapp/docs/LA-WORK-LOG.md`）や注意事項（`localapp/docs/LA-CAVEATS.md`）といった既存ドキュメントを `write_to_file` で更新したところ、ファイルの既存内容がすべて失われ、新規作成時のような状態になってしまった。
 
 ### 原因
 `write_to_file` はファイルが存在する場合、内容を完全に上書きする。追記や部分更新を意図していたが、既存内容を保持せずに新しい内容だけを書き込んでしまったため、過去の作業履歴・注意事項が消失した。
@@ -867,7 +867,7 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 ### 対応策
 
 1. `localapp/src-tauri/src/config.rs` のデフォルト値を `page_timeout_sec: 600`（10 分/ページ）に変更
-2. `docs/progress-notification-spec.md` の記載も合わせて更新
+2. `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` の記載も合わせて更新
 3. タイムアウトエラーメッセージを以下のように改善し、設定画面への誘導を追加
    - 「OCR 処理がタイムアウトしました。設定画面で「1ページあたりのタイムアウト時間」を長くするか、backend/ocr-worker の状態を確認してください。」
 
@@ -921,4 +921,14 @@ backend OCR で 3 ページのテストデータを処理した際、localapp �
 ### 関連タスク
 
 - LA008008: 画像結合PDF生成の実装（OCRなし）
+
+---
+
+## 進捗通知のポーリング（OT002003）
+
+- localapp では、プロキシ環境や接続の不安定さを考慮し、SSE より HTTP ポーリングを優先して使用する
+- ポーリング間隔は原則 1 秒とし、1 リクエストあたりのタイムアウトは 10 秒とする
+- `GET /api/jobs/{job_id}` の接続に失敗した場合は、最大 3 回まで 1 秒 / 2 秒 / 4 秒の指数関数的バックオフでリトライする
+- リトライ前には「ジョブ状態の取得を再試行します」という進捗メッセージを UI に通知し、ユーザーに一過性の通信エラーであることを伝える
+- 詳細なプロトコルやペイロード形式は [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](../docs/SY-PROGRESS-NOTIFICATION-SPEC.md) を参照
 

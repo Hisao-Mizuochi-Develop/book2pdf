@@ -18,7 +18,7 @@
 | ローカルスタンドアローンアプリ | 電子書籍画面のキャプチャ＋不要部分のトリミング | Tauri v2 + Rust + React + Vite | `localapp/` |
 | Web OCR/PDF システム | ZIP 画像 → OCR → 検索可能 PDF 生成 | Next.js 15 + FastAPI + Docker + ndlocr_cli | `frontend/` / `backend/` / `ocr-worker/` |
 
-各システムの選定理由や非機能要件などの詳細は `docs/design-decisions.md` を参照してください。
+各システムの選定理由や非機能要件などの詳細は `docs/SY-DESIGN-DECISIONS.md` を参照してください。
 
 ### 2.1 ドキュメント構成
 
@@ -33,7 +33,7 @@
 | localapp 固有 | `localapp/docs/` | localapp のタスク管理、環境構築ログ、詳細計画 |
 | ocr-worker 固有 | `ocr-worker/docs/` | ocr-worker のタスク管理、環境構築ログ、詳細計画 |
 
-各モジュールの `docs/` には `tasks.md`（タスク管理表）、`work_log.md`（作業ログ）、`caveats.md`（注意事項）を配置します。複数モジュールにまたがる内容は `./docs/` 配下に配置します。詳細な運用ルールは `./.clinerules` を参照してください。
+各モジュールの `docs/` には `OT-TASKS.md`（タスク管理表）、`OT-WORK-LOG.md`（作業ログ）、`OT-CAVEATS.md`（注意事項）を配置します。複数モジュールにまたがる内容は `./docs/` 配下に配置します。詳細な運用ルールは `./.clinerules` を参照してください。
 
 ## 3. 全体アーキテクチャ
 
@@ -147,7 +147,7 @@
 
 - リアルタイムな処理進捗の表示
 - プロキシ環境への対応として SSE と HTTP ポーリングの両方を定義
-- 詳細は [`docs/progress-notification-spec.md`](progress-notification-spec.md) を参照
+- 詳細は [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md) を参照
 
 ## 7. 技術選定の概要
 
@@ -160,7 +160,7 @@
 | PDF 生成 | PyMuPDF | 画像背景＋透明テキストレイヤーの検索可能 PDF 作成に向いている |
 | コンテナ | Docker + Docker Compose | 環境の再現性、OS 依存の排除 |
 
-各技術の詳細な選定理由や実行環境については `docs/design-decisions.md` を参照してください。
+各技術の詳細な選定理由や実行環境については `docs/SY-DESIGN-DECISIONS.md` を参照してください。
 
 ## 8. 初期実装範囲
 
@@ -192,7 +192,7 @@
 
 - **目標**: localapp / frontend のポーリング方式を整備
 - **理由**: プロキシ環境やタイムアウト設定によって SSE が不安定になる場合への対応
-- **詳細**: [`docs/progress-notification-spec.md`](progress-notification-spec.md)
+- **詳細**: [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md)
 
 ### 9.3 縦書き・複雑レイアウトの本格対応
 
@@ -206,35 +206,35 @@ book2pdf/
 ├── .clinerules                  # Cline プロジェクトルール
 ├── backend/                     # FastAPI バックエンド
 │   └── docs/
-│       ├── backend-system-spec.md   # backend 仕様書
-│       ├── caveats.md               # backend 注意事項
+│       ├── BE-BACKEND-SYSTEM-SPEC.md   # backend 仕様書
+│       ├── OT-CAVEATS.md               # backend 注意事項
 │       ├── setup-log.md             # backend 環境構築ログ
-│       └── tasks.md                 # backend タスク管理表
+│       └── OT-TASKS.md                 # backend タスク管理表
 ├── frontend/                    # Next.js フロントエンド
 │   └── docs/
-│       ├── frontend-system-spec.md  # frontend 仕様書
+│       ├── FE-FRONTEND-SYSTEM-SPEC.md  # frontend 仕様書
 │       ├── setup-log.md             # frontend 環境構築ログ
-│       └── tasks.md                 # frontend タスク管理表
+│       └── OT-TASKS.md                 # frontend タスク管理表
 ├── localapp/                    # Tauri ローカルスタンドアローンアプリ
 │   └── docs/
-│       ├── localapp-spec.md         # localapp 仕様書
+│       ├── LA-LOCALAPP-SPEC.md         # localapp 仕様書
 │       ├── setup-log.md             # localapp 環境構築ログ
-│       └── tasks.md                 # localapp タスク管理表
+│       └── OT-TASKS.md                 # localapp タスク管理表
 ├── ocr-worker/                  # ndlocr_cli 実行コンテナ
 │   └── docs/
-│       ├── ocr-worker-system-spec.md  # ocr-worker 仕様書
+│       ├── OW-OCR-WORKER-SYSTEM-SPEC.md  # ocr-worker 仕様書
 │       ├── setup-log.md               # ocr-worker 環境構築ログ
-│       └── tasks.md                   # ocr-worker タスク管理表
+│       └── OT-TASKS.md                   # ocr-worker タスク管理表
 ├── docs/                        # プロジェクト全体の設計・決定事項
-│   ├── caveats.md               # 全体横断の注意事項
-│   ├── coding-conventions.md    # コーディング規約
-│   ├── design-decisions.md      # 設計決定事項
-│   ├── progress-notification-spec.md  # 進捗通知方式仕様書
+│   ├── OT-CAVEATS.md               # 全体横断の注意事項
+│   ├── OT-CODING-CONVENTIONS.md    # コーディング規約
+│   ├── SY-DESIGN-DECISIONS.md      # 設計決定事項
+│   ├── SY-PROGRESS-NOTIFICATION-SPEC.md  # 進捗通知方式仕様書
 │   ├── README.md                # ドキュメントインデックス
-│   ├── integration-test-guide.md  # 結合テスト手順書
-│   ├── tasks.md                 # 全体横断のタスク管理表
-│   ├── web-ocr-system-plan.md   # 本ドキュメント
-│   └── work_log.md              # 全体横断の作業ログ
+│   ├── OT-INTEGRATION-TEST-GUIDE.md  # 結合テスト手順書
+│   ├── OT-TASKS.md                 # 全体横断のタスク管理表
+│   ├── SY-WEB-OCR-SYSTEM-PLAN.md   # 本ドキュメント
+│   └── OT-WORK-LOG.md              # 全体横断の作業ログ
 └── old/                         # 既存アプリケーションの仕様参考用
     └── （ソースコード・ドキュメントは新規開発では参照しない）
 ```
@@ -246,8 +246,8 @@ book2pdf/
 - ndlocr_cli の import パスや関数 signature はリポジトリの実際のコードを確認する必要がある
 - 縦書き PDF 生成は高度な処理となるため、まず横書きで動作確認してから段階的に対応する
 - 各モジュールの詳細な仕様は以下を参照すること
-  - backend: [`backend/docs/backend-system-spec.md`](../backend/docs/backend-system-spec.md)
-  - frontend: [`frontend/docs/frontend-system-spec.md`](../frontend/docs/frontend-system-spec.md)
-  - ocr-worker: [`ocr-worker/docs/ocr-worker-system-spec.md`](../ocr-worker/docs/ocr-worker-system-spec.md)
-  - localapp: [`localapp/docs/localapp-spec.md`](../localapp/docs/localapp-spec.md)
-- 進捗通知方式: [`docs/progress-notification-spec.md`](progress-notification-spec.md)
+  - backend: [`backend/docs/BE-BACKEND-SYSTEM-SPEC.md`](../backend/docs/BE-BACKEND-SYSTEM-SPEC.md)
+  - frontend: [`frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md`](../frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md)
+  - ocr-worker: [`ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md`](../ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md)
+  - localapp: [`localapp/docs/LA-LOCALAPP-SPEC.md`](../localapp/docs/LA-LOCALAPP-SPEC.md)
+- 進捗通知方式: [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md)

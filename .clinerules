@@ -10,6 +10,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Never use write_to_file for existing documents; use replace_in_file instead.
 - Always propose changes before implementing.
 - Maintain working tree clean before starting a task.
+- **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
 
 ## User Communication
 - When asking the user for decisions, use free-form questions rather than multiple-choice options.
@@ -19,7 +20,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Modules: backend/, frontend/, localapp/, ocr-worker/
 - CPU-only execution; no GPU required.
 - For detailed rules, load skills from .cline/skills/ as needed.
-- See docs/agent-skills-guide.md for the AgentSkills overview.
+- See docs/OT-AGENT-SKILLS-GUIDE.md for the AgentSkills overview.
 
 ## Approval Required
 - All docs/ changes require user approval.
@@ -79,6 +80,52 @@ Communicate in Japanese. Prioritize user approval over speed.
 - backend と ocr-worker をまたぐ API 契約変更 → `SY`
 - 結合テストシナリオの追加・実行 → `SY`
 - `.clinerules` や AgentSkills の更新 → `SY`
-- 横断的な内容を含む既存文書の再編成（新規作成・設計変更を伴わない移動・分割・統合） → `OT`
+- 横断的な内容を含む既存ドキュメントの再編成（新規作成・設計変更を伴わない移動・分割・統合） → `OT`
 - タスク管理表や作業ログの整理のみ → `OT`
 - プロジェクト運用ミーティングの議事録作成 → `OT`
+
+## Skill Selection Matrix (3-layer)
+
+タスク実行時は、以下の 3 層マトリックスを使って必要最小限のスキルセットを選択する。
+
+### Layer 1: モジュール接頭辞
+
+| 接頭辞 | 対象領域 | 必須スキル |
+|---|---|---|
+| `SY` | System / 全体設計・仕様・横断基盤 | `workflow-runner`, `file-modifier` |
+| `BE` | backend | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `FE` | frontend | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `LA` | localapp | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `OW` | ocr-worker | `workflow-runner`, `file-modifier`, `code-generator`, `test-manager` |
+| `OT` | Other / その他 | `workflow-runner`, `file-modifier` |
+
+### Layer 2: 活動タイプ
+
+活動に応じて以下のスキルを追加する。
+
+| 活動コード | 活動内容 | 追加スキル |
+|---|---|---|
+| `I` | 調査 / 調べ物 | `search_codebase`, `fetch_web_content` |
+| `D` | 設計 / 仕様作成 | `file-modifier`（ドキュメント編集） |
+| `C` | コーディング / 実装 | `code-generator` |
+| `R` | レビュー / 監査 | `search_codebase`, `test-manager` |
+| `T` | テスト / 検証 | `test-manager` |
+
+### Layer 3: 承認ゲート
+
+以下のフェーズ間ではユーザー承認を得てから進める。
+
+| ゲート | タイミング |
+|---|---|
+| Gate 1 | Phase 1「コンテキスト読込・タスク解析」完了後 |
+| Gate 2 | Phase 2「スキル選択・実行計画」提示後 |
+| Gate 3 | 破壊的変更を含む Phase 4 最終報告前 |
+
+## Workflow Runner Usage
+
+- タスク開始時は必ず `workflow-runner` スキルを最初に読み込む
+- `workflow-runner/SKILL.md` に定義された 4 フェーズワークフローに従う
+- Plan モード・Act モードのいずれの場合も、上記承認ゲートをスキップしない
+- タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 / Gate 2 を取得する
+- Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
+- When reading a skill file, always use the actual file via `read_files`; never rely on recalled or summarized content from memory.

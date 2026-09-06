@@ -31,6 +31,31 @@
 
 ---
 
+## 2026-09-06 OT002003 `docs/OT-CAVEATS.md` の内容を各モジュール `*-CAVEATS.md` に再配布し、`OT-CAVEATS.md` を削除する
+
+### 目的
+
+`docs/OT-CAVEATS.md` にまとめられていたモジュール横断の注意事項を、各モジュール固有の内容は各モジュールの `*-CAVEATS.md` に、横断的な参照は `docs/SY-CAVEATS.md` に集約し、重複管理を解消する。
+
+### 実施内容
+
+- `docs/OT-CAVEATS.md` に記載されていた backend / localapp / ocr-worker 固有の注意事項を、それぞれ `backend/docs/BE-CAVEATS.md` / `localapp/docs/LA-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` に移動
+- frontend で既存の `frontend/docs/FE-CAVEATS.md` 等でカバーされていた項目は `docs/OT-CAVEATS.md` から削除
+- モジュール横断の参照を `docs/SY-CAVEATS.md` に新規作成して集約
+- `docs/OT-TASKS.md` に `OT002003` を完了として追記
+- `docs/OT-CAVEATS.md` を削除
+
+### 結果
+
+- 各モジュールの `*-CAVEATS.md` が自モジュール固有の注意事項を保持するようになった
+- 横断的な注意事項は `docs/SY-CAVEATS.md` に集約された
+- `docs/OT-CAVEATS.md` が削除され、重複した注意事項の一元管理が解消された
+
+### コミット
+
+`634f33af` — OT002003: Redistribute OT-CAVEATS.md items into per-module CAVEATS.md
+
+---
 ## 2026-09-04 .clinerules §8 import/use/from コメント追加（全モジュール横断）
 
 ### 目的
@@ -174,7 +199,7 @@ zip -j sample_002-004.zip \
 
 - ocr-worker の 500 エラーは、モデルロードまでは成功しているが、その後の推論処理で失敗している可能性がある
 - 詳細なエラーを取得するためには、ocr-worker コンテナ内で直接デバッグが必要
-- 本件は `backend/docs/work_log.md` および `ocr-worker/docs/work_log.md` でも追記予定
+- 本件は `backend/docs/BE-WORK-LOG.md` および `ocr-worker/docs/OW-WORK-LOG.md` でも追記予定
 
 ### 関連タスク
 
@@ -182,7 +207,7 @@ zip -j sample_002-004.zip \
 - backend タスク：ocr-worker 500 エラーの原因調査（未完了）
 - 全体タスク：frontend から ZIP アップロード・PDF ダウンロードの統合検証（未完了）
 
-## 2026-09-03 OT006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
+## 2026-09-03 OT003001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
 
 ### 目的
 
@@ -190,27 +215,27 @@ localapp で発生していた「ジョブ状態の取得に失敗しました�
 
 ### 前提
 
-- `docs/progress-notification-polling-design.md` と `docs/progress-notification-spec.md` が別々に存在していた
+- `docs/progress-notification-polling-design.md` と `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` が別々に存在していた
 - localapp のポーリングは 1 秒間隔で `GET /api/jobs/{job_id}` を呼び出すのみで、タイムアウト・リトライが未実装だった
 - 進捗ペイロードに `progress_percent` と `stage`/`message`/`current`/`total` が混在していた
 
 ### 実施内容
 
-- `docs/progress-notification-polling-design.md` を `docs/progress-notification-spec.md` に統合し、前者は削除した
+- `docs/progress-notification-polling-design.md` を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に統合し、前者は削除した
 - `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
 - ポーリングプロトコルを文書化した
   - 1 リクエストあたり 10 秒タイムアウト
   - 接続失敗時は最大 3 回まで 1 秒 / 2 秒 / 4 秒の指数関数的バックオフでリトライ
   - リトライ前に「ジョブ状態の取得を再試行します」の進捗メッセージを UI に通知
-- `docs/README.md` / `docs/web-ocr-system-plan.md` / `docs/caveats.md` / `docs/tasks.md` に進捗通知仕様と OT006001 の計画を反映した
+- `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` / `docs/SY-CAVEATS.md` / `docs/OT-TASKS.md` に進捗通知仕様と OT003001 の計画を反映した
 - `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` のポーリング処理に `poll_job_status` ヘルパーを導入し、タイムアウト・リトライ・バックオフを実装した
 
 ### 結果
 
-- 進捗通知仕様書 [`docs/progress-notification-spec.md`](progress-notification-spec.md) が整備された
+- 進捗通知仕様書 [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md) が整備された
 - localapp のポーリングが一過性の接続エラーに対して耐性を持つようになった
 - `cargo check --tests` と `cargo test backend_api_impl -- --nocapture` にてコンパイル・テストを確認した
 
 ### 関連タスク
 
-- OT006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装（完了）
+- OT003001 進捗通知のポーリング方式仕様策定と localapp リトライ実装（完了）

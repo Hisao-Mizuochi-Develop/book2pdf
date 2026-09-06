@@ -332,8 +332,8 @@ git diff -- docker-compose.yml
 - `ocr-worker/app/main.py` に `LOG_LEVEL` 環境変数に応じたロガー設定を追加した
 - `POST /ocr` エンドポイントの `infer` 関数の開始・完了・所要時間を DEBUG ログに出力するようにした
 - `docker-compose.yml` の ocr-worker サービスに `LOG_LEVEL=DEBUG` を追加した
-- `ocr-worker/docs/tasks.md` にタスク OW002001 を追記した
-- `ocr-worker/docs/work_log.md` に本エントリを追記した
+- `ocr-worker/docs/OW-TASKS.md` にタスク OW002001 を追記した
+- `ocr-worker/docs/OW-WORK-LOG.md` に本エントリを追記した
 
 ### 注意事項
 
@@ -370,7 +370,7 @@ python3 -m py_compile ocr-worker/ndlocr_cli_patches/inference.py
   - ページ処理開始時に `logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')` を追加
   - ページ処理完了時に `page=N` を含む形式に統一: `logger.debug(f'[ndlocr_cli] ページ処理完了: page={page_idx}, img_path={img_path}, elapsed={elapsed_page:.3f}s')`
   - `_infer_ruby_only()`（ルビ推定モード）でも同様に開始・完了ログに `page=N` を含めるように統一
-- `ocr-worker/docs/work_log.md` に本エントリを追記した
+- `ocr-worker/docs/OW-WORK-LOG.md` に本エントリを追記した
 
 ### 注意事項
 
@@ -450,7 +450,7 @@ docker compose logs --tail 100 ocr-worker
 
 - `setuptools` のバージョン固定を怠ると、将来の `setuptools` 更新で同様の問題が再発する可能性がある
 - `pkg_resources` は非推奨 API なので、`pytorch_lightning` 側で `importlib.metadata` などに移行されることを期待する
-- 修正内容は `ocr-worker/docs/caveats.md` の「17. `setuptools` のバージョンは 79.0.1 に固定する」「18. エラーハンドリングでトレースバックをログに出力する」にも記録した
+- 修正内容は `ocr-worker/docs/OW-CAVEATS.md` の「17. `setuptools` のバージョンは 79.0.1 に固定する」「18. エラーハンドリングでトレースバックをログに出力する」にも記録した
 
 ---
 
@@ -474,7 +474,7 @@ OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行�
 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する
 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする
 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する
-7. ドキュメント記録：測定結果を `ocr-worker/docs/work_log.md` / `ocr-worker/docs/tasks.md` に記録する
+7. ドキュメント記録：測定結果を `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-TASKS.md` に記録する
 
 ### 実施コマンド
 
@@ -1001,8 +1001,8 @@ docker compose cp backend:$OUTPUT_DIR ocr-results-OW003006/preprocess-off/output
 #### ドキュメント
 
 - 精度比較レポート `ocr-results-OW003006/preprocess-integration-report-OW003006.md` を作成した
-- 本エントリを `ocr-worker/docs/work_log.md` に追記した
-- `ocr-worker/docs/caveats.md` / `ocr-worker/docs/ocr-worker-system-spec.md` を更新した
+- 本エントリを `ocr-worker/docs/OW-WORK-LOG.md` に追記した
+- `ocr-worker/docs/OW-CAVEATS.md` / `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新した
 
 ### 注意事項
 
@@ -1189,7 +1189,7 @@ chmod +x scripts/run_003007_ocr_remaining.sh
   - `ocr-worker/ndlocr_cli_patches/layout_extraction.py`（新規：deep copy 回避）
   - `ocr-worker/ndlocr_cli_patches/infer_task.py`（新規：predict 後処理）
   - `ocr-worker/Dockerfile`（パッチ COPY 行追加）
-  - `ocr-worker/docs/tasks.md`, `ocr-worker/docs/work_log.md`, `ocr-worker/docs/caveats.md`
+  - `ocr-worker/docs/OW-TASKS.md`, `ocr-worker/docs/OW-WORK-LOG.md`, `ocr-worker/docs/OW-CAVEATS.md`
 - 想定される結果や注意点:
   - Docker Desktop のメモリ制限に依存せず、999 ページまで処理可能になることを目指す
   - 各ページ処理後の `gc.collect()` により処理時間が若干増加する可能性がある
@@ -1223,7 +1223,7 @@ chmod +x scripts/run_003007_ocr_remaining.sh
   - page 14 時点まで OOM は発生せず、メモリ使用量は 4.3GiB〜4.9GiB / 7.75GiB の範囲で推移
   - 明らかな増加傾向は見られず、ページ数に依存しない一定のメモリ使用量が維持されていることを示唆
 - 2026-08-27: 999 ページまでのフルスケールテストは 1 ページあたり約 80〜120 秒かかるため、今回は実施せず別途長時間実行テストとして予定
-- 2026-08-27: `ocr-worker/docs/tasks.md` / `ocr-worker/docs/caveats.md` / 本ファイルを更新
+- 2026-08-27: `ocr-worker/docs/OW-TASKS.md` / `ocr-worker/docs/OW-CAVEATS.md` / 本ファイルを更新
 
 ---
 
@@ -1246,10 +1246,10 @@ chmod +x scripts/run_003007_ocr_remaining.sh
 
 ### 【実施実績】
 
-- 2026-09-01: `ocr-worker/docs/work_log.md` の OW003003・OW003004・OW003007 の記録をレビュー
+- 2026-09-01: `ocr-worker/docs/OW-WORK-LOG.md` の OW003003・OW003004・OW003007 の記録をレビュー
 - 2026-09-01: 過去の検証結果ディレクトリ（`ocr-results-OW003003/`、`ocr-results-OW003007/`）は存在しなかったため、ワークログに記載された定量的データを使用
 - 2026-09-01: ページ分類ベース・認識置信度ベース・レイアウト認識結果ベースの 3 方式を実装コスト・処理時間・効果の観点から評価
 - 2026-09-01: 検討レポート `ocr-worker/test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md` を作成
 - 2026-09-01: 結論として「適応的前処理の導入は保留」とし、理由を記載
-- 2026-09-01: `ocr-worker/docs/tasks.md` に実施結果とレポートリンクを追記
+- 2026-09-01: `ocr-worker/docs/OW-TASKS.md` に実施結果とレポートリンクを追記
 

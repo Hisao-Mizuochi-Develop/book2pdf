@@ -114,10 +114,10 @@ ocr-worker/                       # OCR Worker ルート
 ├── app/                          # FastAPI アプリケーションコード
 │   └── main.py                   # API エントリポイント（/ocr, /health）
 ├── docs/                         # ocr-worker 専用ドキュメント
-│   ├── ocr-worker-system-spec.md # 本仕様書
-│   ├── caveats.md                # 注意事項
-│   ├── work_log.md               # 作業ログ
-│   └── tasks.md                  # タスク管理表
+│   ├── OW-OCR-WORKER-SYSTEM-SPEC.md # 本仕様書
+│   ├── OW-CAVEATS.md                # 注意事項
+│   ├── OW-WORK-LOG.md               # 作業ログ
+│   └── OW-TASKS.md                  # タスク管理表
 ├── ndlocr_cli_patches/           # ndlocr_cli ソースへのパッチファイル
 │   ├── inference.py              # cli/core/inference.py 上書き用（ページ処理時間 DEBUG ログ追加）
 │   └── process_textblock.py      # ndl_layout/tools/process_textblock.py 上書き用（score_thr 反映修正）
@@ -133,7 +133,7 @@ ocr-worker/                       # OCR Worker ルート
 
 ## 8. 注意事項
 
-- ocr-worker に関する注意事項・トラブルシューティングは [caveats.md](./caveats.md) を参照
+- ocr-worker に関する注意事項・トラブルシューティングは [OW-CAVEATS.md](./OW-CAVEATS.md) を参照
 - 主な注意点として、以下がある
   - 公式 Dockerfile は GPU 用のため、CPU 実行用に自前で Dockerfile を作成している
   - 学習済みモデルのダウンロードにより、Docker ビルドに数十分程度かかる場合がある
@@ -143,4 +143,4 @@ ocr-worker/                       # OCR Worker ルート
   - KyTea はソースからビルドしてモデルファイルを配置している
   - `ndlocr_cli_patches/process_textblock.py` を適用し、`config.yml` の `layout_extraction.score_thr` が ndl_layout 推論に反映されるようにしている
   - `PREPROCESS_ENABLED` 環境変数で自動画像前処理（2 倍アップスケール＋軽度シャープニング）の ON/OFF を制御できる（デフォルト ON）
-  - 詳細は [caveats.md](./caveats.md) を参照
+  - 詳細は [OW-CAVEATS.md](./OW-CAVEATS.md) を参照

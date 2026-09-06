@@ -42,7 +42,7 @@
 |---|---|---|---|---|
 | `code-generator` | `.cline/skills/code-generator/SKILL.md` | コード生成 | 言語別コーディング規約、外部依存コメント、API・関数呼び出しの整合性確認 | Python / TypeScript / Rust のソースコードを書く・レビューする時 |
 | `file-modifier` | `.cline/skills/file-modifier/SKILL.md` | ドキュメント更新 | 既存ファイル更新時の `replace_in_file` 適用ルール、末尾追記時のマーカー指定 | `docs/` や `test_cases/` 配下の既存ファイルを更新する時 |
-| `task-manager` | `.cline/skills/task-manager/SKILL.md` | タスク管理 | タスクNo体系、粒度、記録場所（`tasks.md` / `work_log.md`） | タスク管理表・作業ログを作成・更新する時 |
+| `task-manager` | `.cline/skills/task-manager/SKILL.md` | タスク管理 | タスクNo体系、粒度、記録場所（`OT-TASKS.md` / `OT-WORK-LOG.md`） | タスク管理表・作業ログを作成・更新する時 |
 | `test-manager` | `.cline/skills/test-manager/SKILL.md` | テスト・検証 | テストデータ配置、検証レポート作成、PDF目視確認、README.md インデックス追加 | テストデータ配置、OCR 精度比較、検証レポート作成時 |
 | `workflow-runner` | `.cline/skills/workflow-runner/SKILL.md` | 実行・Git運用 | タスクの3フェーズ実行、ブランチ運用、コミット・マージ手順 | タスク開始〜完了のライフサイクル、Git ブランチ操作時 |
 
@@ -71,10 +71,10 @@
 
 タスク管理の基本単位と記録ルールを定めます。
 
-- タスク No は「モジュール接頭辞（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」の計8文字とする（例：`OW003001`）
-  - 接頭辞: `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
+- タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」の計8文字とする（例：`OW003001`）
+  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
 - タスク粒度は数時間〜1日以内で完了できる単位とする
-- 記録は `<module>/docs/tasks.md` と `<module>/docs/work_log.md` に行う
+- 記録は `<module>/docs/<モジュール識別子>-TASKS.md` と `<module>/docs/<モジュール識別子>-WORK-LOG.md` に行う
 - 【計画】欄に記載した事柄は削除せず、実施しない場合は理由を追記する
 
 ### 3.4 `test-manager`
@@ -92,7 +92,7 @@
   - 考察・結論・今後の検討事項
 - 付属データ（CSV、テキスト、画像、比較用 PDF 等）はレポートと同じディレクトリに配置する
 - PDF 目視確認時は `docker compose cp backend:/data/pdfs/<job_id>.pdf ./test_cases/results/ocr-results-<タスクNo>/<パターン名>/pdfs/` で取得する
-- 作成後は必ず `test_cases/README.md` のインデックスと `<module>/docs/tasks.md` の【実施結果】にリンクを追加する
+- 作成後は必ず `test_cases/README.md` のインデックスと `<module>/docs/<モジュール識別子>-TASKS.md` の【実施結果】にリンクを追加する
 
 詳細な配置ルールは `.cline/skills/test-manager/references/testdata-locations.md` を参照。
 
@@ -105,21 +105,21 @@
 2. `git status` で working tree が clean であることを確認
 3. `main` ブランチを最新化（`git checkout main && git pull`）
 4. 専用ブランチを作成（`git checkout -b feature/<タスクNo>-<短縮名>`）
-5. `tasks.md` の【計画】に実施手順を記載
-6. `work_log.md` に【実施予定】を作成
+5. `OT-TASKS.md` の【計画】に実施手順を記載
+6. `OT-WORK-LOG.md` に【実施予定】を作成
 7. ユーザーに計画を提示し、承認を取得
 
 #### Phase 2: Execution（処理）
 1. 計画に従って実装・調査・検証を実行
 2. 節目のフェーズごとにユーザーに状況報告と承認依頼を行う
-3. 必要に応じて `docs/caveats.md` や仕様書を更新
+3. 必要に応じて `docs/OT-CAVEATS.md` や仕様書を更新
 
 #### Phase 3: Post-work（後処理）
-1. `tasks.md` の【実施結果】に実施内容を追記
-2. `work_log.md` の同一エントリに【実施実績】を追記
+1. `OT-TASKS.md` の【実施結果】に実施内容を追記
+2. `OT-WORK-LOG.md` の同一エントリに【実施実績】を追記
 3. `git add -A && git commit` でコミット（コミットメッセージにタスク番号を含める）
 4. `main` ブランチへマージ
-5. `tasks.md` にタスク完了日付を記載
+5. `OT-TASKS.md` にタスク完了日付を記載
 6. ユーザーにタスク完了を報告
 
 ---
@@ -143,7 +143,7 @@ workflow-runner Phase 2
 workflow-runner Phase 3
         │
         ├─ コミット・マージ → workflow-runner
-        └─ tasks.md / work_log.md 更新 → task-manager
+        └─ OT-TASKS.md / OT-WORK-LOG.md 更新 → task-manager
 ```
 
 ### 依存関係の補足

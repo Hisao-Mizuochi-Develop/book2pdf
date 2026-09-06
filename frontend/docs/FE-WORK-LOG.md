@@ -64,7 +64,7 @@ npm run dev
 - `src/app/page.tsx` を新規作成し、ファイル選択から ZIP アップロード、OCR 実行、進捗表示、PDF ダウンロードまでの簡易 UI を実装した
 - `npm run build` が成功した
 - `npm run dev` で開発サーバーが起動し、ブラウザで `http://localhost:3000` にアクセスしてトップページが正常に表示されることを確認した
-- `frontend/docs/frontend-system-spec.md` / `tasks.md` / `work_log.md`、および `docs/web-ocr-system-plan.md` を更新した
+- `frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md` / `FE-TASKS.md` / `FE-WORK-LOG.md`、および `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した
 
 ### 注意事項
 

@@ -178,7 +178,7 @@ GET /api/jobs/{job_id}
 
 ## 10. 関連ドキュメント
 
-- `backend/docs/backend-system-spec.md` — backend 側の実装詳細
-- `frontend/docs/frontend-system-spec.md` — frontend 側の実装詳細
-- `localapp/docs/localapp-spec.md` — localapp 側の実装詳細
-- `docs/web-ocr-system-plan.md` — 全体アーキテクチャ
+- `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` — backend 側の実装詳細
+- `frontend/docs/FE-FRONTEND-SYSTEM-SPEC.md` — frontend 側の実装詳細
+- `localapp/docs/LA-LOCALAPP-SPEC.md` — localapp 側の実装詳細
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` — 全体アーキテクチャ
