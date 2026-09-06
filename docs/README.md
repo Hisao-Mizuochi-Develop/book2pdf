@@ -19,7 +19,7 @@
 | [`agent-skills-guide.md`](agent-skills-guide.md) | Cline AgentSkills の構成定義・各スキル役割・運用方法 |
 | [`tasks.md`](tasks.md) | プロジェクト全体のタスク管理表 |
 | [`work_log.md`](work_log.md) | プロジェクト全体の作業ログ |
-| [`caveats.md`](caveats.md) | 全体横断の注意事項 |
+| [`SY-CAVEATS.md`](SY-CAVEATS.md) | 全体横断の注意事項 |
 
 ## backend ドキュメント
 

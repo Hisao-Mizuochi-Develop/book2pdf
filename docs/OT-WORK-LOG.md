@@ -2,6 +2,35 @@
 
 本ドキュメントは、book2pdf プロジェクトの複数モジュールにまたがる全体横断の作業ログです。
 
+## 2026-09-06 OT002002 `OT-CAVEATS.md` の分離設計と移行計画策定
+
+### 目的
+
+`docs/OT-CAVEATS.md` に混在していたモジュール固有の注意事項と横断的な注意事項を分離し、移行計画を策定する。
+
+### 実施内容
+
+- `docs/OT-CAVEATS.md` の内容を分類し、以下の移行先を決定
+  - backend 固有の注意事項 → `backend/docs/BE-CAVEATS.md`
+  - localapp 固有の注意事項 → `localapp/docs/LA-CAVEATS.md`
+  - ocr-worker 固有の注意事項 → `ocr-worker/docs/OW-CAVEATS.md`
+  - frontend でカバー済みの項目 → `docs/OT-CAVEATS.md` から削除
+  - 横断的な参照 → 新規 `docs/SY-CAVEATS.md` に集約
+- `docs/OT-TASKS.md` に OT002002 として本タスクを記録
+- `docs/OT-WORK-LOG.md` に作業ログを記録
+- `docs/README.md` の `caveats.md` リンクを `SY-CAVEATS.md` に修正
+
+### 結果
+
+- `docs/OT-CAVEATS.md` からの分離設計が完了した
+- 実際の移行・削除は OT002003 として後続タスクで実施されることが明確になった
+
+### コミット
+
+`docs(OT002002): define task, update README and WORK-LOG`
+
+---
+
 ## 2026-09-04 .clinerules §8 import/use/from コメント追加（全モジュール横断）
 
 ### 目的

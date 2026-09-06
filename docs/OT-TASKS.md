@@ -65,6 +65,19 @@
 |  | 【実施結果】 |  |  |  |
 |  | 2026-08-12: `./docs/OT-CAVEATS.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した |  |  |  |
 |  | 2026-08-12: 各モジュール固有の注意事項については `backend/docs/BE-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` へのリンクを設置した |  |  |  |
+| OT002002 | `OT-CAVEATS.md` の分離設計と移行計画策定 | 2026-09-06 | 2026-09-06 | ドキュメント設計 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `docs/OT-CAVEATS.md` の内容を、モジュール固有の注意事項と横断的な注意事項に分類する |  |  |  |
+|  | 各モジュール固有の注意事項の移行先（`backend/docs/BE-CAVEATS.md` / `localapp/docs/LA-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` / `frontend/docs/FE-CAVEATS.md`）を決定する |  |  |  |
+|  | 横断的な注意事項を集約する `docs/SY-CAVEATS.md` の構成案を作成する |  |  |  |
+|  | `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` に本タスクを記録する |  |  |  |
+|  | 実際の移行・削除は OT002003 として別タスクで実施する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-06: `docs/OT-CAVEATS.md` の内容を分類し、モジュール固有の項目と横断的な項目に分離した |  |  |  |
+|  | 2026-09-06: 各モジュールの `*-CAVEATS.md` への移行先と `docs/SY-CAVEATS.md` の構成を決定した |  |  |  |
+|  | 2026-09-06: `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` に OT002002 として記録した |  |  |  |
+|  | 2026-09-06: `docs/README.md` の dead link を `SY-CAVEATS.md` に修正した |  |  |  |
 | OT002003 | `docs/OT-CAVEATS.md` の内容を各モジュールの `*-CAVEATS.md` に再配布し、OT-CAVEATS.md を削除する | 2026-09-06 | 2026-09-06 | ドキュメント整理 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
