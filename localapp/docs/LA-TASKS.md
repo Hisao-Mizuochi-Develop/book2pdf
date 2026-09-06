@@ -9,10 +9,17 @@
 - 1つのタスクに複数の責務が含まれる場合は分割を検討する
 - 詳細項目を無理に別タスクにせず、達成可能な単位でまとめる
 - 作業の記録はタスク詳細欄に箇条書きで記載する
+- タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」とする
+  - 識別子 `LA` は localapp、`SY` は System/全体設計・仕様等を表す
+  - 例：ユースケース001の1番目のタスク → `LA001001`
+- 通番は各ユースケース内で 001 から連番で振る
 
 ---
 
-## ユースケース 001 — Tauri v2 プロジェクト初期化
+## ユースケースNo | LA001
+
+ユースケース
+Tauri v2 プロジェクト初期化
 
 電子書籍キャプチャ・トリミング・ZIP 出力アプリの土台となる、Tauri v2 + React + Vite プロジェクトを構築する。
 
@@ -92,7 +99,10 @@
 
 ---
 
-## ユースケース 002 — 画面キャプチャ
+## ユースケースNo | LA002
+
+ユースケース
+画面キャプチャ
 
 電子書籍リーダー画面を検出し、連続してキャプチャして画像フォルダに保存する。
 
@@ -813,8 +823,10 @@
 【実施結果】
 
 ---
+## ユースケースNo | LA003
 
-## ユースケース 003 — PDF 読込
+ユースケース
+PDF 読込
 
 外部 PDF を画像化して、トリミングタブに引き継ぐ。
 
@@ -1047,8 +1059,10 @@
   - ユーザーテスト: 合格判定を取得
 
 ---
+## ユースケースNo | LA004
 
-## ユースケース 004 — 画像トリミング
+ユースケース
+画像トリミング
 
 キャプチャまたは PDF 展開した画像から余白を削除する。
 
@@ -1153,7 +1167,10 @@
 
 ---
 
-## ユースケース 005 — ZIP 出力・連携
+## ユースケースNo | LA005
+
+ユースケース
+ZIP 出力・連携
 
 トリミング済み画像を ZIP アーカイブにまとめる。
 
@@ -1314,7 +1331,10 @@
 
 ---
 
-## ユースケース 006 — モダン GUI デザイン
+## ユースケースNo | LA006
+
+ユースケース
+モダン GUI デザイン
 
 クリーン＆ミニマルな Apple HIG 風 UI を実装する。
 
@@ -1362,7 +1382,7 @@
    - 各 variant（default, outline, secondary, ghost, destructive, link）に JSDoc コメント
    - 各 size（default, xs, sm, lg, icon...）に JSDoc コメント
    - `buttonVariants` 関数と `Button` コンポーネントにも概要コメント
-3. `localapp/docs/localapp-spec.md` のデザイン仕様更新
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` のデザイン仕様更新
    - カラーパレット表に Tailwind CSS 変数名と oklch 値を追記
    - フォントに `Geist Variable` を明記
    - タイポグラフィのサイズ指定を rem で明記
@@ -1373,7 +1393,7 @@
 【実施結果】
 - `localapp/src/index.css` を Apple HIG 風カラーパレットに変更し、各変数に「用途 + 理由」のコメントを付加
 - `localapp/src/components/ui/button.tsx` の各 variant・size に詳細な JSDoc コメントを付加
-- `localapp/docs/localapp-spec.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
+- `localapp/docs/LA-LOCALAPP-SPEC.md` のカラーパレット表を更新（oklch 値・CSS 変数名を追記）
 - `.clinerules` 第8章に「初学者向け詳細コメント」ルールを加筆
 - `npm run build` でビルド成功
 - `npm run tauri dev` で起動確認完了
@@ -1417,7 +1437,7 @@
    - `window.matchMedia('(prefers-color-scheme: dark)')` を監視
    - 変更時に `document.documentElement.setAttribute('data-theme', ...)` を設定
    - 将来的に手動切り替えを入れる際の土台とする
-3. `localapp/docs/localapp-spec.md` にテーマ仕様を追記
+3. `localapp/docs/LA-LOCALAPP-SPEC.md` にテーマ仕様を追記
    - ライト/ダークモードのカラーパレット表
 4. ビルド・起動確認
 
@@ -1443,7 +1463,10 @@
 
 ---
 
-## ユースケース 007 — 設定・永続化
+## ユースケースNo | LA007
+
+ユースケース
+設定・永続化
 
 アプリ設定、プロファイル、履歴を永続化する。
 
@@ -1473,7 +1496,10 @@
 
 ---
 
-## ユースケース 008 — PDF作成（Backend API連携）
+## ユースケースNo | LA008
+
+ユースケース
+PDF作成（Backend API連携）
 
 トリミング済み画像フォルダ/ZIPから、backend API（FastAPI）を経由してOCR処理済みの検索可能PDFを生成する。
 
@@ -1589,7 +1615,7 @@
    - A4（210mm × 297mm）に統一し、アスペクト比維持で fit
    - 将来的に「元画像サイズ維持」オプションも追加可能な設計
 4. **調査結果のドキュメント化**
-   - `localapp/docs/ocr-technology-survey-LA008007.md` に調査レポートを作成
+   - `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` に調査レポートを作成
    - 各候補の評価スコア、採用理由、POC 結果を記載
 
 【実施結果】
@@ -1598,7 +1624,7 @@
 - A4 フィットロジックを確立：10mm マージン、300 DPI px→mm 変換、`ImageTransform` でのセンタリング＋スケーリング
 - `tesseract` crate 0.15.2 と `leptess` 0.14.0 を調査し、`leptess` を採用（`get_component_boxes()` で word/line bbox を直接取得可能、hOCR/TSV パース不要）
 - backend + ocr-worker 実装との差異を調査・分析。OCR エンジン（ndlocr_cli vs Tesseract）、PDF 生成ライブラリ（PyMuPDF vs printpdf）、座標系処理、アーキテクチャの 4 面で根本的な違いがあることを確認
-- 調査レポート `localapp/docs/ocr-technology-survey-LA008007.md` を作成
+- 調査レポート `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` を作成
 - 残課題：
   - `image` crate 0.25.x と `printpdf` 内部の 0.24.x とのデュアルバージョン対応（LA008008 で対応方針確定）
   - LA008009 で `leptess` 統合 POC（画像→OCR→テキストレイヤーPDF）を実施
@@ -1726,27 +1752,13 @@
    - 各生成パターンのエンドツーエンドテスト
    - ユーザー動作テスト実施・合格判定
 4. **ドキュメント更新**
-   - `localapp/docs/tasks.md` 各タスクの完了日付を記入
-   - `localapp/docs/work_log.md` に実施実績を追記
+   - `localapp/docs/LA-TASKS.md` 各タスクの完了日付を記入
+   - `localapp/docs/LA-WORK-LOG.md` に実施実績を追記
 
 【実施結果】
 - 2026-09-04: `create_searchable_pdf` の引数名を camelCase（`sourcePath`, `sourceType`, `outputPath`）に修正。Tauri `invoke` 経由でフロントエンドから正しくパラメータが渡されるようになった
 - 2026-09-04: 実機（Apple Silicon Mac）で 3 ページの検索可能 PDF を生成（出力サイズ約 14.5 MB）。生成された PDF でテキスト選択および検索が機能することを目視確認
 - 2026-09-04: タスク完了日を 2026-09-04 に設定
-
-> **注**: 本タスクは 2026-09-03 に再構成のため分割実施されました。新タスクは LA008007（技術調査・選定）〜 LA008010（UI統合・収束）です。
-
-【計画】
-- localapp 単体で動作する OCR 処理パイプラインの設計・実装
-- backend API（ocr-worker コンテナ）への依存なしに、ローカル環境で検索可能 PDF を生成する機能
-- 技術選定：Tesseract / 他の軽量 OCR エンジン、または既存の `pdfium-render` / `image` crate を活用したテキスト抽出アプローチの検討
-- 画像フォルダ/ZIP から直接 PDF 生成する Rust コマンドを実装
-- フロントエンド UI（PDF作成タブ内）への機能統合
-- ローカル OCR と backend OCR の使い分けガイド（速度 vs 精度のトレードオフ）を UI 上で明示
-- **再構成：上記内容は LA008007（新）〜 LA008010 に分割して実施**
-
-【実施結果】
-- 2026-09-03: 再構成のため分割実施。詳細は LA008007（新）〜 LA008010 を参照
 
 ### LA008011 OCR精度向上（Tesseract pre-processing / モデル選定）
 
@@ -1754,7 +1766,7 @@
 - Tesseract 単体 OCR の認識率を向上させるため、画像前処理（二値化 / ノイズ除去 / 解像度調整）の効果を検証する
 - `jpn.traineddata` 以外の学習済みモデル（`jpn_vert`、`best`/`fast` モデル等）との比較を実施する
 - backend ndlocr_cli との精度差を定量的に評価し、localapp OCR の使い所を再定義する
-- 前処理パラメータとモデルの選定結果を `localapp/docs/caveats.md` に追記する
+- 前処理パラメータとモデルの選定結果を `localapp/docs/LA-CAVEATS.md` に追記する
 
 【実施結果】
 
@@ -1768,20 +1780,3 @@
 
 【実施結果】
 
-### LA008008 localapp 単体PDF生成処理実装（旧）
-
-> **注**: 本タスクは 2026-09-03 に再構成のため分割実施されました。新タスクは LA008007（新）〜 LA008010（UI統合・収束）です。
-
-【計画】
-- LA008007 で検討した技術選定に基づき、localapp 単体で画像フォルダ/ZIP から PDF を生成する Rust コマンドを実装する
-- 生成パターン：
-  - 画像結合 PDF（OCR なし）：画像をページとして結合した単純な PDF
-  - 検索可能 PDF（OCR 付き）：LA008007 で選定した OCR エンジンを用いてテキストレイヤーを埋め込んだ PDF
-- Rust コマンド実装：`localapp/src-tauri/src/commands/pdf_generation.rs` を新規作成
-- フロントエンド UI 統合：`PdfCreationView.tsx` に「ローカル PDF 生成」ボタンを追加し、backend OCR 連携と使い分け可能にする
-- 処理フロー：画像収集 → （前処理）→ OCR（オプション）→ PDF 生成 → 出力パス返却
-- 進捗通知：`pdf-progress` イベントで生成状況を UI に通知
-- **再構成：上記内容は LA008007（新）〜 LA008010 に分割して実施**
-
-【実施結果】
-- 2026-09-03: 再構成のため分割実施。詳細は LA008007（新）〜 LA008010 を参照

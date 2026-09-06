@@ -1,4 +1,4 @@
-# タイムアウト値調査報告書（OT003001）
+# タイムアウト値調査報告書（OT006001）
 
 ## 1. 調査目的
 
@@ -98,5 +98,5 @@ if Instant::now() > deadline {
 
 ## 6. 関連ドキュメント
 
-- `localapp/docs/caveats.md` — 「`page_timeout_sec` のデフォルト値調整（OT003001）」セクション
+- `localapp/docs/caveats.md` — 「`page_timeout_sec` のデフォルト値調整（OT006001）」セクション
 - `docs/progress-notification-spec.md` — 進捗通知方式仕様書（`page_timeout_sec` の仕様定義）

@@ -153,7 +153,7 @@ zip -j sample_002-004.zip \
 - backend タスク：ocr-worker 500 エラーの原因調査（未完了）
 - 全体タスク：frontend から ZIP アップロード・PDF ダウンロードの統合検証（未完了）
 
-## 2026-09-03 OT003001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
+## 2026-09-03 OT006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
 
 ### 目的
 
@@ -173,7 +173,7 @@ localapp で発生していた「ジョブ状態の取得に失敗しました�
   - 1 リクエストあたり 10 秒タイムアウト
   - 接続失敗時は最大 3 回まで 1 秒 / 2 秒 / 4 秒の指数関数的バックオフでリトライ
   - リトライ前に「ジョブ状態の取得を再試行します」の進捗メッセージを UI に通知
-- `docs/README.md` / `docs/web-ocr-system-plan.md` / `docs/caveats.md` / `docs/tasks.md` に進捗通知仕様と OT003001 の計画を反映した
+- `docs/README.md` / `docs/web-ocr-system-plan.md` / `docs/caveats.md` / `docs/tasks.md` に進捗通知仕様と OT006001 の計画を反映した
 - `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` のポーリング処理に `poll_job_status` ヘルパーを導入し、タイムアウト・リトライ・バックオフを実装した
 
 ### 結果
@@ -184,4 +184,4 @@ localapp で発生していた「ジョブ状態の取得に失敗しました�
 
 ### 関連タスク
 
-- OT003001 進捗通知のポーリング方式仕様策定と localapp リトライ実装（完了）
+- OT006001 進捗通知のポーリング方式仕様策定と localapp リトライ実装（完了）
