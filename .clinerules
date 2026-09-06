@@ -11,10 +11,17 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Always propose changes before implementing.
 - Maintain working tree clean before starting a task.
 - **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
+- **Issue a task number before implementation.** Record the task in the appropriate `<identifier>-TASKS.md` file before starting work, and use it in branch names and commit messages.
+- **Use feature branches for all task work.** Create branches from `main` using the format `feature/<task-no>-<short-description>`. Merge back into `main` with `--no-ff` to preserve task history.
+- **Never recreate a branch for the same task number.** If a branch already exists for a task, reuse it or clean up stale branches before creating a new one.
+- **Prevent duplicate work.** Before creating a branch or committing, check existing branches and the task tracker to ensure the same task is not already in progress or completed.
 
 ## User Communication
 - When asking the user for decisions, use free-form questions rather than multiple-choice options.
 - When the user needs to switch to Act mode, explicitly say "toggle to Act mode".
+- **Do not quote the user's exact wording when summarizing intent.** Rephrase the user's intent in your own words before asking for confirmation or acting on it.
+- **Do not generalize or over-interpret user intent.** If a statement might apply broadly, ask the user whether the intent is limited to the immediate context or should be generalized.
+- When requesting approval, present a clear **do / do-not** choice (e.g., "実施してよろしいでしょうか？" / "中止しますか？") so the user can reply with a single decision.
 
 ## Project Context
 - Modules: backend/, frontend/, localapp/, ocr-worker/
