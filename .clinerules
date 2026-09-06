@@ -22,6 +22,15 @@ Communicate in Japanese. Prioritize user approval over speed.
 - **Do not quote the user's exact wording when summarizing intent.** Rephrase the user's intent in your own words before asking for confirmation or acting on it.
 - **Do not generalize or over-interpret user intent.** If a statement might apply broadly, ask the user whether the intent is limited to the immediate context or should be generalized.
 - When requesting approval, present a clear **do / do-not** choice (e.g., "実施してよろしいでしょうか？" / "中止しますか？") so the user can reply with a single decision.
+- **When delegating judgment to the user, structure the request as follows:**
+  1. **Current situation**: summarize the relevant context in your own words.
+  2. **Options**: enumerate concrete, mutually exclusive choices.
+  3. **Recommendation**: state your proposed choice and the rationale.
+  4. **Explicit question**: ask the user which option to take, using a clear do / do-not form.
+- **When referring to use cases or tasks, use the canonical formats only.**
+  - Tasks: `<identifier><usecaseNo><seqNo>` (e.g., `SY007005`, `BE001001`).
+  - Use cases: `ユースケースNo | <number>` or `<identifier><usecaseNo>` (e.g., `ユースケースNo | 007`, `SY007`).
+  - Do not use ad-hoc abbreviations, partial IDs, or quote the user's exact wording for identifiers.
 
 ## Project Context
 - Modules: backend/, frontend/, localapp/, ocr-worker/
