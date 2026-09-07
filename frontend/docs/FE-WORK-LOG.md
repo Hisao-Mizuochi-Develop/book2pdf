@@ -193,3 +193,85 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 - 全体タスク：docker compose での 3 コンテナ起動確認（完了）
 - 全体タスク：frontend から ZIP アップロード・PDF ダウンロードの統合検証（未完了）
 
+---
+
+## 2026-09-05 タスク001002/002001/003001：コンポーネント化、型定義、テスト基盤導入
+
+### 目的
+
+frontend の UI をコンポーネント単位に分割し、型定義と API クライアントを強化する。
+さらに、ユーザーの動作確認前に自動テストを最大限実施できるよう、単体テスト・結合テスト基盤を導入する。
+
+### 前提
+
+- `feature/FE001002-componentize-and-test` ブランチで作業すること
+- Node.js / npm が利用可能であること
+- backend API のエンドポイント仕様は `backend/docs/api-spec.md` 等で確認済みであること
+
+### 実施予定コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+
+# テスト基盤導入
+npm install -D vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom msw
+
+# 型定義・API 強化
+# - src/types/index.ts 新規作成
+# - src/lib/api.ts リファクタ
+
+# コンポーネント分割
+# - src/components/upload/UploadForm.tsx
+# - src/components/progress/ProgressPanel.tsx
+# - src/components/result/DownloadButton.tsx / ResultPanel.tsx
+
+# テスト実装
+# - src/lib/api.test.ts
+# - src/components/**/*.test.tsx
+# - src/lib/api.integration.test.ts
+
+# 品質ゲート
+npm run lint
+npm run test -- --run
+npm run build
+npm audit
+```
+
+### 想定される結果や注意点
+
+- Vitest + Testing Library + jsdom でコンポーネント単体テストが実行可能になる
+- MSW で backend API のレスポンスをモックし、コンポーネント連携の結合テストが実行可能になる
+- Playwright は基盤準備（config + サンプルテスト）までとし、backend 連携の完全 E2E は別タスクとする
+- ドキュメント更新は `tasks.md` / `work_log.md` / `frontend-system-spec.md` / `caveats.md` / `docs/agent-skills-guide.md` / `.cline/skills/test-manager/SKILL.md` が対象
+
+
+## 2026-09-07 タスク FE001002：page.tsx リファクタリングと作業完了
+
+### 実施内容
+
+- `feature/FE001002-componentize-and-test` ブランチにて、FE001002 の実装を完了した。
+- `src/app/page.tsx` を `ZipUploadForm` コンポーネントに委譲し、UI ロジックを `useOcrJob` フックと共有 API レイヤー（`src/lib/api.ts`）に集約した。
+- 型定義（`src/types/index.ts`）とテスト（`page.test.tsx`、`ZipUploadForm.test.tsx`、`useOcrJob.test.tsx`、`api.test.ts`）を追加・整備した。
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npx tsc --noEmit          # 成功（エラーなし）
+npm test -- --run         # 5 files, 33 tests passed
+```
+
+### 変更ファイル
+
+- `src/app/page.tsx`
+- `src/types/index.ts`
+- `src/lib/api.ts`
+- `src/components/upload/ZipUploadForm.tsx`
+- `src/hooks/useOcrJob.ts`
+- 上記各ファイルに対応するテストファイル
+
+### 状態
+
+- `FE-TASKS.md` の FE001002 完了日を 2026-09-07 に更新済み。
+- 本ブランチは `main` へマージ可能な状態である。
+
