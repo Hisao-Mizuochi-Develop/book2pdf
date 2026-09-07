@@ -432,7 +432,7 @@ OCR 完了後に生成される PDF の品質を向上する
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| BE007001 | FastAPI に CORS ミドルウェアを追加する | 2026-09-07 |  | 機能実装 |
+| BE007001 | FastAPI に CORS ミドルウェアを追加する | 2026-09-07 | 2026-09-07 | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `backend/app/main.py` に `fastapi.middleware.cors.CORSMiddleware` を追加する |  |  |  |
@@ -441,4 +441,7 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | `backend/tests/test_cors.py` を新規作成し、OPTIONS プリフライトと実際のレスポンスに CORS ヘッダーが含まれることを検証する |  |  |  |
 |  | pytest を実行し、既存テストを含むすべてのテストが PASS することを確認する |  |  |  |
 |  | 【実施結果】 |  |  |  |
-|  | （実施予定） |  |  |  |
+|  | 2026-09-07: `backend/app/main.py` に `CORSMiddleware` を追加した |  |  |  |
+|  | 2026-09-07: `backend/tests/test_cors.py` を新規作成し、OPTIONS プリフライト・実際のレスポンス・未許可オリジンの 3 ケースを検証した |  |  |  |
+|  | 2026-09-07: pytest を実行し、`test_cors.py` 3 件・`test_jobs.py` 5 件の計 8 件がすべて PASS した |  |  |  |
+|  | 2026-09-07: `feature/BE007001-add-cors-middleware` ブランチから `main` へ `--no-ff` マージした |  |  |  |
