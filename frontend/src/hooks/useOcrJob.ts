@@ -107,6 +107,11 @@ export function useOcrJob(): UseOcrJobResult {
                 event.message ??
                 `${event.status} - ${event.progress}% (${event.current_page}/${event.total_pages})`;
               setProgressLog((prev) => [...prev, text]);
+
+              // PDF ダウンロードは OCR/PDF 生成が完了してから有効にします
+              if (event.status === "completed") {
+                setDownloadableJobId(newJobId);
+              }
             } else {
               setProgressLog((prev) => [...prev, message]);
             }
@@ -124,8 +129,7 @@ export function useOcrJob(): UseOcrJobResult {
 
         const ocrResult = await runOcr(newJobId);
         setResult(JSON.stringify(ocrResult, null, 2));
-        setDownloadableJobId(newJobId);
-        setProgressLog((prev) => [...prev, "OCR 処理が完了しました"]);
+        setProgressLog((prev) => [...prev, "OCR 処理を開始しました"]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
         closeEventSource();

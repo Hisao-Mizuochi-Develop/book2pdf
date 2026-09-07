@@ -275,3 +275,34 @@ npm test -- --run         # 5 files, 33 tests passed
 - `FE-TASKS.md` の FE001002 完了日を 2026-09-07 に更新済み。
 - 本ブランチは `main` へマージ可能な状態である。
 
+
+## 2026-09-07 タスク FE001002 再開：PDF ダウンロード有効化タイミングの修正
+
+### 実施内容
+
+- UAT 中に PDF ダウンロードボタンが OCR/PDF 生成完了前から有効になっており、`GET /api/jobs/{job_id}/pdf` を呼ぶと `400 Bad Request` が返る不具合を確認した。
+- `feature/FE001002-componentize-and-test` ブランチを再利用し、FE001002 を再開した。
+- `src/hooks/useOcrJob.ts` の `handleUploaded` 内で、`setDownloadableJobId(newJobId)` の呼び出しを `runOcr` API 成功直後から、SSE 進捗イベントの `status === "completed"` を受信した時点に変更した。
+- `src/hooks/__tests__/useOcrJob.test.ts` を更新し、`runOcr` 直後は `downloadableJobId` が null のままであることを検証するよう修正した。
+- `useOcrJob.test.ts` に「completed SSE イベント受信後に `downloadableJobId` が設定される」テストケースを追加した。
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test -- --run          # 5 files, 34 tests passed
+```
+
+### 変更ファイル
+
+- `src/hooks/useOcrJob.ts`
+- `src/hooks/__tests__/useOcrJob.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT 再検証が必要である。
+
