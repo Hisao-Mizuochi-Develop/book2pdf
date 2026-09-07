@@ -76,7 +76,7 @@
 ## ユースケースNo | 007
 
 ユースケース
-`OT` に誤分類された System タスクの切り出しと運用ルール整備
+`.clinerules` にユーザー対話時の厳格なワークフロー・表現ルールの改善
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
@@ -137,33 +137,24 @@
 |  | 2026-09-06: `docs/SY-TASKS.md` に `SY007004` を起票した |  |  |  |
 |  | 2026-09-06: 変更を feature ブランチ `feature/SY007004-clinerules-branch-rules` から main へ `--no-ff` マージした |  |  |  |
 
----
-
-## ユースケースNo | 008
-
-ユースケース
-`.clinerules` にユーザー対話時の厳格な表現ルールを追加する
-
-| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
-|---|---|---|---|---|
-| SY007005 | ユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルール追加 | 2026-09-07 |  | 運用整備 |
+| SY007005 | ユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルール追加 | 2026-09-07 | 2026-09-07 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` の **User Communication** に「判断委ねの構造」（状況・選択肢・推奨・明示的質問）を追加する |  |  |  |
 |  | `.clinerules` の **User Communication** に「ユースケース・タスク言及形式」（`SY007005` / `ユースケースNo | 007` 等の canonical 形式）を追加する |  |  |  |
-|  | `docs/SY-TASKS.md` にユースケースNo 008 と `SY007005` を起票する |  |  |  |
+|  | `docs/SY-TASKS.md` に `SY007005` を起票する |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-09-07: `.clinerules` にユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルールを追加した |  |  |  |
-|  | 2026-09-07: `docs/SY-TASKS.md` にユースケースNo 008 と `SY007005` を起票した |  |  |  |
+|  | 2026-09-07: `docs/SY-TASKS.md` に `SY007005` を起票した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007005-clinerules-user-comm-rules` から main へ `--no-ff` マージした |  |  |  |
-| SY007006 | Phase 4 必須報告ルールと Verification Report Template の追加 | 2026-09-07 |  | 運用整備 |
+| SY007006 | テスト関連ワークフローのAgentSkills改善 | 2026-09-07 |  | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
-|  | `.clinerules` に Phase 4 の必須報告項目（7 項目）を追加する |  |  |  |
-|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 4 を 7 項目に更新し、`.clinerules` と `test-manager/SKILL.md` を参照させる |  |  |  |
-|  | `.cline/skills/test-manager/SKILL.md` に Verification Report Template を追加する |  |  |  |
+|  | `.clinerules` に「Phase 4 必須報告ルール」セクションを追加し、7項目のレポート枠組みを定義する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新し、`.clinerules` の 7項目枠組みと `test-manager` スキルの Verification Report Template を参照させる |  |  |  |
+|  | `.cline/skills/test-manager/SKILL.md` に「Verification Report Template（検証レポートテンプレート）」セクションを新設する |  |  |  |
 |  | `docs/SY-TASKS.md` に `SY007006` を起票する |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |

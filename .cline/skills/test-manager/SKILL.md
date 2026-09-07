@@ -90,83 +90,40 @@ metadata:
    - セクションがない場合: 該当するセクション見出しを新規作成し、エントリを追加
    - インデックス追加後、他のエントリが欠落していないか確認する
 
-## Verification Report Template
+## Verification Report Template（検証レポートテンプレート）
 
-Use this template for all verification reports created during Phase 4.
-The report MUST be placed at `<module>/test-results/<タスクNo>-<概要>/README.md`
-or `test_cases/results/ocr-results-<タスクNo>/README.md` as defined in the
-**テストデータの配置** section.
+本テンプレートは、`workflow-runner` Phase 4 の「最終報告書」に埋め込んで使用する標準フォーマットです。Clineは報告時、以下の表とフォーマットを必ずそのまま出力に含めること。
 
-### Report Structure
+### テストフェーズ毎の実施済みテスト項目と合否判定結果
 
-Every verification report MUST contain the following sections:
+| テストフェーズ | 確認項目（実施内容） | 合否判定基準 | 結果 |
+|---|---|---|---|
+| **ビルド** | 対象モジュールのビルド/コンパイルがエラーなしで完了する | エラー 0 件、警告は許容範囲内 | □ PASS / □ FAIL / □ N/A |
+| **単体テスト**<br>(CI/CD実施項目) | 既存および新規のテストスイートが全件通過する | 失敗 0 件、スキップ 0 件（意図的スキップを除く） | □ PASS / □ FAIL / □ N/A |
+| **動作確認**<br>(ユーザー検証項目の自動テスト) | 主要ユースケースおよびユーザー検証項目を満たす自動テストが正常に完了する | 期待結果と実際の結果が完全に一致する | □ PASS / □ FAIL / □ N/A |
 
-1. **タスク名・実施日・目的**
-2. **対象データ・環境・条件**
-3. **実行手順と使用コマンド**
-4. **期待結果**
-5. **実際の結果**
-6. **判定（PASS / FAIL / CONDITIONAL PASS）**
-7. **スクリーンショット・証跡（該当する場合）**
-8. **考察・結論・今後の検討事項**
+### 【ユーザー検証試験についての準備】
 
-### Markdown Template
+#### 1. テスト環境準備状況
 
-~~~markdown
-# Verification Report — <タスクNo>
+| 項目 | 確認内容 | 状態・準備状況の詳細 |
+|---|---|---|
+| コンテナ起動 | `docker compose up -d` で全サービスが Healthy 状態になる | □ 完了 / □ 未完了 (詳細: ) |
+| データ配置 | 検証に必要なテストデータが所定のパスに配置されている | □ 完了 / □ 未完了 (詳細: ) |
+| 依存関係 | 必要なパッケージ/ライブラリが環境にインストール済み | □ 完了 / □ 未完了 (詳細: ) |
 
-## 1. タスク名・実施日・目的
+#### 2. ユーザーテスト項目と実施方法
+*(ユーザーが実際に手動で検証、または結果を確認するための具体的なテストケースと手順を記述すること)*
+- **テストケース1:** [画面/機能名]
+  - **実施方法・手順:** 1. 〇〇にアクセスする / 2. 〇〇を入力してボタンを押す
+  - **期待される結果:** 〇〇が表示され、エラーが出ないこと
+  - **判定:** □ PASS / □ FAIL
+- **テストケース2:** ...
 
-- タスク名: <タスク名>
-- タスクNo: <タスクNo>
-- 実施日: YYYY-MM-DD
-- 目的: <なぜこの検証を実施したか>
+### 総合判定
 
-## 2. 対象データ・環境・条件
-
-- 対象データ: <ファイルパスまたは識別子>
-- 実行環境: <OS / コンテナ / バージョン>
-- 前提条件: <再現に必要な設定>
-
-## 3. 実行手順と使用コマンド
-
-1. <手順 1>
-2. <手順 2>
-
-```bash
-# 実行したコマンド
-```
-
-## 4. 期待結果
-
-- <期待する動作や出力>
-
-## 5. 実際の結果
-
-- <実際に観測した動作や出力>
-
-## 6. 判定
-
-- [ ] PASS
-- [ ] FAIL
-- [ ] CONDITIONAL PASS
-
-## 7. スクリーンショット・証跡
-
-<該当する場合は画像またはファイルパスを記載>
-
-## 8. 考察・結論・今後の検討事項
-
-- <分析と次のアクション>
-
-~~~
-
-### Rules
-
-- The report MUST be created in the same directory as the artifacts it references.
-- All file references MUST use relative paths from the report file.
-- The PASS/FAIL/CONDITIONAL PASS judgment MUST be explicit.
-- If a section does not apply, write "N/A" and explain why.
+- 各フェーズがすべて PASS の場合: **PASS**
+- いえない項目、または FAIL がある場合: **FAIL**（要修正・再検証）
 
 ## Prohibited Actions
 
