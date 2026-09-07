@@ -455,11 +455,13 @@ PDF 生成時に異体字を正規字体に正規化する
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| BE008001 | `test_generate_searchable_pdf_normalizes_variant_characters` の失敗修正 | 2026-09-07 |  | 不具合修正 |
+| BE008001 | `test_generate_searchable_pdf_normalizes_variant_characters` の失敗修正 | 2026-09-07 | 2026-09-08 | 不具合修正 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | 異体字「索」（U+F92A）が「索」（U+7D22）ではなく「浪」と認識される原因を調査する |  |  |  |
 |  | PDF 生成時のテキスト正規化処理（NFKC）の不具合を修正する |  |  |  |
 |  | `pytest tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_characters` が PASS することを確認する |  |  |  |
 |  | 【実施結果】 |  |  |  |
-|  | （未実施） |  |  |  |
+|  | 2026-09-08: `unicodedata.normalize("NFKC", "\uf92a")` が「浪」(U+6D6A) を返すのは Python 標準ライブラリの仕様。U+F92A は NFKC で「索」(U+7D22) に戻らない互換文字であり、BE006002 で対象外と定義済み |  |  |  |
+|  | 2026-09-08: テストの異体字を `漢`(U+FA47) に変更。U+FA47 は NFKC で正しく「漢」(U+6F22) に正規化される（Python 標準ライブラリ動作を確認済み） |  |  |  |
+|  | 2026-09-08: `backend/tests/test_pdf.py` のコメント、variant_text、アサーション期待値を修正。backend 全体テスト 30/30 PASS |  |  |  |
