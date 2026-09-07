@@ -78,6 +78,8 @@
 
 - `docs(SY007007): add cross-module defect handling and one-task-per-branch rule`
 - `[SY007007] Merge cross-module defect handling and one-task-per-branch rule`
+- `docs(SY007007): update task tracker and work log with completion`
+- `docs(SY007007): add missing Phase 3-A cross-module defect handling to workflow-runner`
 
 ### 関連タスク
 
