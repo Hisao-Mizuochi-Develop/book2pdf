@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-09-07 SY007006 Phase 4 必須報告ルールと Verification Report Template の追加
+
+### 目的
+
+- Phase 4 の最終報告に必須項目を設け、報告品質を均一化する
+- `.clinerules`、`workflow-runner` スキル、`test-manager` スキルの間で報告フレームワークを統一する
+- 検証レポートの作成テンプレートを `test-manager/SKILL.md` に定義し、全検証活動で再利用できるようにする
+
+### 実施内容
+
+- `.clinerules` に **Phase 4 Reporting Rules** セクションを追加し、必須報告 7 項目を定義した
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 4 最終報告手順を 7 項目に更新し、`.clinerules` と `test-manager/SKILL.md` を参照するようにした
+- `.cline/skills/test-manager/SKILL.md` に **Verification Report Template** を追加した
+- `docs/SY-TASKS.md` に `SY007006` を起票した
+- `docs/SY-WORK-LOG.md` に本 `SY007006` の実施内容と結果を追記した
+
+### 結果
+
+- Phase 4 の最終報告に必須項目が明文化された
+- `.clinerules` → `workflow-runner` → `test-manager` の一貫した参照関係が構築された
+- 検証レポートの作成テンプレートが `test-manager/SKILL.md` に追加された
+
+### コミット
+
+`docs(SY007006): add phase-4 reporting rules and verification report template`
+
+### 関連タスク
+
+- `SY007006` Phase 4 必須報告ルールと Verification Report Template の追加（完了）
+
+---
+
 ## 2026-09-07 SY007005 `.clinerules` にユーザー対話時の厳格な表現ルールを追加する
 
 ### 目的

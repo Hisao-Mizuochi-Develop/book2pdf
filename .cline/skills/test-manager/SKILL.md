@@ -90,6 +90,84 @@ metadata:
    - セクションがない場合: 該当するセクション見出しを新規作成し、エントリを追加
    - インデックス追加後、他のエントリが欠落していないか確認する
 
+## Verification Report Template
+
+Use this template for all verification reports created during Phase 4.
+The report MUST be placed at `<module>/test-results/<タスクNo>-<概要>/README.md`
+or `test_cases/results/ocr-results-<タスクNo>/README.md` as defined in the
+**テストデータの配置** section.
+
+### Report Structure
+
+Every verification report MUST contain the following sections:
+
+1. **タスク名・実施日・目的**
+2. **対象データ・環境・条件**
+3. **実行手順と使用コマンド**
+4. **期待結果**
+5. **実際の結果**
+6. **判定（PASS / FAIL / CONDITIONAL PASS）**
+7. **スクリーンショット・証跡（該当する場合）**
+8. **考察・結論・今後の検討事項**
+
+### Markdown Template
+
+~~~markdown
+# Verification Report — <タスクNo>
+
+## 1. タスク名・実施日・目的
+
+- タスク名: <タスク名>
+- タスクNo: <タスクNo>
+- 実施日: YYYY-MM-DD
+- 目的: <なぜこの検証を実施したか>
+
+## 2. 対象データ・環境・条件
+
+- 対象データ: <ファイルパスまたは識別子>
+- 実行環境: <OS / コンテナ / バージョン>
+- 前提条件: <再現に必要な設定>
+
+## 3. 実行手順と使用コマンド
+
+1. <手順 1>
+2. <手順 2>
+
+```bash
+# 実行したコマンド
+```
+
+## 4. 期待結果
+
+- <期待する動作や出力>
+
+## 5. 実際の結果
+
+- <実際に観測した動作や出力>
+
+## 6. 判定
+
+- [ ] PASS
+- [ ] FAIL
+- [ ] CONDITIONAL PASS
+
+## 7. スクリーンショット・証跡
+
+<該当する場合は画像またはファイルパスを記載>
+
+## 8. 考察・結論・今後の検討事項
+
+- <分析と次のアクション>
+
+~~~
+
+### Rules
+
+- The report MUST be created in the same directory as the artifacts it references.
+- All file references MUST use relative paths from the report file.
+- The PASS/FAIL/CONDITIONAL PASS judgment MUST be explicit.
+- If a section does not apply, write "N/A" and explain why.
+
 ## Prohibited Actions
 
 - `git checkout -- <testdata パス>` による revert

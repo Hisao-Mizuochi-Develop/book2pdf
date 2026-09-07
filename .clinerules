@@ -145,3 +145,27 @@ Communicate in Japanese. Prioritize user approval over speed.
 - タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 / Gate 2 を取得する
 - Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
 - When reading a skill file, always use the actual file via `read_files`; never rely on recalled or summarized content from memory.
+
+## Phase 4 Reporting Rules
+
+Every task MUST conclude with a mandatory final report in Phase 4.
+The report MUST include all of the following items:
+
+1. **実施内容の要約** — What was done and why.
+2. **変更ファイル一覧** — Absolute paths of every modified or
+   created file.
+3. **検証結果** — Build, test, lint, and/or runtime verification results,
+   including commands executed.
+4. **残タスク・注意事項** — Outstanding work, known limitations, or
+   caveats.
+5. **ユーザー確認・承認履歴** — Gate approvals and any mid-task user
+   decisions.
+6. **推奨次アクション** — Recommended next steps or follow-up tasks.
+7. **検証レポート** — A link or embedded reference to the
+   Verification Report Template
+   defined in `.cline/skills/test-manager/SKILL.md`.
+
+The Verification Report Template is the canonical source for
+verification report structure.
+All Phase 4 verification reports MUST follow that template when a
+verification report is produced.
