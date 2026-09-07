@@ -427,3 +427,69 @@ npm run test -- --run      # 5 files, 38 tests passed
 
 - FE001002 は完了。main ブランチにマージ済み。
 
+## 2026-09-08 タスク FE002001：進捗表示 UI の実装
+
+### 目的
+
+`frontend/src/app/page.tsx` に含まれていた進捗表示部分を `ProgressPanel` コンポーネントに切り出し、単体テストおよび MSW を使用した結合テストを追加する。これにより、進捗表示機能の責務分離と品質担保を行う。
+
+### 前提
+
+- `useOcrJob.ts` で SSE 経由の進捵監視ロジックは既に実装済みであること
+- `frontend/src/app/page.tsx` で進捗を表示する UI が既に存在すること
+- Vitest + @testing-library/react + jsdom のテスト基盤が導入済みであること
+
+### 実施内容
+
+1. `frontend/src/components/progress/ProgressPanel.tsx` を新規作成
+   - `latest`（最新進捗）と `log`（進捗ログ）を受け取る純粋表示コンポーネントとする
+   - 進捗パーセンテージのクランプ処理（0〜100）を実装
+   - 進捗バー、ステータス、ページ数、メッセージログを表示
+2. `frontend/src/components/progress/index.ts` を新規作成
+   - `ProgressPanel` を default export する
+3. `frontend/src/app/page.tsx` をリファクタリング
+   - 進捗表示の JSX を削除
+   - `<ProgressPanel latest={latestProgress} log={progressLog} />` として呼び出し
+   - ジョブ情報パネルに `data-testid="job-info-panel"` を追加
+4. `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を新規作成（7 tests）
+   - 進捗なし時の表示
+   - 進捗表示（プログレスバー・パーセンテージ）
+   - ログ表示
+   - 100% 超過のクランプ
+   - 負値のクランプ
+   - total_pages が 0 の場合の安全表示
+5. MSW 基盤を新規構築
+   - `frontend/src/mocks/handlers.ts`：API モックハンドラ（ジョブ作成、ZIP アップロード、OCR 実行、PDF ダウンロード）
+   - `frontend/src/mocks/server.ts`：MSW サーバーインスタンス
+   - `frontend/vitest.setup.ts`：MSW サーバーの起動・リセット・停止処理
+6. `frontend/src/app/__tests__/page.msw.test.tsx` を新規作成（1 test）
+   - EventSource をテスト制御可能なモックに差し替え
+   - アップロード → OCR 開始 → SSE 進捗 → ダウンロードボタン表示までの結合フローを検証
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm run test -- --run      # 7 files / 46 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/components/progress/ProgressPanel.tsx`
+- `frontend/src/components/progress/index.ts`
+- `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`
+- `frontend/src/app/page.tsx`
+- `frontend/src/app/__tests__/page.msw.test.tsx`
+- `frontend/src/mocks/handlers.ts`
+- `frontend/src/mocks/server.ts`
+- `frontend/vitest.setup.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- ユーザー検収テスト（UAT）は本タスクでは実施しない（単体テスト・結合テストのみ）。
+- 【別タスク】FE002001 実装中に `src/lib/api.ts` の `downloadPdf()` における `WritableStream.close()` の重複呼び出し不具合を発見。FE002002 として起票済み。
+
