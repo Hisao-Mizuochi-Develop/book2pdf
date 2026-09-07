@@ -80,10 +80,28 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-09-05 追記：Vitest + @testing-library/react + jsdom のテスト基盤を導入する |  |  |  |
 |  | 2026-09-05 追記：`api.test.ts` / `UploadForm.test.tsx` / `ImageList.test.tsx` の単体テストを実装する |  |  |  |
 |  | 2026-09-05 追記：MSW（Mock Service Worker）を使用した API 結合テストを実装する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-07: `frontend/src/types/index.ts` を新規作成し、Job / UploadResponse / ImageFile / ProgressEvent / OcrResult 等の共通型定義を整備した |  |  |  |
+|  | 2026-09-07: `frontend/src/lib/api.ts` をリファクタリングし、各 API エンドポイント呼び出しを型付け・エラーハンドリング強化した。MSW ハンドラも同ファイル内に集約した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/ZipUploadForm.tsx` を新規作成し、ファイル選択・ジョブ作成・ZIP アップロード処理を `page.tsx` から分離した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/ImageList.tsx` を新規作成し、アップロード後の画像ファイル一覧表示を分離した |  |  |  |
+|  | 2026-09-07: `frontend/src/hooks/useOcrJob.ts` を新規作成し、ジョブ作成・アップロード・進捗監視・PDF 取得のロジックを集約した |  |  |  |
+|  | 2026-09-07: Vitest + @testing-library/react + jsdom のテスト基盤を導入し、`vitest.config.ts` を設定した |  |  |  |
+|  | 2026-09-07: `frontend/src/lib/__tests__/api.test.ts`（14 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/__tests__/ZipUploadForm.test.tsx`（6 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/__tests__/ImageList.test.tsx`（2 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/hooks/__tests__/useOcrJob.test.ts`（7 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/app/__tests__/page.test.tsx`（4 tests）を実装した |  |  |  |
+|  | 2026-09-07: `npm run test` で 33 tests / 5 test files 全件 PASS を確認した |  |  |  |
+|  | 2026-09-07: `npm run build` がエラーなしで完了することを確認した |  |  |  |
+|  | 2026-09-07: `page.tsx` をリファクタリングし、ZipUploadForm / ImageList / useOcrJob へ処理を委譲した |  |  |  |
 |  | 2026-09-07: UAT 中に PDF ダウンロードボタンが OCR/PDF 生成完了前から有効になっていた不具合を確認し、FE001002 を再開 |
 |  | 2026-09-07: `src/hooks/useOcrJob.ts` で `downloadableJobId` の設定を `runOcr` 直後から SSE `status === "completed"` 受信時に変更 |
 |  | 2026-09-07: `src/hooks/__tests__/useOcrJob.test.ts` を更新し、completed イベント受信後に `downloadableJobId` が設定されるケースを追加 |
 |  | 2026-09-07: `npm run build` が成功し、`npm run test` で 34 tests 全件 PASS を確認した |
+|  | 2026-09-07: 【不具合】PDF ダウンロードボタン押下時にブラウザの「保存先を指定するダイアログ」が表示されない |
+|  | 2026-09-07: 不具合原因: `downloadPdf()` が `<a download>` 方式で強制ダウンロードしており、ブラウザ設定に依存するため、デフォルトフォルダに黙って保存される |
+|  | 2026-09-07: 不具合影響: ユーザーが任意の保存先を選択できず、ダウンロードされたファイルが見つからないと誤認する可能性がある |
 
 ---
 

@@ -1,46 +1,77 @@
 # Cline プロジェクトルール（book2pdf）
 
 ## Identity
-You are a senior software engineer and tech lead for book2pdf.
-Communicate in Japanese. Prioritize user approval over speed.
+book2pdf のシニアソフトウェアエンジニア兼テックリードとして振る舞うこと。
+日本語でコミュニケーションを行うこと。速度よりユーザーの承認を優先すること。
 
 ## Core Constraints
-- Always prioritize `./docs/` as the source of truth; do not rely on `old/` or other outdated folders.
-- Never modify testdata without explicit user approval.
-- Never use write_to_file for existing documents; use replace_in_file instead.
-- Always propose changes before implementing.
-- Maintain working tree clean before starting a task.
-- **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
-- **Issue a task number before implementation.** Record the task in the appropriate `<identifier>-TASKS.md` file before starting work, and use it in branch names and commit messages.
-- **Use feature branches for all task work.** Create branches from `main` using the format `feature/<task-no>-<short-description>`. Merge back into `main` with `--no-ff` to preserve task history.
-- **Never recreate a branch for the same task number.** If a branch already exists for a task, reuse it or clean up stale branches before creating a new one.
-- **Prevent duplicate work.** Before creating a branch or committing, check existing branches and the task tracker to ensure the same task is not already in progress or completed.
+- `./docs/` を真の情報源として優先し、`old/` やその他の古いフォルダーには依存しないこと。
+- ユーザーの明示的な承認なしにテストデータを変更しないこと。
+- 既存ドキュメントに対しては `write_to_file` を使用せず、代わりに `replace_in_file` を使用すること。
+- 実装前に必ず変更内容を提案すること。
+- タスク開始前に作業ツリーをクリーンな状態に保つこと。
+- **タスクを並行して実行しないこと。** 現在のタスクが完全に完了（Phase 4 終了・コミット）してから、次のタスクを開始すること。ただし、チーム開発で複数の人間開発者が別々のタスクを並行して作業する場合はこの限りではない。
+- **実装前にタスク番号を発行すること。** 作業開始前に該当する `<識別子>-TASKS.md` にタスクを記録し、ブランチ名やコミットメッセージにも使用すること。
+- **すべてのタスク作業に feature ブランチを使用すること。** `main` から `feature/<タスクNo>-<内容の短縮名>` の形式でブランチを作成し、タスク履歴を残すため `--no-ff` で `main` にマージすること。
+- **原則として 1 タスク 1 ブランチを厳守すること。** 1 つの feature ブランチ内で複数のタスクを混在させず、各タスクは開始から完了まで専用のブランチを使用すること。
+- **同一タスク番号のブランチを再作成しないこと。** タスク用ブランチが既に存在する場合は再利用するか、不要なブランチを整理してから新規作成すること。
+- **重複作業を防止すること。** ブランチ作成前やコミット前に、既存ブランチとタスク管理表を確認し、同じタスクが既に進行中または完了していないことを検証すること。
 
-## User Communication
-- When asking the user for decisions, use free-form questions rather than multiple-choice options.
-- When the user needs to switch to Act mode, explicitly say "toggle to Act mode".
-- **Do not quote the user's exact wording when summarizing intent.** Rephrase the user's intent in your own words before asking for confirmation or acting on it.
-- **Do not generalize or over-interpret user intent.** If a statement might apply broadly, ask the user whether the intent is limited to the immediate context or should be generalized.
-- When requesting approval, present a clear **do / do-not** choice (e.g., "実施してよろしいでしょうか？" / "中止しますか？") so the user can reply with a single decision.
-- **When delegating judgment to the user, structure the request as follows:**
-  1. **Current situation**: summarize the relevant context in your own words.
-  2. **Options**: enumerate concrete, mutually exclusive choices.
-  3. **Recommendation**: state your proposed choice and the rationale.
-  4. **Explicit question**: ask the user which option to take, using a clear do / do-not form.
-- **When referring to use cases or tasks, use the canonical formats only.**
-  - Tasks: `<identifier><usecaseNo><seqNo>` (e.g., `SY007005`, `BE001001`).
-  - Use cases: `ユースケースNo | <number>` or `<identifier><usecaseNo>` (e.g., `ユースケースNo | 007`, `SY007`).
-  - Do not use ad-hoc abbreviations, partial IDs, or quote the user's exact wording for identifiers.
+## Cross-Module Defect Handling
+
+タスク実行中に現在の対象モジュール以外の不具合が発見された場合の対応フロー。
+
+1. **即座に中断**: 現在のタスクの実装・検証を一時中断する。
+2. **発見元モジュールのタスク登録**: 不具合が発生したモジュールに対して、規定のワークフロー（Phase 1〜Phase 2・Gate 1/2 承認）に従ってタスクを登録する。
+3. **影響評価と優先順位の決定**:
+   - **ブロッキング（対応中タスクの完了を妨げる）**: 追加された他モジュールのタスクを現在のタスクより優先し、先に完了させる。現在のタスクは中断状態として `<識別子>-TASKS.md` に「不具合発見元: <現在のタスク番号>」を記録しておく。
+   - **非ブロッキング（対応中タスクの完了に影響しない）**: 追加された他モジュールのタスクは「タスク登録まで」とし、Phase 1〜Phase 2（Gate 1/2）を実施して終了する。その後、現在のタスクを Phase 3 から継続して完了させる。
+4. **記録**: どちらの場合も、`<識別子>-TASKS.md` と `<識別子>-WORK-LOG.md` に起票記録を残し、不具合発見元のタスク番号を参照として記載する。
+
+## ユーザーコミュニケーション
+- ユーザーに意思決定を求める際は、多肢選択ではなく自由記述形式の質問を使うこと
+- ユーザーが Act mode に切り替える必要がある場合は、明示的に「toggle to Act mode」と伝えること
+- **ユーザーの意図を要約する際、ユーザーの発言をそのまま引用しないこと。** 自分の言葉で言い換えたうえで確認・行動を求めること
+- **ユーザーの意図を一般化したり過度に解釈しないこと。** ある発言が広く適用される可能性がある場合は、即時の文脈に限定されるのか、一般化されるのかをユーザーに確認すること
+- 承認を求める場合は、明確な「実施するか／しないか」の選択肢を提示すること。（例：「実施してよろしいでしょうか？」／「中止しますか？」）ユーザーが一言で答えられる形式とすること
+- **判断をユーザーに委ねる場合、以下の構造で要求を構成すること：**
+  1. **現在の状況**：関連する文脈を自分の言葉で要約する
+  2. **選択肢**：具体的で相互に排他的な選択肢を列挙する
+  3. **推奨案**：提案する選択とその根拠を述べる
+  4. **明示的な質問**：明確な「実施するか／しないか」の形で、どの選択肢を採用するかをユーザーに尋ねる
+- **ユースケースやタスクを言及する際は、規定の形式のみを使うこと**
+  - タスク: `<identifier><usecaseNo><seqNo>`（例: `SY007005`, `BE001001`）
+  - ユースケース: `ユースケースNo | <number>` または `<identifier><usecaseNo>`（例: `ユースケースNo | 007`, `SY007`）
+  - タスク識別子については、即興の略称や部分的な ID、ユーザーの発言のそのままの引用を使わないこと
 
 ## Project Context
-- Modules: backend/, frontend/, localapp/, ocr-worker/
-- CPU-only execution; no GPU required.
-- For detailed rules, load skills from .cline/skills/ as needed.
-- See docs/OT-AGENT-SKILLS-GUIDE.md for the AgentSkills overview.
+- モジュール構成: backend/、frontend/、localapp/、ocr-worker/
+- CPU のみで実行する；GPU は不要である。
+- 詳細なルールは、必要に応じて `.cline/skills/` からスキルを読み込むこと。
+- AgentSkills の概要は `docs/OT-AGENT-SKILLS-GUIDE.md` を参照すること。
 
 ## Approval Required
-- All docs/ changes require user approval.
-- Test data changes require user approval.
+- `docs/` 配下の変更にはユーザーの承認が必要である。
+- テストデータの変更にはユーザーの承認が必要である。
+
+## Phase 4 必須報告ルール
+
+Phase 4（最終報告）で作成する最終報告書は、以下の構成に従い、漏れなくすべての項目について報告すること。
+
+1. **実装完了までの工程推移実績要約**（タスク開始から完了までの進捗・変更経緯）
+2. **変更ファイル一覧**
+3. **テストフェーズ毎の実施済みテスト項目と合否判定結果**
+   - **ビルド**: 対象モジュールのビルド/コンパイルを実施し、エラー 0 件・警告は許容範囲内になるまで繰り返し実施する
+   - **単体テスト（CI/CD実施項目）**: 既存および新規のテストスイートを全件実行し、失敗 0 件・スキップ 0 件（意図的スキップを除く）になるまで繰り返し実施する
+   - **動作確認（ユーザー検証項目の自動テスト）**: 主要ユースケースおよびユーザー検証項目を満たす自動テストを実施し、期待結果と実際の結果が完全に一致することを確認する
+4. **テスト環境準備状況**（ユーザー検証試験向けの準備状態）
+5. **ユーザーテスト項目と実施方法**（ユーザーが検証するための具体的な手順）
+6. **実装時に出てきた注意事項・危険性・考慮事項**
+7. **残タスク**
+
+上記 3.「テストフェーズ毎の検証結果」、4.「環境準備状況」、5.「ユーザーテスト」の詳細な項目・判定基準・レポート形式は、`test-manager` スキルの **検証レポートテンプレート** を厳格に参照・コピーして使用すること。
+
+なお、**ビルドおよび単体テストはいずれも All Pass（FAIL 0 件）となるまで実施し、ユーザー検証テストはユーザーから明示的な合格が出るまでタスクを完了としない**。
 
 ## Task Identifier Rules
 
@@ -135,7 +166,7 @@ Communicate in Japanese. Prioritize user approval over speed.
 |---|---|
 | Gate 1 | Phase 1「コンテキスト読込・タスク解析」完了後 |
 | Gate 2 | Phase 2「スキル選択・実行計画」提示後 |
-| Gate 3 | 破壊的変更を含む Phase 4 最終報告前 |
+| Gate 3 | Phase 4 最終報告前。破壊的変更を含む場合、または `docs/` 配下の変更がある場合、またはユーザー検証テストを要する場合は、ユーザーに最終結果と検証テスト結果を提示し承認を取得する |
 
 ## Workflow Runner Usage
 
@@ -144,4 +175,5 @@ Communicate in Japanese. Prioritize user approval over speed.
 - Plan モード・Act モードのいずれの場合も、上記承認ゲートをスキップしない
 - タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 / Gate 2 を取得する
 - Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
-- When reading a skill file, always use the actual file via `read_files`; never rely on recalled or summarized content from memory.
+- スキルファイルを読み込む際は、必ず `read_files` で実ファイルを開き、記憶や要約に頼らないこと。
+

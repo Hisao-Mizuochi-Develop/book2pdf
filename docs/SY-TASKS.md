@@ -76,7 +76,7 @@
 ## ユースケースNo | 007
 
 ユースケース
-`OT` に誤分類された System タスクの切り出しと運用ルール整備
+`.clinerules` にユーザー対話時の厳格なワークフロー・表現ルールの改善
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
@@ -120,7 +120,7 @@
 |  | 【移行履歴】 |  |  |  |
 |  | 元々 `SY007001` / `SY007002` の整備作業中に指摘された運用漏れであり、個別の修正タスクとして分離した |  |  |  |
 |  | 本タスク実施中に並行タスク禁止ルールの追加が発生したため、未コミット変更を `SY007003` に吸収して一括コミットした |  |  |  |
-| SY007004 | ブランチ運用の再発防止ルールとユーザー表現ルールを追加する | 2026-09-06 |  | 運用整備 |
+| SY007004 | ブランチ運用の再発防止ルールとユーザー表現ルールを追加する | 2026-09-06 | 2026-09-06 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` に「タスク番号発行後実装」「feature ブランチ戦略」「重複ブランチ・重複コミット・重複実装禁止」ルールを追加する |  |  |  |
@@ -136,25 +136,81 @@
 |  | 2026-09-06: `branch-naming.md` に禁止事項セクションを追加した |  |  |  |
 |  | 2026-09-06: `docs/SY-TASKS.md` に `SY007004` を起票した |  |  |  |
 |  | 2026-09-06: 変更を feature ブランチ `feature/SY007004-clinerules-branch-rules` から main へ `--no-ff` マージした |  |  |  |
-
----
-
-## ユースケースNo | 008
-
-ユースケース
-`.clinerules` にユーザー対話時の厳格な表現ルールを追加する
-
-| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
-|---|---|---|---|---|
-| SY007005 | ユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルール追加 | 2026-09-07 |  | 運用整備 |
+| SY007005 | ユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルール追加 | 2026-09-07 | 2026-09-07 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` の **User Communication** に「判断委ねの構造」（状況・選択肢・推奨・明示的質問）を追加する |  |  |  |
-|  | `.clinerules` の **User Communication** に「ユースケース・タスク言及形式」（`SY007005` / `ユースケースNo | 007` 等の canonical 形式）を追加する |  |  |  |
-|  | `docs/SY-TASKS.md` にユースケースNo 008 と `SY007005` を起票する |  |  |  |
+|  | `.clinerules` の **User Communication** に「ユースケース・タスク言及形式」（`SY007005` / `ユースケースNo ｜ 007` 等の canonical 形式）を追加する |  |  |  |
+|  | `docs/SY-TASKS.md` に `SY007005` を起票する |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-09-07: `.clinerules` にユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルールを追加した |  |  |  |
-|  | 2026-09-07: `docs/SY-TASKS.md` にユースケースNo 008 と `SY007005` を起票した |  |  |  |
+|  | 2026-09-07: `docs/SY-TASKS.md` に `SY007005` を起票した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007005-clinerules-user-comm-rules` から main へ `--no-ff` マージした |  |  |  |
+| SY007006 | テスト関連ワークフローと検証合格基準のAgentSkills改善 | 2026-09-07 | 2026-09-07 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に「Phase 4 必須報告ルール」セクションを追加し、7項目のレポート枠組みを定義する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新し、`.clinerules` の 7項目枠組みと `test-manager` スキルの Verification Report Template を参照させる |  |  |  |
+|  | `.cline/skills/test-manager/SKILL.md` に「Verification Report Template（検証レポートテンプレート）」セクションを新設する |  |  |  |
+|  | `.clinerules` / `workflow-runner/SKILL.md` / `test-manager/SKILL.md` において、ビルドテスト・単体テストの All Pass 基準と、ユーザー検証テスト合格までタスクを完了としないルールを追加する |  |  |  |
+|  | `docs/SY-TASKS.md` に `SY007006` を起票する |  |  |  |
+|  | `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-07: `.clinerules` に「Phase 4 必須報告ルール」を追加した |  |  |  |
+|  | 2026-09-07: `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新した |  |  |  |
+|  | 2026-09-07: `.cline/skills/test-manager/SKILL.md` に Verification Report Template（検証レポートテンプレート）を追加した |  |  |  |
+|  | 2026-09-07: `docs/SY-TASKS.md` に `SY007006` を起票し、`SY007005` をユースケースNo 007 配下に整理した |  |  |  |
+|  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記した |  |  |  |
+|  | 2026-09-07: 変更を feature ブランチ `feature/SY007006-test-workflow-agentskills-improvement` から main へ `--no-ff` マージした |  |  |  |
+|  | 2026-09-07: ユーザー検証テスト合格までタスクを完了としないルールを `.clinerules` / `workflow-runner/SKILL.md` / `test-manager/SKILL.md` に追加した |  |  |  |
+|  | 2026-09-07: `.clinerules` / `workflow-runner/SKILL.md` にビルドテスト・単体テストの All Pass 基準を追加した |  |  |  |
+|  | 2026-09-07: `test-manager/SKILL.md` の Verification Report Template に FAIL 時の再テスト手順とユーザー検証テスト承認ルールを追加した |  |  |  |
+|  | 2026-09-07: `docs/SY-TASKS.md` の `SY007006` スコープを検証合格基準・ユーザー検証承認ゲートの追加に拡張した |  |  |  |
+|  | 2026-09-07: `.clinerules` の **ユーザーコミュニケーション** セクションの英語記載を日本語に翻訳・入れ替えた |  |  |  |
+
+---
+
+## ユースケースNo | 009
+
+ユースケース
+モジュール横断不具合発見時のタスク管理
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| SY007007 | `.clinerules` と `workflow-runner` にモジュール横断不具合対応フローを追加 | 2026-09-07 | 2026-09-07 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に「Cross-Module Defect Handling」セクションを追加する |  |  |  |
+|  | 対応中のタスク実行中に他のモジュールの不具合が見つかった場合は、対応中タスクを一時中断し、不具合発生モジュールのタスク登録を行うルールを定義する |  |  |  |
+|  | 不具合発生モジュールのタスクが対応中タスクの完了に影響する場合は、追加タスクの完了を優先するルールを定義する |  |  |  |
+|  | 不具合発生モジュールのタスクが対応中タスクの完了に影響しない場合は、追加タスクはタスク登録までとするルールを定義する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に「Phase 3-A: 他モジュール不具合発見時の対応」を追加する |  |  |  |
+|  | 規定ワークフロー（Phase 1〜Phase 2・Gate 1/2）に従ったタスク登録手順を定義する |  |  |  |
+|  | `.clinerules` の **Core Constraints** に「原則として1タスク1ブランチを厳守する」ルールを追加する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールを追加する |  |  |  |
+|  | `docs/SY-WORK-LOG.md` に本タスクの実施内容・結果を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-07: `.clinerules` に「Cross-Module Defect Handling」セクションを追加した |  |  |  |
+|  | 2026-09-07: `.clinerules` に「原則として1タスク1ブランチを厳守する」ルールを追加した |  |  |  |
+|  | 2026-09-07: `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に「Phase 3-A: 他モジュール不具合発見時の対応」を追加した |  |  |  |
+|  | 2026-09-07: `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に漏れていた「Phase 3-A: 他モジュール不具合発見時の対応」を追加した |  |  |  |
+|  | 2026-09-07: `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールを追加した |  |  |  |
+|  | 2026-09-07: `docs/SY-WORK-LOG.md` に本 `SY007007` の実施内容・結果を追記した |  |  |  |
+|  | 2026-09-07: 変更を feature ブランチ `feature/SY007007-cross-module-defect-handling` から main へ `--no-ff` マージした |  |  |  |
+|  | 2026-09-07: Phase 3-A の漏れを `main` で追加修正・コミットした |  |  |  |
+|  | 2026-09-07: 漏れていた Phase 3-A 追加コミットを `docs/SY-TASKS.md` と `docs/SY-WORK-LOG.md` に反映した |  |  |  |
+| SY007008 | `.clinerules`、AgentSkills の英文部分の日本語化 | 2026-09-07 | 2026-09-07 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳する |  |  |  |
+|  | `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出し（`## Overview` / `## Step-by-step Instructions` / `## Common Edge Cases`）を日本語にする |  |  |  |
+|  | YAML frontmatter（`name` / `compatibility` / `author` / `version`）やコード・コマンド・ファイルパスは翻訳対象外とする |  |  |  |
+|  | `docs/SY-WORK-LOG.md` に本 `SY007008` の実施内容・結果を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-07: `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳した |  |  |  |
+|  | 2026-09-07: `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出しを日本語化した |  |  |  |
+|  | 2026-09-07: `.clinerules` 内の `Verification Report Template（検証レポートテンプレート）` の表記を `検証レポートテンプレート` に統一した |  |  |  |
+|  | 2026-09-07: `docs/SY-WORK-LOG.md` に本 `SY007008` の実施内容・結果を追記した |  |  |  |
+|  | 2026-09-07: 変更を feature ブランチ `feature/SY007008-english-to-japanese` から main へ `--no-ff` マージした |  |  |  |

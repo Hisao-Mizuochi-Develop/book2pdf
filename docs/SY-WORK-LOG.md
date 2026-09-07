@@ -4,6 +4,121 @@
 
 ---
 
+## 2026-09-07 SY007006 テスト関連ワークフローと検証合格基準のAgentSkills改善
+
+### 目的
+
+- Phase 4（最終報告）で必ず報告すべき項目を `.clinerules` に定義し、報告品質を均一化する
+- `workflow-runner` スキルの Phase 4 手順から `.clinerules` の必須項目と `test-manager` スキルの Verification Report Template を参照させ、一貫した報告フローを構築する
+- `test-manager` スキルに検証レポートの標準フォーマットを定義し、全検証活動で再利用できるようにする
+- ビルドテスト・単体テストの All Pass 基準、およびユーザー検証テスト合格までタスクを完了としないルールを各スキルと `.clinerules` に明文化する
+
+### 実施内容
+
+- `.clinerules` の **Approval Required** 直後に **Phase 4 必須報告ルール** セクションを追加し、7項目のレポート枠組みを定義した
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新し、`.clinerules` の **Phase 4 必須報告ルール** と `test-manager` スキルの **Verification Report Template** を参照するようにした
+- `.cline/skills/test-manager/SKILL.md` に **Verification Report Template（検証レポートテンプレート）** を新設し、テストフェーズ毎の合否判定表、テスト環境準備状況、ユーザーテスト項目、総合判定を定義した
+- `.clinerules` に、ビルド・単体テストが All Pass（FAIL 0 件）となるまで繰り返し実施し、ユーザー検証テストはユーザーから明示的な合格が出るまでタスクを完了としない旨を追加した
+- `.clinerules` の **ユーザーコミュニケーション** セクションの英語記載を日本語に翻訳・入れ替えた
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に、ビルドテスト（エラー 0 件まで）・単体テスト（失敗 0 件まで）・動作確認の必須基準を追加した
+- `.cline/skills/workflow-runner/SKILL.md` の Gate 3 に、ユーザー検証テストを要する場合はユーザーに最終結果と検証テスト結果を提示し承認を取得する条件を追加した
+- `.cline/skills/test-manager/SKILL.md` の Verification Report Template に、FAIL 時の再テスト手順とユーザー検証テスト承認ルールを追加した
+- `docs/SY-TASKS.md` に `SY007006` を起票し、`SY007005` をユースケースNo 007 配下に整理した
+- `docs/SY-TASKS.md` の `SY007006` スコープを検証合格基準・ユーザー検証承認ゲートの追加に拡張した
+- `docs/SY-WORK-LOG.md` に本 `SY007006` の実施内容と結果を追記した
+
+### 結果
+
+- Phase 4 の最終報告に必須項目が `.clinerules` に明文化された
+- `.clinerules` → `workflow-runner` → `test-manager` の一貫した参照関係が構築された
+- 検証レポートの標準フォーマットが `test-manager/SKILL.md` に定義された
+- ビルド・単体テストの All Pass 基準と、ユーザー検証テスト合格までの停止ルールが `.clinerules` / `workflow-runner` / `test-manager` に明文化された
+- FAIL 時の再テスト手順が `test-manager/SKILL.md` の Verification Report Template に追加された
+- `.clinerules` の **ユーザーコミュニケーション** セクションが日本語化され、プロジェクト内の日本語表記と整合した
+- `docs/SY-TASKS.md` のユースケースNo 007 / 008 が整理され、`SY007005` と `SY007006` が同一ユースケースに集約された
+- `docs/SY-TASKS.md` の `SY007006` スコープが拡張され、未完了状態に更新された
+
+### コミット
+
+`docs(SY007006): enforce report rules, test criteria, and localize user communication`
+
+### 関連タスク
+
+- `SY007006` テスト関連ワークフローと検証合格基準のAgentSkills改善（完了）
+
+---
+
+## 2026-09-07 SY007007 モジュール横断不具合発見時のタスク管理ルール追加
+
+### 目的
+
+- 対応中のタスク実行中に他のモジュールの不具合が見つかった場合の対応フローを `.clinerules` と `workflow-runner/SKILL.md` に明文化する
+- 不具合発生モジュールのタスク登録を規定ワークフローに従って実施する手順を定義する
+- 追加タスクが対応中タスクの完了に影響する場合としない場合の優先順位を明確にする
+
+### 実施予定
+
+- `docs/SY-TASKS.md` に `SY007007` を起票する
+- `.clinerules` の **Core Constraints** 直後に **Cross-Module Defect Handling** セクションを追加する
+- `.cline/skills/workflow-runner/SKILL.md` の **Phase 3** に **Phase 3-A: 他モジュール不具合発見時の対応** を追加する
+- `.clinerules` の **Core Constraints** に「原則として1タスク1ブランチを厳守する」ルールを追加する
+- `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールを追加する
+- `docs/SY-WORK-LOG.md` に本 `SY007007` の実施内容・結果を追記する
+- 変更を feature ブランチ `feature/SY007007-cross-module-defect-handling` から main へ `--no-ff` マージする
+
+### 結果
+
+- `.clinerules` に「Cross-Module Defect Handling」セクションが追加された
+- `.clinerules` の **Core Constraints** に「原則として1タスク1ブランチを厳守する」ルールが追加された
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に「Phase 3-A: 他モジュール不具合発見時の対応」が追加された
+- `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールが追加された
+- 変更は feature ブランチ `feature/SY007007-cross-module-defect-handling` から main へ `--no-ff` マージされた
+
+### コミット
+
+- `docs(SY007007): add cross-module defect handling and one-task-per-branch rule`
+- `[SY007007] Merge cross-module defect handling and one-task-per-branch rule`
+- `docs(SY007007): update task tracker and work log with completion`
+- `docs(SY007007): add missing Phase 3-A cross-module defect handling to workflow-runner`
+
+### 関連タスク
+
+- `SY007007` モジュール横断不具合発見時のタスク管理ルール追加（完了）
+
+---
+
+## 2026-09-07 SY007008 `.clinerules`、AgentSkills の英文部分の日本語化
+
+### 目的
+
+- `.clinerules` に残存している英文を日本語に翻訳し、プロジェクト全体の日本語表記と整合させる
+- AgentSkills 各 SKILL.md の英文セクション見出しを日本語化し、可読性と一貫性を向上させる
+
+### 実施予定
+
+- `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳する
+- `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出し（`## Overview` / `## Step-by-step Instructions` / `## Common Edge Cases`）を日本語にする
+- YAML frontmatter（`name` / `compatibility` / `author` / `version`）やコード・コマンド・ファイルパスは翻訳対象外とする
+- `docs/SY-TASKS.md` と `docs/SY-WORK-LOG.md` に本 `SY007008` の実施内容・結果を追記する
+
+### 結果
+
+- `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳した
+- `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出しを日本語化した
+- `.clinerules` 内の `Verification Report Template（検証レポートテンプレート）` の表記を `検証レポートテンプレート` に統一した
+- YAML frontmatter（`name` / `compatibility` / `author` / `version`）やコード・コマンド・ファイルパスは翻訳対象外として維持した
+
+### コミット
+
+- `docs(SY007008): translate remaining English sections in .clinerules and AgentSkills to Japanese`
+- `docs(SY007008): merge feature branch for Japanese localization`
+
+### 関連タスク
+
+- `SY007008` `.clinerules`、AgentSkills の英文部分の日本語化（完了）
+
+---
+
 ## 2026-09-07 SY007005 `.clinerules` にユーザー対話時の厳格な表現ルールを追加する
 
 ### 目的

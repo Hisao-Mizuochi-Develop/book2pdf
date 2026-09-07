@@ -11,10 +11,10 @@ metadata:
 
 # task-manager
 
-## Overview
+## 概要
 本スキルは、book2pdf プロジェクトのタスク管理表・作業ログの運用ルールを定めます。
 
-## Step-by-step Instructions
+## 手順
 
 1. **タスクNo体系**
    - 形式: モジュール識別子(2桁) + ユースケースNo(3桁) + 通番(3桁)（計8文字）
@@ -58,5 +58,5 @@ metadata:
      - `<module>/docs/<モジュール識別子>-WORK-LOG.md` の【実施実績】
    - 完了日付を `<module>/docs/<モジュール識別子>-TASKS.md` に記載する
 
-## Common Edge Cases
+## よくある境界ケース
 - 新規ユースケースが必要な場合: まずユーザーに提案し、承認を得てから起票
