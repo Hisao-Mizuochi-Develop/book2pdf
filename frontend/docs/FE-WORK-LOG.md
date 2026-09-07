@@ -275,3 +275,155 @@ npm test -- --run         # 5 files, 33 tests passed
 - `FE-TASKS.md` の FE001002 完了日を 2026-09-07 に更新済み。
 - 本ブランチは `main` へマージ可能な状態である。
 
+
+## 2026-09-07 タスク FE001002 再開：PDF ダウンロード有効化タイミングの修正
+
+### 実施内容
+
+- UAT 中に PDF ダウンロードボタンが OCR/PDF 生成完了前から有効になっており、`GET /api/jobs/{job_id}/pdf` を呼ぶと `400 Bad Request` が返る不具合を確認した。
+- `feature/FE001002-componentize-and-test` ブランチを再利用し、FE001002 を再開した。
+- `src/hooks/useOcrJob.ts` の `handleUploaded` 内で、`setDownloadableJobId(newJobId)` の呼び出しを `runOcr` API 成功直後から、SSE 進捗イベントの `status === "completed"` を受信した時点に変更した。
+- `src/hooks/__tests__/useOcrJob.test.ts` を更新し、`runOcr` 直後は `downloadableJobId` が null のままであることを検証するよう修正した。
+- `useOcrJob.test.ts` に「completed SSE イベント受信後に `downloadableJobId` が設定される」テストケースを追加した。
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test -- --run          # 5 files, 34 tests passed
+```
+
+### 変更ファイル
+
+- `src/hooks/useOcrJob.ts`
+- `src/hooks/__tests__/useOcrJob.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT 再検証が必要である。
+
+## 2026-09-07 タスク FE001002：PDF 保存先ダイアログの実装
+
+### 目的
+
+PDF ダウンロード時に、ブラウザ標準の「保存先を指定するダイアログ」を表示できるように改修する。これにより、ユーザーが任意のフォルダに PDF を保存できるようになる。
+
+### 前提
+
+- `downloadPdf()` は従来 `<a download>` 方式を使用しており、ブラウザ設定によってはダウンロード先を指定できなかった
+- File System Access API (`window.showSaveFilePicker`) が利用可能なブラウザでは、OS 標準の保存ダイアログを表示できる
+
+### 実施内容
+
+1. `src/lib/api.ts` の `downloadPdf()` を改修
+   - `window.showSaveFilePicker` が利用可能な場合は、保存先ダイアログを表示して選択先ファイルにストリーミング書き込み
+   - 未対応ブラウザでは従来の `<a download>` 方式にフォールバック
+   - ユーザーがダイアログをキャンセルした場合（`AbortError`）は例外を投げない
+2. `src/lib/__tests__/api.test.ts` にテストケースを追加
+   - File System Access API パス
+   - ダイアログキャンセル時の挙動
+   - フォールバックパス
+   - HTTP エラー時の挙動
+3. `frontend/docs/FE-TASKS.md` の FE001002 実施結果欄に不具合情報を追記
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test                   # 5 files, 36 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/__tests__/api.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT にて実ブラウザ（Chrome / Edge）での保存ダイアログ表示を検証する必要がある。
+
+
+## 2026-09-07 タスク FE001002：PDF 保存先ダイアログの改修（やり直し）
+
+### 目的
+
+`downloadPdf()` 内で `window.showSaveFilePicker` がユーザージェスチャ（クリック）文脈の失効後に呼ばれていたため、ブラウザの保存ダイアログが表示されない不具合を修正する。
+
+### 原因
+
+File System Access API の `showSaveFilePicker` はユーザージェスチャ（ボタンクリック）の文脈内で同期的に呼ぶ必要がある。`fetch` 後に呼ぶとセキュリティコンテキストが失効し、ダイアログが抑制される。
+
+### 実施内容
+
+1. `src/lib/api.ts` の `downloadPdf()` を改修
+   - `window.showSaveFilePicker` を `fetch` より先に呼び出し、ファイルハンドルを取得
+   - ハンドル取得後に `fetchWithTimeout` で PDF を取得し、`createWritable` → `pipeTo` → `close` で保存
+   - フォールバック処理は維持（`showSaveFilePicker` 非対応ブラウザでは `<a download>` 方式）
+2. `src/lib/__tests__/api.test.ts` を更新
+   - `showSaveFilePicker` が `fetch` より先に呼ばれることを検証するアサーションを追加
+   - ダイアログキャンセル時は `fetch` が呼ばれないことを検証
+   - File System Access API パスとフォールバックパスの両方で HTTP エラー時の挙動を検証
+3. `frontend/docs/FE-TASKS.md` / `FE-WORK-LOG.md` を更新
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test -- --run          # 5 files, 37 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/__tests__/api.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT にて実ブラウザ（Chrome / Edge）での保存ダイアログ表示を検証する必要がある。
+
+
+## 2026-09-08 タスク FE001002：完了・main マージ
+
+### 目的
+
+Phase 4 最終報告書を作成し、ユーザー検収テスト（Gate 3）の承認を取得したうえで、FE001002 を完了させ main ブランチへマージする。
+
+### 実施内容
+
+- Phase 4 最終報告書を作成し、ユーザーに提示
+- Gate 3 においてユーザー検収テストの合格承認を取得
+- `frontend/docs/FE-TASKS.md` の FE001002 行にタスク完了日付 `2026-09-08` を記入
+- `frontend/docs/FE-WORK-LOG.md` に本完了記録を追記
+- 未コミット変更を `git add -A && git commit` した
+- `main` ブランチへ `git merge --no-ff feature/FE001002-componentize-and-test` を実施
+- 完了後、feature ブランチを削除した
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm run test -- --run      # 5 files, 38 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- FE001002 は完了。main ブランチにマージ済み。
+

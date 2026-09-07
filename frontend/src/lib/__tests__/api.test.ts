@@ -6,6 +6,7 @@ import {
   subscribeJobProgress,
   getPdfDownloadUrl,
   downloadPdf,
+  type FileSystemFileHandle,
 } from "../api";
 
 const API_BASE_URL = "http://localhost:8000";
@@ -240,7 +241,91 @@ describe("api client", () => {
   });
 
   describe("downloadPdf", () => {
-    it("Blob URL を作成しダウンロードリンクをクリックする", async () => {
+    it("File System Access API 使用時に保存先ダイアログを表示し、選択先に書き込む（showSaveFilePicker が fetch より先に呼ばれる）", async () => {
+      const writable = {
+        write: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      const handle = {
+        createWritable: vi.fn().mockResolvedValue(writable),
+      };
+      const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      const blob = new Blob(["pdf"], { type: "application/pdf" });
+      const response = new Response(blob, { status: 200 });
+      // jsdom 以外の環境では response.body が存在するため、Blob 書き込みパスを検証するために null にします
+      Object.defineProperty(response, "body", { value: null });
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
+
+      await downloadPdf("job-123", "result.pdf");
+
+      // showSaveFilePicker が fetch より先に呼ばれていることを検証します（ユーザージェスチャ文脈保持のため）
+      const pickerCallOrder = showSaveFilePickerMock.mock.invocationCallOrder[0];
+      const fetchCallOrder = (fetch as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0];
+      expect(pickerCallOrder).toBeLessThan(fetchCallOrder);
+
+      expect(showSaveFilePickerMock).toHaveBeenCalledWith({
+        suggestedName: "result.pdf",
+        types: [
+          {
+            description: "PDF ファイル",
+            accept: { "application/pdf": [".pdf"] },
+          },
+        ],
+      });
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/pdf`, {
+        signal: expect.any(AbortSignal),
+      });
+      expect(handle.createWritable).toHaveBeenCalledTimes(1);
+      expect(writable.write).toHaveBeenCalledWith(expect.any(Blob));
+      expect(writable.close).toHaveBeenCalledTimes(1);
+    });
+
+    it("fileHandle を渡すと showSaveFilePicker をスキップし直接ストリーミング書き込みする", async () => {
+      const writable = {
+        write: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      const handle = {
+        createWritable: vi.fn().mockResolvedValue(writable),
+      };
+      const showSaveFilePickerMock = vi.fn().mockRejectedValue(
+        new Error("showSaveFilePicker should not be called")
+      );
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      const blob = new Blob(["pdf"], { type: "application/pdf" });
+      const response = new Response(blob, { status: 200 });
+      // pipeTo は実際の WritableStream を要求するため、body を null にして
+      // writable.write フォールバックパスを検証します。
+      Object.defineProperty(response, "body", { value: null });
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
+
+      await downloadPdf("job-123", "result.pdf", handle as FileSystemFileHandle);
+
+      expect(showSaveFilePickerMock).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/pdf`, {
+        signal: expect.any(AbortSignal),
+      });
+      expect(handle.createWritable).toHaveBeenCalledTimes(1);
+      expect(writable.write).toHaveBeenCalledWith(expect.any(Blob));
+      expect(writable.close).toHaveBeenCalledTimes(1);
+    });
+
+    it("保存ダイアログをキャンセルした場合はエラーを投げず、fetch を呼ばない", async () => {
+      const abortError = new DOMException("User cancelled", "AbortError");
+      const showSaveFilePickerMock = vi.fn().mockRejectedValue(abortError);
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      await expect(downloadPdf("job-123", "result.pdf")).resolves.toBeUndefined();
+      expect(showSaveFilePickerMock).toHaveBeenCalledTimes(1);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("showSaveFilePicker がない環境では <a download> でフォールバックする", async () => {
+      vi.stubGlobal("showSaveFilePicker", undefined);
+
       const createObjectURL = vi.fn(() => "blob:http://localhost/abc");
       const revokeObjectURL = vi.fn();
       vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
@@ -254,9 +339,6 @@ describe("api client", () => {
 
       await downloadPdf("job-123", "result.pdf");
 
-      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/pdf`, {
-        signal: expect.any(AbortSignal),
-      });
       expect(createObjectURL).toHaveBeenCalledWith(blob);
       expect(clickSpy).toHaveBeenCalledTimes(1);
       expect(revokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/abc");
@@ -264,7 +346,9 @@ describe("api client", () => {
       clickSpy.mockRestore();
     });
 
-    it("HTTP エラー時に例外を投げる", async () => {
+    it("フォールバックパスで HTTP エラー時に例外を投げる", async () => {
+      vi.stubGlobal("showSaveFilePicker", undefined);
+
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
         new Response("not found", { status: 404, statusText: "Not Found" })
       );
@@ -272,6 +356,27 @@ describe("api client", () => {
       await expect(downloadPdf("job-123")).rejects.toThrow(
         "PDF のダウンロードに失敗しました: 404 Not Found"
       );
+    });
+
+    it("File System Access API パスで HTTP エラー時に例外を投げる", async () => {
+      const writable = {
+        write: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      const handle = {
+        createWritable: vi.fn().mockResolvedValue(writable),
+      };
+      const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response("not found", { status: 404, statusText: "Not Found" })
+      );
+
+      await expect(downloadPdf("job-123")).rejects.toThrow(
+        "PDF のダウンロードに失敗しました: 404 Not Found"
+      );
+      expect(handle.createWritable).not.toHaveBeenCalled();
     });
   });
 });

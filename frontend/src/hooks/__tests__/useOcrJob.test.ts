@@ -106,7 +106,7 @@ describe("useOcrJob", () => {
     );
     expect(runOcr).toHaveBeenCalledWith("job-123");
     expect(result.current.result).toBe(JSON.stringify({ text: "ocr result" }, null, 2));
-    expect(result.current.downloadableJobId).toBe("job-123");
+    expect(result.current.downloadableJobId).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
 
@@ -142,6 +142,35 @@ describe("useOcrJob", () => {
       });
     });
     expect(result.current.progressLog).toContain("50% 完了");
+    expect(result.current.downloadableJobId).toBeNull();
+  });
+
+  it("completed SSE イベント受信後に downloadableJobId が設定される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "completed",
+          progress: 100,
+          current_page: 2,
+          total_pages: 2,
+          message: "PDF 生成が完了しました",
+        }),
+      );
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.latestProgress?.status).toBe("completed");
+    });
+    expect(result.current.downloadableJobId).toBe("job-123");
+    expect(result.current.progressLog).toContain("PDF 生成が完了しました");
   });
 
   it("SSE エラー時はログに追加し EventSource を閉じる", async () => {

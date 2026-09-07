@@ -65,7 +65,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-08-11: Puppeteer による自動確認で、`http://localhost:3000` のトップページにタイトル・サブタイトル・ZIP ファイル選択 input・「アップロードして OCR 実行」ボタンが表示されることを確認した |  |  |  |
 |  | 2026-08-11: `GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認（Puppeteer の PDF 直接表示はブラウザ制限で `net::ERR_ABORTED` となるが、API 自体は正常動作） |  |  |  |
 |  | 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/FE-WORK-LOG.md` / `backend/docs/BE-CAVEATS.md` に記録 |  |  |  |
-| FE001002 | ZIP アップロード UI の実装 | 2026-08-11 | 2026-09-07 | 機能実装 |
+| FE001002 | ZIP アップロード UI の実装 | 2026-08-11 | 2026-09-08 | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | backend の POST /api/jobs からジョブ ID を取得する処理を実装する |  |  |  |
@@ -95,6 +95,18 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-09-07: `npm run test` で 33 tests / 5 test files 全件 PASS を確認した |  |  |  |
 |  | 2026-09-07: `npm run build` がエラーなしで完了することを確認した |  |  |  |
 |  | 2026-09-07: `page.tsx` をリファクタリングし、ZipUploadForm / ImageList / useOcrJob へ処理を委譲した |  |  |  |
+|  | 2026-09-07: UAT 中に PDF ダウンロードボタンが OCR/PDF 生成完了前から有効になっていた不具合を確認し、FE001002 を再開 |
+|  | 2026-09-07: `src/hooks/useOcrJob.ts` で `downloadableJobId` の設定を `runOcr` 直後から SSE `status === "completed"` 受信時に変更 |
+|  | 2026-09-07: `src/hooks/__tests__/useOcrJob.test.ts` を更新し、completed イベント受信後に `downloadableJobId` が設定されるケースを追加 |
+|  | 2026-09-07: `npm run build` が成功し、`npm run test` で 34 tests 全件 PASS を確認した |
+|  | 2026-09-07: 【不具合】PDF ダウンロードボタン押下時にブラウザの「保存先を指定するダイアログ」が表示されない |
+|  | 2026-09-07: 不具合原因: `downloadPdf()` が `<a download>` 方式で強制ダウンロードしており、ブラウザ設定に依存するため、デフォルトフォルダに黙って保存される |
+|  | 2026-09-07: 不具合影響: ユーザーが任意の保存先を選択できず、ダウンロードされたファイルが見つからないと誤認する可能性がある |
+|  | 2026-09-07: 【改修】`downloadPdf()` 内で `fetch` の後に `window.showSaveFilePicker` を呼んでいたためユーザージェスチャ文脈が失効し、ダイアログが表示されなくなっていた問題を修正 |
+|  | 2026-09-07: 改修内容: `showSaveFilePicker` を `fetch` より先に移動し、ファイルハンドル取得後に PDF をダウンロード・ストリーミング書き込みするように順序を変更 |
+|  | 2026-09-07: 改修結果: `npm run build` 成功、`npm run test` で 37 tests / 5 test files 全件 PASS（File System Access API パスの HTTP エラーテストを追加） |
+|  | 2026-09-07: 残件: 実ブラウザ（Chrome / Edge）での保存ダイアログ表示は手動 UAT にて検証する必要がある |
+|  | 2026-09-08: ユーザー検収テスト（UAT）を実施し、保存ダイアログ表示・PDF 保存・キャンセル動作ともに問題なしと判定。Phase 4 最終報告・Gate 3 承認を経て FE001002 を完了 |
 
 ---
 
