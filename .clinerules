@@ -13,8 +13,20 @@ Communicate in Japanese. Prioritize user approval over speed.
 - **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
 - **Issue a task number before implementation.** Record the task in the appropriate `<identifier>-TASKS.md` file before starting work, and use it in branch names and commit messages.
 - **Use feature branches for all task work.** Create branches from `main` using the format `feature/<task-no>-<short-description>`. Merge back into `main` with `--no-ff` to preserve task history.
+- **Strictly adhere to one task per branch.** Do not mix multiple tasks in a single feature branch. Each task must have its own dedicated branch from start to finish.
 - **Never recreate a branch for the same task number.** If a branch already exists for a task, reuse it or clean up stale branches before creating a new one.
 - **Prevent duplicate work.** Before creating a branch or committing, check existing branches and the task tracker to ensure the same task is not already in progress or completed.
+
+## Cross-Module Defect Handling
+
+タスク実行中に現在の対象モジュール以外の不具合が発見された場合の対応フロー。
+
+1. **即座に中断**: 現在のタスクの実装・検証を一時中断する。
+2. **発見元モジュールのタスク登録**: 不具合が発生したモジュールに対して、規定のワークフロー（Phase 1〜Phase 2・Gate 1/2 承認）に従ってタスクを登録する。
+3. **影響評価と優先順位の決定**:
+   - **ブロッキング（対応中タスクの完了を妨げる）**: 追加された他モジュールのタスクを現在のタスクより優先し、先に完了させる。現在のタスクは中断状態として `<識別子>-TASKS.md` に「不具合発見元: <現在のタスク番号>」を記録しておく。
+   - **非ブロッキング（対応中タスクの完了に影響しない）**: 追加された他モジュールのタスクは「タスク登録まで」とし、Phase 1〜Phase 2（Gate 1/2）を実施して終了する。その後、現在のタスクを Phase 3 から継続して完了させる。
+4. **記録**: どちらの場合も、`<識別子>-TASKS.md` と `<識別子>-WORK-LOG.md` に起票記録を残し、不具合発見元のタスク番号を参照として記載する。
 
 ## ユーザーコミュニケーション
 - ユーザーに意思決定を求める際は、多肢選択ではなく自由記述形式の質問を使うこと
