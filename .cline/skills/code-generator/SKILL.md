@@ -11,10 +11,10 @@ metadata:
 
 # code-generator
 
-## Overview
+## 概要
 本スキルは、book2pdf プロジェクトの言語別コーディング規約と、API/関数呼び出しの整合性確認手順を定めます。
 
-## Step-by-step Instructions
+## 手順
 
 1. **技術スタックの確認**
    - Web backend: FastAPI + Python
@@ -42,5 +42,5 @@ metadata:
    - 引数名・キー名・型の整合性を横並びで確認
    - フレームワークの自動変換挙動（camelCase ↔ snake_case など）を確認
 
-## Common Edge Cases
+## よくある境界ケース
 - 規約に反する実装が必要な場合は、コメントで理由を明示

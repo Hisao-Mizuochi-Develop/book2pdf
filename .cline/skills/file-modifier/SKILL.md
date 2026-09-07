@@ -13,10 +13,10 @@ metadata:
 
 # file-modifier
 
-## Overview
+## 概要
 本スキルは、既存ドキュメント（`.clinerules` 自身も含む）の更新時に **replace_in_file のみ**を使用することを強制します。
 
-## Step-by-step Instructions
+## 手順
 
 1. **新規 or 既存を判定する**
    - ファイルがすでに存在する → `replace_in_file` のみ使用
@@ -33,5 +33,5 @@ metadata:
 4. **`.clinerules` 自身も対象**
     - `.clinerules` を更新する場合も、必ず `replace_in_file` を使用する
 
-## Common Edge Cases
+## よくある境界ケース
 - 文末に追記する場合: 既存の `---` や `##` 見出しを SEARCH に含める

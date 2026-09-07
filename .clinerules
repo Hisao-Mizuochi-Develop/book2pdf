@@ -1,21 +1,21 @@
 # Cline プロジェクトルール（book2pdf）
 
 ## Identity
-You are a senior software engineer and tech lead for book2pdf.
-Communicate in Japanese. Prioritize user approval over speed.
+book2pdf のシニアソフトウェアエンジニア兼テックリードとして振る舞うこと。
+日本語でコミュニケーションを行うこと。速度よりユーザーの承認を優先すること。
 
 ## Core Constraints
-- Always prioritize `./docs/` as the source of truth; do not rely on `old/` or other outdated folders.
-- Never modify testdata without explicit user approval.
-- Never use write_to_file for existing documents; use replace_in_file instead.
-- Always propose changes before implementing.
-- Maintain working tree clean before starting a task.
-- **Tasks must not be executed in parallel.** Start the next task only after the current task is fully completed (Phase 4 finished and committed). Exception: this restriction does not apply during team development where multiple human developers work on different tasks concurrently.
-- **Issue a task number before implementation.** Record the task in the appropriate `<identifier>-TASKS.md` file before starting work, and use it in branch names and commit messages.
-- **Use feature branches for all task work.** Create branches from `main` using the format `feature/<task-no>-<short-description>`. Merge back into `main` with `--no-ff` to preserve task history.
-- **Strictly adhere to one task per branch.** Do not mix multiple tasks in a single feature branch. Each task must have its own dedicated branch from start to finish.
-- **Never recreate a branch for the same task number.** If a branch already exists for a task, reuse it or clean up stale branches before creating a new one.
-- **Prevent duplicate work.** Before creating a branch or committing, check existing branches and the task tracker to ensure the same task is not already in progress or completed.
+- `./docs/` を真の情報源として優先し、`old/` やその他の古いフォルダーには依存しないこと。
+- ユーザーの明示的な承認なしにテストデータを変更しないこと。
+- 既存ドキュメントに対しては `write_to_file` を使用せず、代わりに `replace_in_file` を使用すること。
+- 実装前に必ず変更内容を提案すること。
+- タスク開始前に作業ツリーをクリーンな状態に保つこと。
+- **タスクを並行して実行しないこと。** 現在のタスクが完全に完了（Phase 4 終了・コミット）してから、次のタスクを開始すること。ただし、チーム開発で複数の人間開発者が別々のタスクを並行して作業する場合はこの限りではない。
+- **実装前にタスク番号を発行すること。** 作業開始前に該当する `<識別子>-TASKS.md` にタスクを記録し、ブランチ名やコミットメッセージにも使用すること。
+- **すべてのタスク作業に feature ブランチを使用すること。** `main` から `feature/<タスクNo>-<内容の短縮名>` の形式でブランチを作成し、タスク履歴を残すため `--no-ff` で `main` にマージすること。
+- **原則として 1 タスク 1 ブランチを厳守すること。** 1 つの feature ブランチ内で複数のタスクを混在させず、各タスクは開始から完了まで専用のブランチを使用すること。
+- **同一タスク番号のブランチを再作成しないこと。** タスク用ブランチが既に存在する場合は再利用するか、不要なブランチを整理してから新規作成すること。
+- **重複作業を防止すること。** ブランチ作成前やコミット前に、既存ブランチとタスク管理表を確認し、同じタスクが既に進行中または完了していないことを検証すること。
 
 ## Cross-Module Defect Handling
 
@@ -45,14 +45,14 @@ Communicate in Japanese. Prioritize user approval over speed.
   - タスク識別子については、即興の略称や部分的な ID、ユーザーの発言のそのままの引用を使わないこと
 
 ## Project Context
-- Modules: backend/, frontend/, localapp/, ocr-worker/
-- CPU-only execution; no GPU required.
-- For detailed rules, load skills from .cline/skills/ as needed.
-- See docs/OT-AGENT-SKILLS-GUIDE.md for the AgentSkills overview.
+- モジュール構成: backend/、frontend/、localapp/、ocr-worker/
+- CPU のみで実行する；GPU は不要である。
+- 詳細なルールは、必要に応じて `.cline/skills/` からスキルを読み込むこと。
+- AgentSkills の概要は `docs/OT-AGENT-SKILLS-GUIDE.md` を参照すること。
 
 ## Approval Required
-- All docs/ changes require user approval.
-- Test data changes require user approval.
+- `docs/` 配下の変更にはユーザーの承認が必要である。
+- テストデータの変更にはユーザーの承認が必要である。
 
 ## Phase 4 必須報告ルール
 
@@ -69,7 +69,7 @@ Phase 4（最終報告）で作成する最終報告書は、以下の構成に�
 6. **実装時に出てきた注意事項・危険性・考慮事項**
 7. **残タスク**
 
-上記 3.「テストフェーズ毎の検証結果」、4.「環境準備状況」、5.「ユーザーテスト」の詳細な項目・判定基準・レポート形式は、`test-manager` スキルの **Verification Report Template（検証レポートテンプレート）** を厳格に参照・コピーして使用すること。
+上記 3.「テストフェーズ毎の検証結果」、4.「環境準備状況」、5.「ユーザーテスト」の詳細な項目・判定基準・レポート形式は、`test-manager` スキルの **検証レポートテンプレート** を厳格に参照・コピーして使用すること。
 
 なお、**ビルドおよび単体テストはいずれも All Pass（FAIL 0 件）となるまで実施し、ユーザー検証テストはユーザーから明示的な合格が出るまでタスクを完了としない**。
 
@@ -175,5 +175,5 @@ Phase 4（最終報告）で作成する最終報告書は、以下の構成に�
 - Plan モード・Act モードのいずれの場合も、上記承認ゲートをスキップしない
 - タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 / Gate 2 を取得する
 - Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
-- When reading a skill file, always use the actual file via `read_files`; never rely on recalled or summarized content from memory.
+- スキルファイルを読み込む際は、必ず `read_files` で実ファイルを開き、記憶や要約に頼らないこと。
 
