@@ -174,8 +174,8 @@ FAILED tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_charac
 
 | タスクNO | タスク内容 | 優先度 | 備考 |
 |---|---|---|---|
+| BE008001 | `tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_characters` の修正 | 中 | BE007001 スコープ外の既存不具合。2026-09-07 に BE-TASKS.md へ起票済み |
 | FE00002 | frontend の「Failed to fetch」エラーが解消したか、ブラウザでのユーザー検証テストを実施 | 高 | 本タスクの目的である CORS 設定は完了。ユーザー検証で最終確認 |
-| （新規検討） | `tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_characters` の修正 | 中 | BE007001 スコープ外の既存不具合 |
 | （将来） | CORS 許可オリジンを環境変数化 | 低 | 本番環境向け |
 
 ---

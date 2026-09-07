@@ -443,5 +443,23 @@ OCR 完了後に生成される PDF の品質を向上する
 |  | 【実施結果】 |  |  |  |
 |  | 2026-09-07: `backend/app/main.py` に `CORSMiddleware` を追加した |  |  |  |
 |  | 2026-09-07: `backend/tests/test_cors.py` を新規作成し、OPTIONS プリフライト・実際のレスポンス・未許可オリジンの 3 ケースを検証した |  |  |  |
-|  | 2026-09-07: pytest を実行し、`test_cors.py` 3 件・`test_jobs.py` 5 件の計 8 件がすべて PASS した |  |  |  |
+|  | 2026-09-07: pytest を実行し、`test_cors.py` 3 件・`test_jobs.py` 5 件・`test_main.py` 3 件の計 11 件がすべて PASS した |  |  |  |
 |  | 2026-09-07: `feature/BE007001-add-cors-middleware` ブランチから `main` へ `--no-ff` マージした |  |  |  |
+
+---
+
+## ユースケースNo | 008
+
+ユースケース
+PDF 生成時に異体字を正規字体に正規化する
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| BE008001 | `test_generate_searchable_pdf_normalizes_variant_characters` の失敗修正 | 2026-09-07 |  | 不具合修正 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | 異体字「索」（U+F92A）が「索」（U+7D22）ではなく「浪」と認識される原因を調査する |  |  |  |
+|  | PDF 生成時のテキスト正規化処理（NFKC）の不具合を修正する |  |  |  |
+|  | `pytest tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_characters` が PASS することを確認する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | （未実施） |  |  |  |
