@@ -12,6 +12,10 @@ from __future__ import annotations
 # Web アプリケーションの本体（エンドポイント登録・リクエスト処理など）を提供します
 from fastapi import FastAPI
 
+# CORS（Cross-Origin Resource Sharing）を制御するミドルウェアです
+# ブラウザから別オリジン（frontend）へのアクセスを許可するために使用します
+from fastapi.middleware.cors import CORSMiddleware
+
 # routers パッケージから API ルーターをインポートします
 # APIRouter を使うことで、エンドポイントを機能ごとに分割できます
 from app.routers import jobs
@@ -32,6 +36,16 @@ logging.basicConfig(
 # FastAPI のアプリケーションインスタンスを作成します
 # title は API ドキュメントに表示される名前です
 app = FastAPI(title="book2pdf Web OCR API")
+
+# CORS ミドルウェアをアプリケーションに追加します
+# frontend（localhost:3000）から backend（localhost:8000）へのクロスオリジン要求を許可します
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # jobs ルーターをアプリケーションに登録します
 # prefix="/api/jobs" で、jobs ルーターのエンドポイント URL が /api/jobs/... になります

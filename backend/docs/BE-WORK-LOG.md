@@ -1297,3 +1297,50 @@ done
 - クライアント側は `processing` 状態を継続ポーリングし、`completed`/`failed` で完了判定する必要がある
 - バックグラウンドタスク実行中に backend コンテナが再起動するとジョブ状態は失われる（BE005001 SQLite 永続化完了後に解消予定）
 
+---
+
+## 2026-09-07 タスク BE007001：FastAPI に CORS ミドルウェアを追加する
+
+### 目的
+
+frontend（localhost:3000）から backend（localhost:8000）へのクロスオリジン API アクセスを可能にする。
+
+### 前提
+
+- FE00002（ZIP アップロード UI）のユーザー検証テストで「Failed to fetch」エラーが発生
+- 原因は backend に CORS ミドルウェアが未設定であったこと
+
+### 実施内容
+
+1. `backend/app/main.py` に `CORSMiddleware` を追加
+   - `allow_origins=["http://localhost:3000"]`
+   - `allow_credentials=True`
+   - `allow_methods=["*"]`
+   - `allow_headers=["*"]`
+2. `backend/tests/test_cors.py` を新規作成
+   - OPTIONS プリフライトが 200 OK を返すことを検証
+   - 実際の POST レスポンスに CORS ヘッダーが含まれることを検証
+   - 許可されていないオリジンには CORS ヘッダーが返らないことを検証
+3. pytest を実行
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+.venv/bin/python -m pytest tests/test_cors.py tests/test_jobs.py -v
+```
+
+### 結果
+
+- テスト 8 件すべて PASS
+  - `test_cors.py`: 3 件
+  - `test_jobs.py`: 5 件
+- 警告は依存ライブラリからのものであり、許容範囲内
+
+### 変更ファイル
+
+- `backend/app/main.py`
+- `backend/tests/test_cors.py`
+- `backend/docs/BE-TASKS.md`
+- `backend/docs/BE-WORK-LOG.md`
+
