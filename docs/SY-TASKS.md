@@ -136,12 +136,11 @@
 |  | 2026-09-06: `branch-naming.md` に禁止事項セクションを追加した |  |  |  |
 |  | 2026-09-06: `docs/SY-TASKS.md` に `SY007004` を起票した |  |  |  |
 |  | 2026-09-06: 変更を feature ブランチ `feature/SY007004-clinerules-branch-rules` から main へ `--no-ff` マージした |  |  |  |
-
 | SY007005 | ユーザー対話時の判断委ね構造とユースケース・タスク言及形式のルール追加 | 2026-09-07 | 2026-09-07 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` の **User Communication** に「判断委ねの構造」（状況・選択肢・推奨・明示的質問）を追加する |  |  |  |
-|  | `.clinerules` の **User Communication** に「ユースケース・タスク言及形式」（`SY007005` / `ユースケースNo | 007` 等の canonical 形式）を追加する |  |  |  |
+|  | `.clinerules` の **User Communication** に「ユースケース・タスク言及形式」（`SY007005` / `ユースケースNo ｜ 007` 等の canonical 形式）を追加する |  |  |  |
 |  | `docs/SY-TASKS.md` に `SY007005` を起票する |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
