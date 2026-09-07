@@ -75,7 +75,7 @@ describe("Home page MSW integration", () => {
         JSON.stringify({
           job_id: MOCK_JOB_ID,
           status: "processing",
-          progress: 50,
+          progress: 0.5,
           current_page: 1,
           total_pages: 1,
           message: "50% 完了",
@@ -95,7 +95,7 @@ describe("Home page MSW integration", () => {
         JSON.stringify({
           job_id: MOCK_JOB_ID,
           status: "completed",
-          progress: 100,
+          progress: 1.0,
           current_page: 1,
           total_pages: 1,
           message: "PDF 生成が完了しました",

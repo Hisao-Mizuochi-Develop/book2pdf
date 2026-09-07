@@ -11,7 +11,7 @@ function makeProgressEvent(overrides: Partial<ProgressEvent> = {}): ProgressEven
   return {
     job_id: "job-123",
     status: "processing",
-    progress: 50,
+    progress: 0.5,
     current_page: 1,
     total_pages: 2,
     ...overrides,
@@ -55,14 +55,14 @@ describe("ProgressPanel", () => {
   });
 
   it("progress が 0 未満の場合は 0% にクランプする", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: -10 })} log={[]} />);
+    render(<ProgressPanel latest={makeProgressEvent({ progress: -0.1 })} log={[]} />);
 
     expect(screen.getByText("0%")).toBeInTheDocument();
     expect(screen.getByTestId("progress-bar")).toHaveStyle({ width: "0%" });
   });
 
-  it("progress が 100 を超える場合は 100% にクランプする", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: 150 })} log={[]} />);
+  it("progress が 1.0 を超える場合は 100% にクランプする", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 1.5 })} log={[]} />);
 
     expect(screen.getByText("100%")).toBeInTheDocument();
     expect(screen.getByTestId("progress-bar")).toHaveStyle({ width: "100%" });

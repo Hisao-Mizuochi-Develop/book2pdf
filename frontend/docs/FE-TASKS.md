@@ -134,6 +134,7 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | 2026-09-08: `frontend/vitest.setup.ts` に MSW サーバーの起動・リセット・停止処理を追加した |  |  |  |
 |  | 2026-09-08: `frontend/src/app/__tests__/page.msw.test.tsx`（1 test）を新規作成し、MSW で API をモックしてアップロード → OCR 完了 → 進捗表示 → PDF ダウンロードボタン表示までの結合フローを検証した |  |  |  |
 |  | 2026-09-08: `npm run build` 成功、`npm run test -- --run` で 7 files / 46 tests 全件 PASS を確認した |  |  |  |
+|  | 2026-09-08: backend から送信される `progress` は 0.0〜1.0 の float であるため、`ProgressPanel.tsx` で `Math.round(progress * 100)` に変更し、パーセンテージ表示に変換。関連する全テストの progress 値を 0.0〜1.0 に修正 |  |  |  |
 |  | 2026-09-08: 【不具合発見元: FE002001】`src/lib/api.ts` の `downloadPdf()` で `response.body.pipeTo(writable)` 完了後に `writable.close()` を重複呼び出ししている不具合を発見。FE002002 として起票 |
 | FE002002 | `downloadPdf` の WritableStream close 重複呼び出し修正 | 2026-09-08 |  | バグ修正 |
 |  | タスク詳細 |  |  |  |

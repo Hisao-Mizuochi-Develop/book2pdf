@@ -20,8 +20,9 @@ export function ProgressPanel({ latest, log }: ProgressPanelProps) {
   }
 
   // progress が範囲外の値を返した場合でも UI が崩れないよう 0〜100 にクランプします
+  // backend からは 0.0〜1.0 の float で送られてくるため、×100 してパーセンテージに変換します
   const progressPercent = latest
-    ? Math.min(100, Math.max(0, latest.progress))
+    ? Math.min(100, Math.max(0, Math.round(latest.progress * 100)))
     : 0;
 
   // total_pages が 0 や未設定の場合に備え、安全な表示文字列を用意します
