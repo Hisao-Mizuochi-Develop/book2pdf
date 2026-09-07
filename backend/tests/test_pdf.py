@@ -228,9 +228,9 @@ def test_generate_searchable_pdf_normalizes_variant_characters() -> None:
         # ダミーの画像ファイルを作成します
         (extract_dir / "page1.png").write_bytes(b"dummy image data")
 
-        # XML に異体字「索」（U+F92A）を含めます
-        # 正規字体は「索」（U+7D22）です
-        variant_text = "図書館の探\uf92a"
+        # XML に異体字「漢」（U+FA47）を含めます
+        # 正規字体は「漢」（U+6F22）です
+        variant_text = "図書館の探\ufa47"
         create_sorted_xml(
             output_dir,
             image_name="page1.png",
@@ -260,9 +260,9 @@ def test_generate_searchable_pdf_normalizes_variant_characters() -> None:
             extracted_text = page.get_text()
             # 抽出テキストを NFKC 正規化して正規字体で比較します
             normalized_extracted = unicodedata.normalize("NFKC", extracted_text)
-            assert "図書館の探索" in normalized_extracted
+            assert "図書館の探漢" in normalized_extracted
             # 異体字そのものは含まれていないことを確認します
-            assert "\uf92a" not in normalized_extracted
+            assert "\ufa47" not in normalized_extracted
         finally:
             doc.close()
 
