@@ -4,35 +4,36 @@
 
 ---
 
-## 2026-09-07 SY007006 Phase 4 必須報告ルールと Verification Report Template の追加
+## 2026-09-07 SY007006 テスト関連ワークフローのAgentSkills改善
 
 ### 目的
 
-- Phase 4 の最終報告に必須項目を設け、報告品質を均一化する
-- `.clinerules`、`workflow-runner` スキル、`test-manager` スキルの間で報告フレームワークを統一する
-- 検証レポートの作成テンプレートを `test-manager/SKILL.md` に定義し、全検証活動で再利用できるようにする
+- Phase 4（最終報告）で必ず報告すべき項目を `.clinerules` に定義し、報告品質を均一化する
+- `workflow-runner` スキルの Phase 4 手順から `.clinerules` の必須項目と `test-manager` スキルの Verification Report Template を参照させ、一貫した報告フローを構築する
+- `test-manager` スキルに検証レポートの標準フォーマットを定義し、全検証活動で再利用できるようにする
 
 ### 実施内容
 
-- `.clinerules` に **Phase 4 Reporting Rules** セクションを追加し、必須報告 7 項目を定義した
-- `.cline/skills/workflow-runner/SKILL.md` の Phase 4 最終報告手順を 7 項目に更新し、`.clinerules` と `test-manager/SKILL.md` を参照するようにした
-- `.cline/skills/test-manager/SKILL.md` に **Verification Report Template** を追加した
-- `docs/SY-TASKS.md` に `SY007006` を起票した
+- `.clinerules` の **Approval Required** 直後に **Phase 4 必須報告ルール** セクションを追加し、7項目のレポート枠組みを定義した
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新し、`.clinerules` の **Phase 4 必須報告ルール** と `test-manager` スキルの **Verification Report Template** を参照するようにした
+- `.cline/skills/test-manager/SKILL.md` に **Verification Report Template（検証レポートテンプレート）** を新設し、テストフェーズ毎の合否判定表、テスト環境準備状況、ユーザーテスト項目、総合判定を定義した
+- `docs/SY-TASKS.md` に `SY007006` を起票し、`SY007005` をユースケースNo 007 配下に整理した
 - `docs/SY-WORK-LOG.md` に本 `SY007006` の実施内容と結果を追記した
 
 ### 結果
 
-- Phase 4 の最終報告に必須項目が明文化された
+- Phase 4 の最終報告に必須項目が `.clinerules` に明文化された
 - `.clinerules` → `workflow-runner` → `test-manager` の一貫した参照関係が構築された
-- 検証レポートの作成テンプレートが `test-manager/SKILL.md` に追加された
+- 検証レポートの標準フォーマットが `test-manager/SKILL.md` に定義された
+- `docs/SY-TASKS.md` のユースケースNo 007 / 008 が整理され、`SY007005` と `SY007006` が同一ユースケースに集約された
 
 ### コミット
 
-`docs(SY007006): add phase-4 reporting rules and verification report template`
+`docs(SY007006): enforce workflow completion report rules and test-manager reference`
 
 ### 関連タスク
 
-- `SY007006` Phase 4 必須報告ルールと Verification Report Template の追加（完了）
+- `SY007006` テスト関連ワークフローのAgentSkills改善（完了）
 
 ---
 
