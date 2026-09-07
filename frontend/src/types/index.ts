@@ -99,3 +99,17 @@ export interface DownloadButtonProps {
   /** ボタン押下時のコールバックです。 */
   onDownload: () => void;
 }
+
+/** ZIP アップロードフォームの状態を表す文字列リテラル型です。 */
+export type ZipUploadStatus =
+  | "idle"
+  | "creating"
+  | "uploading"
+  | "uploaded"
+  | "error";
+
+/** ZipUploadForm コンポーネントの props 型です。 */
+export interface ZipUploadFormProps {
+  /** アップロード完了時に呼び出されるコールバックです。 */
+  onUploaded: (jobId: string, files: string[]) => void;
+}

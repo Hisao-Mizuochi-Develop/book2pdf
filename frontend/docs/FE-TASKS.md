@@ -65,7 +65,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-08-11: Puppeteer による自動確認で、`http://localhost:3000` のトップページにタイトル・サブタイトル・ZIP ファイル選択 input・「アップロードして OCR 実行」ボタンが表示されることを確認した |  |  |  |
 |  | 2026-08-11: `GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認（Puppeteer の PDF 直接表示はブラウザ制限で `net::ERR_ABORTED` となるが、API 自体は正常動作） |  |  |  |
 |  | 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/FE-WORK-LOG.md` / `backend/docs/BE-CAVEATS.md` に記録 |  |  |  |
-| FE001002 | ZIP アップロード UI の実装 | 2026-08-11 |  | 機能実装 |
+| FE001002 | ZIP アップロード UI の実装 | 2026-08-11 | 2026-09-07 | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | backend の POST /api/jobs からジョブ ID を取得する処理を実装する |  |  |  |

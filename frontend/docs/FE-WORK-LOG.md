@@ -244,3 +244,34 @@ npm audit
 - Playwright は基盤準備（config + サンプルテスト）までとし、backend 連携の完全 E2E は別タスクとする
 - ドキュメント更新は `tasks.md` / `work_log.md` / `frontend-system-spec.md` / `caveats.md` / `docs/agent-skills-guide.md` / `.cline/skills/test-manager/SKILL.md` が対象
 
+
+## 2026-09-07 タスク FE001002：page.tsx リファクタリングと作業完了
+
+### 実施内容
+
+- `feature/FE001002-componentize-and-test` ブランチにて、FE001002 の実装を完了した。
+- `src/app/page.tsx` を `ZipUploadForm` コンポーネントに委譲し、UI ロジックを `useOcrJob` フックと共有 API レイヤー（`src/lib/api.ts`）に集約した。
+- 型定義（`src/types/index.ts`）とテスト（`page.test.tsx`、`ZipUploadForm.test.tsx`、`useOcrJob.test.tsx`、`api.test.ts`）を追加・整備した。
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npx tsc --noEmit          # 成功（エラーなし）
+npm test -- --run         # 5 files, 33 tests passed
+```
+
+### 変更ファイル
+
+- `src/app/page.tsx`
+- `src/types/index.ts`
+- `src/lib/api.ts`
+- `src/components/upload/ZipUploadForm.tsx`
+- `src/hooks/useOcrJob.ts`
+- 上記各ファイルに対応するテストファイル
+
+### 状態
+
+- `FE-TASKS.md` の FE001002 完了日を 2026-09-07 に更新済み。
+- 本ブランチは `main` へマージ可能な状態である。
+
