@@ -80,6 +80,21 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 |  | 2026-09-05 追記：Vitest + @testing-library/react + jsdom のテスト基盤を導入する |  |  |  |
 |  | 2026-09-05 追記：`api.test.ts` / `UploadForm.test.tsx` / `ImageList.test.tsx` の単体テストを実装する |  |  |  |
 |  | 2026-09-05 追記：MSW（Mock Service Worker）を使用した API 結合テストを実装する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-07: `frontend/src/types/index.ts` を新規作成し、Job / UploadResponse / ImageFile / ProgressEvent / OcrResult 等の共通型定義を整備した |  |  |  |
+|  | 2026-09-07: `frontend/src/lib/api.ts` をリファクタリングし、各 API エンドポイント呼び出しを型付け・エラーハンドリング強化した。MSW ハンドラも同ファイル内に集約した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/ZipUploadForm.tsx` を新規作成し、ファイル選択・ジョブ作成・ZIP アップロード処理を `page.tsx` から分離した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/ImageList.tsx` を新規作成し、アップロード後の画像ファイル一覧表示を分離した |  |  |  |
+|  | 2026-09-07: `frontend/src/hooks/useOcrJob.ts` を新規作成し、ジョブ作成・アップロード・進捗監視・PDF 取得のロジックを集約した |  |  |  |
+|  | 2026-09-07: Vitest + @testing-library/react + jsdom のテスト基盤を導入し、`vitest.config.ts` を設定した |  |  |  |
+|  | 2026-09-07: `frontend/src/lib/__tests__/api.test.ts`（14 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/__tests__/ZipUploadForm.test.tsx`（6 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/components/upload/__tests__/ImageList.test.tsx`（2 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/hooks/__tests__/useOcrJob.test.ts`（7 tests）を実装した |  |  |  |
+|  | 2026-09-07: `frontend/src/app/__tests__/page.test.tsx`（4 tests）を実装した |  |  |  |
+|  | 2026-09-07: `npm run test` で 33 tests / 5 test files 全件 PASS を確認した |  |  |  |
+|  | 2026-09-07: `npm run build` がエラーなしで完了することを確認した |  |  |  |
+|  | 2026-09-07: `page.tsx` をリファクタリングし、ZipUploadForm / ImageList / useOcrJob へ処理を委譲した |  |  |  |
 
 ---
 
