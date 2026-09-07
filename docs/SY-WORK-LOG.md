@@ -87,6 +87,34 @@
 
 ---
 
+## 2026-09-07 SY007008 `.clinerules`、AgentSkills の英文部分の日本語化
+
+### 目的
+
+- `.clinerules` に残存している英文を日本語に翻訳し、プロジェクト全体の日本語表記と整合させる
+- AgentSkills 各 SKILL.md の英文セクション見出しを日本語化し、可読性と一貫性を向上させる
+
+### 実施予定
+
+- `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳する
+- `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出し（`## Overview` / `## Step-by-step Instructions` / `## Common Edge Cases`）を日本語にする
+- YAML frontmatter（`name` / `compatibility` / `author` / `version`）やコード・コマンド・ファイルパスは翻訳対象外とする
+- `docs/SY-TASKS.md` と `docs/SY-WORK-LOG.md` に本 `SY007008` の実施内容・結果を追記する
+
+### 結果
+
+- （実施後に記述）
+
+### コミット
+
+- （実施後に記述）
+
+### 関連タスク
+
+- `SY007008` `.clinerules`、AgentSkills の英文部分の日本語化（進行中）
+
+---
+
 ## 2026-09-07 SY007005 `.clinerules` にユーザー対話時の厳格な表現ルールを追加する
 
 ### 目的
