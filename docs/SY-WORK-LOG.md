@@ -226,3 +226,45 @@
 
 - OT003001 進捗通知のポーリング方式仕様策定と localapp リトライ実装
 - OT007001 `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する
+
+---
+
+## 2026-09-08 SY007009 タスク完了基準・UAT判定ガイドの追加
+
+### 目的
+
+- `FE002001` における完了日付先行入力の再発防止
+- タスク完了前に満たすべき必須条件を `.clinerules` に明文化する
+- UAT 実施要否の判定基準を `.clinerules` に明確にする
+- `workflow-runner/SKILL.md` の Phase 4 に完了基準チェックを組み込む
+
+### 実施内容
+
+- `docs/SY-TASKS.md` に `SY007009` を起票した
+- `.clinerules` に **タスク完了基準** セクションを追加した
+  - Phase 3 のビルド/単体/動作確認 PASS
+  - Gate 3 承認（必要な場合）
+  - UAT 合格（必要な場合）
+  - Git merge 完了
+  - feature ブランチ削除
+  - 未達成時は完了日付記入禁止、中間進捗を【実施結果】に追記
+- `.clinerules` に **ユーザー検証テスト（UAT）実施要否判定ガイド** を追加した
+  - UAT が必要な場合・不要な場合の基準
+  - 判断に迷う場合のユーザー確認と記録義務
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 4 に **完了基準チェック** を追加した
+  - 後処理の完了日付記入を「完了基準チェックを満たしている場合のみ」とした
+  - 手順番号を整理した
+
+### 結果
+
+- `.clinerules` にタスク完了基準と UAT 判定ガイドが追加された
+- `workflow-runner/SKILL.md` の Phase 4 に完了基準チェックが組み込まれた
+- `FE002001` のような完了日付先行入力の再発防止策が整備された
+
+### コミット
+
+`docs(SY007009): add task completion criteria and UAT decision guide`
+
+### 関連タスク
+
+- `SY007009` タスク完了基準・UAT判定ガイドの `.clinerules`・`workflow-runner` への追加
