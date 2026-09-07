@@ -48,6 +48,38 @@
 
 ---
 
+## 2026-09-07 SY007007 モジュール横断不具合発見時のタスク管理ルール追加
+
+### 目的
+
+- 対応中のタスク実行中に他のモジュールの不具合が見つかった場合の対応フローを `.clinerules` と `workflow-runner/SKILL.md` に明文化する
+- 不具合発生モジュールのタスク登録を規定ワークフローに従って実施する手順を定義する
+- 追加タスクが対応中タスクの完了に影響する場合としない場合の優先順位を明確にする
+
+### 実施予定
+
+- `docs/SY-TASKS.md` に `SY007007` を起票する
+- `.clinerules` の **Core Constraints** 直後に **Cross-Module Defect Handling** セクションを追加する
+- `.cline/skills/workflow-runner/SKILL.md` の **Phase 3** に **Phase 3-A: 他モジュール不具合発見時の対応** を追加する
+- `.clinerules` の **Core Constraints** に「原則として1タスク1ブランチを厳守する」ルールを追加する
+- `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールを追加する
+- `docs/SY-WORK-LOG.md` に本 `SY007007` の実施内容・結果を追記する
+- 変更を feature ブランチ `feature/SY007007-cross-module-defect-handling` から main へ `--no-ff` マージする
+
+### 結果
+
+（未実施）
+
+### コミット
+
+（未確定）
+
+### 関連タスク
+
+- `SY007007` モジュール横断不具合発見時のタスク管理ルール追加（進行中）
+
+---
+
 ## 2026-09-07 SY007005 `.clinerules` にユーザー対話時の厳格な表現ルールを追加する
 
 ### 目的
