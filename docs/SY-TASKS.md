@@ -214,3 +214,19 @@
 |  | 2026-09-07: `.clinerules` 内の `Verification Report Template（検証レポートテンプレート）` の表記を `検証レポートテンプレート` に統一した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に本 `SY007008` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007008-english-to-japanese` から main へ `--no-ff` マージした |  |  |  |
+| SY007009 | タスク完了基準・UAT判定ガイドの `.clinerules`・`workflow-runner` への追加 | 2026-09-08 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に「タスク完了基準（必須チェックリスト）」を新設する |  |  |  |
+|  | 完了日付を `<識別子>-TASKS.md` に記入する前の必須条件（Phase 3 PASS / Gate 3 承認 / UAT 合格 / Git merge 完了）を明文化する |  |  |  |
+|  | `.clinerules` に「UAT実施要否判定ガイド」を新設する |  |  |  |
+|  | UAT が必要なタスクと不要なタスクの判定基準を明確にする |  |  |  |
+|  | `workflow-runner/SKILL.md` の Phase 4 手順4に「完了基準チェック」を追加する |  |  |  |
+|  | 完了日付記入前に、ビルドPASS・テストPASS・UAT合格・Git merge の確認を義務付ける |  |  |  |
+|  | `docs/SY-WORK-LOG.md` に本タスクの実施内容・結果を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-08: `docs/SY-TASKS.md` に `SY007009` を起票した |  |  |  |
+|  | 2026-09-08: `.clinerules` に「タスク完了基準」と「ユーザー検証テスト（UAT）実施要否判定ガイド」を追加した |  |  |  |
+|  | 2026-09-08: `workflow-runner/SKILL.md` の Phase 4 に「完了基準チェック」を追加し、完了日付記入を完了基準満た後のみに限定した |  |  |  |
+|  | 2026-09-08: `docs/SY-WORK-LOG.md` に本タスクの実施内容を追記した |  |  |  |
+|  | 2026-09-08: Git commit / merge 実施（完了日付は merge 後に記入） |  |  |  |
