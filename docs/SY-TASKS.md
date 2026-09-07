@@ -148,12 +148,13 @@
 |  | 2026-09-07: `docs/SY-TASKS.md` に `SY007005` を起票した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007005-clinerules-user-comm-rules` から main へ `--no-ff` マージした |  |  |  |
-| SY007006 | テスト関連ワークフローのAgentSkills改善 | 2026-09-07 | 2026-09-07 | 運用整備 |
+| SY007006 | テスト関連ワークフローと検証合格基準のAgentSkills改善 | 2026-09-07 | 2026-09-07 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` に「Phase 4 必須報告ルール」セクションを追加し、7項目のレポート枠組みを定義する |  |  |  |
 |  | `.cline/skills/workflow-runner/SKILL.md` の Phase 4「最終報告書」手順を更新し、`.clinerules` の 7項目枠組みと `test-manager` スキルの Verification Report Template を参照させる |  |  |  |
 |  | `.cline/skills/test-manager/SKILL.md` に「Verification Report Template（検証レポートテンプレート）」セクションを新設する |  |  |  |
+|  | `.clinerules` / `workflow-runner/SKILL.md` / `test-manager/SKILL.md` において、ビルドテスト・単体テストの All Pass 基準と、ユーザー検証テスト合格までタスクを完了としないルールを追加する |  |  |  |
 |  | `docs/SY-TASKS.md` に `SY007006` を起票する |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
@@ -163,3 +164,8 @@
 |  | 2026-09-07: `docs/SY-TASKS.md` に `SY007006` を起票し、`SY007005` をユースケースNo 007 配下に整理した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007006-test-workflow-agentskills-improvement` から main へ `--no-ff` マージした |  |  |  |
+|  | 2026-09-07: ユーザー検証テスト合格までタスクを完了としないルールを `.clinerules` / `workflow-runner/SKILL.md` / `test-manager/SKILL.md` に追加した |  |  |  |
+|  | 2026-09-07: `.clinerules` / `workflow-runner/SKILL.md` にビルドテスト・単体テストの All Pass 基準を追加した |  |  |  |
+|  | 2026-09-07: `test-manager/SKILL.md` の Verification Report Template に FAIL 時の再テスト手順とユーザー検証テスト承認ルールを追加した |  |  |  |
+|  | 2026-09-07: `docs/SY-TASKS.md` の `SY007006` スコープを検証合格基準・ユーザー検証承認ゲートの追加に拡張した |  |  |  |
+|  | 2026-09-07: `.clinerules` の **ユーザーコミュニケーション** セクションの英語記載を日本語に翻訳・入れ替えた |  |  |  |
