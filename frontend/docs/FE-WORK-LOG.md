@@ -350,3 +350,80 @@ npm test                   # 5 files, 36 tests passed
 - 本ブランチは `main` へマージ可能な状態である。
 - UAT にて実ブラウザ（Chrome / Edge）での保存ダイアログ表示を検証する必要がある。
 
+
+## 2026-09-07 タスク FE001002：PDF 保存先ダイアログの改修（やり直し）
+
+### 目的
+
+`downloadPdf()` 内で `window.showSaveFilePicker` がユーザージェスチャ（クリック）文脈の失効後に呼ばれていたため、ブラウザの保存ダイアログが表示されない不具合を修正する。
+
+### 原因
+
+File System Access API の `showSaveFilePicker` はユーザージェスチャ（ボタンクリック）の文脈内で同期的に呼ぶ必要がある。`fetch` 後に呼ぶとセキュリティコンテキストが失効し、ダイアログが抑制される。
+
+### 実施内容
+
+1. `src/lib/api.ts` の `downloadPdf()` を改修
+   - `window.showSaveFilePicker` を `fetch` より先に呼び出し、ファイルハンドルを取得
+   - ハンドル取得後に `fetchWithTimeout` で PDF を取得し、`createWritable` → `pipeTo` → `close` で保存
+   - フォールバック処理は維持（`showSaveFilePicker` 非対応ブラウザでは `<a download>` 方式）
+2. `src/lib/__tests__/api.test.ts` を更新
+   - `showSaveFilePicker` が `fetch` より先に呼ばれることを検証するアサーションを追加
+   - ダイアログキャンセル時は `fetch` が呼ばれないことを検証
+   - File System Access API パスとフォールバックパスの両方で HTTP エラー時の挙動を検証
+3. `frontend/docs/FE-TASKS.md` / `FE-WORK-LOG.md` を更新
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test -- --run          # 5 files, 37 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/__tests__/api.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT にて実ブラウザ（Chrome / Edge）での保存ダイアログ表示を検証する必要がある。
+
+
+## 2026-09-08 タスク FE001002：完了・main マージ
+
+### 目的
+
+Phase 4 最終報告書を作成し、ユーザー検収テスト（Gate 3）の承認を取得したうえで、FE001002 を完了させ main ブランチへマージする。
+
+### 実施内容
+
+- Phase 4 最終報告書を作成し、ユーザーに提示
+- Gate 3 においてユーザー検収テストの合格承認を取得
+- `frontend/docs/FE-TASKS.md` の FE001002 行にタスク完了日付 `2026-09-08` を記入
+- `frontend/docs/FE-WORK-LOG.md` に本完了記録を追記
+- 未コミット変更を `git add -A && git commit` した
+- `main` ブランチへ `git merge --no-ff feature/FE001002-componentize-and-test` を実施
+- 完了後、feature ブランチを削除した
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm run test -- --run      # 5 files, 38 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- FE001002 は完了。main ブランチにマージ済み。
+

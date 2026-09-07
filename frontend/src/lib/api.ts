@@ -143,7 +143,7 @@ interface SaveFilePickerOptions {
   }>;
 }
 
-interface FileSystemFileHandle {
+export interface FileSystemFileHandle {
   createWritable(): Promise<FileSystemWritableFileStream>;
 }
 
@@ -172,18 +172,42 @@ async function streamToWritable(
 /**
  * ブラウザ標準の「保存先を指定するダイアログ」を使用して PDF を保存します。
  * File System Access API に対応していないブラウザでは、従来の `<a download>` 方式にフォールバックします。
+ *
+ * showSaveFilePicker はユーザージェスチャ（クリック）の文脈内で同期的に呼ぶ必要があるため、
+ * この関数内部で呼び出すと呼び出し元の async ラッパーによってジェスチャが失効する場合があります。
+ * そのため本関数では fileHandle を受け取る方式を推奨し、showSaveFilePicker の呼び出しは
+ * UI 層の同期 onClick ハンドラで行ってください。
+ *
  * @param jobId ジョブ ID
  * @param filename 保存するファイル名（省略時は {jobId}.pdf）
+ * @param fileHandle UI 層で事前に取得した FileSystemFileHandle（推奨）
  */
-export async function downloadPdf(jobId: string, filename?: string): Promise<void> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
-  if (!response.ok) {
-    throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
-  }
-
+export async function downloadPdf(
+  jobId: string,
+  filename?: string,
+  fileHandle?: FileSystemFileHandle
+): Promise<void> {
   const suggestedName = filename || `${jobId}.pdf`;
 
-  // File System Access API が利用可能な場合は、保存先ダイアログを表示します
+  // fileHandle が提供されている場合は、ピッカーをスキップして直接ストリーミング書き込みします。
+  // これによりクリックのユーザージェスチャ文脈を保持し、ダイアログが確実に表示されます。
+  if (fileHandle) {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+    if (!response.ok) {
+      throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
+    }
+
+    const writable = await fileHandle.createWritable();
+    try {
+      await streamToWritable(response, writable);
+    } finally {
+      await writable.close();
+    }
+    return;
+  }
+
+  // File System Access API が利用可能な場合は、保存先ダイアログを表示してから書き込みます。
+  // ただし、showSaveFilePicker を本関数内で呼ぶ場合は呼び出し元が同期イベントハンドラである必要があります。
   if (typeof window.showSaveFilePicker === "function") {
     let handle: FileSystemFileHandle;
     try {
@@ -204,6 +228,11 @@ export async function downloadPdf(jobId: string, filename?: string): Promise<voi
       throw error;
     }
 
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+    if (!response.ok) {
+      throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
+    }
+
     const writable = await handle.createWritable();
     try {
       await streamToWritable(response, writable);
@@ -214,6 +243,12 @@ export async function downloadPdf(jobId: string, filename?: string): Promise<voi
   }
 
   // フォールバック: Blob URL + <a download> 方式
+  // （File System Access API に対応していないブラウザ用）
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+  if (!response.ok) {
+    throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
+  }
+
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
 

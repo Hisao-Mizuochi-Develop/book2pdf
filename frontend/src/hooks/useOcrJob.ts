@@ -5,7 +5,7 @@
 // 管理を一括して行います。
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { downloadPdf, runOcr, subscribeJobProgress } from "@/lib/api";
+import { runOcr, subscribeJobProgress } from "@/lib/api";
 import type { ProgressEvent } from "@/types";
 
 /** useOcrJob の戻り値型です。 */
@@ -30,8 +30,6 @@ export interface UseOcrJobResult {
   handleUploaded: (jobId: string, files: string[]) => Promise<void>;
   /** 状態を初期化します。 */
   reset: () => void;
-  /** PDF をダウンロードします。 */
-  download: () => Promise<void>;
 }
 
 /**
@@ -140,11 +138,6 @@ export function useOcrJob(): UseOcrJobResult {
     [reset, parseProgressEvent, closeEventSource],
   );
 
-  const download = useCallback(async () => {
-    if (!downloadableJobId) return;
-    await downloadPdf(downloadableJobId);
-  }, [downloadableJobId]);
-
   useEffect(() => {
     return () => {
       closeEventSource();
@@ -162,6 +155,5 @@ export function useOcrJob(): UseOcrJobResult {
     downloadableJobId,
     handleUploaded,
     reset,
-    download,
   };
 }
