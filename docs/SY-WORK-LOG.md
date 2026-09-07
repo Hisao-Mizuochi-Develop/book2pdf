@@ -103,15 +103,19 @@
 
 ### 結果
 
-- （実施後に記述）
+- `.clinerules` の `Identity` / `Core Constraints` / `Approval Required` / `Project Context` / `Workflow Runner Usage` の英文を日本語に翻訳した
+- `code-generator/SKILL.md`、`file-modifier/SKILL.md`、`task-manager/SKILL.md`、`test-manager/SKILL.md`、`workflow-runner/SKILL.md` の英文セクション見出しを日本語化した
+- `.clinerules` 内の `Verification Report Template（検証レポートテンプレート）` の表記を `検証レポートテンプレート` に統一した
+- YAML frontmatter（`name` / `compatibility` / `author` / `version`）やコード・コマンド・ファイルパスは翻訳対象外として維持した
 
 ### コミット
 
-- （実施後に記述）
+- `docs(SY007008): translate remaining English sections in .clinerules and AgentSkills to Japanese`
+- `docs(SY007008): merge feature branch for Japanese localization`
 
 ### 関連タスク
 
-- `SY007008` `.clinerules`、AgentSkills の英文部分の日本語化（進行中）
+- `SY007008` `.clinerules`、AgentSkills の英文部分の日本語化（完了）
 
 ---
 
