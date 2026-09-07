@@ -68,15 +68,20 @@
 
 ### 結果
 
-（未実施）
+- `.clinerules` に「Cross-Module Defect Handling」セクションが追加された
+- `.clinerules` の **Core Constraints** に「原則として1タスク1ブランチを厳守する」ルールが追加された
+- `.cline/skills/workflow-runner/SKILL.md` の Phase 3 に「Phase 3-A: 他モジュール不具合発見時の対応」が追加された
+- `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順に「原則として1タスク1ブランチを厳守する」ルールが追加された
+- 変更は feature ブランチ `feature/SY007007-cross-module-defect-handling` から main へ `--no-ff` マージされた
 
 ### コミット
 
-（未確定）
+- `docs(SY007007): add cross-module defect handling and one-task-per-branch rule`
+- `[SY007007] Merge cross-module defect handling and one-task-per-branch rule`
 
 ### 関連タスク
 
-- `SY007007` モジュール横断不具合発見時のタスク管理ルール追加（進行中）
+- `SY007007` モジュール横断不具合発見時のタスク管理ルール追加（完了）
 
 ---
 
