@@ -158,3 +158,12 @@
 |  | 2026-09-07: `docs/SY-TASKS.md` にユースケースNo 008 と `SY007005` を起票した |  |  |  |
 |  | 2026-09-07: `docs/SY-WORK-LOG.md` に `SY007005` の実施内容・結果を追記した |  |  |  |
 |  | 2026-09-07: 変更を feature ブランチ `feature/SY007005-clinerules-user-comm-rules` から main へ `--no-ff` マージした |  |  |  |
+| SY007006 | Phase 4 必須報告ルールと Verification Report Template の追加 | 2026-09-07 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に Phase 4 の必須報告項目（7 項目）を追加する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 4 を 7 項目に更新し、`.clinerules` と `test-manager/SKILL.md` を参照させる |  |  |  |
+|  | `.cline/skills/test-manager/SKILL.md` に Verification Report Template を追加する |  |  |  |
+|  | `docs/SY-TASKS.md` に `SY007006` を起票する |  |  |  |
+|  | `docs/SY-WORK-LOG.md` に `SY007006` の実施内容・結果を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
