@@ -127,7 +127,51 @@ export function getPdfDownloadUrl(jobId: string): string {
 }
 
 /**
- * 指定したジョブの生成済み PDF をファイルとしてダウンロードします
+ * File System Access API の型定義です
+ * TypeScript の標準 lib に含まれていない可能性があるため、最小限の型を定義します
+ */
+interface FileSystemWritableFileStream extends WritableStream {
+  write(data: Blob | BufferSource | string): Promise<void>;
+  close(): Promise<void>;
+}
+
+interface SaveFilePickerOptions {
+  suggestedName?: string;
+  types?: Array<{
+    description?: string;
+    accept: Record<string, string[]>;
+  }>;
+}
+
+interface FileSystemFileHandle {
+  createWritable(): Promise<FileSystemWritableFileStream>;
+}
+
+declare global {
+  interface Window {
+    showSaveFilePicker?: (options?: SaveFilePickerOptions) => Promise<FileSystemFileHandle>;
+  }
+}
+
+/**
+ * レスポンスボディを WritableStream に直接転送します
+ * @param response 転送元の Response
+ * @param writable 転送先の WritableStream
+ */
+async function streamToWritable(
+  response: Response,
+  writable: FileSystemWritableFileStream
+): Promise<void> {
+  if (response.body) {
+    await response.body.pipeTo(writable);
+  } else {
+    await writable.write(await response.blob());
+  }
+}
+
+/**
+ * ブラウザ標準の「保存先を指定するダイアログ」を使用して PDF を保存します。
+ * File System Access API に対応していないブラウザでは、従来の `<a download>` 方式にフォールバックします。
  * @param jobId ジョブ ID
  * @param filename 保存するファイル名（省略時は {jobId}.pdf）
  */
@@ -137,22 +181,49 @@ export async function downloadPdf(jobId: string, filename?: string): Promise<voi
     throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
   }
 
-  // レスポンスを Blob として取得します
-  const blob = await response.blob();
+  const suggestedName = filename || `${jobId}.pdf`;
 
-  // Blob から一時的なオブジェクト URL を作成します
+  // File System Access API が利用可能な場合は、保存先ダイアログを表示します
+  if (typeof window.showSaveFilePicker === "function") {
+    let handle: FileSystemFileHandle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: "PDF ファイル",
+            accept: { "application/pdf": [".pdf"] },
+          },
+        ],
+      });
+    } catch (error) {
+      // ユーザーがダイアログをキャンセルした場合は何もせず終了します
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      throw error;
+    }
+
+    const writable = await handle.createWritable();
+    try {
+      await streamToWritable(response, writable);
+    } finally {
+      await writable.close();
+    }
+    return;
+  }
+
+  // フォールバック: Blob URL + <a download> 方式
+  const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
 
-  // ダウンロード用のリンク要素を作成します
   const link = document.createElement("a");
   link.href = url;
-  link.download = filename || `${jobId}.pdf`;
+  link.download = suggestedName;
 
-  // リンクをクリックしてダウンロードを開始します
   document.body.appendChild(link);
   link.click();
 
-  // リンク要素とオブジェクト URL を解放します
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 }

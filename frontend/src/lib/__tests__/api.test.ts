@@ -240,7 +240,59 @@ describe("api client", () => {
   });
 
   describe("downloadPdf", () => {
-    it("Blob URL を作成しダウンロードリンクをクリックする", async () => {
+    it("File System Access API 使用時に保存先ダイアログを表示し、選択先に書き込む", async () => {
+      const writable = {
+        write: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      const handle = {
+        createWritable: vi.fn().mockResolvedValue(writable),
+      };
+      const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      const blob = new Blob(["pdf"], { type: "application/pdf" });
+      const response = new Response(blob, { status: 200 });
+      // jsdom 以外の環境では response.body が存在するため、Blob 書き込みパスを検証するために null にします
+      Object.defineProperty(response, "body", { value: null });
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
+
+      await downloadPdf("job-123", "result.pdf");
+
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/pdf`, {
+        signal: expect.any(AbortSignal),
+      });
+      expect(showSaveFilePickerMock).toHaveBeenCalledWith({
+        suggestedName: "result.pdf",
+        types: [
+          {
+            description: "PDF ファイル",
+            accept: { "application/pdf": [".pdf"] },
+          },
+        ],
+      });
+      expect(handle.createWritable).toHaveBeenCalledTimes(1);
+      expect(writable.write).toHaveBeenCalledWith(expect.any(Blob));
+      expect(writable.close).toHaveBeenCalledTimes(1);
+    });
+
+    it("保存ダイアログをキャンセルした場合はエラーを投げない", async () => {
+      const abortError = new DOMException("User cancelled", "AbortError");
+      const showSaveFilePickerMock = vi.fn().mockRejectedValue(abortError);
+      vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
+
+      const blob = new Blob(["pdf"], { type: "application/pdf" });
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(blob, { status: 200 })
+      );
+
+      await expect(downloadPdf("job-123", "result.pdf")).resolves.toBeUndefined();
+      expect(showSaveFilePickerMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("showSaveFilePicker がない環境では <a download> でフォールバックする", async () => {
+      vi.stubGlobal("showSaveFilePicker", undefined);
+
       const createObjectURL = vi.fn(() => "blob:http://localhost/abc");
       const revokeObjectURL = vi.fn();
       vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
@@ -254,9 +306,6 @@ describe("api client", () => {
 
       await downloadPdf("job-123", "result.pdf");
 
-      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/pdf`, {
-        signal: expect.any(AbortSignal),
-      });
       expect(createObjectURL).toHaveBeenCalledWith(blob);
       expect(clickSpy).toHaveBeenCalledTimes(1);
       expect(revokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/abc");

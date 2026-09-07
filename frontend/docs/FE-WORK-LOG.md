@@ -306,3 +306,47 @@ npm test -- --run          # 5 files, 34 tests passed
 - 本ブランチは `main` へマージ可能な状態である。
 - UAT 再検証が必要である。
 
+## 2026-09-07 タスク FE001002：PDF 保存先ダイアログの実装
+
+### 目的
+
+PDF ダウンロード時に、ブラウザ標準の「保存先を指定するダイアログ」を表示できるように改修する。これにより、ユーザーが任意のフォルダに PDF を保存できるようになる。
+
+### 前提
+
+- `downloadPdf()` は従来 `<a download>` 方式を使用しており、ブラウザ設定によってはダウンロード先を指定できなかった
+- File System Access API (`window.showSaveFilePicker`) が利用可能なブラウザでは、OS 標準の保存ダイアログを表示できる
+
+### 実施内容
+
+1. `src/lib/api.ts` の `downloadPdf()` を改修
+   - `window.showSaveFilePicker` が利用可能な場合は、保存先ダイアログを表示して選択先ファイルにストリーミング書き込み
+   - 未対応ブラウザでは従来の `<a download>` 方式にフォールバック
+   - ユーザーがダイアログをキャンセルした場合（`AbortError`）は例外を投げない
+2. `src/lib/__tests__/api.test.ts` にテストケースを追加
+   - File System Access API パス
+   - ダイアログキャンセル時の挙動
+   - フォールバックパス
+   - HTTP エラー時の挙動
+3. `frontend/docs/FE-TASKS.md` の FE001002 実施結果欄に不具合情報を追記
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm test                   # 5 files, 36 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/__tests__/api.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- 本ブランチは `main` へマージ可能な状態である。
+- UAT にて実ブラウザ（Chrome / Edge）での保存ダイアログ表示を検証する必要がある。
+
