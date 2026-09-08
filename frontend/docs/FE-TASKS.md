@@ -159,6 +159,8 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | 経緯: FE002001 実施中（2026-09-08）にコードレビュー時に発見し、重複していたログ出力を削除した |  |  |  |
 |  | **テスト更新方針** |  |  |  |
 |  | `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが、バグ 1 修正後の close 後の状態を正しく検証できるよう更新する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-08: `src/lib/api.ts` の `streamToWritable` に `pipeTo(writable, { preventClose: true })` を適用し、バグ 1 を修正。`npm run build` 成功、テスト 7 files / 47 tests 全件 PASS |  |  |  |
 
 ---
 

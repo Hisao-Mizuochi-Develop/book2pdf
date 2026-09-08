@@ -560,3 +560,28 @@ npm run test -- --run      # 7 files / 46 tests passed
 
 - feature/FE002002-fe002001-uat-bugfix ブランチを作成し、バグ 1 の修正を実施する
 
+---
+
+## 2026-09-08 FE002002 実装（バグ 1 修正）
+
+### 実施内容
+
+- `frontend/src/lib/api.ts` の `streamToWritable` 関数内で `pipeTo(writable)` を `pipeTo(writable, { preventClose: true })` に変更
+- これにより `response.body.pipeTo` の完了時に自動 close が抑制され、`finally` ブロックでの `writable.close()` のみが実行されるようになった
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm run test -- --run      # 7 files / 47 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/lib/api.ts`
+
+### 状態
+
+- バグ 1 の修正完了。バグ 2・3 は FE002001 実施中に既に修正済み。
+
