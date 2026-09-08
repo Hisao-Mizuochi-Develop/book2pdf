@@ -3,21 +3,21 @@
 ## ブランチ命名規則
 
 ```
-feature/<タスクNo>-<内容の短縮名>
+feature/<タスクNo>-<タスクのタイトル>
 ```
 
 ## 例
 
-- `feature/OT001001-scaffold`
-- `feature/OT002001-screenshot-research`
+- `feature/FE002001-進捗表示 UI の実装`
+- `feature/BE007001-FastAPI に CORS ミドルウェアを追加する`
 
 ## ブランチ運用手順
 
 1. `git checkout main && git pull`
-2. `git checkout -b feature/<タスクNo>-<xxx>`
+2. `git checkout -b feature/<タスクNo>-<タスクのタイトル>`
 3. 作業実施
-4. `git add -A && git commit -m "<タスクNo>: <内容>"`
-5. `git checkout main && git merge --no-ff feature/<タスクNo>-<xxx>`
+4. `git add -A && git commit -m "[<タスクNo>] <内容>"`
+5. `git checkout main && git merge --no-ff feature/<タスクNo>-<タスクのタイトル>`
 
 ## コミット前必須チェック
 
