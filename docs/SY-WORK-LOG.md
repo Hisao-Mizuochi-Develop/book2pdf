@@ -358,3 +358,36 @@
 ### 関連タスク
 
 - `SY007011` ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定
+
+---
+
+## SY007012 — UAT クロスモジュール不具合のタスク起票手順と優先順位ルールの明文化
+
+### 日付
+
+2026-09-09
+
+### 実施内容
+
+- `.clinerules` の `Cross-Module Defect Handling` に「UAT フェーズでの適用」を追加
+  - UAT 実施中に他モジュールの不具合が発見された場合の対応フローを追記
+  - UAT 合格の阻害要因となる場合の判定基準と、元タスクの再開手順を明記
+- `workflow-runner/SKILL.md` の Phase 3-A に同様の「UAT フェーズでの適用」を追加
+- `task-manager/SKILL.md` の「UAT 不具合発見時の対応」に「クロスモジュールの場合」を追加
+  - Cross-Module Defect Handling への参照を明記
+  - ブロッキング／非ブロッキングの場合の UAT タスク継続／中断方針を明記
+- `docs/SY-TASKS.md` に `SY007012` を起票した
+
+### 結果
+
+- UAT フェーズでのクロスモジュール不具合発見時の対応フローが明文化された
+- `.clinerules`・`workflow-runner`・`task-manager` の 3 文書間で内容が整合した
+- UAT バグ対応（同一モジュール）とクロスモジュール不具合対応の境界が明確になった
+
+### コミット
+
+`docs(SY007012): align cross-module defect handling with UAT phase rules`
+
+### 関連タスク
+
+- `SY007012` UAT クロスモジュール不具合のタスク起票手順と優先順位ルールの明文化
