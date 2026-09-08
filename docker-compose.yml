@@ -63,6 +63,10 @@ services:
       - pdfs:/data/pdfs
       # 進捗通知用ファイルの共有ディレクトリです
       - progress:/data/progress
+      # ソースコードをホストと共有し、ホットリロードを有効にします
+      # Dockerfile の WORKDIR /opt/ocr-worker と一致させ、app/ ディレクトリのみマウントします
+      # cli/ などの依存モジュールはイメージ内のものを使用するため、上書きしないよう注意してください
+      - ./ocr-worker/app:/opt/ocr-worker/app
     environment:
       # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
       - LOG_LEVEL=DEBUG
