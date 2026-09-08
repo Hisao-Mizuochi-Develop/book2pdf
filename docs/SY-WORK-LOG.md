@@ -304,3 +304,57 @@
 ### 関連タスク
 
 - `SY007010` UAT 派生バグ対応タスク管理ルールの策定
+
+---
+
+## 2026-09-08 SY007011 ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定
+
+### 目的
+
+- 分散していたブランチ運用ルールを `branch-manager` スキルとして一元化し、`.clinerules` / `workflow-runner` / `branch-naming.md` の重複・齟齬を解消する
+- `FE002002` で発生した「git log の存在を UAT 合格・タスク完了と誤認」した事象の再発防止
+- マージ前の絶対遵守チェックリスト、マージブロック条件、タスク管理表との照合義務を明文化する
+
+### 実施内容
+
+- `.cline/skills/branch-manager/SKILL.md` を新規作成した
+  - ブランチ命名・通常運用手順・マージ前最終承認チェックリスト・マージブロック条件
+  - マージ済みブランチの追加実装フロー（再利用・再作成・完了日付の扱い）
+  - タスク管理表との照合義務と矛盾発見時の対応
+- `.cline/skills/branch-manager/references/branch-naming.md` を新規作成した
+  - `workflow-runner/references/branch-naming.md` の内容を移行・拡張
+  - マージ済みブランチの再作成例外を追加
+- `.cline/skills/workflow-runner/references/branch-naming.md` を更新した
+  - 内容を `branch-manager` への参照に変更（重複排除）
+- `.clinerules` に以下を追加した
+  - **マージ前最終承認チェックリスト（絶対遵守）**
+  - **マージブロック条件**（UAT合格発言なし・完了日付なし・Gate 3未承認）
+  - **git 履歴の存在 ≠ タスク完了**（タスク管理表とユーザー発言を正とする）
+- `.cline/skills/workflow-runner/SKILL.md` を更新した
+  - ブランチ運用部分を `branch-manager` スキルへの参照に変更
+  - Phase 1 の重複確認手順に「完了済み（タスク管理表に完了日付あり）」の確認を追加
+  - Phase 4 の完了基準チェックに「マージブロック条件チェック」を追加
+- `.cline/skills/task-manager/SKILL.md` を更新した
+  - 「9. タスク完了判定時の照合義務」を追加
+  - git 履歴とタスク管理表の矛盾発見時の対応表を追加
+- `docs/OT-AGENT-SKILLS-GUIDE.md` を更新した
+  - ディレクトリ構造・スキル一覧表に `branch-manager` を追加
+  - セクション 3.5/3.6 を整理（`branch-manager` / `workflow-runner`）
+  - 付録Aの新旧対比表に `branch-manager` 追加・再構成ポイント更新
+  - バージョンを 2.0 に更新
+- `docs/SY-TASKS.md` に `SY007011` を起票した
+
+### 結果
+
+- ブランチ運用ルールが `branch-manager` スキルに一元化され、重複が排除された
+- `.clinerules` にマージ前の絶対遵守チェックリストとブロック条件が明文化された
+- `git log` の存在を UAT 合格・タスク完了と誤認する事象の再発防止策が整備された
+- タスク管理表との照合義務が `task-manager` と `branch-manager` に明文化された
+
+### コミット
+
+`docs(SY007011): add branch-manager skill and harden merge governance`
+
+### 関連タスク
+
+- `SY007011` ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定

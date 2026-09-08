@@ -14,6 +14,10 @@
 .clinerules                          # プロジェクト全体の基本方針（最小限）
 .cline/
   skills/
+    branch-manager/
+      SKILL.md                       # ブランチ命名・マージ前承認・マージ済みブランチ追加実装
+      references/
+        branch-naming.md             # ブランチ命名規則と禁止事項
     code-generator/
       SKILL.md                       # コーディング規約・API整合性確認
     file-modifier/
@@ -25,7 +29,7 @@
       references/
         testdata-locations.md        # テストデータ配置の詳細リファレンス
     workflow-runner/
-      SKILL.md                       # 3フェーズ実行・Git運用
+      SKILL.md                       # 4フェーズ実行・スキル選択・承認ゲート
 ```
 
 ### 設計方針
@@ -40,11 +44,12 @@
 
 | スキル名 | 定義ファイル | カテゴリ | 主な役割 | アクティベーション条件 |
 |---|---|---|---|---|
+| `branch-manager` | `.cline/skills/branch-manager/SKILL.md` | ブランチ運用 | ブランチ命名、マージ前承認チェック、マージ済みブランチの追加実装、タスク管理表との照合 | feature ブランチの作成・マージ・再利用時、タスク完了判定時 |
 | `code-generator` | `.cline/skills/code-generator/SKILL.md` | コード生成 | 言語別コーディング規約、外部依存コメント、API・関数呼び出しの整合性確認 | Python / TypeScript / Rust のソースコードを書く・レビューする時 |
 | `file-modifier` | `.cline/skills/file-modifier/SKILL.md` | ドキュメント更新 | 既存ファイル更新時の `replace_in_file` 適用ルール、末尾追記時のマーカー指定 | `docs/` や `test_cases/` 配下の既存ファイルを更新する時 |
 | `task-manager` | `.cline/skills/task-manager/SKILL.md` | タスク管理 | タスクNo体系、粒度、記録場所（`OT-TASKS.md` / `OT-WORK-LOG.md`） | タスク管理表・作業ログを作成・更新する時 |
 | `test-manager` | `.cline/skills/test-manager/SKILL.md` | テスト・検証 | テストデータ配置、検証レポート作成、PDF目視確認、README.md インデックス追加 | テストデータ配置、OCR 精度比較、検証レポート作成時 |
-| `workflow-runner` | `.cline/skills/workflow-runner/SKILL.md` | 実行・Git運用 | タスクの3フェーズ実行、ブランチ運用、コミット・マージ手順 | タスク開始〜完了のライフサイクル、Git ブランチ操作時 |
+| `workflow-runner` | `.cline/skills/workflow-runner/SKILL.md` | 実行・承認ゲート | タスクの4フェーズ実行、スキル選択、承認ゲート（Gate 1/2/3） | タスク開始〜完了のライフサイクル、スキル選択時 |
 
 ---
 
@@ -96,7 +101,24 @@
 
 詳細な配置ルールは `.cline/skills/test-manager/references/testdata-locations.md` を参照。
 
-### 3.5 `workflow-runner`
+### 3.5 `branch-manager`
+
+本スキルは、book2pdf プロジェクトの feature ブランチ運用を一元管理します。
+
+- ブランチ命名規則: `feature/<タスクNo>-<内容の短縮名>`
+- マージ前最終承認チェックリスト（絶対遵守）:
+  - UAT 明示的合格発言（UAT 要タスクの場合）
+  - `<識別子>-TASKS.md` の【タスク完了日付】に日付が記入されていること
+  - Gate 3 でのユーザー承認
+- マージブロック条件: UAT合格発言なし・完了日付なし・Gate 3未承認
+- マージ済みブランチの追加実装フロー:
+  - マージ済みブランチが残存していれば再利用、削除済みであれば同じタスク番号で再作成
+  - 完了日付が記入済みの場合は追加実装前に削除し、【実施結果】に追記
+- タスク管理表との照合義務:
+  - git log にマージコミットが存在しても、タスク管理表に完了日付がない場合は「未完了」とする
+  - 矛盾発見時はマージ巻き戻しまたはユーザー確認
+
+### 3.6 `workflow-runner`
 
 タスク全体のライフサイクルと Git 運用を定めます。
 
@@ -196,12 +218,12 @@ workflow-runner Phase 3
 | **第9章** API・整合性確認 | 双方向チェック、フレームワーク挙動確認 | `code-generator/SKILL.md` Step 4 | コード生成時に統合 |
 | **第10章** ユーザー確認方式 | 自由記述形式、toggle to Act mode | `.clinerules` User Communication | 最小限の記述に集約 |
 | **第11章** テスト・検証系タスク | 実施手順、レポート作成、PDF確認 | `test-manager/SKILL.md` | 詳細手順をスキル化 |
-| **第12章** Git運用ルール | ブランチ命名、コミット前チェック | `workflow-runner/SKILL.md` | 3フェーズの一部として統合 |
-| **第13章** タスク実行3フェーズ | 前処理・処理・後処理 | `workflow-runner/SKILL.md` Phase 1-3 | 最適化された構造 |
+| **第12章** Git運用ルール | ブランチ命名、コミット前チェック | `branch-manager/SKILL.md` | `branch-manager` スキルとして独立 |
+| **第13章** タスク実行3フェーズ | 前処理・処理・後処理 | `workflow-runner/SKILL.md` Phase 1-4 | 4フェーズ構造に最適化 |
 
 ### 主要な再構成ポイント
 
-1. **重複の排除**: 旧第11章（Git運用）と第12-13章（タスク実行）で重複していたブランチ運用・コミット手順を、`workflow-runner/SKILL.md` に集約しました。
+1. **ブランチ運用の独立**: 旧第12章（Git運用）で定義されていたブランチ命名・マージ・追加実装フローを、`branch-manager/SKILL.md` として独立させました。`workflow-runner` は実行フロー・承認ゲートに特化します。
 2. **スキル間の依存関係の明確化**: `test-manager` は `workflow-runner` Phase 1 で読み込まれ、`file-modifier` は `test-manager` のレポート更新手順で参照されます。
 3. **定義場所の最適化**: プロジェクト共通ポリシーは `.clinerules` に、タスク実行フローは `workflow-runner` に、専門領域ルールは各スキルファイルに分離しました。
 
@@ -215,15 +237,17 @@ workflow-runner Phase 3
 | `.clinerules.backup-20260904` | 移行前のオリジナルファイル（Git管理対象・参照用） |
 | `.cline/skills/code-generator/SKILL.md` | コーディング規約・API整合性確認 |
 | `.cline/skills/file-modifier/SKILL.md` | 既存ドキュメント更新ルール |
+| `.cline/skills/branch-manager/SKILL.md` | ブランチ命名・マージ前承認・追加実装フロー |
+| `.cline/skills/branch-manager/references/branch-naming.md` | ブランチ命名規則と禁止事項 |
 | `.cline/skills/task-manager/SKILL.md` | タスク管理表・作業ログ運用 |
 | `.cline/skills/test-manager/SKILL.md` | テスト実施・検証レポート作成 |
 | `.cline/skills/test-manager/references/testdata-locations.md` | テストデータ配置詳細 |
-| `.cline/skills/workflow-runner/SKILL.md` | 3フェーズ実行・Git運用 |
+| `.cline/skills/workflow-runner/SKILL.md` | 4フェーズ実行・スキル選択・承認ゲート |
 
 ---
 
 ## バージョン
 
 - 移行日: 2026-09-04
-- 新構成バージョン: 1.0
+- 新構成バージョン: 2.0（2026-09-08: `branch-manager` スキルを追加し Git 運用を独立）
 - 旧構成バージョン: `.clinerules.backup-20260904`
