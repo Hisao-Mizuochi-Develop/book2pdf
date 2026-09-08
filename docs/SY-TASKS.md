@@ -241,3 +241,16 @@
 |  | `.cline/skills/workflow-runner/SKILL.md` の冒頭に「1 タスク 1 ブランチ」の大前提を追加する（`.clinerules` との重複を許容） |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
+| SY007011 | ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定 | 2026-09-08 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.cline/skills/branch-manager/SKILL.md` を新規作成し、分散しているブランチ運用ルールを一元化する |  |  |  |
+|  | `.clinerules` に「マージ前最終承認チェックリスト（絶対遵守）」を追加する |  |  |  |
+|  | `.clinerules` に「git 履歴の存在 ≠ タスク完了」の明文化を追加する |  |  |  |
+|  | `.clinerules` にマージブロック条件（UAT合格発言なし・完了日付なし・Gate 3未承認）を禁止事項として追加する |  |  |  |
+|  | `workflow-runner/SKILL.md` の Git 運用セクションからブランチ運用部分を削除し、`branch-manager` への参照に変更する |  |  |  |
+|  | `workflow-runner/SKILL.md` の Phase 4 に「マージブロック条件チェック」を追加する |  |  |  |
+|  | `task-manager/SKILL.md` に「タスク管理表との照合義務」を追加する |  |  |  |
+|  | `branch-naming.md` に「マージ済みブランチの再作成例外」を明記する |  |  |  |
+|  | 各種ドキュメントの重複記述を `branch-manager` への参照に一本化する |  |  |  |
+|  | 【実施結果】 |  |  |  |
