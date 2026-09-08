@@ -172,7 +172,7 @@ async function streamToWritable(
   writable: FileSystemWritableFileStream
 ): Promise<void> {
   if (response.body) {
-    await response.body.pipeTo(writable);
+    await response.body.pipeTo(writable, { preventClose: true });
   } else {
     await writable.write(await response.blob());
   }
