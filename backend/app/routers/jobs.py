@@ -468,6 +468,8 @@ async def _progress_event_generator(job_id: str):
                 if data["status"] in (JobStatus.COMPLETED.value, JobStatus.FAILED.value):
                     # ストリーム終了前に制御を渡し、最後のチャンクが確実に送信されるようにします
                     await asyncio.sleep(0)
+                    # クライアントに正常終了を示す [DONE] シグナルを送信します
+                    yield "data: [DONE]\n\n"
                     break
 
         # 次のポーリングまで短時間スリープします
