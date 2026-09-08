@@ -493,3 +493,44 @@ npm run test -- --run      # 7 files / 46 tests passed
 - ユーザー検収テスト（UAT）は本タスクでは実施しない（単体テスト・結合テストのみ）。
 - 【別タスク】FE002001 実装中に `src/lib/api.ts` の `downloadPdf()` における `WritableStream.close()` の重複呼び出し不具合を発見。FE002002 として起票済み。
 
+## 2026-09-08 タスク FE002001：SSE ストリーム終了不具合修正・マージ完了
+
+### 目的
+
+backend の SSE ストリームが `[DONE]` センチネルを送信せず、job 完了時にブラウザ側の `EventSource.onerror` で「進捗接続エラー」が出力されていた不具合を修正し、main ブランチへマージする。
+
+### 実施内容
+
+1. `backend/app/routers/jobs.py`
+   - `subscribe_job_events` 内で job 完了（`completed`）または失敗（`failed`）時に `yield "data: [DONE]\n\n"` を送信するよう追加
+2. `frontend/src/lib/api.ts`
+   - `subscribeJobProgress` に `doneReceived` フラグを追加
+   - `[DONE]` センチネル受信後にフラグを立て、`onerror` コールバックをスキップするよう修正
+3. `frontend/src/hooks/useOcrJob.ts`
+   - 「OCR 処理を開始しました」ログの重複出力を削除
+4. `frontend/src/lib/__tests__/api.test.ts`
+   - `[DONE]` 受信後の `onerror` 抑制を検証するテストケースを追加
+5. ビルド・テスト検証
+6. `feature/FE002001-extract-progress-panel` を `main` へ `--no-ff` マージ、feature ブランチを削除
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build              # 成功（エラーなし）
+npm run test -- --run      # 7 files / 46 tests passed
+```
+
+### 変更ファイル
+
+- `backend/app/routers/jobs.py`
+- `frontend/src/lib/api.ts`
+- `frontend/src/hooks/useOcrJob.ts`
+- `frontend/src/lib/__tests__/api.test.ts`
+- `frontend/docs/FE-TASKS.md`
+- `frontend/docs/FE-WORK-LOG.md`
+
+### 状態
+
+- FE002001 は完了。main ブランチにマージ済み。
+

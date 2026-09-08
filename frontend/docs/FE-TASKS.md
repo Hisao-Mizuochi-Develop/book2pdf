@@ -136,6 +136,13 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | 2026-09-08: `npm run build` 成功、`npm run test -- --run` で 7 files / 46 tests 全件 PASS を確認した |  |  |  |
 |  | 2026-09-08: backend から送信される `progress` は 0.0〜1.0 の float であるため、`ProgressPanel.tsx` で `Math.round(progress * 100)` に変更し、パーセンテージ表示に変換。関連する全テストの progress 値を 0.0〜1.0 に修正 |  |  |  |
 |  | 2026-09-08: 【不具合発見元: FE002001】`src/lib/api.ts` の `downloadPdf()` で `response.body.pipeTo(writable)` 完了後に `writable.close()` を重複呼び出ししている不具合を発見。FE002002 として起票 |
+|  |  | 2026-09-08: 【不具合修正】backend の SSE ストリームが `[DONE]` センチネルを送信せず、完了時にブラウザの `onerror` で「進捗接続エラー」が出ていた不具合を修正 |  |  |  |
+|  |  | 2026-09-08: `backend/app/routers/jobs.py`: job 完了・失敗時に `yield "data: [DONE]\n\n"` を送信するよう修正 |  |  |  |
+|  |  | 2026-09-08: `frontend/src/lib/api.ts`: `subscribeJobProgress` に `doneReceived` フラグを追加し、`[DONE]` 受信後の `onerror` を抑制 |  |  |  |
+|  |  | 2026-09-08: `frontend/src/hooks/useOcrJob.ts`: 「OCR 処理を開始しました」ログの重複出力を削除 |  |  |  |
+|  |  | 2026-09-08: `frontend/src/lib/__tests__/api.test.ts`: `[DONE]` 受信後の `onerror` 抑制を検証するテストケースを追加 |  |  |  |
+|  |  | 2026-09-08: `npm run build` 成功、`npm run test -- --run` で 7 files / 46 tests 全件 PASS（追加テスト含む） |  |  |  |
+|  |  | 2026-09-08: `feature/FE002001-extract-progress-panel` ブランチを `main` へ `--no-ff` マージ完了。feature ブランチを削除 |  |  |  |
 | FE002002 | `downloadPdf` の WritableStream close 重複呼び出し修正 | 2026-09-08 |  | バグ修正 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
