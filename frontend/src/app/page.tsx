@@ -2,7 +2,9 @@
 
 // book2pdf Web OCR/PDF システムのメインページです
 // ZIP アップロードから OCR 実行、PDF ダウンロードまでをブラウザ上で操作できます
+// 各機能は独立したコンポーネントに委譲し、本ファイルは統合のみを担当します
 
+import { ProgressPanel } from "@/components/progress";
 import { ZipUploadForm } from "@/components/upload/ZipUploadForm";
 import { useOcrJob } from "@/hooks/useOcrJob";
 import { downloadPdf } from "@/lib/api";
@@ -43,7 +45,10 @@ export default function Home() {
         )}
 
         {jobId && (
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <div
+            data-testid="job-info-panel"
+            className="rounded-2xl border border-border bg-card p-6 shadow-sm"
+          >
             <h2 className="text-lg font-semibold text-card-foreground">ジョブ情報</h2>
             <p className="mt-1 text-sm text-muted-foreground">ジョブ ID: {jobId}</p>
             {files.length > 0 && (
@@ -61,35 +66,7 @@ export default function Home() {
           </div>
         )}
 
-        {(latestProgress || progressLog.length > 0) && (
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-card-foreground">進捗</h2>
-            {latestProgress && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between text-sm text-card-foreground">
-                  <span>状態: {latestProgress.status}</span>
-                  <span>
-                    {latestProgress.current_page} / {latestProgress.total_pages} ページ
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full bg-primary transition-all duration-500 ease-out"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, latestProgress.progress))}%`,
-                    }}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">{latestProgress.progress}%</p>
-              </div>
-            )}
-            {progressLog.length > 0 && (
-              <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm text-foreground">
-                {progressLog.join("\n")}
-              </pre>
-            )}
-          </div>
-        )}
+        <ProgressPanel latest={latestProgress} log={progressLog} />
 
         {result && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">

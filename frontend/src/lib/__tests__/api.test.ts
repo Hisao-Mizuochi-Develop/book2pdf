@@ -232,6 +232,21 @@ describe("api client", () => {
       expect(onError).toHaveBeenCalledTimes(1);
       expect(es.close).toHaveBeenCalledTimes(1);
     });
+
+    it("[DONE] 受信後のエラーでは onError を呼ばない", () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      subscribeJobProgress("job-123", onMessage, onError, onComplete);
+      const es = mockInstances[0];
+      es.simulateMessage("[DONE]");
+      es.simulateError();
+
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
+      expect(es.close).toHaveBeenCalledTimes(2); // [DONE] 時 1 回 + エラー時 1 回
+    });
   });
 
   describe("getPdfDownloadUrl", () => {

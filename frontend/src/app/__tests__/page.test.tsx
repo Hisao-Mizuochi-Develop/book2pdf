@@ -42,7 +42,7 @@ describe("Home page", () => {
       latestProgress: {
         job_id: "job-123",
         status: "processing",
-        progress: 50,
+        progress: 0.5,
         current_page: 1,
         total_pages: 2,
       },

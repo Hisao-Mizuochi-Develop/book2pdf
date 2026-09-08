@@ -117,7 +117,7 @@ OCR 処理の進捗をリアルタイムで確認する
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| FE002001 | 進捗表示 UI の実装 | 2026-08-11 |  | 機能実装 |
+| FE002001 | 進捗表示 UI の実装 | 2026-08-11 | 2026-09-08 | 機能実装 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | backend から SSE またはポーリングで進捗を受信する |  |  |  |
@@ -125,6 +125,23 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | 2026-09-05 追記：`ProgressPanel` コンポーネントを作成し、進捗受信と表示を責務分離する |  |  |  |
 |  | 2026-09-05 追記：`ProgressPanel.test.tsx` の単体テストを実装する |  |  |  |
 |  | 2026-09-05 追記：MSW を使用した進捗通知フローの結合テストを実装する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-08: `frontend/src/components/progress/ProgressPanel.tsx` を新規作成し、進捗表示機能を `page.tsx` から分離した |  |  |  |
+|  | 2026-09-08: `frontend/src/components/progress/index.ts` を新規作成し、ProgressPanel を export した |  |  |  |
+|  | 2026-09-08: `frontend/src/app/page.tsx` から進捗表示の JSX を削除し、`<ProgressPanel latest={latestProgress} log={progressLog} />` として呼び出すように変更した |  |  |  |
+|  | 2026-09-08: `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`（7 tests）を新規作成し、進捗バー・ログ・クランプ・安全表示を検証した |  |  |  |
+|  | 2026-09-08: MSW 用の `frontend/src/mocks/handlers.ts` / `server.ts` を新規作成した |  |  |  |
+|  | 2026-09-08: `frontend/vitest.setup.ts` に MSW サーバーの起動・リセット・停止処理を追加した |  |  |  |
+|  | 2026-09-08: `frontend/src/app/__tests__/page.msw.test.tsx`（1 test）を新規作成し、MSW で API をモックしてアップロード → OCR 完了 → 進捗表示 → PDF ダウンロードボタン表示までの結合フローを検証した |  |  |  |
+|  | 2026-09-08: `npm run build` 成功、`npm run test -- --run` で 7 files / 46 tests 全件 PASS を確認した |  |  |  |
+|  | 2026-09-08: backend から送信される `progress` は 0.0〜1.0 の float であるため、`ProgressPanel.tsx` で `Math.round(progress * 100)` に変更し、パーセンテージ表示に変換。関連する全テストの progress 値を 0.0〜1.0 に修正 |  |  |  |
+|  | 2026-09-08: 【不具合発見元: FE002001】`src/lib/api.ts` の `downloadPdf()` で `response.body.pipeTo(writable)` 完了後に `writable.close()` を重複呼び出ししている不具合を発見。FE002002 として起票 |
+| FE002002 | `downloadPdf` の WritableStream close 重複呼び出し修正 | 2026-09-08 |  | バグ修正 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `src/lib/api.ts` の `downloadPdf()` 内で、`response.body.pipeTo(writable)` が完了後に自動的に writable を close するため、続けて `writable.close()` を呼ぶと `TypeError: WritableStream is closed` になる不具合を修正する |  |  |  |
+|  | `pipeTo` の `preventClose` オプション、または `downloadPdf` 側の `writable.close()` 呼び出しを調整する |  |  |  |
+|  | `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが close 後の状態を正しく検証できるよう更新する |  |  |  |
 
 ---
 

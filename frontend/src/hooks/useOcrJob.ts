@@ -127,7 +127,6 @@ export function useOcrJob(): UseOcrJobResult {
 
         const ocrResult = await runOcr(newJobId);
         setResult(JSON.stringify(ocrResult, null, 2));
-        setProgressLog((prev) => [...prev, "OCR 処理を開始しました"]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
         closeEventSource();

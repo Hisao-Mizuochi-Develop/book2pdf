@@ -99,9 +99,15 @@ export function subscribeJobProgress(
 ): EventSource {
   const eventSource = new EventSource(`${API_BASE_URL}/api/jobs/${jobId}/events`);
 
+  // [DONE] を受信済みかどうかを追跡します。
+  // サーバーが正常にストリームを終了すると、ブラウザ側で onerror が発火する場合がありますが、
+  // 既に [DONE] を受信済みの場合はエラーとして扱いません。
+  let doneReceived = false;
+
   eventSource.onmessage = (event) => {
     const data = event.data;
     if (data === "[DONE]") {
+      doneReceived = true;
       onComplete();
       eventSource.close();
       return;
@@ -110,7 +116,10 @@ export function subscribeJobProgress(
   };
 
   eventSource.onerror = (error) => {
-    onError(error);
+    // [DONE] 受信後の切断は正常終了として扱います
+    if (!doneReceived) {
+      onError(error);
+    }
     eventSource.close();
   };
 
