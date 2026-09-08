@@ -161,6 +161,8 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
             "ruby_only": False,
             # ocr-worker 側で進捗ファイルを更新するために job_id を渡します
             "job_id": job_id,
+            # backend 側が進捗ファイルを管理するため、ocr-worker 側の進捗書き込みを無効化します
+            "enable_progress": False,
         }
 
         # ocr-worker に HTTP POST で OCR 実行をリクエストします

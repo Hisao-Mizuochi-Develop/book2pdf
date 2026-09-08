@@ -161,6 +161,10 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが、バグ 1 修正後の close 後の状態を正しく検証できるよう更新する |  |  |  |
 |  | 【実施結果】 |  |  |  |
 |  | 2026-09-08: `src/lib/api.ts` の `streamToWritable` に `pipeTo(writable, { preventClose: true })` を適用し、バグ 1 を修正。`npm run build` 成功、テスト 7 files / 47 tests 全件 PASS |  |  |  |
+|  | 2026-09-08: `ocr-worker/app/main.py`: `OcrRequest` に `enable_progress: bool = True` を追加し、`_write_progress` の呼び出しをフラグでガード |  |  |  |
+|  | 2026-09-08: `backend/app/services/ocr_engine.py`: `RemoteNdloCrOcrEngine.run` が `enable_progress: False` を ocr-worker に送信するよう変更 |  |  |  |
+|  | 2026-09-08: `backend/app/routers/jobs.py`: `_write_progress` ヘルパーを追加し、`_run_ocr_and_generate_pdf` 内で 1/3→2/3→3/3 の段階的進捗を書き込むように変更 |  |  |  |
+|  | 2026-09-08: `backend/tests/test_ocr.py`: 段階的進捗書き込みと `enable_progress=False` 送信を検証するテスト 2 件を追加。backend pytest 全32件 PASS |  |  |  |
 
 ---
 

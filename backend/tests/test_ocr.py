@@ -10,6 +10,9 @@ ndlocr_cli はローカル開発環境にインストールされていないた
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
+# JSON 形式のデータを扱うための標準ライブラリです
+import json
+
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
@@ -242,3 +245,79 @@ def test_run_ocr_updates_job_status(
 
     # 状態が completed に更新されていることを確認します
     assert data["status"] == "completed"
+
+
+def test_run_ocr_writes_staged_progress(
+    client: TestClient,
+    mock_pdf_generator: None,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """OCR・PDF 生成完了後に段階的進捗ファイルが書き込まれることを確認します（3/3）。"""
+    from app.routers import jobs as jobs_router
+
+    # 進捗ファイルの保存先をテスト用一時ディレクトリに差し替えます
+    progress_dir = tmp_path / "progress"
+    monkeypatch.setattr(jobs_router, "_PROGRESS_DIR", progress_dir)
+
+    # ジョブを作成して ZIP をアップロードします
+    response = client.post("/api/jobs/")
+    job_id = response.json()["job_id"]
+
+    zip_buffer = create_zip_buffer(["page1.png"])
+    client.post(
+        f"/api/jobs/{job_id}/upload",
+        files={"file": ("images.zip", zip_buffer, "application/zip")},
+    )
+
+    # OCR を実行します
+    response = client.post(f"/api/jobs/{job_id}/ocr")
+    assert response.status_code == 200
+
+    # バックグラウンドタスクの完了を待ちます
+    data = _wait_for_terminal_status(client, job_id)
+    assert data["status"] == "completed"
+
+    # 進捗ファイルが書き込まれていることを確認します
+    progress_file = progress_dir / f"{job_id}.json"
+    assert progress_file.exists(), "進捗ファイルが作成されていません"
+
+    progress_data = json.loads(progress_file.read_text(encoding="utf-8"))
+    assert progress_data["status"] == "completed"
+    assert progress_data["progress"] == 1.0
+    assert progress_data["current_page"] == 3
+    assert progress_data["total_pages"] == 3
+    assert "PDF 生成が完了しました" in progress_data["message"]
+
+
+def test_ocr_engine_sends_disable_progress(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """RemoteNdloCrOcrEngine が ocr-worker に enable_progress=False を送信することを確認します。"""
+    from app.services.ocr_engine import RemoteNdloCrOcrEngine
+    import httpx
+
+    captured_payload: dict | None = None
+
+    def mock_post(url: str, **kwargs) -> httpx.Response:
+        nonlocal captured_payload
+        captured_payload = kwargs.get("json")
+        # ダミーの正常レスポンスを返します
+        return httpx.Response(
+            status_code=200,
+            json={"success": True, "text": "mock", "output_dir": "/tmp", "message": ""},
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr(httpx, "post", mock_post)
+
+    engine = RemoteNdloCrOcrEngine(worker_url="http://dummy:8001")
+    dummy_image = tmp_path / "test.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
+    engine.run(
+        image_files=[str(dummy_image)],
+        work_dir=tmp_path,
+        job_id="test-job-id",
+    )
+
+    assert captured_payload is not None, "リクエストボディが送信されていません"
+    assert captured_payload.get("enable_progress") is False, "enable_progress=False が含まれていません"
+    assert captured_payload.get("job_id") == "test-job-id"

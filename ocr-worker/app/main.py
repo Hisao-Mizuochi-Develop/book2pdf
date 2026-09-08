@@ -78,6 +78,11 @@ logger = logging.getLogger(__name__)
 # デフォルトは ON（true）です
 PREPROCESS_ENABLED = os.environ.get("PREPROCESS_ENABLED", "true").lower() in ("true", "1", "yes", "on")
 
+# 進捗ファイルの保存先ディレクトリです
+# docker-compose.yml で backend と共有しています
+# テスト時は PROGRESS_DIR 環境変数で上書きできます
+PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
+
 # FastAPI アプリケーションを作成します
 app = FastAPI(title="ocr-worker")
 
@@ -131,6 +136,10 @@ class OcrRequest(BaseModel):
     # 進捗通知用のジョブ ID です
     # backend 側で SSE 配信を行う際に、どのジョブの進捗かを識別するために使用します
     job_id: str | None = Field(default=None, description="進捗通知用のジョブ ID")
+
+    # 進捗ファイルへの書き込みを有効にするかどうかです
+    # backend から呼び出される場合は False にして、backend 側が進捗を管理します
+    enable_progress: bool = Field(default=True, description="進捗ファイルへの書き込みを有効にするかどうか")
 
 
 class OcrResponse(BaseModel):
@@ -399,14 +408,16 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         }
 
         # OCR 処理開始を進捗ファイルに記録します
-        _write_progress(
-            job_id,
-            status="processing",
-            progress=0.0,
-            current_page=0,
-            total_pages=total_pages,
-            message="OCR 処理を開始しました",
-        )
+        # backend から呼び出される場合は enable_progress=False で抑制されます
+        if request.enable_progress:
+            _write_progress(
+                job_id,
+                status="processing",
+                progress=0.0,
+                current_page=0,
+                total_pages=total_pages,
+                message="OCR 処理を開始しました",
+            )
 
         # Hydra のグローバルインスタンスをクリアします
         # 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にします
@@ -452,14 +463,15 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         )
 
         # OCR 処理完了を進捗ファイルに記録します
-        _write_progress(
-            job_id,
-            status="completed",
-            progress=1.0,
-            current_page=total_pages,
-            total_pages=total_pages,
-            message="OCR 処理が完了しました",
-        )
+        if request.enable_progress:
+            _write_progress(
+                job_id,
+                status="completed",
+                progress=1.0,
+                current_page=total_pages,
+                total_pages=total_pages,
+                message="OCR 処理が完了しました",
+            )
 
         # OCR 結果を返します
         return OcrResponse(
@@ -480,14 +492,15 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         logger.error(error_message)
 
         # エラー発生を進捗ファイルに記録します
-        _write_progress(
-            job_id,
-            status="failed",
-            progress=0.0,
-            current_page=0,
-            total_pages=total_pages,
-            message=error_message,
-        )
+        if request.enable_progress:
+            _write_progress(
+                job_id,
+                status="failed",
+                progress=0.0,
+                current_page=0,
+                total_pages=total_pages,
+                message=error_message,
+            )
 
         # エラーが発生した場合は HTTP 500 エラーを返します
         # detail にはトレースバックも含めて、backend 側で原因を確認できるようにします
