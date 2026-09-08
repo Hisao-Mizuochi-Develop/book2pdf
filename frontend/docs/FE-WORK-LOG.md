@@ -534,3 +534,29 @@ npm run test -- --run      # 7 files / 46 tests passed
 
 - FE002001 は完了。main ブランチにマージ済み。
 
+---
+
+## 2026-09-08 FE002002 FE002001 UATバグ対応（起票）
+
+### 目的
+
+- FE002001 の UAT 中に発見された不具合を統合対応する
+- SY007010（UAT 派生バグ対応タスク管理ルール）に従い、同じ元タスク由来のバグを 1 つのタスクに集約する
+
+### 統合対象の不具合一覧
+
+1. **downloadPdf() の WritableStream close 重複呼び出し（未修正）**
+   - 内容: `pipeTo` の自動 close と `finally` ブロックの手動 close が競合
+   - 経緯: FE002001 UAT 中に PDF ダウンロード動作確認時に発見
+   - 対応方針: `pipeTo` に `{ preventClose: true }` を指定
+
+2. **backend SSE [DONE] センチネル未送信（FE002001 実施中に修正済み）**
+   - 内容・経緯: backend の SSE が `[DONE]` を送信せず、frontend で `onerror` 誤発火。2026-09-08 に backend/frontend 双方を修正
+
+3. **useOcrJob.ts のログ重複出力（FE002001 実施中に修正済み）**
+   - 内容・経緯: 「OCR 処理を開始しました」ログが複数回出力されていた。2026-09-08 に削除済み
+
+### 次のアクション
+
+- feature/FE002002-fe002001-uat-bugfix ブランチを作成し、バグ 1 の修正を実施する
+
