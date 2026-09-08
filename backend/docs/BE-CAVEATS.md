@@ -549,3 +549,21 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - バックエンド側の進捗通知は現状 `JobResponse` の拡張で対応しており、将来的に専用の `/progress` エンドポイントを検討してもよい
 - 詳細なプロトコルやペイロード形式は [`docs/SY-PROGRESS-NOTIFICATION-SPEC.md`](../docs/SY-PROGRESS-NOTIFICATION-SPEC.md) を参照
 
+---
+
+## 17. 異体字の NFKC 正規化に関する注意事項（BE008001）
+
+### 事象
+
+`test_generate_searchable_pdf_normalizes_variant_characters` で使用していた異体字 U+F92A（索）が、Python の `unicodedata.normalize("NFKC")` で「浪」（U+6D6A）に変換され、「索」（U+7D22）に戻らない。
+
+### 原因
+
+CJK 互換漢字の正規化マッピングは複数の候補を持つことがあり、Python 標準ライブラリの `unicodedata` モジュールでは特定の互換漢字が期待とは異なる正規字体にマッピングされる場合がある。これは Python の仕様であり、プロジェクト側での修正は困難。
+
+### 対応
+
+- U+F92A（索）を U+FA47（漢）に変更。U+FA47 は NFKC で正しく「漢」（U+6F22）に正規化されることを確認済み。
+- 今後、異体字をテストデータに使用する際は、必ず `unicodedata.normalize("NFKC", char)` の結果を実際に確認してから使用すること。
+- BE006002 で「U+2F840（咢）→ 倉」が「サポート外」と明記されているように、NFKC で期待通りに戻らない異体字は「サポート外」として扱う。
+

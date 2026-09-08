@@ -1344,3 +1344,37 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
 - `backend/docs/BE-TASKS.md`
 - `backend/docs/BE-WORK-LOG.md`
 
+---
+
+## 2026-09-08 BE008001 異体字サポートテストの修正
+
+### 目的
+
+`test_generate_searchable_pdf_normalizes_variant_characters` の失敗を修正する。
+
+### 前提
+
+- U+F92A（索）は Python の `unicodedata.normalize("NFKC")` で「浪」（U+6D6A）に変換され、「索」（U+7D22）に戻らない。
+- これは Python 標準ライブラリの仕様であり、当プロジェクトでは対応不可。
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+.venv/bin/python -m pytest tests/test_pdf.py::test_generate_searchable_pdf_normalizes_variant_characters -v
+```
+
+### 結果
+
+- テスト失敗を確認
+  - `AssertionError: assert '図書館の探索' in '図書館の探浪\n'`
+- 異体字を U+F92A（索）から U+FA47（漢）に変更
+  - U+FA47 は NFKC で正しく「漢」（U+6F22）に正規化されることを確認
+- 期待値を「索」から「漢」に変更
+- 全テスト 30/30 PASS を確認
+
+### 変更ファイル
+
+- `backend/tests/test_pdf.py`
+- `backend/docs/BE-TASKS.md`
+
