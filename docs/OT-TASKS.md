@@ -53,7 +53,9 @@
 > - Python / TypeScript / Rust のコーディング規約を `docs/OT-CODING-CONVENTIONS.md` にまとめる
 >
 > 【実施結果】
-> - 2026-08-11: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を新規作成し、システム全体構成・アーキテクチャ・処理フローを記載した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-11: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を新規作成し、システム全体構成・アーキテクチャ・処理フローを記載した
 > - 2026-08-11: `docs/SY-DESIGN-DECISIONS.md` を新規作成し、技術選定と将来の課題を記載した
 > - 2026-08-11: `docs/OT-CODING-CONVENTIONS.md` を新規作成し、各言語のコーディング規約を定めた
 >
@@ -69,7 +71,9 @@
 > - `.clinerules` に `./docs/` 配下にも `OT-TASKS.md` / `OT-WORK-LOG.md` / `OT-CAVEATS.md` を配置するルールを明記する
 >
 > 【実施結果】
-> - 2026-08-12: `./docs/OT-INTEGRATION-TEST-GUIDE.md` を新規作成し、Docker Compose 起動から PDF ダウンロードまでの手順を記載した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-12: `./docs/OT-INTEGRATION-TEST-GUIDE.md` を新規作成し、Docker Compose 起動から PDF ダウンロードまでの手順を記載した
 > - 2026-08-12: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の「フォルダ・ファイル構成」に `OT-INTEGRATION-TEST-GUIDE.md` を追加し、関連ドキュメントセクションへのリンクを含めた
 > - 2026-08-12: トラブルシューティングとして backend 再ビルド、`GlobalHydra` エラー、CORS、PDF `ERR_ABORTED`、OCR タイムアウトについて記載した
 > - 2026-08-12: `.clinerules` の「フォルダ・ドキュメント配置ルール」に `./docs/` 用の `OT-TASKS.md` / `OT-WORK-LOG.md` / `OT-CAVEATS.md` 配置ルールを追加した
@@ -101,7 +105,9 @@
 > - 各モジュール固有の注意事項は `<module>/docs/<モジュール識別子>-CAVEATS.md` に残し、ここでは全体横断の視点だけを記載する
 >
 > 【実施結果】
-> - 2026-08-12: `./docs/OT-CAVEATS.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-12: `./docs/OT-CAVEATS.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した
 > - 2026-08-12: 各モジュール固有の注意事項については `backend/docs/BE-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` へのリンクを設置した
 >
 <a id="ot002002"></a>
@@ -117,7 +123,9 @@
 > - 実際の移行・削除は OT002003 として別タスクで実施する
 >
 > 【実施結果】
-> - 2026-09-06: `docs/OT-CAVEATS.md` の内容を分類し、モジュール固有の項目と横断的な項目に分離した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-06: `docs/OT-CAVEATS.md` の内容を分類し、モジュール固有の項目と横断的な項目に分離した
 > - 2026-09-06: 各モジュールの `*-CAVEATS.md` への移行先と `docs/SY-CAVEATS.md` の構成を決定した
 > - 2026-09-06: `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` に OT002002 として記録した
 > - 2026-09-06: `docs/README.md` の dead link を `SY-CAVEATS.md` に修正した
@@ -134,7 +142,9 @@
 > - 再配布完了後、`docs/OT-CAVEATS.md` を削除する
 >
 > 【実施結果】
-> - 2026-09-06: `backend/docs/BE-CAVEATS.md` に OCR タイムアウト設定、性能テストの `LOG_LEVEL=DEBUG` 前提、進捗通知の `JobResponse` 拡張と将来の `/progress` エンドポイント方針を追加した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-06: `backend/docs/BE-CAVEATS.md` に OCR タイムアウト設定、性能テストの `LOG_LEVEL=DEBUG` 前提、進捗通知の `JobResponse` 拡張と将来の `/progress` エンドポイント方針を追加した
 > - 2026-09-06: `localapp/docs/LA-CAVEATS.md` に HTTP ポーリング優先、1 秒間隔 / 10 秒タイムアウト、指数関数的バックオフリトライ、リトライ前の進捗メッセージを追加した
 > - 2026-09-06: `ocr-worker/docs/OW-CAVEATS.md` に OCR 呼び出し側の `--max-time 600` タイムアウト設定を追加した
 > - 2026-09-06: `docs/SY-CAVEATS.md` を新規作成し、`docs/SY-PROGRESS-NOTIFICATION-SPEC.md` への横断的な参照を集約した
@@ -168,7 +178,9 @@
 > - `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` / `docs/OT-CAVEATS.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` / `docs/README.md` を更新する
 >
 > 【実施結果】
-> - 2026-09-03: `docs/progress-notification-polling-design.md` を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に統合し、前者を削除した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-03: `docs/progress-notification-polling-design.md` を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に統合し、前者を削除した
 > - 2026-09-03: `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
 > - 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に文書化した
 > - 2026-09-03: `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` に `poll_job_status` ヘルパーを追加し、per-request タイムアウトと指数関数的バックオフによるリトライを実装した
@@ -205,7 +217,9 @@
 > - `workflow-runner/SKILL.md` v2.0 を新規作成し、4 フェーズワークフローと選択的スキル読込を定義する
 >
 > 【実施結果】
-> - 2026-09-05: `docs/OT-TASKS.md` に本タスク（OT007001）を追記した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-05: `docs/OT-TASKS.md` に本タスク（OT007001）を追記した
 > - 2026-09-05: `docs/SY-TASKS.md` を新規作成し、元 `OT001001` / `OT003001` の System / 全体設計・仕様策定部分を `SY` タスクとして分離記録した
 > - 2026-09-05: `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加した
 > - 2026-09-05: `.cline/skills/workflow-runner/SKILL.md` を v2.0 に更新し、4 フェーズワークフローと選択的スキル読込を定義した
@@ -236,7 +250,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - LA008007 と連携し、localapp 側の調査結果を反映する
 >
 > 【実施結果】
-> - 2026-09-04: LA008007 の技術調査・選定が完了した。`printpdf` 0.7.0（画像→A4 PDF 埋め込み）と `leptess` 0.14.0（Tesseract 5.x ラッパー）を採用した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-04: LA008007 の技術調査・選定が完了した。`printpdf` 0.7.0（画像→A4 PDF 埋め込み）と `leptess` 0.14.0（Tesseract 5.x ラッパー）を採用した
 > - 2026-09-04: 調査レポート `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` を作成した
 >
 ---
@@ -270,7 +286,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - セクション区切り（`---`）の前後の空行は Markdown 見出し構造を維持するため適切に残す
 >
 > 【実施結果】
-> - `FE002002` の作業再開（ブランチ `feature/FE002002-fe002001-uat-bugfix` の実装作業）は本 OT タスクとは分けて実施する
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - `FE002002` の作業再開（ブランチ `feature/FE002002-fe002001-uat-bugfix` の実装作業）は本 OT タスクとは分けて実施する
 > - 2026-09-09: `frontend/docs/FE-TASKS.md` の行98-109（FE001002の実施結果）のカラムずれを修正（末尾の空セル4つを追加）
 > - 2026-09-09: `feature/OT009001-fix-task-md-column-alignment` ブランチを `main` へ `--no-ff` マージ完了
 >
@@ -310,7 +328,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `docs/OT-AGENT-SKILLS-GUIDE.md` の識別子一覧に `PJ` を追加する
 >
 > 【実施結果】
-> - 2026-09-09: `.clinerules` に `PJ` 識別子を追加し、識別子選択基準・具体例・スキルマトリックスを更新した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: `.clinerules` に `PJ` 識別子を追加し、識別子選択基準・具体例・スキルマトリックスを更新した
 > - 2026-09-09: `docs/PJ-TASKS.md` を新規作成し、`PJ001`（`.clinerules`/AgentSkills ガバナンス）と `PJ002`–`PJ004`（JIRA/Confluence/Slack プレースホルダー）を定義した
 > - 2026-09-09: `docs/PJ-WORK-LOG.md` / `docs/PJ-CAVEATS.md` を新規作成した
 > - 2026-09-09: `docs/SY-TASKS.md` から `SY007001` / `SY007003` / `SY007011` / `SY007012` / `SY007013` を削除し、移行履歴セクションを追加した
@@ -329,7 +349,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `docs/SY-TASKS.md` の `SY007` 移行履歴を 13 件分に更新する
 >
 > 【実施結果】
-> - `docs/PJ-WORK-LOG.md` に振り直し・追加移行の作業記録を追記する
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - `docs/PJ-WORK-LOG.md` に振り直し・追加移行の作業記録を追記する
 > - 2026-09-09: `docs/SY-TASKS.md` から `SY007002`–`SY007010` の 8 タスクを削除し、`docs/PJ-TASKS.md` に `PJ001002` / `PJ001004`–`PJ001010` として追加移行した
 > - 2026-09-09: `docs/PJ-TASKS.md` の既存 `PJ001002`–`PJ001005` を `PJ001003` / `PJ001011`–`PJ001013` に番号振り直しした
 > - 2026-09-09: `docs/SY-TASKS.md` の移行履歴テーブルを 13 件分に更新した
@@ -344,7 +366,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `docs/SY-TASKS.md` の「識別子運用ルール」セクションを削除し、`.clinerules` の **Task Identifier Rules** を正とする
 >
 > 【実施結果】
-> - 2026-09-09: `docs/SY-TASKS.md` から「識別子運用ルール」セクションを削除した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: `docs/SY-TASKS.md` から「識別子運用ルール」セクションを削除した
 >
 <a id="ot010004"></a>
 ### OT010004 各 `<識別子>-TASKS.md` の「タスク粒度の方針」を自識別子のみの記述に統一する
@@ -356,7 +380,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 例の数を各ファイル 1 つに統一する
 >
 > 【実施結果】
-> - 2026-09-09: 上記 6 ファイルの識別子説明を自識別子のみに統一し、例を 1 つに整理した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: 上記 6 ファイルの識別子説明を自識別子のみに統一し、例を 1 つに整理した
 >
 <a id="ot010006"></a>
 ### OT010006 `localapp/docs/LA-TASKS.md` レイアウト改善（見出しアンカー・ブロッククォート・4列テーブル化・ユースケース一覧）
@@ -375,7 +401,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `npm run build`（frontend）および `cargo check`（Rust）はエラー 0 件で PASS した
 >
 > 【実施結果】
-> - 2026-09-10: `localapp/docs/LA-TASKS.md` にユースケース見出し・タスク見出しの `<a id="...">` アンカーを挿入し、4列タスク一覧テーブルを構築した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` にユースケース見出し・タスク見出しの `<a id="...">` アンカーを挿入し、4列タスク一覧テーブルを構築した
 >
 <a id="ot010007"></a>
 ### OT010007 `OT010006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正
@@ -388,7 +416,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
-> - 2026-09-10: LA-TASKS.md 内の全 55 箇所の戻りリンクを HTML `<a>` アンカーに一括置換した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: LA-TASKS.md 内の全 55 箇所の戻りリンクを HTML `<a>` アンカーに一括置換した
 > - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
 > - 2026-09-10: feature ブランチを `main` へ `--no-ff` マージし、リモートへ push 完了
 >
@@ -403,7 +433,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
-> - 2026-09-10: `localapp/docs/LA-TASKS.md` の 9 箇所のコンフリクトブロックを main 側（HTML アンカー・4列テーブル・ブロッククォート形式）で解消し、27 個のコンフリクトマーカーを全削除した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` の 9 箇所のコンフリクトブロックを main 側（HTML アンカー・4列テーブル・ブロッククォート形式）で解消し、27 個のコンフリクトマーカーを全削除した
 > - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
 >
 <a id="ot010009"></a>
@@ -417,7 +449,9 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
-> - 2026-09-10: `localapp/docs/LA-TASKS.md` の構造を元に `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` を新規作成した
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` の構造を元に `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` を新規作成した
 > - 2026-09-10: `.cline/skills/task-manager/SKILL.md` に `TEMPLATE-TASKS.md` と `task-id-format.md` の参照リンクを追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
 >
@@ -434,6 +468,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [OT011005](#ot011005) タスク管理ファイルフォーマット統一と整合性全チェック | 2026-09-09 | 2026-09-09 | ドキュメント整理 |
+| [OT011006](#ot011006) `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行 | 2026-09-10 |  | 運用整備 |
 
 <a id="ot011005"></a>
 ### OT011005 タスク管理ファイルフォーマット統一と整合性全チェック
@@ -450,10 +485,26 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - すべての `*-TASKS.md` で linter を実行し、37 ファイル ALL PASS を確認する
 >
 > 【実施結果】
-> - 2026-09-09: `ocr-worker/docs/OW-TASKS.md` のヘッダー番号ミスを 3 件修正（005→004、009→005、003-FUTURE→003）
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: `ocr-worker/docs/OW-TASKS.md` のヘッダー番号ミスを 3 件修正（005→004、009→005、003-FUTURE→003）
 > - 2026-09-09: `localapp/docs/LA-TASKS.md` のテーブル外 `### LAxxx` セクション（48 個）をテーブル内に統合し、他の `*-TASKS.md` とフォーマットを統一（1782 行→1383 行）
 > - 2026-09-09: linter でプロジェクト内 37 Markdown ファイルを全チェックし、ALL PASS を確認
 > - 2026-09-09: `ocr-worker/docs/OW-TASKS.md` の重複していた `## ユースケースNo / 003` 見出しを 1 つに統合し、OW003008 を同一テーブルに移動。テーブル間の空行を削除して 003 内のタスク（OW003001〜OW003008）を連続したテーブル行として再構成
 > - 2026-09-09: `docs/SY-TASKS.md` の末尾移行履歴セクション（SY007001〜SY007013 の PJ 移行記録）を削除
 > - 2026-09-09: `localapp/docs/LA-TASKS.md` の LA002008-1/2/3 を LA002008 に統合（完了日を 2026-08-20 に更新し、詳細欄に各派生修正の実施日・内容・種別を追記）
 >
+<a id="ot011006"></a>
+### OT011006 `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行
+
+<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `docs/SY-TASKS.md` から `SY007` ユースケースを削除する
+> - `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` の `PJ001` に `PJ001017` として追加する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
+> - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
