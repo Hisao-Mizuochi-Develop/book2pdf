@@ -99,3 +99,8 @@ metadata:
 
 ## よくある境界ケース
 - 新規ユースケースが必要な場合: まずユーザーに提案し、承認を得てから起票
+
+## 参考資料
+
+- [タスク管理ファイルテンプレート](./references/TEMPLATE-TASKS.md) — `<識別子>-TASKS.md` の構造テンプレート
+- [タスクNo体系](./references/task-id-format.md) — タスク番号の命名規則と記録形式

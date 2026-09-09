@@ -195,17 +195,17 @@ OCR 完了後に検索可能 PDF をダウンロードする
 |  | backend から生成された PDF をダウンロードする |  |  |  |
 |  | 2026-09-05 追記：`DownloadButton` / `ResultPanel` コンポーネントを作成し、PDF ダウンロード処理を責務分離する |  |  |  |
 |  | 2026-09-05 追記：`DownloadButton.test.tsx` / `ResultPanel.test.tsx` の単体テストを実装する |  |  |  |
-|  | 2026-09-05 追記：MSW を使用した PDF ダウンロードフローの結合テストを実装する
-|  |  | 【実施結果】 |  |  |  |
-|  |  | 2026-09-09: UAT 実施中に「進捗が 1/3 のまま」「OCR 処理を開始しました」の重複メッセージ問題が発生 |  |  |  |
-|  |  | 根本原因: `docker-compose.yml` の ocr-worker サービスに volume マウントがなく、ホスト側の `enable_progress=False` 対応コードがコンテナに反映されていなかった |  |  |  |
-|  |  | 対応: `docker-compose.yml` に `- ./ocr-worker/app:/opt/ocr-worker/app` を追加し、app/ ディレクトリのみホストと共有するよう修正。ocr-worker コンテナを再起動して修正を反映 |  |  |  |
-|  |  | 2026-09-09: `docker-compose.yml` 修正をコミットし、コンテナが正常に `enable_progress=False` を認識することを確認 |  |  |  | |  |  |  |
-|  |  | 2026-09-09: `src/lib/api.ts` に `pollJobProgress` 関数を新規実装。SSE が利用できないプロキシ環境へのフォールバックとして、2秒間隔で `/api/jobs/{job_id}` をポーリングし進捗を取得する機能を追加 |  |  |  |
-|  |  | 2026-09-09: `src/hooks/useOcrJob.ts` に SSE エラー時の polling フォールバックロジックを統合。`subscribeJobProgress` の `onerror` で `pollJobProgress` を開始し、進捙監視を継続するよう変更 |  |  |  |
-|  |  | 2026-09-09: `src/components/progress/ProgressPanel.tsx` に polling モード時の「プロキシ環境を検出しました…」メッセージ表示を追加 |  |  |  |
-|  |  | 2026-09-09: `pollJobProgress` に `PollJobProgressOptions` インターフェースを追加し、`interval` を外部から注入可能に変更。単体テストで `interval: 0` を指定することで、Vitest fake timers 下での不安定問題を解消 |  |  |  |
-|  |  | 2026-09-09: `src/lib/__tests__/api.test.ts` の「定期的に進捗を取得」テストを real timers + callback-based waiting + 毎回新規 Response を返す `mockImplementation` に書き換え。テスト 7 files / 58 tests 全件 PASS、`npm run build` 成功 |  |  |  |
+|  | 2026-09-05 追記：MSW を使用した PDF ダウンロードフローの結合テストを実装する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-09: UAT 実施中に「進捗が 1/3 のまま」「OCR 処理を開始しました」の重複メッセージ問題が発生 |  |  |  |
+|  | 根本原因: `docker-compose.yml` の ocr-worker サービスに volume マウントがなく、ホスト側の `enable_progress=False` 対応コードがコンテナに反映されていなかった |  |  |  |
+|  | 対応: `docker-compose.yml` に `- ./ocr-worker/app:/opt/ocr-worker/app` を追加し、app/ ディレクトリのみホストと共有するよう修正。ocr-worker コンテナを再起動して修正を反映 |  |  |  |
+|  | 2026-09-09: `docker-compose.yml` 修正をコミットし、コンテナが正常に `enable_progress=False` を認識することを確認 |  |  |  |
+|  | 2026-09-09: `src/lib/api.ts` に `pollJobProgress` 関数を新規実装。SSE が利用できないプロキシ環境へのフォールバックとして、2秒間隔で `/api/jobs/{job_id}` をポーリングし進捗を取得する機能を追加 |  |  |  |
+|  | 2026-09-09: `src/hooks/useOcrJob.ts` に SSE エラー時の polling フォールバックロジックを統合。`subscribeJobProgress` の `onerror` で `pollJobProgress` を開始し、進捙監視を継続するよう変更 |  |  |  |
+|  | 2026-09-09: `src/components/progress/ProgressPanel.tsx` に polling モード時の「プロキシ環境を検出しました…」メッセージ表示を追加 |  |  |  |
+|  | 2026-09-09: `pollJobProgress` に `PollJobProgressOptions` インターフェースを追加し、`interval` を外部から注入可能に変更。単体テストで `interval: 0` を指定することで、Vitest fake timers 下での不安定問題を解消 |  |  |  |
+|  | 2026-09-09: `src/lib/__tests__/api.test.ts` の「定期的に進捗を取得」テストを real timers + callback-based waiting + 毎回新規 Response を返す `mockImplementation` に書き換え。テスト 7 files / 58 tests 全件 PASS、`npm run build` 成功 |  |  |  |
 
 ---
 
