@@ -53,6 +53,7 @@
 | [PJ001015](#pj001015) タスク管理表整合性検証ワークフローの強化 | 2026-09-09 | 2026-09-09 | 運用整備 |
 | [PJ001016](#pj001016) PJ001015 UAT バグ対応 | 2026-09-09 | 2026-09-09 | 運用整備 |
 | [PJ001017](#pj001017) `.clinerules`、AgentSkills の Phase 4 必須報告ルールとテストワークフロー整備 | 2026-09-10 | 2026-09-10 | 運用整備 |
+| [PJ001018](#pj001018) `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する | 2026-09-10 | | 運用整備 |
 
 <a id="pj001001"></a>
 ### PJ001001 `SY` 識別子の運用ルールと 3 層スキル選択マトリックスを文書化する
@@ -379,6 +380,20 @@
 > 【実施結果】
 > - 2026-09-10: `.clinerules` / `workflow-runner/SKILL.md` / `test-manager/SKILL.md` に Phase 4 必須報告ルールを追加した
 > - 2026-09-10: テスト関連ワークフローを AgentSkills に統合した
+>
+<a id="pj001018"></a>
+### PJ001018 `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する
+
+<div align="right"><a href="#pj001">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `.cline/skills/task-manager/SKILL.md` の「手順」に `TEMPLATE-TASKS.md` 参照義務を追加する
+> - `.cline/skills/task-manager/SKILL.md` の「参考資料」リンクを「必須参照」に昇格させる
+> - `.clinerules` にタスク管理表作成・更新時のテンプレート参照義務を追加する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - （未実施）
 >
 <a id="pj002"></a>
 ## ユースケースNo | PJ002
