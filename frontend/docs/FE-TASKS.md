@@ -65,6 +65,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 >   - `frontend/docs/FE-TASKS.md` に本計画と実施結果を追記する
 >   - `frontend/docs/FE-WORK-LOG.md` に実行コマンドと結果を記録する
 >   - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の frontend 構成も更新する
+>
 > 【実施結果】
 > - 2026-08-11: `npx create-next-app@latest` で Next.js 16.3.0 + React 19 + Tailwind CSS v4 + TypeScript + App Router 構成のプロジェクトを作成した
 > - 2026-08-11: 不要なサンプルファイル（README.md, AGENTS.md, CLAUDE.md, public/*.svg）を削除した
