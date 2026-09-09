@@ -38,7 +38,7 @@ Tauri v2 プロジェクト初期化
 
 電子書籍キャプチャ・トリミング・ZIP 出力アプリの土台となる、Tauri v2 + React + Vite プロジェクトを構築する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -50,7 +50,7 @@ Tauri v2 プロジェクト初期化
 <a id="la001001"></a>
 ### LA001001 Tauri v2 + React + Vite プロジェクト scaffold 作成
 
-<div align="right">[タスク一覧へ↩︎](#la001)</div>
+<div align="right"><a href="#la001">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `cargo create-tauri-app` または手動で `localapp/` 配下に Tauri v2 プロジェクトを構築する
@@ -68,7 +68,7 @@ Tauri v2 プロジェクト初期化
 <a id="la001002"></a>
 ### LA001002 Rust 側依存クレートの選定・追加
 
-<div align="right">[タスク一覧へ↩︎](#la001)</div>
+<div align="right"><a href="#la001">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 画像処理: `image`
@@ -86,7 +86,7 @@ Tauri v2 プロジェクト初期化
 <a id="la001003"></a>
 ### LA001003 frontend 側依存の選定・追加
 
-<div align="right">[タスク一覧へ↩︎](#la001)</div>
+<div align="right"><a href="#la001">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - Tailwind CSS v4
@@ -108,7 +108,7 @@ Tauri v2 プロジェクト初期化
 <a id="la001004"></a>
 ### LA001004 開発・ビルド環境整備（tauri.conf.json / scripts 等）
 
-<div align="right">[タスク一覧へ↩︎](#la001)</div>
+<div align="right"><a href="#la001">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `tauri.conf.json` のウィンドウサイズ・タイトル・権限を調整
@@ -136,7 +136,7 @@ Tauri v2 プロジェクト初期化
 
 電子書籍リーダー画面を検出し、連続してキャプチャして画像フォルダに保存する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -156,7 +156,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002001"></a>
 ### LA002001 画面キャプチャ方式調査・実装
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. Tauri v2 標準API・プラグイン調査
@@ -220,7 +220,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002002"></a>
 ### LA002002 アプリプロファイル管理 UI
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - LA002001 で追加した `CaptureView.tsx` にプロファイル選択セレクタを追加
@@ -271,7 +271,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002003"></a>
 ### LA002003 連続キャプチャ実行・進捗表示
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 >
@@ -364,7 +364,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002004"></a>
 ### LA002004 キャプチャ画像のフォルダ管理
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 >
@@ -442,7 +442,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002005"></a>
 ### LA002005 ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 >
@@ -494,7 +494,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002006"></a>
 ### LA002006 ウィンドウ指定キャプチャ実装のコンパイルエラー修正
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `use screenshots::Window` を削除（`Window` struct は `screenshots` v0.8.10 で存在しない）
@@ -522,7 +522,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002007"></a>
 ### LA002007 ウィンドウ指定キャプチャ実装（xcap crate 版）
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `localapp/src-tauri/Cargo.toml` — `screenshots` を削除、`xcap = "0.3"` を追加
@@ -565,7 +565,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002008"></a>
 ### LA002008 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **Bug 1: MSE計算修正**
@@ -649,7 +649,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002009"></a>
 ### LA002009 プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **デフォルトプロファイル選択を "kindle" に固定**
@@ -767,7 +767,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002010"></a>
 ### LA002010 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. 不具合の原因調査
@@ -809,7 +809,7 @@ Tauri v2 プロジェクト初期化
 <a id="la002011"></a>
 ### LA002011 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
 
-<div align="right">[タスク一覧へ↩︎](#la002)</div>
+<div align="right"><a href="#la002">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. 機能要件
@@ -898,7 +898,7 @@ PDF 読込
 
 外部 PDF を画像化して、トリミングタブに引き継ぐ。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -912,7 +912,7 @@ PDF 読込
 <a id="la003006"></a>
 ### LA003006 PDF → OCR 連携（localapp → backend API）
 
-<div align="right">[タスク一覧へ↩︎](#la003)</div>
+<div align="right"><a href="#la003">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - localapp から backend API を呼び出し、OCR → 検索可能 PDF 生成 → ダウンロードまでを自動化する
@@ -971,7 +971,7 @@ PDF 読込
 <a id="la003001"></a>
 ### LA003001 PDF 選択・設定 UI
 
-<div align="right">[タスク一覧へ↩︎](#la003)</div>
+<div align="right"><a href="#la003">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 2026-08-19 実装予定
@@ -1008,7 +1008,7 @@ PDF 読込
 <a id="la003002"></a>
 ### LA003002 PDF → 画像展開（Rust バックエンド）
 
-<div align="right">[タスク一覧へ↩︎](#la003)</div>
+<div align="right"><a href="#la003">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 2026-08-19 実装予定
@@ -1053,7 +1053,7 @@ PDF 読込
 <a id="la003004"></a>
 ### LA003004 PDF 読込 Pdfium 二重初期化エラー修正
 
-<div align="right">[タスク一覧へ↩︎](#la003)</div>
+<div align="right"><a href="#la003">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 2026-08-20 実施
@@ -1092,7 +1092,7 @@ PDF 読込
 <a id="la003005"></a>
 ### LA003005 PDF 画面の出力フォルダ自動設定と完了後表示改善
 
-<div align="right">[タスク一覧へ↩︎](#la003)</div>
+<div align="right"><a href="#la003">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. 機能要件
@@ -1152,7 +1152,7 @@ PDF 読込
 
 キャプチャまたは PDF 展開した画像から余白を削除する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -1165,7 +1165,7 @@ PDF 読込
 <a id="la004001"></a>
 ### LA004001 画像フォルダ読み込み・サムネイル一覧 UI
 
-<div align="right">[タスク一覧へ↩︎](#la004)</div>
+<div align="right"><a href="#la004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `tauri-plugin-dialog` で任意の画像フォルダを選択（005002で追加済みのプラグインを流用）
@@ -1202,7 +1202,7 @@ PDF 読込
 <a id="la004002"></a>
 ### LA004002 Before/After プレビュー表示
 
-<div align="right">[タスク一覧へ↩︎](#la004)</div>
+<div align="right"><a href="#la004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - オリジナル画像とトリミング後画像を左右に並列表示
@@ -1232,7 +1232,7 @@ PDF 読込
 <a id="la004003"></a>
 ### LA004003 余白自動検出（Rust バックエンド）
 
-<div align="right">[タスク一覧へ↩︎](#la004)</div>
+<div align="right"><a href="#la004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 複数ページをサンプリングして 4 辺の余白を推定
@@ -1245,7 +1245,7 @@ PDF 読込
 <a id="la004004"></a>
 ### LA004004 手動余白調整 UI
 
-<div align="right">[タスク一覧へ↩︎](#la004)</div>
+<div align="right"><a href="#la004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 左/右/上/下 の数値入力
@@ -1258,7 +1258,7 @@ PDF 読込
 <a id="la004005"></a>
 ### LA004005 トリミング一括実行・進捗表示
 
-<div align="right">[タスク一覧へ↩︎](#la004)</div>
+<div align="right"><a href="#la004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 全画像の一括トリミングを Rust 側で実行
@@ -1278,7 +1278,7 @@ ZIP 出力・連携
 
 トリミング済み画像を ZIP アーカイブにまとめる。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -1290,7 +1290,7 @@ ZIP 出力・連携
 <a id="la005001"></a>
 ### LA005001 ZIP アーカイブ化（Rust バックエンド）
 
-<div align="right">[タスク一覧へ↩︎](#la005)</div>
+<div align="right"><a href="#la005">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `localapp/src-tauri/src/commands/capture.rs` に `create_zip_archive` コマンドを新規追加
@@ -1324,7 +1324,7 @@ ZIP 出力・連携
 <a id="la005002"></a>
 ### LA005002 出力設定・ファイル名設定 UI
 
-<div align="right">[タスク一覧へ↩︎](#la005)</div>
+<div align="right"><a href="#la005">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `tauri-plugin-dialog` を追加
@@ -1372,7 +1372,7 @@ ZIP 出力・連携
 <a id="la005003"></a>
 ### LA005003 タブ間自動連携
 
-<div align="right">[タスク一覧へ↩︎](#la005)</div>
+<div align="right"><a href="#la005">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `ExportView.tsx` の mount 時に `captureStore.lastCaptureFolder` を監視し、存在すれば `sourceFolder` に自動設定
@@ -1399,7 +1399,7 @@ ZIP 出力・連携
 <a id="la005004"></a>
 ### LA005004 ZIP 作成進捗インジケーター追加
 
-<div align="right">[タスク一覧へ↩︎](#la005)</div>
+<div align="right"><a href="#la005">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **ユーザー要望**
@@ -1457,7 +1457,7 @@ ZIP 出力・連携
 
 クリーン＆ミニマルな Apple HIG 風 UI を実装する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -1469,7 +1469,7 @@ ZIP 出力・連携
 <a id="la006004"></a>
 ### LA006004 アプリ名・サイドバー変更
 
-<div align="right">[タスク一覧へ↩︎](#la006)</div>
+<div align="right"><a href="#la006">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - アプリ名 `book2pdf` → `Book Capture`
@@ -1493,7 +1493,7 @@ ZIP 出力・連携
 <a id="la006001"></a>
 ### LA006001 デザインシステム定義
 
-<div align="right">[タスク一覧へ↩︎](#la006)</div>
+<div align="right"><a href="#la006">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. `localapp/src/index.css` の CSS 変数調整
@@ -1529,7 +1529,7 @@ ZIP 出力・連携
 <a id="la006002"></a>
 ### LA006002 サイドバー＋メインレイアウト実装
 
-<div align="right">[タスク一覧へ↩︎](#la006)</div>
+<div align="right"><a href="#la006">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 左サイドバーに 4 機能のアイコン+ラベル配置
@@ -1555,7 +1555,7 @@ ZIP 出力・連携
 <a id="la006003"></a>
 ### LA006003 ライトモード対応 + OS 設定連動
 
-<div align="right">[タスク一覧へ↩︎](#la006)</div>
+<div align="right"><a href="#la006">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - ライトモードを基本テーマとする
@@ -1604,7 +1604,7 @@ ZIP 出力・連携
 
 アプリ設定、プロファイル、履歴を永続化する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -1614,7 +1614,7 @@ ZIP 出力・連携
 <a id="la007001"></a>
 ### LA007001 アプリ設定ファイル管理
 
-<div align="right">[タスク一覧へ↩︎](#la007)</div>
+<div align="right"><a href="#la007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `dirs::config_dir()` 配下に `config.json` を保存
@@ -1627,7 +1627,7 @@ ZIP 出力・連携
 <a id="la007002"></a>
 ### LA007002 プロファイル・履歴の永続化
 
-<div align="right">[タスク一覧へ↩︎](#la007)</div>
+<div align="right"><a href="#la007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - カスタムプロファイルの保存/読み込み
@@ -1646,7 +1646,7 @@ PDF作成（Backend API連携）
 
 トリミング済み画像フォルダ/ZIPから、backend API（FastAPI）を経由してOCR処理済みの検索可能PDFを生成する。
 
-<div align="right">[ユースケース一覧へ↩︎](#ユースケース一覧)</div>
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
@@ -1666,7 +1666,7 @@ PDF作成（Backend API連携）
 <a id="la008001"></a>
 ### LA008001 ローカル画像収集・ZIPアーカイブ化コマンド
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 対象フォルダ内の `001.png`〜`999.png`（または `.jpg`）を正規表現で収集
@@ -1685,7 +1685,7 @@ PDF作成（Backend API連携）
 <a id="la008002"></a>
 ### LA008002 Backend API連携 — ジョブ作成・アップロード・OCR実行
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `reqwest` で `POST /api/jobs` でジョブ作成
@@ -1702,7 +1702,7 @@ PDF作成（Backend API連携）
 <a id="la008003"></a>
 ### LA008003 Backend API連携 — ジョブ状態ポーリング・PDFダウンロード
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 3秒間隔で `GET /api/jobs/{id}` をポーリング
@@ -1719,7 +1719,7 @@ PDF作成（Backend API連携）
 <a id="la008004"></a>
 ### LA008004 フロントエンド進捗インジケーター統合
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - ZIP作成中：「ZIPを作成中... X / Y ファイル」
@@ -1739,7 +1739,7 @@ PDF作成（Backend API連携）
 <a id="la008005"></a>
 ### LA008005 完了後「フォルダを開く」ボタン実装
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 処理完了後、作成されたPDFがあるフォルダを開くボタンを表示
@@ -1753,7 +1753,7 @@ PDF作成（Backend API連携）
 <a id="la008006"></a>
 ### LA008006 backend OCR 連携機能実装
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - LA008001〜LA008005 の個別実装を統合し、backend OCR 連携機能全体としての一貫性を確保する
@@ -1767,7 +1767,7 @@ PDF作成（Backend API連携）
 <a id="la008007"></a>
 ### LA008007 localapp 単体生成 技術調査・選定
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **PDF 生成 crate 選定**
@@ -1798,7 +1798,7 @@ PDF作成（Backend API連携）
 <a id="la008008"></a>
 ### LA008008 画像結合PDF生成の実装（OCRなし）
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **Rust コマンド実装**
@@ -1867,7 +1867,7 @@ PDF作成（Backend API連携）
 <a id="la008009"></a>
 ### LA008009 OCRエンジン統合・検索可能PDF生成の実装
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **前提：LA008007 の OCR エンジン選定完了**
@@ -1914,7 +1914,7 @@ PDF作成（Backend API連携）
 <a id="la008010"></a>
 ### LA008010 Tauri invoke 引数修正・エンドツーエンド動作確認
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > 1. **UI 統合**
@@ -1938,7 +1938,7 @@ PDF作成（Backend API連携）
 <a id="la008011"></a>
 ### LA008011 OCR精度向上（Tesseract pre-processing / モデル選定）
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - Tesseract 単体 OCR の認識率を向上させるため、画像前処理（二値化 / ノイズ除去 / 解像度調整）の効果を検証する
@@ -1951,7 +1951,7 @@ PDF作成（Backend API連携）
 <a id="la008012"></a>
 ### LA008012 透明テキストレイヤー・座標補正
 
-<div align="right">[タスク一覧へ↩︎](#la008)</div>
+<div align="right"><a href="#la008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - 現在のテキストレイヤーは黒色で描画されているため、PDF ビューアの「テキスト表示」設定がオンの場合に視認性に影響を与える
