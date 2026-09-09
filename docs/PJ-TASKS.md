@@ -53,7 +53,8 @@
 | [PJ001015](#pj001015) タスク管理表整合性検証ワークフローの強化 | 2026-09-09 | 2026-09-09 | 運用整備 |
 | [PJ001016](#pj001016) PJ001015 UAT バグ対応 | 2026-09-09 | 2026-09-09 | 運用整備 |
 | [PJ001017](#pj001017) `.clinerules`、AgentSkills の Phase 4 必須報告ルールとテストワークフロー整備 | 2026-09-10 | 2026-09-10 | 運用整備 |
-| [PJ001018](#pj001018) `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する | 2026-09-10 | | 運用整備 |
+| [PJ001018](#pj001018) `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する | 2026-09-10 | 2026-09-10 | 運用整備 |
+| [PJ001019](#pj001019) 「コミット・マージ ≠ タスク完了」を徹底するための `.clinerules`・AgentSkills 改修 | 2026-09-10 | | 運用整備 |
 
 <a id="pj001001"></a>
 ### PJ001001 `SY` 識別子の運用ルールと 3 層スキル選択マトリックスを文書化する
@@ -390,6 +391,29 @@
 > - `.cline/skills/task-manager/SKILL.md` の「手順」に `TEMPLATE-TASKS.md` 参照義務を追加する
 > - `.cline/skills/task-manager/SKILL.md` の「参考資料」リンクを「必須参照」に昇格させる
 > - `.clinerules` にタスク管理表作成・更新時のテンプレート参照義務を追加する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-10: `.cline/skills/task-manager/SKILL.md` の「手順」に `TEMPLATE-TASKS.md` 参照義務を追加した
+> - 2026-09-10: `.cline/skills/task-manager/SKILL.md` の手順番号重複を修正した（4→5, 5→6, 6→7, 7→8, 8→9, ##9→##10）
+> - 2026-09-10: `.clinerules` に「タスク管理表作成・更新時のテンプレート参照義務」を追加した
+> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
+> - 2026-09-10: `main` ブランチへ `--no-ff` マージ完了
+> - 2026-09-10: ユーザーからタスク完了の承認を取得
+>
+<a id="pj001019"></a>
+### PJ001019 「コミット・マージ ≠ タスク完了」を徹底するための `.clinerules`・AgentSkills 改修
+
+<div align="right"><a href="#pj001">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `.clinerules` に新規セクション「コミット・マージとタスク完了の厳密な分離」を追加する
+> - `.clinerules` の「タスク完了基準」を強化し、「ユーザーからの明示的な承認なしに完了日付を記入してはならない」を明記する
+> - `.clinerules` に「ユーザー承認の形式」を明確化する（「承認する」「合格」は有効、「OK」「了解」は無効）
+> - `.clinerules` の「マージ前最終承認チェックリスト」に「マージ後の追加チェック」を追加する
+> - `.cline/skills/task-manager/SKILL.md` に「タスク完了前のユーザー承認取得」を追加する
+> - `.cline/skills/workflow-runner/SKILL.md` の Phase 4 に「マージ後承認取得」を追加する
+> - `.clinerules` または `workflow-runner/SKILL.md` に「タスク完了日付記入前の自己確認リスト」を追加する
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
