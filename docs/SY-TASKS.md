@@ -61,25 +61,3 @@
 |  | 2026-09-03: `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 元 `OT003001` に含まれていた「進捗通知ポーリング方式の仕様策定」部分を `SY` タスクとして分離記録した。`localapp` 側のリトライ実装・タイムアウト設定ファイル化は `OT003001` に残した |  |  |  |
-
----
-
-## 移行履歴
-
-本ファイルに記載されていた `.clinerules` / AgentSkills / ガバナンス・運用ルールに関するタスクは、新規モジュール識別子 `PJ` の設立に伴い `docs/PJ-TASKS.md` へ移行しました。
-
-| 元タスクNO | 移行先タスクNO | 移行先ファイル | 移行理由 | 移行実施日 |
-|---|---|---|---|---|
-| SY007001 | PJ001001 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007002 | PJ001002 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007003 | PJ001003 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007004 | PJ001004 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007005 | PJ001005 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007006 | PJ001006 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007007 | PJ001007 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007008 | PJ001008 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007009 | PJ001009 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007010 | PJ001010 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007011 | PJ001011 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007012 | PJ001012 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
-| SY007013 | PJ001013 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
