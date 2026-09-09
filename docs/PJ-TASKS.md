@@ -188,6 +188,8 @@
 |  | `.cline/skills/workflow-runner/SKILL.md` の冒頭に「1 タスク 1 ブランチ」の大前提を追加する（`.clinerules` との重複を許容） |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
+|  | `.clinerules` に「UAT 派生バグ対応タスク管理ルール」を新設した |  |  |  |
+|  | `task-manager/SKILL.md` と `workflow-runner/SKILL.md` を更新した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 元タスク `SY007010`（`docs/SY-TASKS.md`）として完了。`OT010002` により `PJ001010` へ再番号付けし、`docs/PJ-TASKS.md` に移行した |  |  |  |
 | PJ001011 | ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定 | 2026-09-08 | 2026-09-08 | 運用整備 |
@@ -242,9 +244,11 @@
 |  | `.pre-commit-config.yaml` を新規作成する |  |  |  |
 |  | `docs/OT-AGENT-SKILLS-GUIDE.md` に `markdown-table-validator` を追加する |  |  |  |
 |  | 【実施結果】 |  |  |  |
+|  | `markdown-table-validator` AgentSkill と `scripts/lint-task-md.py` を新規作成した |  |  |  |
+|  | `.github/workflows/lint-task-md.yml` と `.pre-commit-config.yaml` を新規作成した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 元タスク `SY007013`（`docs/SY-TASKS.md`）として 2026-09-09 に完了。`OT010002` により `PJ001013` へ再番号付けし、`docs/PJ-TASKS.md` に移行した |  |  |  |
-| PJ001014 | feature ブランチ作業開始前のブランチ健全性チェックルール追加 | 2026-09-09 | 2026-09-09 | 運用整備 |
+| PJ001014 | feature ブランチ作業開始前のブランチ健全性チェックルール追加 | 2026-09-09 |  | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` に「Branch Health Check Rules」セクションを追加する |  |  |  |
@@ -254,6 +258,16 @@
 |  | 【実施結果】 |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 新規タスク |  |  |  |
+| PJ001015 | タスク管理表整合性検証ワークフローの強化 | 2026-09-09 | 2026-09-09 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に新規タスク起票テンプレート・Plan モード編集禁止ルールを追加する |  |  |  |
+|  | `scripts/lint-task-md.py` に「完了日付・実施結果」整合性検証を追加する |  |  |  |
+|  | `workflow-runner/SKILL.md` Phase 1 に完了状態確認手順を追加する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 【移行履歴】 |  |  |  |
+|  | 新規タスク（PJ001014 不具合発見元） |  |  |  |
+
 
 ---
 
