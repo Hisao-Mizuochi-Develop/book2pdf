@@ -22,3 +22,15 @@
 - `docs/PJ-TASKS.md` の `PJ001` ユースケースを `PJ001001`–`PJ001013` の 13 タスクに再構成（元 `SY` 番号順で配置）
 - `docs/SY-TASKS.md` の `SY007` セクションを削除し、移行履歴テーブルを 13 件分に更新
 - `docs/OT-TASKS.md` の `OT010001` 【実施結果】に番号振り直し注記を追加し、`OT010002` を起票
+
+---
+
+## 2026-09-09: `PJ001014` — feature ブランチ作業開始前のブランチ健全性チェックルール追加
+
+- `feature/FE002002-fe002001-uat-bugfix` が `main` から 11 コミット遅れた状態で `git checkout` され、OT010001〜OT010004 のドキュメント再編が「先祖返り」した事象の再発防止
+- `.clinerules` に「Branch Health Check Rules」セクションを追加（適用タイミング・適用除外・6 つの必須手順）
+- `.cline/skills/branch-manager/SKILL.md` に「作業開始前のブランチ健全性確認」を追加（main 差分確認・マージ・再確認の 3 ステップ）
+- `.cline/skills/workflow-runner/SKILL.md` に Phase 1 でのブランチ健全性チェックと Phase 4 でのマージ前確認を追加
+- `docs/PJ-TASKS.md` に `PJ001014` を起票し、完了日付を記入
+- 変更ファイル: `.clinerules`, `branch-manager/SKILL.md`, `workflow-runner/SKILL.md`, `docs/PJ-TASKS.md`
+- `--no-ff` で `main` にマージ完了（`b4368e04` → `77c1e3b9`）
