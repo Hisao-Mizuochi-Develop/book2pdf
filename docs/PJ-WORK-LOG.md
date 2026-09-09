@@ -34,3 +34,21 @@
 - `docs/PJ-TASKS.md` に `PJ001014` を起票し、完了日付を記入
 - 変更ファイル: `.clinerules`, `branch-manager/SKILL.md`, `workflow-runner/SKILL.md`, `docs/PJ-TASKS.md`
 - `--no-ff` で `main` にマージ完了（`b4368e04` → `77c1e3b9`）
+
+---
+
+## 2026-09-09: `PJ001015` — タスク管理表整合性検証ワークフローの強化
+
+- `.clinerules` に「Task Management Integrity Rules」を新設
+  - 新規タスク起票テンプレート（完了日付空欄・実施結果セクション必須）
+  - Plan モードと Act モードの役割分離（Plan モードでは編集禁止）
+- `scripts/lint-task-md.py` に `validate_task_completion()` を追加
+  - タスク完了日付あり → 後続の【実施結果】セクションが空欄でないかを検証
+  - `## ` / `### ` セクション境界でスキャンを打ち切ることで誤検出を防止
+- `.cline/skills/workflow-runner/SKILL.md` Phase 1 に「タスク完了状態確認（step 8）」を追加
+  - 起票前に完了日付・実施結果の整合性を確認し、Gate 1 を step 9 に繰り下げ
+- 既存データ不備の修正
+  - `docs/PJ-TASKS.md`: PJ001010 / PJ001013 の【実施結果】空欄を追記（`SY` → `PJ` 移行時の漏れ）
+- Linter 実行結果: 37 ファイル全てで ALL PASS を確認
+- 変更ファイル: `.clinerules`, `scripts/lint-task-md.py`, `workflow-runner/SKILL.md`, `docs/PJ-TASKS.md`
+- `--no-ff` で `main` にマージ完了
