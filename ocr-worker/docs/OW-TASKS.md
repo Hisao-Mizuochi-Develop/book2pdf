@@ -369,26 +369,22 @@ OCR 読み取り精度向上
 > - 7. `ocr-results-OW003005/config-comparison-report-OW003005.md` を作成する
 > - 8. OW-TASKS.md の【実施結果】欩末にレポートリンクを追加し、タスク完了日付を記載する
 > - ※前提：OW003003 で sharpen_light_upscale_2x が最も効果的、OW003004 で config.yml 調整に効果なし（ハードコーディングが原因と判明）
-> - 
 > - 1. config.yml パラメータ無視の原因調査と修正：
 > - - `ocr-worker/ndlocr_cli_patches/inference.py` を開き、config.yml の `layout_extraction.score_thr` がどこで読み込まれるか確認
 > - - パッチ内または ndlocr_cli ソースで、ハードコードされた閾値（例: 0.3）を検索
 > - - config.yml の値を実際に参照するようにコードを修正し、パッチを更新
 > - - コンテナをリビルドし、同一画像で再度OCR実行、出力に差分が出ることを確認
 > - - OW003004 の検証パターン（score_thr 0.2 / 0.1 / 0.2+additional_elements False）を再実施し、修正後の効果を評価
-> - 
 > - 2. 自動前処理統合の実装：
 > - - `ocr-worker/app/main.py` の `/ocr` エンドポイントまたは前処理関数に、sharpen_light_upscale_2x を自動適用する処理を追加
 > - - 前処理の有無を制御するフラグ（デフォルトON）を環境変数 `PREPROCESS_ENABLED` で設定可能にする
 > - - 前処理済み画像の一時保存先を確保し、OCR完了後に cleanup
 > - - `benchmark-ocr-OW003002.zip` で動作確認：前処理ON/OFF の結果を比較し、OW003003 と同等の精度向上を確認
-> - 
 > - 3. 表紙ページ（002.png）の残存誤認識対策実装：
 > - - 002.png の OCR 結果（`002_main.txt`）を確認し、RAG→RAC、Improving→mproving などの誤認識パターンを列挙
 > - - 追加前処理（例: 4x アップスケール、局所的二値化、コントラスト強調）をスクリプト化し効果を検証
 > - - または、OCR後の辞書ベース補正（表紙に出現しやすい固有名詞のマッピング表）を試作する
 > - - いずれかの手法で誤認識が減少することを確認したら、該当処理を統合する
-> - 
 >
 > 【実施結果】
 > - 2026-08-14: config.yml パラメータ無視の原因を特定（ndl_layout submodule 内の `process_textblock.py` / `process.py` に `score_thr: float = 0.3` がハードコードされており、config.yml の `layout_extraction.score_thr` が無視されていた）
@@ -448,7 +444,6 @@ OCR 読み取り精度向上
 > - 2026-08-14: 前処理 OFF のジョブ `e07faa8c-195b-4d36-bc7c-d44e0aa28582` は status: completed となり、OW003002 baseline と同等の「〓」出現数 5個を確認した
 > - 2026-08-14: 精度比較レポート [ocr-results-OW003006/preprocess-integration-report-OW003006.md](ocr-results-OW003006/preprocess-integration-report-OW003006.md) を作成した
 > - 2026-08-14: `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-CAVEATS.md` / `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新した
-> - 
 >
 
 <a id="ow003007"></a>
@@ -487,7 +482,6 @@ OCR 読み取り精度向上
 > - 主な結果：「〓」出現数（全 txt 合計）は local_binarization/local_binarization_sharpen=135、contrast_strong=160、4x_upscale_sharpen=178、contrast_strong_4x=176、baseline_2x=194、4x_upscale=202 だった
 > - 主な結果：local_binarization 系は文字潰れによる誤認識が増加し、contrast_strong は認識欠落が多かった
 > - 結論：今回試した追加前処理（4x アップスケール、局所的二値化、強コントラスト）は、OW003006 で採用済みの 2x アップスケール＋軽度シャープニングを超える明確な改善は確認できず、新たな前処理として追加導入することは推奨されない
-> - 
 >
 
 <a id="ow003008"></a>
