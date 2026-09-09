@@ -188,17 +188,21 @@ OCR 処理の進捗をリアルタイムで確認する
 > 本タスクは FE002001（進捗表示 UI の実装）の UAT 中に発見された不具合を統合対応するものです。複数の不具合が発見されましたが、SY007010（UAT 派生バグ対応タスク管理ルール）に従い、同じ元タスク（FE002001）由来のため 1 つのタスクに集約します。
 >
 > 【計画】
-> **バグ 1: `downloadPdf()` の WritableStream close 重複呼び出し（未修正）**
-> 内容: `src/lib/api.ts` の `downloadPdf()` 内で `response.body.pipeTo(writable)` が完了後に自動的に writable を close するが、`finally` ブロックで再度 `writable.close()` を呼んでおり、`TypeError: WritableStream is closed` になる可能性がある
-> 経緯: FE002001 の UAT 中に File System Access API を使用した PDF ダウンロード動作確認時に発見
-> 対応方針: `pipeTo` に `{ preventClose: true }` を指定し、`finally` ブロックの `writable.close()` のみで close するよう調整する
-> **バグ 2: backend SSE が `[DONE]` センチネルを送信せず `onerror` で「進捗接続エラー」となる（FE002001 実施中に修正済み）**
-> 内容: backend の SSE ストリームが完了時に `[DONE]` センチネルを送信せず、ブラウザ側で切断を異常として検知し `onerror` イベントが発火していた
-> 経緯: FE002001 実施中（2026-09-08）に進捗表示の結合テスト時に発見。backend の `jobs.py` で job 完了・失敗時に `yield "data: [DONE]\n\n"` を追加し、frontend の `subscribeJobProgress` に `doneReceived` フラグを追加して `[DONE]` 受信後の `onerror` を抑制した
-> **バグ 3: `useOcrJob.ts` で「OCR 処理を開始しました」ログの重複出力（FE002001 実施中に修正済み）**
-> 内容: `src/hooks/useOcrJob.ts` の `handleUploaded` 内で「OCR 処理を開始しました」ログが複数回出力されていた
-> 経緯: FE002001 実施中（2026-09-08）にコードレビュー時に発見し、重複していたログ出力を削除した
-> **テスト更新方針**
+>
+> #### バグ 1: `downloadPdf()` の WritableStream close 重複呼び出し（未修正）
+>   内容: `src/lib/api.ts` の `downloadPdf()` 内で `response.body.pipeTo(writable)` が完了後に自動的に writable を close するが、`finally` ブロックで再度 `writable.close()` を呼んでおり、`TypeError: WritableStream is closed` になる可能性がある
+>   経緯: FE002001 の UAT 中に File System Access API を使用した PDF ダウンロード動作確認時に発見
+>   対応方針: `pipeTo` に `{ preventClose: true }` を指定し、`finally` ブロックの `writable.close()` のみで close するよう調整する
+>
+> #### バグ 2: backend SSE が `[DONE]` センチネルを送信せず `onerror` で「進捗接続エラー」となる（FE002001 実施中に修正済み）
+>   内容: backend の SSE ストリームが完了時に `[DONE]` センチネルを送信せず、ブラウザ側で切断を異常として検知し `onerror` イベントが発火していた
+>   経緯: FE002001 実施中（2026-09-08）に進捗表示の結合テスト時に発見。backend の `jobs.py` で job 完了・失敗時に `yield "data: [DONE]\n\n"` を追加し、frontend の `subscribeJobProgress` に `doneReceived` フラグを追加して `[DONE]` 受信後の `onerror` を抑制した
+>
+> #### バグ 3: `useOcrJob.ts` で「OCR 処理を開始しました」ログの重複出力（FE002001 実施中に修正済み）
+>   内容: `src/hooks/useOcrJob.ts` の `handleUploaded` 内で「OCR 処理を開始しました」ログが複数回出力されていた
+>   経緯: FE002001 実施中（2026-09-08）にコードレビュー時に発見し、重複していたログ出力を削除した
+>
+> #### テスト更新方針
 > - `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが、バグ 1 修正後の close 後の状態を正しく検証できるよう更新する
 >
 > 【実施結果】
