@@ -52,3 +52,20 @@
 - Linter 実行結果: 37 ファイル全てで ALL PASS を確認
 - 変更ファイル: `.clinerules`, `scripts/lint-task-md.py`, `workflow-runner/SKILL.md`, `docs/PJ-TASKS.md`
 - `--no-ff` で `main` にマージ完了
+
+---
+
+## 2026-09-09: `PJ001016` — `PJ001015` UAT バグ対応（完了日付・実施結果・テーブル構文の修正）
+
+- `PJ001015` UAT 実施中に発見されたデータ不備（【実施結果】空欄）に対する修正タスク
+- `PJ001014` と `PJ001015` の【実施結果】空欄と完了日付を補完
+  - `docs/PJ-TASKS.md` に PJ001014 の【実施結果】（Branch Health Check Rules 関連 4 件）を追記
+  - `docs/PJ-TASKS.md` に PJ001015 の【実施結果】（Task Management Integrity Rules 関連 4 件）を追記
+- `docs/PJ-TASKS.md` に `PJ001016` を起票し、完了日付を記入
+  - 【計画】に PJ001015 / PJ001014 の修正内容を明記
+  - 【実施結果】に UAT 不合格解消の記録を追記
+- Markdown pipe-table 構文の修正
+  - `docs/PJ-TASKS.md` 内の PJ001016 セクションで pipe 数が 1 つ多くなっていた不整合を修正（NF=8 → NF=7）
+  - Linter 実行結果: 37 ファイル全てで ALL PASS を確認
+- 変更ファイル: `docs/PJ-TASKS.md`, `docs/PJ-WORK-LOG.md`
+- `--no-ff` で `main` にマージ完了
