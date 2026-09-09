@@ -81,6 +81,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 > - 2026-08-11: Puppeteer による自動確認で、`http://localhost:3000` のトップページにタイトル・サブタイトル・ZIP ファイル選択 input・「アップロードして OCR 実行」ボタンが表示されることを確認した
 > - 2026-08-11: `GET /api/jobs/{job_id}/pdf` の API 応答がブラウザから直接開けることを確認（Puppeteer の PDF 直接表示はブラウザ制限で `net::ERR_ABORTED` となるが、API 自体は正常動作）
 > - 2026-08-11: frontend から backend API を呼び出す際の CORS 設定が今後必要になる可能性があることを `frontend/docs/FE-WORK-LOG.md` / `backend/docs/BE-CAVEATS.md` に記録
+>
 
 <a id="fe001002"></a>
 ### FE001002 ZIP アップロード UI の実装
@@ -100,6 +101,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 > - 2026-09-05 追記：Vitest + @testing-library/react + jsdom のテスト基盤を導入する
 > - 2026-09-05 追記：`api.test.ts` / `UploadForm.test.tsx` / `ImageList.test.tsx` の単体テストを実装する
 > - 2026-09-05 追記：MSW（Mock Service Worker）を使用した API 結合テストを実装する
+>
 > 【実施結果】
 > - 2026-09-07: `frontend/src/types/index.ts` を新規作成し、Job / UploadResponse / ImageFile / ProgressEvent / OcrResult 等の共通型定義を整備した
 > - 2026-09-07: `frontend/src/lib/api.ts` をリファクタリングし、各 API エンドポイント呼び出しを型付け・エラーハンドリング強化した。MSW ハンドラも同ファイル内に集約した
@@ -127,6 +129,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 > - 2026-09-07: 改修結果: `npm run build` 成功、`npm run test` で 37 tests / 5 test files 全件 PASS（File System Access API パスの HTTP エラーテストを追加）
 > - 2026-09-07: 残件: 実ブラウザ（Chrome / Edge）での保存ダイアログ表示は手動 UAT にて検証する必要がある
 > - 2026-09-08: ユーザー検収テスト（UAT）を実施し、保存ダイアログ表示・PDF 保存・キャンセル動作ともに問題なしと判定。Phase 4 最終報告・Gate 3 承認を経て FE001002 を完了
+>
 
 ---
 
@@ -154,6 +157,7 @@ OCR 処理の進捗をリアルタイムで確認する
 > - 2026-09-05 追記：`ProgressPanel` コンポーネントを作成し、進捗受信と表示を責務分離する
 > - 2026-09-05 追記：`ProgressPanel.test.tsx` の単体テストを実装する
 > - 2026-09-05 追記：MSW を使用した進捗通知フローの結合テストを実装する
+>
 > 【実施結果】
 > - 2026-09-08: `frontend/src/components/progress/ProgressPanel.tsx` を新規作成し、進捗表示機能を `page.tsx` から分離した
 > - 2026-09-08: `frontend/src/components/progress/index.ts` を新規作成し、ProgressPanel を export した
@@ -173,6 +177,7 @@ OCR 処理の進捗をリアルタイムで確認する
 > - 2026-09-08: `npm run build` 成功、`npm run test -- --run` で 7 files / 46 tests 全件 PASS（追加テスト含む）
 > - 2026-09-08: `feature/FE002001-extract-progress-panel` ブランチを `main` へ `--no-ff` マージ完了。feature ブランチを削除
 > - 2026-09-09: 【訂正】完了条件未充足のため【タスク完了日付】を削除し未完了状態に戻す（AI が誤って完了日付を記入したため）
+>
 
 <a id="fe002002"></a>
 ### FE002002 FE002001 UATバグ対応
@@ -180,6 +185,7 @@ OCR 処理の進捗をリアルタイムで確認する
 <div align="right"><a href="#fe002">タスク一覧へ↩︎</a></div>
 
 > 本タスクは FE002001（進捗表示 UI の実装）の UAT 中に発見された不具合を統合対応するものです。複数の不具合が発見されましたが、SY007010（UAT 派生バグ対応タスク管理ルール）に従い、同じ元タスク（FE002001）由来のため 1 つのタスクに集約します。
+>
 > 【計画】
 > **バグ 1: `downloadPdf()` の WritableStream close 重複呼び出し（未修正）**
 > 内容: `src/lib/api.ts` の `downloadPdf()` 内で `response.body.pipeTo(writable)` が完了後に自動的に writable を close するが、`finally` ブロックで再度 `writable.close()` を呼んでおり、`TypeError: WritableStream is closed` になる可能性がある
@@ -193,6 +199,7 @@ OCR 処理の進捗をリアルタイムで確認する
 > 経緯: FE002001 実施中（2026-09-08）にコードレビュー時に発見し、重複していたログ出力を削除した
 > **テスト更新方針**
 > - `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが、バグ 1 修正後の close 後の状態を正しく検証できるよう更新する
+>
 > 【実施結果】
 > - 2026-09-08: `src/lib/api.ts` の `streamToWritable` に `pipeTo(writable, { preventClose: true })` を適用し、バグ 1 を修正。`npm run build` 成功、テスト 7 files / 47 tests 全件 PASS
 > - 2026-09-09: 【訂正】完了条件未充足のため【タスク完了日付】を削除し未完了状態に戻す（AI が誤って完了日付を記入したため）
@@ -212,6 +219,7 @@ OCR 処理の進捗をリアルタイムで確認する
 >   対応: `backend/tests/test_ocr.py` のアサーションを修正（`current_page==3` を実際の画像枚数に合わせて `1` に変更）
 >   検証: frontend `npm run test -- --run` で 7 files / 47 tests 全件 PASS
 >   検証: backend pytest で 7 tests 全件 PASS
+>
 
 ---
 
@@ -238,6 +246,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - 2026-09-05 追記：`DownloadButton` / `ResultPanel` コンポーネントを作成し、PDF ダウンロード処理を責務分離する
 > - 2026-09-05 追記：`DownloadButton.test.tsx` / `ResultPanel.test.tsx` の単体テストを実装する
 > - 2026-09-05 追記：MSW を使用した PDF ダウンロードフローの結合テストを実装する
+>
 > 【実施結果】
 > - 2026-09-09: UAT 実施中に「進捗が 1/3 のまま」「OCR 処理を開始しました」の重複メッセージ問題が発生
 >   根本原因: `docker-compose.yml` の ocr-worker サービスに volume マウントがなく、ホスト側の `enable_progress=False` 対応コードがコンテナに反映されていなかった
@@ -248,6 +257,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - 2026-09-09: `src/components/progress/ProgressPanel.tsx` に polling モード時の「プロキシ環境を検出しました…」メッセージ表示を追加
 > - 2026-09-09: `pollJobProgress` に `PollJobProgressOptions` インターフェースを追加し、`interval` を外部から注入可能に変更。単体テストで `interval: 0` を指定することで、Vitest fake timers 下での不安定問題を解消
 > - 2026-09-09: `src/lib/__tests__/api.test.ts` の「定期的に進捗を取得」テストを real timers + callback-based waiting + 毎回新規 Response を返す `mockImplementation` に書き換え。テスト 7 files / 58 tests 全件 PASS、`npm run build` 成功
+>
 
 ---
 
