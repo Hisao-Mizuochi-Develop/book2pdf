@@ -59,7 +59,19 @@ metadata:
    - 既存の `git branch -a` 一覧を確認し、同名・同タスク番号の未マージ feature ブランチが存在しないことを検証する
    - 既存の `git log --oneline` を確認し、同じタスク番号で既に完了（タスク管理表に完了日付あり）していることを検証する
    - 重複が疑われる場合は、ユーザーに確認のうえ既存ブランチを再利用または整理する
-7. **Gate 1**: ユーザーに「タスクの理解」と「進め方の方向性」を提示し、承認を取得する
+7. **feature ブランチの健全性を確認する（詳細は `branch-manager` スキルを参照）**
+   - `.clinerules` の **Branch Health Check Rules** に従い、以下を実行する：
+     - `git branch --show-current`
+     - `git status --short`
+     - `git fetch origin`
+     - `git checkout main && git pull`
+     - `git checkout feature/<タスクNo>-<タスクのタイトル>`
+     - `git log --oneline HEAD..main`
+     - `git diff --stat HEAD main`
+   - `main` から遅れている場合は、ユーザーに報告のうえ `git merge main` を実施する
+   - マージ後に再度 `git log --oneline HEAD..main` を実行し、遅れが解消したことを確認する
+   - 未コミット変更がある場合は、先にコミットまたは stash する
+8. **Gate 1**: ユーザーに「タスクの理解」と「進め方の方向性」を提示し、承認を取得する
    - Plan モード・Act モードのいずれの場合も、Gate 1 をスキップしない
    - タスク完了後に別のタスクへ移行する場合は、新規タスクについて Phase 1 から Gate 1 を取得する
    - 下記の「タスク着手時確認テンプレート」を用いて、各 Phase の概要と本タスクでの想定される流れを提示する
@@ -138,6 +150,7 @@ metadata:
    - **ブランチ運用**: ブランチ作成・マージ・削除（ユーザーが手動で実施）・追加実装の詳細は `branch-manager` スキルを参照する。原則として 1 タスク 1 ブランチを厳守する
    - コミット: `git add -A && git commit -m "[<タスクNo>] <内容>"`
    - **マージ前**: `branch-manager` スキルの「マージ前最終承認チェックリスト（絶対遵守）」でブロック条件を確認する
+   - マージ前に `git log --oneline main..feature/<タスクNo>-<タスクのタイトル>` を実行し、feature ブランチが `main` の最新を含んでいることを確認する
    - マージ: `git checkout main && git pull && git merge --no-ff feature/<タスクNo>-<タスクのタイトル>`
    - リモート同期: 必要に応じて `git push origin main` または該当ブランチを push する
 7. ユーザーにタスク完了を報告する

@@ -35,6 +35,27 @@ feature/<タスクNo>-<タスクのタイトル>
    - `git checkout main && git pull && git checkout -b feature/<タスクNo>-<タスクのタイトル>`
    - 作成前に `git branch -a` で同名の未マージブランチがないことを確認する
 
+### 作業開始前のブランチ健全性確認
+
+feature ブランチで作業を開始・再開する前、必ず以下を実施する：
+
+1. **main との差分を確認する**
+   - `git fetch origin`
+   - `git log --oneline HEAD..main`
+   - `git diff --stat HEAD main`
+
+2. **main から遅れている場合は、作業前に main をマージする**
+   - `git checkout main && git pull`
+   - `git checkout feature/<タスクNo>-<タスクのタイトル>`
+   - `git merge main`
+   - コンフリクト発生時は解消してから作業を開始する
+   - マージ後に再度 `git log --oneline HEAD..main` を実行し、遅れが解消したことを確認する
+
+3. **作業再開時の確認項目**
+   - `git branch --show-current` で対象ブランチであることを確認
+   - `git status` で working tree が clean であることを確認
+   - `git log --oneline -5` で期待する履歴であることを確認
+
 2. **作業・コミット**
    - すべての作業は feature ブランチ上で行う。`main` ブランチへの直接コミットは禁止。
    - コミット: `git add -A && git commit -m "[<タスクNo>] <内容>"`
