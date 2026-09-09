@@ -262,4 +262,14 @@ localapp 単体 OCR→PDF 技術調査・選定
 |  | 2026-09-10: LA002012→LA002011、LA002013→LA002012 のリナンバリングを `LA-TASKS.md` / `LA-WORK-LOG.md` / `LA-CAVEATS.md` に反映した |  |  |  |
 |  | 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した |  |  |  |
 |  | 2026-09-10: `npm run build`（frontend）および `cargo check`（Rust）はエラー 0 件で PASS した |  |  |  |
+| OT010007 | `OT010006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正 | 2026-09-10 | 2026-09-10 | 不具合修正 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `localapp/docs/LA-TASKS.md` の「ユースケース一覧へ↩︎」「タスク一覧へ↩︎」戻りリンクを Markdown `[text](#anchor)` 構文から生の HTML `<a href="#anchor">text</a>` に変更する |  |  |  |
+|  | HTML ブロック（`<div align="right">`）内では Markdown リンクがレンダラによって解析されないため、生の HTML アンカーに置き換える |  |  |  |
+|  | `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-10: LA-TASKS.md 内の全 55 箇所の戻りリンクを HTML `<a>` アンカーに一括置換した |  |  |  |
+|  | 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した |  |  |  |
+|  | 2026-09-10: feature ブランチを `main` へ `--no-ff` マージし、リモートへ push 完了 |  |  |  |
 
