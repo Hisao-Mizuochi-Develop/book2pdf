@@ -177,55 +177,55 @@ OCR 読み取り精度向上
 
 > 【計画】
 > - 目的：OCR 精度向上施策を検討する前に、現状の ndlocr_cli（CPU 実行）の認識精度を定量的・定性的に把握する
-> - 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*`、作業ディレクトリ内テスト出力を削除する
-> - 2. テスト用 ZIP の確認：既存の `benchmark-ocr-OW003002.zip` を使用し、含まれる画像を `unzip -l` で確認する
-> - 3. Docker Compose 起動：`backend` / `ocr-worker` コンテナを最新イメージで起動する
-> - 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する
-> - 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする
-> - 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する
-> - 7. ドキュメント記録：測定結果を `ocr-worker/docs/OW-WORK-LOG.md` / `backend/docs/BE-WORK-LOG.md` に記載し、本タスクの【実施結果】欄に追記する
-> - ### 詳細実施手順
-> - #### 1. 環境クリーンアップ
-> - ```bash
-> - cd /Users/hisao/Documents/work4/sakura/book2pdf
-> - docker compose exec backend rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*
-> - docker compose exec ocr-worker rm -rf /data/ocr_output/* /data/extracted/*
-> - rm -rf /tmp/book2pdf-*
-> - ```
-> - #### 2. テスト用 ZIP の確認
-> - ```bash
-> - unzip -l benchmark-ocr-OW003002.zip
-> - ```
-> - #### 3. Docker Compose 起動
-> - ```bash
-> - docker compose up -d --build
-> - ```
-> - #### 4. OCR 実行
-> - ```bash
-> - JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ \
-> - curl -s -X POST -F "file=@benchmark-ocr-OW003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload \
-> - curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr \
-> - curl -s http://localhost:8000/api/jobs/$JOB_ID \
-> - ```
-> - #### 5. 成果物取得
-> - ```bash
-> - # ジョブ情報から output_dir と pdf_path を特定
-> - curl -s http://localhost:8000/api/jobs/$JOB_ID \
-> - # 例：ocr-worker 出力をホストにコピー
-> - docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-OW003002/
-> - docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-OW003002/
-> - ```
-> - #### 6. 精度解析
-> - - 目視確認：元画像と OCR 結果テキスト（`_main.txt`, `_ruby.txt`, XML）を照合し、英数字・記号・漢字・異体字の誤認識を一覧化
-> - - 定量的評価：正解テキストがあれば CER を算出。ない場合は認識文字数に対する誤認識箇所数でミス率を算出
-> - ```bash
-> - # 例：CER 計算スクリプト
-> - python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-OW003002.txt --ocr ./ocr-results-OW003002/<job_dir>/txt/<page>_main.txt
-> - ```
-> - #### 7. ドキュメント記録
-> - - `ocr-worker/docs/OW-WORK-LOG.md` に測定結果を記載
-> - - `ocr-worker/docs/OW-TASKS.md` の OW003002【実施結果】欄に追記
-> - - 必要に応じて `backend/docs/BE-WORK-LOG.md` にも記載
+> 1. 環境クリーンアップ：コンテナ内 `/data/extracted/*`、`/data/ocr_output/*`、`/data/pdfs/*` と、ホスト側 `/tmp/book2pdf-*`、作業ディレクトリ内テスト出力を削除する
+> 2. テスト用 ZIP の確認：既存の `benchmark-ocr-OW003002.zip` を使用し、含まれる画像を `unzip -l` で確認する
+> 3. Docker Compose 起動：`backend` / `ocr-worker` コンテナを最新イメージで起動する
+> 4. OCR 実行：backend API から ZIP をアップロードし、backend → ocr-worker 経由で OCR を実行する。ジョブが `completed` になるまで待機する
+> 5. 成果物取得：ocr-worker 出力の XML ファイル、テキストファイル、backend 生成 PDF をホスト側にコピーする
+> 6. 精度解析：元画像と OCR 結果テキストを比較し、英数字・記号・漢字・異体字などの認識ミスを一覧化する。定量的には CER（Character Error Rate）を算出し、目視確認も併用する
+> 7. ドキュメント記録：測定結果を `ocr-worker/docs/OW-WORK-LOG.md` / `backend/docs/BE-WORK-LOG.md` に記載し、本タスクの【実施結果】欄に追記する
+> ### 詳細実施手順
+> #### 1. 環境クリーンアップ
+> ```bash
+> cd /Users/hisao/Documents/work4/sakura/book2pdf
+> docker compose exec backend rm -rf /data/extracted/* /data/ocr_output/* /data/pdfs/*
+> docker compose exec ocr-worker rm -rf /data/ocr_output/* /data/extracted/*
+> rm -rf /tmp/book2pdf-*
+> ```
+> #### 2. テスト用 ZIP の確認
+> ```bash
+> unzip -l benchmark-ocr-OW003002.zip
+> ```
+> #### 3. Docker Compose 起動
+> ```bash
+> docker compose up -d --build
+> ```
+> #### 4. OCR 実行
+> ```bash
+> JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ \
+> curl -s -X POST -F "file=@benchmark-ocr-OW003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload \
+> curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr \
+> curl -s http://localhost:8000/api/jobs/$JOB_ID \
+> ```
+> #### 5. 成果物取得
+> ```bash
+> # ジョブ情報から output_dir と pdf_path を特定
+> curl -s http://localhost:8000/api/jobs/$JOB_ID \
+> # 例：ocr-worker 出力をホストにコピー
+> docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-OW003002/
+> docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-OW003002/
+> ```
+> #### 6. 精度解析
+>   目視確認：元画像と OCR 結果テキスト（`_main.txt`, `_ruby.txt`, XML）を照合し、英数字・記号・漢字・異体字の誤認識を一覧化
+>   定量的評価：正解テキストがあれば CER を算出。ない場合は認識文字数に対する誤認識箇所数でミス率を算出
+> ```bash
+> # 例：CER 計算スクリプト
+> python scripts/compare_ocr_accuracy.py --ground-truth ./ground-truth-OW003002.txt --ocr ./ocr-results-OW003002/<job_dir>/txt/<page>_main.txt
+> ```
+> #### 7. ドキュメント記録
+>   `ocr-worker/docs/OW-WORK-LOG.md` に測定結果を記載
+>   `ocr-worker/docs/OW-TASKS.md` の OW003002【実施結果】欄に追記
+>   必要に応じて `backend/docs/BE-WORK-LOG.md` にも記載
 >
 > 【実施結果】
 > - 2026-08-13: `benchmark-ocr-OW003002.zip`（002.png, 003.png, 004.png）を使用して再測定を実施
@@ -250,52 +250,52 @@ OCR 読み取り精度向上
 > - 前処理は Python スクリプト（Pillow / OpenCV）で実装し、backend へ ZIP アップロードする前に適用する
 > - 評価指標：「〓」出現数、明らかな誤認識箇所数、推定 CER、処理時間
 > - 各パターンの具体的なパラメータ値：
-> - - sharpen_light: PIL.ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)
-> - - upscale_2x: PIL.Image.Resampling.LANCZOS で 2 倍アップスケール
-> - - contrast: ImageEnhance.Contrast で enhance(1.5)
-> - - gamma: γ=0.8 のガンマ補正（arr ^ 0.8、clip 後 uint8 変換）
+>   sharpen_light: PIL.ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)
+>   upscale_2x: PIL.Image.Resampling.LANCZOS で 2 倍アップスケール
+>   contrast: ImageEnhance.Contrast で enhance(1.5)
+>   gamma: γ=0.8 のガンマ補正（arr ^ 0.8、clip 後 uint8 変換）
 > - 実施順序と比較パターン：
-> - 1. baseline（前処理なし） ※OW003002 と同一条件のため、本タスクでは再実行せず `ocr-results-OW003002/` の結果を比較基準として使用する
-> - 2. sharpen_light（軽度シャープニング）
-> - 3. sharpen_light_upscale_2x（2 倍アップスケーリング＋軽度シャープニング）
-> - 4. contrast_gamma（コントラスト強調＋ガンマ補正）
-> - 5. contrast_gamma_sharpen_light（コントラスト強調＋ガンマ補正＋軽度シャープニング）
+> 1. baseline（前処理なし） ※OW003002 と同一条件のため、本タスクでは再実行せず `ocr-results-OW003002/` の結果を比較基準として使用する
+> 2. sharpen_light（軽度シャープニング）
+> 3. sharpen_light_upscale_2x（2 倍アップスケーリング＋輕度シャープニング）
+> 4. contrast_gamma（コントラスト強調＋ガンマ補正）
+> 5. contrast_gamma_sharpen_light（コントラスト強調＋ガンマ補正＋輕度シャープニング）
 > - なお、denoise（ノイズ除去）は機械的スキャンでありノイズがない前提で、今回は実施しない
 > - 各パターンで OCR を実行し、結果を `ocr-results-OW003003/` に保存する（baseline は OW003002 の結果を流用）
 > - 各ステップごとに結果を報告し、次のパターンを実施するかを確認する
 > - 最も効果的な前処理パターンを選定し、`ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-TASKS.md` に記録する
-> - ### 詳細実施手順
-> - #### 1. 前処理スクリプトの作成
+> ### 詳細実施手順
+> #### 1. 前処理スクリプトの作成
 > - `scripts/preprocess_image.py` を新規作成し、ZIP 内画像に対して以下の前処理を適用できるようにする
-> - - baseline
-> - - sharpen_light
-> - - sharpen_light_upscale_2x
-> - - contrast_gamma
-> - - contrast_gamma_sharpen_light
-> - - denoise（今回は実施しないがスクリプトとしては用意しておく）
-> - #### 2. 前処理パターンの定義
-> - - baseline：前処理なし（比較基準）
-> - - sharpen_light：軽度シャープニング。輪郭を鮮明化し、英数字・漢字部品類似誤認識を抑制する
-> - - sharpen_light_upscale_2x：2 倍アップスケーリング＋軽度シャープニング。文字サイズを大きくしつつ輪郭を補強する
-> - - contrast_gamma：コントラスト強調＋ガンマ補正。薄字・記号の認識率向上を狙う
-> - - contrast_gamma_sharpen_light：コントラスト強調＋ガンマ補正＋軽度シャープニング。コントラストと輪郭の両方を改善する
-> - - denoise：ノイズ除去。機械的スキャンでありノイズがない前提で、今回は実施しない
-> - #### 3. OCR 実行
-> - - 各パターンごとに ZIP を生成し、backend API から OCR を実行する
-> - - ジョブが `completed` になるまで待機する
-> - - 出力を `ocr-results-OW003003/<pattern>/` に保存する
-> - #### 4. 精度比較
-> - - 各パターンの OCR 結果と baseline を比較する
-> - - 主な誤認識箇所（RAG→RAC、GPT-4→〓PT-4、LLM→lm、商→育 など）の改善状況を確認する
-> - - 「〓」出現数、明らかな誤認識箇所数、推定 CER を集計する
-> - #### 5. ドキュメント記録
-> - - `ocr-worker/docs/OW-WORK-LOG.md` に作業ログを追記する
-> - - `ocr-worker/docs/OW-TASKS.md` の OW003003【実施結果】欄に結果を追記する
-> - - 精度比較レポートを `ocr-results-OW003003/preprocess-comparison-report-OW003003.md` に作成する
+>   baseline
+>   sharpen_light
+>   sharpen_light_upscale_2x
+>   contrast_gamma
+>   contrast_gamma_sharpen_light
+>   denoise（今回は実施しないがスクリプトとしては用意しておく）
+> #### 2. 前処理パターンの定義
+>   baseline：前処理なし（比較基準）
+>   sharpen_light：軽度シャープニング。輪郭を鮮明化し、英数字・漢字部品類似誤認識を抑制する
+>   sharpen_light_upscale_2x：2 倍アップスケーリング＋輕度シャープニング。文字サイズを大きくしつつ輪郭を補強する
+>   contrast_gamma：コントラスト強調＋ガンマ補正。薄字・記号の認識率向上を狙う
+>   contrast_gamma_sharpen_light：コントラスト強調＋ガンマ補正＋輕度シャープニング。コントラストと輪郭の両方を改善する
+>   denoise：ノイズ除去。機械的スキャンでありノイズがない前提で、今回は実施しない
+> #### 3. OCR 実行
+>   各パターンごとに ZIP を生成し、backend API から OCR を実行する
+>   ジョブが `completed` になるまで待機する
+>   出力を `ocr-results-OW003003/<pattern>/` に保存する
+> #### 4. 精度比較
+>   各パターンの OCR 結果と baseline を比較する
+>   主な誤認識箇所（RAG→RAC、GPT-4→〓PT-4、LLM→lm、商→育 など）の改善状況を確認する
+>   「〓」出現数、明らかな誤認識箇所数、推定 CER を集計する
+> #### 5. ドキュメント記録
+>   `ocr-worker/docs/OW-WORK-LOG.md` に作業ログを追記する
+>   `ocr-worker/docs/OW-TASKS.md` の OW003003【実施結果】欄に結果を追記する
+>   精度比較レポートを `ocr-results-OW003003/preprocess-comparison-report-OW003003.md` に作成する
 >
 > 【実施結果】
 > - 2026-08-13: 5 パターンの入力画像前処理を適用し、OCR 精度を比較した（baseline は OW003002 の結果を流用）
-> - 2026-08-13: 最も効果的だったのは `sharpen_light_upscale_2x`（2 倍アップスケーリング＋軽度シャープニング）で、「〓」出現数が baseline 5 個から 3 個へ減少し、003.png・004.png でほぼ完全な認識を実現した
+> - 2026-08-13: 最も効果的だったのは `sharpen_light_upscale_2x`（2 倍アップスケーリング＋輕度シャープニング）で、「〓」出現数が baseline 5 個から 3 個へ減少し、003.png・004.png でほぼ完全な認識を実現した
 > - 2026-08-13: `sharpen_light` のみでは効果が限定的で、`contrast_gamma` は逆に記号・英数字の誤認識を増加させる傾向があった
 > - 2026-08-13: 精度比較レポート [ocr-results-OW003003/preprocess-comparison-report-OW003003.md](ocr-results-OW003003/preprocess-comparison-report-OW003003.md) を作成した
 >
@@ -311,34 +311,34 @@ OCR 読み取り精度向上
 > - 前提：評価基準は OW003003 と同一（「〓」出現数、明らかな誤認識箇所数）を用い、比較可能とする
 > - 前提：コンテナ内の config.yml（/opt/ocr-worker/config.yml）を確認済み。調整可能な閾値は `layout_extraction.score_thr: 0.3` のみ。`line_ocr.score_thr` は存在しない
 > - 具体的な変更パラメータ値：
-> - - pattern A: `layout_extraction.score_thr: 0.3 → 0.2`
-> - - pattern B: `layout_extraction.score_thr: 0.3 → 0.1`
-> - - pattern C: `layout_extraction.score_thr: 0.3 → 0.2` + `line_ocr.additional_elements` の柱/ノンブル/ルビ: True → False
+>   pattern A: `layout_extraction.score_thr: 0.3 → 0.2`
+>   pattern B: `layout_extraction.score_thr: 0.3 → 0.1`
+>   pattern C: `layout_extraction.score_thr: 0.3 → 0.2` + `line_ocr.additional_elements` の柱/ノンブル/ルビ: True → False
 > - `layout_extraction.score_thr`、`line_ocr.additional_elements`（柱/ノンブル/ルビの有無）を調整する
 > - パラメータパターンごとに OCR 精度を比較する
 > - 改善効果と処理時間への影響を評価する
 > - 実施順序と比較パターン：
-> - 1. baseline（config.yml 変更なし）※OW003003 の sharpen_light_upscale_2x 結果を流用する
-> - 2. pattern A: layout_extraction.score_thr 0.2 ― 小さな文字領域の検出漏れを減らす
-> - 3. pattern B: layout_extraction.score_thr 0.1 ― さらに検出感度を上げる
-> - 4. pattern C: layout_extraction.score_thr 0.2 + line_ocr.additional_elements の柱/ノンブル/ルビを False ― ノイズ認識を抑制しつつ検出感度を上げる
-> - ### 詳細実施手順
-> - #### 1. コンテナ内 config.yml の確認
+> 1. baseline（config.yml 変更なし）※OW003003 の sharpen_light_upscale_2x 結果を流用する
+> 2. pattern A: layout_extraction.score_thr 0.2 ― 小さな文字領域の検出漏れを減らす
+> 3. pattern B: layout_extraction.score_thr 0.1 ― さらに検出感度を上げる
+> 4. pattern C: layout_extraction.score_thr 0.2 + line_ocr.additional_elements の柱/ノンブル/ルビを False ― ノイズ認識を抑制しつつ検出感度を上げる
+> ### 詳細実施手順
+> #### 1. コンテナ内 config.yml の確認
 > - `docker compose exec ocr-worker cat /opt/ocr-worker/config.yml` で内容を確認する（済）
-> - #### 2. パラメータ調整用スクリプトの作成
+> #### 2. パラメータ調整用スクリプトの作成
 > - `scripts/adjust_ocr_config.py` を新規作成し、config.yml の `layout_extraction.score_thr` と `line_ocr.additional_elements` を上書きする機能を実装する
-> - #### 3. 各パターンでの OCR 実行
+> #### 3. 各パターンでの OCR 実行
 > - 各パターンごとに調整後の config.yml を ocr-worker に配置する
 > - sharpen_light_upscale_2x 適用済み ZIP（または同条件で新規生成）を使用し、backend API 経由で OCR を実行する
 > - 結果を `ocr-results-OW003004/<pattern>/` に保存する
-> - #### 4. 精度比較
+> #### 4. 精度比較
 > - 各パターンの OCR 結果と baseline を比較する
 > - 「〓」出現数、明らかな誤認識箇所数を集計する
-> - #### 5. ドキュメント記録
+> #### 5. ドキュメント記録
 > - `ocr-worker/docs/OW-WORK-LOG.md` に作業ログを追記する
 > - `ocr-worker/docs/OW-TASKS.md` の OW003004【実施結果】欄に結果を追記する
 > - 精度比較レポートを `ocr-results-OW003004/config-comparison-report-OW003004.md` に作成する
-> - ### 注意事項・リスク
+> ### 注意事項・リスク
 > - `score_thr` を下げすぎると、ノイズや見出し線まで文字として認識する可能性がある
 > - config.yml のパラメータ名・構造は ndlocr_cli のバージョンによって異なる可能性がある
 > - パラメータ変更の効果は前処理と比べて限定的である可能性がある
@@ -360,31 +360,31 @@ OCR 読み取り精度向上
 > 【計画】
 > - ※2026-08-14: 再検証計画を追加。初回の score_thr 検証では ocr-worker コンテナ内での直接実行を行っていたため、backend 生成 PDF が取得できず、.clinerules 第10章の backend API 経由フルフロー要件を満たしていなかった
 > - 再検証手順：
-> - 1. `docker compose up -d` で backend / ocr-worker / frontend を起動する（frontend は API 経由フルフローには必須ではないが、起動しておく）
-> - 2. ocr-worker コンテナ内の `/opt/ocr-worker/config.yml` の `layout_extraction.score_thr` を pattern-A: 0.2 / pattern-B: 0.1 / pattern-C: 0.5 に変更する
-> - 3. `benchmark-ocr-OW003002.zip` を backend API 経由でアップロード・OCR 実行し、ジョブが `completed` になるまでポーリングする
-> - 4. 生成された PDF を `docker compose cp backend:/data/pdfs/<job_id>.pdf ./ocr-results-OW003005/<pattern>/pdfs/` で取得する
-> - 5. ocr-worker 出力（XML / txt）もあわせて取得し、`./ocr-results-OW003005/<pattern>/` に保存する
-> - 6. 3 パターン分の PDF を目視確認し、レイアウト・文字認識・欠落行の違いを比較する
-> - 7. `ocr-results-OW003005/config-comparison-report-OW003005.md` を作成する
-> - 8. OW-TASKS.md の【実施結果】欩末にレポートリンクを追加し、タスク完了日付を記載する
+> 1. `docker compose up -d` で backend / ocr-worker / frontend を起動する（frontend は API 経由フルフローには必須ではないが、起動しておく）
+> 2. ocr-worker コンテナ内の `/opt/ocr-worker/config.yml` の `layout_extraction.score_thr` を pattern-A: 0.2 / pattern-B: 0.1 / pattern-C: 0.5 に変更する
+> 3. `benchmark-ocr-OW003002.zip` を backend API 経由でアップロード・OCR 実行し、ジョブが `completed` になるまでポーリングする
+> 4. 生成された PDF を `docker compose cp backend:/data/pdfs/<job_id>.pdf ./ocr-results-OW003005/<pattern>/pdfs/` で取得する
+> 5. ocr-worker 出力（XML / txt）もあわせて取得し、`./ocr-results-OW003005/<pattern>/` に保存する
+> 6. 3 パターン分の PDF を目視確認し、レイアウト・文字認識・欠落行の違いを比較する
+> 7. `ocr-results-OW003005/config-comparison-report-OW003005.md` を作成する
+> 8. OW-TASKS.md の【実施結果】欩末にレポートリンクを追加し、タスク完了日付を記載する
 > - ※前提：OW003003 で sharpen_light_upscale_2x が最も効果的、OW003004 で config.yml 調整に効果なし（ハードコーディングが原因と判明）
-> - 1. config.yml パラメータ無視の原因調査と修正：
-> - - `ocr-worker/ndlocr_cli_patches/inference.py` を開き、config.yml の `layout_extraction.score_thr` がどこで読み込まれるか確認
-> - - パッチ内または ndlocr_cli ソースで、ハードコードされた閾値（例: 0.3）を検索
-> - - config.yml の値を実際に参照するようにコードを修正し、パッチを更新
-> - - コンテナをリビルドし、同一画像で再度OCR実行、出力に差分が出ることを確認
-> - - OW003004 の検証パターン（score_thr 0.2 / 0.1 / 0.2+additional_elements False）を再実施し、修正後の効果を評価
-> - 2. 自動前処理統合の実装：
-> - - `ocr-worker/app/main.py` の `/ocr` エンドポイントまたは前処理関数に、sharpen_light_upscale_2x を自動適用する処理を追加
-> - - 前処理の有無を制御するフラグ（デフォルトON）を環境変数 `PREPROCESS_ENABLED` で設定可能にする
-> - - 前処理済み画像の一時保存先を確保し、OCR完了後に cleanup
-> - - `benchmark-ocr-OW003002.zip` で動作確認：前処理ON/OFF の結果を比較し、OW003003 と同等の精度向上を確認
-> - 3. 表紙ページ（002.png）の残存誤認識対策実装：
-> - - 002.png の OCR 結果（`002_main.txt`）を確認し、RAG→RAC、Improving→mproving などの誤認識パターンを列挙
-> - - 追加前処理（例: 4x アップスケール、局所的二値化、コントラスト強調）をスクリプト化し効果を検証
-> - - または、OCR後の辞書ベース補正（表紙に出現しやすい固有名詞のマッピング表）を試作する
-> - - いずれかの手法で誤認識が減少することを確認したら、該当処理を統合する
+> 1. config.yml パラメータ無視の原因調査と修正：
+>   `ocr-worker/ndlocr_cli_patches/inference.py` を開き、config.yml の `layout_extraction.score_thr` がどこで読み込まれるか確認
+>   パッチ内または ndlocr_cli ソースで、ハードコードされた閾値（例: 0.3）を検索
+>   config.yml の値を実際に参照するようにコードを修正し、パッチを更新
+>   コンテナをリビルドし、同一画像で再度OCR実行、出力に差分が出ることを確認
+>   OW003004 の検証パターン（score_thr 0.2 / 0.1 / 0.2+additional_elements False）を再実施し、修正後の効果を評価
+> 2. 自動前処理統合の実装：
+>   `ocr-worker/app/main.py` の `/ocr` エンドポイントまたは前処理関数に、sharpen_light_upscale_2x を自動適用する処理を追加
+>   前処理の有無を制御するフラグ（デフォルトON）を環境変数 `PREPROCESS_ENABLED` で設定可能にする
+>   前処理済み画像の一時保存先を確保し、OCR完了後に cleanup
+>   `benchmark-ocr-OW003002.zip` で動作確認：前処理ON/OFF の結果を比較し、OW003003 と同等の精度向上を確認
+> 3. 表紙ページ（002.png）の残存誤認識対策実装：
+>   002.png の OCR 結果（`002_main.txt`）を確認し、RAG→RAC、Improving→mproving などの誤認識パターンを列挙
+>   追加前処理（例: 4x アップスケール、局所的二値化、コントラスト強調）をスクリプト化し効果を検証
+>   または、OCR後の辞書ベース補正（表紙に出現しやすい固有名詞のマッピング表）を試作する
+>   いずれかの手法で誤認識が減少することを確認したら、該当処理を統合する
 >
 > 【実施結果】
 > - 2026-08-14: config.yml パラメータ無視の原因を特定（ndl_layout submodule 内の `process_textblock.py` / `process.py` に `score_thr: float = 0.3` がハードコードされており、config.yml の `layout_extraction.score_thr` が無視されていた）
@@ -410,28 +410,28 @@ OCR 読み取り精度向上
 > - 前提：OW003003 で `sharpen_light_upscale_2x` が最も効果的であることが確認済みであること
 > - 前提：`benchmark-ocr-OW003002.zip`（002.png, 003.png, 004.png）をテストデータとして使用する
 > - 前提：`ocr-worker/app/main.py` には現状前処理機能が存在しないこと
-> - 1. `ocr-worker/app/main.py` に前処理関数を追加する
-> - - Pillow を使用して 2 倍アップスケール（LANCZOS）を実施する
-> - - `PIL.ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)` で軽度シャープニングを実施する
-> - - 入力画像パスを受け取り、前処理済み画像を一時ディレクトリに保存する関数を実装する
-> - 2. 環境変数 `PREPROCESS_ENABLED`（デフォルト true）で前処理の ON/OFF を制御する
-> - - `PREPROCESS_ENABLED=false` の場合は既存の input_root をそのまま ndlocr_cli に渡す
-> - - `PREPROCESS_ENABLED=true` の場合は `/tmp/ocr_preprocess/<job_id>/img/` に前処理済み画像を出力してから OCR を実行する
-> - 3. 前処理済み画像の一時保存先を確保し、OCR 完了後に cleanup する
-> - - 一時ディレクトリは `tempfile` または `/tmp/ocr_preprocess/<job_id>` を使用する
-> - - OCR 成功・失敗に関わらず cleanup を実施する（try/finally で保証する）
-> - 4. `ocr-worker/Dockerfile` に Pillow のインストールを確認・追加する
-> - - 現状 Pillow が入っていない場合は `pip install --no-cache-dir Pillow` を追加する
-> - 5. `docker compose up -d --build` で ocr-worker コンテナを再構築する
-> - 6. backend API 経由フルフローで動作確認を実施する
-> - - `PREPROCESS_ENABLED=true`（デフォルト）で `benchmark-ocr-OW003002.zip` を OCR 実行する
-> - - `PREPROCESS_ENABLED=false` にして ocr-worker を再起動し、同一 ZIP を OCR 実行する
-> - - 前処理 ON/OFF の「〓」出現数・誤認識箇所数を比較し、OW003003 と同等の効果を確認する
-> - - 生成 PDF を `docker compose cp` で取得し、必要に応じて目視確認する
-> - 7. ドキュメントを更新する
-> - - `ocr-worker/docs/OW-WORK-LOG.md` に【実施予定】・【実施実績】を記載する
-> - - `ocr-worker/docs/OW-CAVEATS.md` に前処理に関する注意事項を追記する
-> - - 必要に応じて `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新する
+> 1. `ocr-worker/app/main.py` に前処理関数を追加する
+>   Pillow を使用して 2 倍アップスケール（LANCZOS）を実施する
+>   `PIL.ImageFilter.UnsharpMask(radius=2, percent=80, threshold=3)` で軽度シャープニングを実施する
+>   入力画像パスを受け取り、前処理済み画像を一時ディレクトリに保存する関数を実装する
+> 2. 環境変数 `PREPROCESS_ENABLED`（デフォルト true）で前処理の ON/OFF を制御する
+>   `PREPROCESS_ENABLED=false` の場合は既存の input_root をそのまま ndlocr_cli に渡す
+>   `PREPROCESS_ENABLED=true` の場合は `/tmp/ocr_preprocess/<job_id>/img/` に前処理済み画像を出力してから OCR を実行する
+> 3. 前処理済み画像の一時保存先を確保し、OCR 完了後に cleanup する
+>   一時ディレクトリは `tempfile` または `/tmp/ocr_preprocess/<job_id>` を使用する
+>   OCR 成功・失敗に関わらず cleanup を実施する（try/finally で保証する）
+> 4. `ocr-worker/Dockerfile` に Pillow のインストールを確認・追加する
+>   現状 Pillow が入っていない場合は `pip install --no-cache-dir Pillow` を追加する
+> 5. `docker compose up -d --build` で ocr-worker コンテナを再構築する
+> 6. backend API 経由フルフローで動作確認を実施する
+>   `PREPROCESS_ENABLED=true`（デフォルト）で `benchmark-ocr-OW003002.zip` を OCR 実行する
+>   `PREPROCESS_ENABLED=false` にして ocr-worker を再起動し、同一 ZIP を OCR 実行する
+>   前処理 ON/OFF の「〓」出現数・誤認識箇所数を比較し、OW003003 と同等の効果を確認する
+>   生成 PDF を `docker compose cp` で取得し、必要に応じて目視確認する
+> 7. ドキュメントを更新する
+>   `ocr-worker/docs/OW-WORK-LOG.md` に【実施予定】・【実施実績】を記載する
+>   `ocr-worker/docs/OW-CAVEATS.md` に前処理に関する注意事項を追記する
+>   必要に応じて `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` を更新する
 >
 > 【実施結果】
 > - 2026-08-14: `ocr-worker/app/main.py` に前処理関数 `_preprocess_image()` / `_preprocess_input_root()` を追加し、2倍アップスケール（LANCZOS）+ 軽度シャープニング（UnsharpMask radius=2, percent=80, threshold=3）を実装した
@@ -454,14 +454,14 @@ OCR 読み取り精度向上
 > - 目的：OW003003 で `sharpen_light_upscale_2x`（2倍アップスケール＋軽度シャープニング）が最も効果的だったが、表紙ページなどで残存誤認識があったため、さらに強力な前処理パターンの効果を定量的に検証する
 > - 対象データ：`sample-png/手を動かしながら学ぶDocker入門_trimmed/001.png` 〜 `010.png`（10枚）
 > - 比較パターン：baseline_2x / 4x_upscale / 4x_upscale_sharpen / local_binarization / local_binarization_sharpen / contrast_strong / contrast_strong_4x（計7パターン）
-> - 1. `scripts/preprocess_image.py` に上記パターンを追加する
-> - 2. 001.png 〜 010.png を ZIP にまとめた `benchmark-ocr-OW003007.zip` を作成する
-> - 3. Docker Compose 環境を起動し、ocr-worker の自動前処理を OFF にする（`PREPROCESS_ENABLED=false`）
-> - 4. 各パターンごとに backend API 経由でフルフロー OCR を実行する（`POST /api/jobs` → `upload` → `ocr`）
-> - 5. `docker compose cp` で各ジョブの PDF および ocr-worker 出力（XML / txt）を `ocr-results-OW003007/<pattern>/` に取得する
-> - 6. 各パターンの「〓」出現数、明らかな誤認識箇所数、目視確認結果を集計する
-> - 7. 精度比較レポート `ocr-results-OW003007/additional-preprocess-report-OW003007.md` を作成する
-> - 8. `ocr-worker/docs/OW-WORK-LOG.md` と `ocr-worker/docs/OW-TASKS.md` の本タスク欄に実施結果を追記する
+> 1. `scripts/preprocess_image.py` に上記パターンを追加する
+> 2. 001.png 〜 010.png を ZIP にまとめた `benchmark-ocr-OW003007.zip` を作成する
+> 3. Docker Compose 環境を起動し、ocr-worker の自動前処理を OFF にする（`PREPROCESS_ENABLED=false`）
+> 4. 各パターンごとに backend API 経由でフルフロー OCR を実行する（`POST /api/jobs` → `upload` → `ocr`）
+> 5. `docker compose cp` で各ジョブの PDF および ocr-worker 出力（XML / txt）を `ocr-results-OW003007/<pattern>/` に取得する
+> 6. 各パターンの「〓」出現数、明らかな誤認識箇所数、目視確認結果を集計する
+> 7. 精度比較レポート `ocr-results-OW003007/additional-preprocess-report-OW003007.md` を作成する
+> 8. `ocr-worker/docs/OW-WORK-LOG.md` と `ocr-worker/docs/OW-TASKS.md` の本タスク欄に実施結果を追記する
 >
 > 【実施結果】
 > - 2026-08-14: `scripts/preprocess_image.py` に 6 パターンの前処理を追加した（4x_upscale / 4x_upscale_sharpen / local_binarization / local_binarization_sharpen / contrast_strong / contrast_strong_4x）
@@ -492,13 +492,13 @@ OCR 読み取り精度向上
 > - 【背景】
 > - OW003007 の検証結果より、表紙・目次・本文などページタイプによって最適な前処理が異なる可能性が見られた。一律の前処理では全ページタイプに最適ではない。
 > - 【検討内容】
-> - - ページ分類ベース：文字サイズ分布・色数・エッジ密度などからページタイプ（表紙/目次/本文）を自動判定し、前処理パラメータを切り替える
-> - - 認識置信度ベース：標準前処理後の CONF 値や「〓」出現率に応じて、再OCR時に異なるパラメータを適用する
-> - - レイアウト認識結果ベース：ndlocr_cli の TEXTBLOCK 数・領域サイズ分布から特殊ページを検出して切り替える
+>   ページ分類ベース：文字サイズ分布・色数・エッジ密度などからページタイプ（表紙/目次/本文）を自動判定し、前処理パラメータを切り替える
+>   認識置信度ベース：標準前処理後の CONF 値や「〓」出現率に応じて、再OCR時に異なるパラメータを適用する
+>   レイアウト認識結果ベース：ndlocr_cli の TEXTBLOCK 数・領域サイズ分布から特殊ページを検出して切り替える
 > - 【懸念事項】
-> - - ページ分類器の追加実装コスト
-> - - 処理パイプラインが2パス化する場合の処理時間増加
-> - - 技術書の表紙は1ページのみのため、一律前処理を選ぶ方がシンプルな可能性
+>   ページ分類器の追加実装コスト
+>   処理パイプラインが2パス化する場合の処理時間増加
+>   技術書の表紙は1ページのみのため、一律前処理を選ぶ方がシンプルな可能性
 > - 【結論】
 > - 現状はコストパフォーマンスが不明確。OCR後処理（辞書補正）やUIでの手動補正を優先し、本対応は将来の検討事項として保留とする。
 > - 2026-09-01: 検討レポート [ocr-worker/test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md](../test-results/ocr-results-OW003008/adaptive-preprocess-report-OW003008.md) を作成し、上記結論を維持
@@ -570,10 +570,10 @@ OCR 認識精度を次世代アプローチで向上させる
 > - 003 シリーズ（前処理・パラメータ調整）で達成した精度向上の限界を整理する
 > - 次世代アプローチをリストアップし、コストパフォーマンスを評価する
 > - 候補アプローチ：
-> - - OCR 後処理：辞書ベース誤認識補正（「〓」→推定文字の復元、固有名詞辞書の活用）
-> - - 異なる OCR エンジン・モデルの導入検討（ lightweight 日本語 OCR の調査）
-> - - レイアウト認識結果の活用：ndlocr_cli の TEXTBLOCK 情報を用いた構造的理解の強化
-> - - 機械学習ベースの誤認識検出：認識結果の言語モデルスコアリング
+>   OCR 後処理：辞書ベース誤認識補正（「〓」→推定文字の復元、固有名詞辞書の活用）
+>   異なる OCR エンジン・モデルの導入検討（ lightweight 日本語 OCR の調査）
+>   レイアウト認識結果の活用：ndlocr_cli の TEXTBLOCK 情報を用いた構造的理解の強化
+>   機械学習ベースの誤認識検出：認識結果の言語モデルスコアリング
 > - 各アプローチの実装コスト・期待効果・リスクを評価し、優先順位を決定する
 > - 最も効果的なアプローチを 1〜2 つ選び、 POC（概念検証）タスクを起票する
 >
