@@ -260,6 +260,32 @@ async def _run_ocr_and_generate_pdf(
             for image_file in image_files
         ]
 
+        total_pages = len(image_files)
+
+        # OCR 処理開始を記録します
+        _write_progress(
+            job_id,
+            status="processing",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="OCR 処理を開始しました",
+        )
+
+        # 各ページの処理マーカーを書き込みます
+        # ndlocr_cli はページ単位のコールバックを提供しないため、
+        # 開始直前に一括書き込みを行います（ステージマーカーとして表示されます）
+        for i in range(1, total_pages + 1):
+            progress = round(0.1 + 0.5 * (i / total_pages), 2)
+            _write_progress(
+                job_id,
+                status="processing",
+                progress=progress,
+                current_page=i,
+                total_pages=total_pages,
+                message=f"OCR 処理中です（{i}/{total_pages}）",
+            )
+
         # OCR 処理は同期ブロッキングなので別スレッドで実行します
         result = await asyncio.to_thread(
             ocr_engine.run,
@@ -270,6 +296,14 @@ async def _run_ocr_and_generate_pdf(
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
+        _write_progress(
+            job_id,
+            status="failed",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message=f"OCR 処理に失敗しました: {exc}",
+        )
         job_manager.update_job_with_ocr_result(
             job_id,
             message=f"OCR 処理に失敗しました: {exc}",
@@ -286,6 +320,26 @@ async def _run_ocr_and_generate_pdf(
         job_id,
         text=result.text,
         output_dir=str(result.output_dir),
+    )
+
+    # OCR 処理完了を記録します
+    _write_progress(
+        job_id,
+        status="processing",
+        progress=0.7,
+        current_page=total_pages,
+        total_pages=total_pages,
+        message=f"OCR 処理が完了しました（{total_pages}/{total_pages}）",
+    )
+
+    # PDF を生成中です
+    _write_progress(
+        job_id,
+        status="processing",
+        progress=0.9,
+        current_page=total_pages,
+        total_pages=total_pages,
+        message="PDF を生成中です",
     )
 
     # OCR 結果から検索可能 PDF を生成します
@@ -309,9 +363,26 @@ async def _run_ocr_and_generate_pdf(
             JobStatus.COMPLETED,
             message="PDF 生成が完了しました",
         )
+        # PDF 生成完了を記録します
+        _write_progress(
+            job_id,
+            status="completed",
+            progress=1.0,
+            current_page=total_pages,
+            total_pages=total_pages,
+            message="PDF 生成が完了しました",
+        )
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します
         logger.exception("PDF 生成に失敗しました: job_id=%s", job_id)
+        _write_progress(
+            job_id,
+            status="failed",
+            progress=0.7,
+            current_page=total_pages,
+            total_pages=total_pages,
+            message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
+        )
         job_manager.update_job_with_pdf_path(
             job_id,
             pdf_path="",
@@ -341,6 +412,42 @@ _PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
 # 進捗ファイルのポーリング間隔（秒）です
 # テスト時は PROGRESS_POLL_INTERVAL 環境変数で短縮できます
 _POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.5"))
+
+
+def _write_progress(
+    job_id: str,
+    status: str,
+    progress: float,
+    current_page: int,
+    total_pages: int,
+    message: str,
+) -> None:
+    """進捗ファイルを書き込みます。
+
+    backend 側が自ら SSE 用の進捗イベントを発行するために使用します。
+    ocr-worker 側の進捗書き込みを無効化した代わりに、
+    こちらで 1/3 → 2/3 → 3/3 の段階的進捗を管理します。
+
+    Args:
+        job_id: 対象ジョブ ID
+        status: ジョブ状態（processing / completed / failed）
+        progress: 進捗率（0.0〜1.0）
+        current_page: 現在のページ（フェーズ番号として使用）
+        total_pages: 総ページ数（フェーズ総数として使用）
+        message: 進捗メッセージ
+    """
+    _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
+    progress_file = _PROGRESS_DIR / f"{job_id}.json"
+    now = datetime.now(timezone.utc).isoformat()
+    data = {
+        "status": status,
+        "progress": progress,
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "message": message,
+        "timestamp": now,
+    }
+    progress_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
 
 @router.get("/{job_id}/pdf")
