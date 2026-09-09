@@ -248,7 +248,7 @@
 |  | `.github/workflows/lint-task-md.yml` と `.pre-commit-config.yaml` を新規作成した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 元タスク `SY007013`（`docs/SY-TASKS.md`）として 2026-09-09 に完了。`OT010002` により `PJ001013` へ再番号付けし、`docs/PJ-TASKS.md` に移行した |  |  |  |
-| PJ001014 | feature ブランチ作業開始前のブランチ健全性チェックルール追加 | 2026-09-09 |  | 運用整備 |
+| PJ001014 | feature ブランチ作業開始前のブランチ健全性チェックルール追加 | 2026-09-09 | 2026-09-09 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` に「Branch Health Check Rules」セクションを追加する |  |  |  |
@@ -256,6 +256,10 @@
 |  | `.cline/skills/workflow-runner/SKILL.md` の Phase 1 / Phase 4 を更新する |  |  |  |
 |  | `docs/PJ-WORK-LOG.md` に実施記録を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
+|  | 2026-09-09: `.clinerules` に「Branch Health Check Rules」セクションを追加した |  |  |  |
+|  | 2026-09-09: `.cline/skills/branch-manager/SKILL.md` に「作業開始前のブランチ健全性確認」を追加した |  |  |  |
+|  | 2026-09-09: `.cline/skills/workflow-runner/SKILL.md` の Phase 1 / Phase 4 を更新した |  |  |  |
+|  | 2026-09-09: `docs/PJ-WORK-LOG.md` に実施記録を追記した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 新規タスク |  |  |  |
 | PJ001015 | タスク管理表整合性検証ワークフローの強化 | 2026-09-09 | 2026-09-09 | 運用整備 |
@@ -265,8 +269,19 @@
 |  | `scripts/lint-task-md.py` に「完了日付・実施結果」整合性検証を追加する |  |  |  |
 |  | `workflow-runner/SKILL.md` Phase 1 に完了状態確認手順を追加する |  |  |  |
 |  | 【実施結果】 |  |  |  |
+|  | 2026-09-09: `.clinerules` に「Task Management Integrity Rules」を新設した |  |  |  |
+|  | 2026-09-09: `scripts/lint-task-md.py` に「完了日付・実施結果」整合性検証を追加した |  |  |  |
+|  | 2026-09-09: `workflow-runner/SKILL.md` Phase 1 に完了状態確認手順を追加した |  |  |  |
+|  | 2026-09-09: `docs/PJ-TASKS.md` PJ001010 / PJ001013 の【実施結果】空欄を追記した |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 新規タスク（PJ001014 不具合発見元） |  |  |  |
+| PJ001016 | PJ001015 UAT バグ対応 | 2026-09-09 | 2026-09-09 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | PJ001015 の【実施結果】空欄を修正する |  |  |  |
+|  | PJ001014 の【実施結果】空欄と完了日付を修正する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | PJ001015 / PJ001014 の【実施結果】と【完了日付】を修正し、UAT 不合格を解消した |  |  |  |
 
 
 ---
