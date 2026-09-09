@@ -226,7 +226,7 @@ export function CaptureView() {
           />
         </div>
 
-        {/* 出力先フォルダ選択フィールド（LA002009） */}
+        {/* 出力先フォルダ選択フィールド（LA002008） */}
         <div className="space-y-2">
           <label htmlFor="output-folder" className="text-sm font-medium">
             出力先フォルダ

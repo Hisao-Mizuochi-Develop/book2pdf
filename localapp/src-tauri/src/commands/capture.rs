@@ -211,14 +211,14 @@ fn run_continuous_capture_loop(
     // MSE（平均二乗誤差）閾値。環境により調整が必要なため、将来的にプロファイルパラメータ化を検討
     // この値はフルHD画面でアルファチャンネルを含むピクセル差の経験値に基づく
     const MSE_THRESHOLD: f64 = 1000.0;
-    // 【LA002008-3】同一ページと判定された連続回数。
+    // 【LA002007-3】同一ページと判定された連続回数。
     // 1回目は「ページ遷移が追いついていない可能性」として再度ページ送りを試み、
     // 2回連続で MSE < threshold となった場合のみ最終ページ到達と判断する。
     // これにより、page_wait が短くてページ遷移完了前にキャプチャされた場合の誤完了を防ぐ
     let mut same_page_count: u32 = 0;
 
-    // 【LA002008-1 デバッグ】リトライ回数と待機時間のログ出力用
-    eprintln!("[LA002008-1 DEBUG] 連続キャプチャループ開始: profile={:?}", profile);
+    // 【LA002007-1 デバッグ】リトライ回数と待機時間のログ出力用
+    eprintln!("[LA002007-1 DEBUG] 連続キャプチャループ開始: profile={:?}", profile);
 
     // --- 先頭ページ復帰処理 ---
     // 「先頭ページから」が選択された場合、逆方向ページ送りを連続実行して先頭に戻る。
@@ -237,7 +237,7 @@ fn run_continuous_capture_loop(
         // 先頭復帰前に最前面化（キー入力が確実に届くようフォーカスを当てる）
         if !profile.window_title_keyword.is_empty() {
             if let Err(e) = bring_window_to_front(&profile) {
-                eprintln!("[LA002008-2] 先頭復帰: 最前面化失敗 {}", e);
+                eprintln!("[LA002007-2] 先頭復帰: 最前面化失敗 {}", e);
             } else {
                 // AppleScript 実行後、ウィンドウが前面に来るまで待機
                 thread::sleep(Duration::from_millis(1500));
@@ -256,7 +256,7 @@ fn run_continuous_capture_loop(
 
             // 逆方向ページ送り
             if let Err(e) = turn_page_reverse(&mut enigo, &profile.page_turn_key) {
-                eprintln!("[LA002008-2] 先頭復帰: ページ送りエラー {}", e);
+                eprintln!("[LA002007-2] 先頭復帰: ページ送りエラー {}", e);
                 break;
             }
             // 画面遷移が安定するまで待機
@@ -266,7 +266,7 @@ fn run_continuous_capture_loop(
             let current_image = match capture_window_image(&profile) {
                 Ok(img) => img,
                 Err(e) => {
-                    eprintln!("[LA002008-2] 先頭復帰: キャプチャ失敗 {}", e);
+                    eprintln!("[LA002007-2] 先頭復帰: キャプチャ失敗 {}", e);
                     break;
                 }
             };
@@ -319,7 +319,7 @@ fn run_continuous_capture_loop(
             break;
         }
 
-        // --- 最前面化（LA002008-1: xcap では非最前面ウィンドウがキャプチャ不可のため常に実行）---
+        // --- 最前面化（LA002007-1: xcap では非最前面ウィンドウがキャプチャ不可のため常に実行）---
         if !profile.window_title_keyword.is_empty() {
             if let Err(e) = bring_window_to_front(&profile) {
                 emit_progress(
@@ -388,7 +388,7 @@ fn run_continuous_capture_loop(
         if let Some(ref prev) = prev_image {
             let mse = calculate_mse(prev, &current_image);
             eprintln!(
-                "[LA002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
+                "[LA002007-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
                 page_num, mse, MSE_THRESHOLD, same_page_count
             );
             if mse < MSE_THRESHOLD {
@@ -409,7 +409,7 @@ fn run_continuous_capture_loop(
                 // 1回目の同一ページ判定は「ページ遷移が追いついていない可能性」として、
                 // もう一度ページ送りを試みる。キャプチャ画像は保存せずに破棄。
                 eprintln!(
-                    "[LA002008-3 DEBUG] page={} は同一ページと判定（{}回目）のため、再ページ送りを試みます",
+                    "[LA002007-3 DEBUG] page={} は同一ページと判定（{}回目）のため、再ページ送りを試みます",
                     page_num, same_page_count
                 );
                 emit_progress(
@@ -600,13 +600,13 @@ fn capture_window_image(profile: &CaptureProfile) -> Result<image::RgbaImage, St
     const MAX_RETRIES: u32 = 3;
 
     for attempt in 1..=MAX_RETRIES {
-        eprintln!("[LA002008-1 DEBUG] capture_window_image 試行 {}/{}", attempt, MAX_RETRIES);
+        eprintln!("[LA002007-1 DEBUG] capture_window_image 試行 {}/{}", attempt, MAX_RETRIES);
 
         let windows = Window::all()
             .map_err(|e| format!("ウィンドウ一覧取得エラー: {}", e))?;
 
         if windows.is_empty() {
-            eprintln!("[LA002008-1 DEBUG] 試行 {}/{}: ウィンドウ一覧が空", attempt, MAX_RETRIES);
+            eprintln!("[LA002007-1 DEBUG] 試行 {}/{}: ウィンドウ一覧が空", attempt, MAX_RETRIES);
             if attempt < MAX_RETRIES {
                 thread::sleep(Duration::from_millis(500));
                 continue;
@@ -635,24 +635,24 @@ fn capture_window_image(profile: &CaptureProfile) -> Result<image::RgbaImage, St
                 let title = window.title();
                 let app = window.app_name();
                 eprintln!(
-                    "[LA002008-1 DEBUG] 試行 {}/{}: ウィンドウ発見 '{}' (app: {}, {}x{})",
+                    "[LA002007-1 DEBUG] 試行 {}/{}: ウィンドウ発見 '{}' (app: {}, {}x{})",
                     attempt, MAX_RETRIES, title, app, window.width(), window.height()
                 );
                 match window.capture_image() {
                     Ok(img) => {
                         eprintln!(
-                            "[LA002008-1 DEBUG] 試行 {}/{}: キャプチャ成功 ({}x{})",
+                            "[LA002007-1 DEBUG] 試行 {}/{}: キャプチャ成功 ({}x{})",
                             attempt, MAX_RETRIES, img.width(), img.height()
                         );
                         return Ok(img);
                     }
                     Err(e) => {
                         eprintln!(
-                            "[LA002008-1 DEBUG] 試行 {}/{}: キャプチャ失敗 '{}' ({}x{}) : {}",
+                            "[LA002007-1 DEBUG] 試行 {}/{}: キャプチャ失敗 '{}' ({}x{}) : {}",
                             attempt, MAX_RETRIES, title, window.width(), window.height(), e
                         );
                         if attempt < MAX_RETRIES {
-                            eprintln!("[LA002008-1 DEBUG] 500ms 待機後にリトライ");
+                            eprintln!("[LA002007-1 DEBUG] 500ms 待機後にリトライ");
                             thread::sleep(Duration::from_millis(500));
                             continue;
                         }
@@ -665,7 +665,7 @@ fn capture_window_image(profile: &CaptureProfile) -> Result<image::RgbaImage, St
             }
             None => {
                 eprintln!(
-                    "[LA002008-1 DEBUG] 試行 {}/{}: ウィンドウ '{}' が見つからない",
+                    "[LA002007-1 DEBUG] 試行 {}/{}: ウィンドウ '{}' が見つからない",
                     attempt, MAX_RETRIES, keyword_lower
                 );
                 if attempt < MAX_RETRIES {
@@ -699,7 +699,7 @@ fn capture_window_image(profile: &CaptureProfile) -> Result<image::RgbaImage, St
 /// 4. 対象ウィンドウの `capture_image()` でスクリーンショット取得
 /// 5. `crop_insets` が設定されていれば内容領域トリミングを適用
 ///
-/// 【LA002008】xcap crate を使用したウィンドウ指定キャプチャ。
+/// 【LA002007】xcap crate を使用したウィンドウ指定キャプチャ。
 /// `Window::all()` でウィンドウ一覧を取得し、タイトルの部分一致で対象ウィンドウを
 /// 特定してから `capture_image()` でキャプチャする。
 /// `window_title_keyword` が未設定の場合は全画面キャプチャにフォールバックする。
