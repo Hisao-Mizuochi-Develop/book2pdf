@@ -78,4 +78,44 @@ describe("ProgressPanel", () => {
 
     expect(screen.getByText("0 / ? ページ")).toBeInTheDocument();
   });
+
+  it("段階的なステップ表示がレンダリングされる", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.5 })} log={[]} />);
+
+    expect(screen.getByTestId("progress-stages")).toBeInTheDocument();
+    expect(screen.getByText("アップロード")).toBeInTheDocument();
+    expect(screen.getByText("OCR 処理")).toBeInTheDocument();
+    expect(screen.getByText("PDF 生成")).toBeInTheDocument();
+    expect(screen.getByText("完了")).toBeInTheDocument();
+  });
+
+  it("progress < 0.33 の場合はステップ1がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.1 })} log={[]} />);
+
+    const dot0 = screen.getByTestId("stage-dot-0");
+    expect(dot0).toHaveClass("bg-primary", "ring-2");
+  });
+
+  it("0.33 <= progress < 0.66 の場合はステップ2がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.5 })} log={[]} />);
+
+    const dot0 = screen.getByTestId("stage-dot-0");
+    const dot1 = screen.getByTestId("stage-dot-1");
+    expect(dot0).toHaveClass("bg-green-500");
+    expect(dot1).toHaveClass("bg-primary", "ring-2");
+  });
+
+  it("0.66 <= progress < 1.0 の場合はステップ3がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.75 })} log={[]} />);
+
+    const dot2 = screen.getByTestId("stage-dot-2");
+    expect(dot2).toHaveClass("bg-primary", "ring-2");
+  });
+
+  it("progress >= 1.0 の場合はステップ4が完了状態", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ progress: 1.0, status: "completed" })} log={[]} />);
+
+    const dot3 = screen.getByTestId("stage-dot-3");
+    expect(dot3).toHaveClass("bg-green-500");
+  });
 });

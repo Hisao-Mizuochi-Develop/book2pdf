@@ -127,6 +127,83 @@ export function subscribeJobProgress(
 }
 
 /**
+ * ポーリング間隔（ミリ秒）です
+ */
+const POLL_INTERVAL_MS = 2_000;
+
+/**
+ * 指定したジョブの進捗をポーリングで監視します。
+ * SSE が利用できない環境（プロキシ環境など）でのフォールバックとして使用します。
+ * @param jobId ジョブ ID
+ * @param onMessage 進捗メッセージを受け取るコールバック
+ * @param onError エラー発生時のコールバック
+ * @param onComplete 完了時のコールバック
+ * @returns ポーリングを停止するための関数
+ */
+export interface PollJobProgressOptions {
+  /** ポーリング間隔（ミリ秒）。デフォルトは 2000ms です。 */
+  interval?: number;
+}
+
+export function pollJobProgress(
+  jobId: string,
+  onMessage: (message: string) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void,
+  options?: PollJobProgressOptions
+): () => void {
+  const interval = options?.interval ?? POLL_INTERVAL_MS;
+  let active = true;
+
+  const tick = async () => {
+    if (!active) return;
+
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}`);
+      if (!response.ok) {
+        throw new Error(`進捗の取得に失敗しました: ${response.status} ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as { status: string; message?: string; progress?: number; current_page?: number; total_pages?: number; timestamp?: string };
+
+      // 進捗情報を SSE と同じ形式（JSON）に変換してコールバックに渡します
+      const progressEvent = {
+        job_id: jobId,
+        status: data.status,
+        progress: data.progress ?? 0,
+        current_page: data.current_page ?? 0,
+        total_pages: data.total_pages ?? 0,
+        message: data.message ?? "",
+        timestamp: data.timestamp ?? new Date().toISOString(),
+      };
+      onMessage(JSON.stringify(progressEvent));
+
+      // ジョブが完了または失敗した場合はポーリングを停止します
+      if (data.status === "completed" || data.status === "failed") {
+        active = false;
+        onComplete();
+        return;
+      }
+    } catch (err) {
+      if (!active) return;
+      onError(err instanceof Error ? err : new Error(String(err)));
+    }
+
+    // 次のポーリングをスケジュールします
+    if (active) {
+      setTimeout(tick, interval);
+    }
+  };
+
+  // 初回のポーリングを開始します
+  tick();
+
+  return () => {
+    active = false;
+  };
+}
+
+/**
  * 指定したジョブの生成済み PDF をダウンロードします
  * @param jobId ジョブ ID
  * @returns ブラウザで PDF を開くための URL

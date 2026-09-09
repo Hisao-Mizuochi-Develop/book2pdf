@@ -4,6 +4,7 @@ import {
   uploadZip,
   runOcr,
   subscribeJobProgress,
+  pollJobProgress,
   getPdfDownloadUrl,
   downloadPdf,
   type FileSystemFileHandle,
@@ -392,6 +393,188 @@ describe("api client", () => {
         "PDF のダウンロードに失敗しました: 404 Not Found"
       );
       expect(handle.createWritable).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("pollJobProgress", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** async/await + fake timers で Promise 解決を待つヘルパーです */
+    async function flushPromises() {
+      for (let i = 0; i < 50; i++) {
+        await Promise.resolve();
+      }
+    }
+
+    it("定期的に進捗を取得して onMessage を呼び出す", async () => {
+      // fake timers で複数回のポーリングループを安定させるのが難しいため、
+      // このテストだけリアルタイマーを使用し、短い interval で実行します
+      vi.useRealTimers();
+
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              status: "processing",
+              progress: 0.5,
+              current_page: 1,
+              total_pages: 2,
+            }),
+            { status: 200 }
+          )
+        )
+      );
+
+      let resolveWhenDone: (() => void) | undefined;
+      const donePromise = new Promise<void>((resolve) => {
+        resolveWhenDone = resolve;
+      });
+
+      const onMessage = vi.fn(() => {
+        if (onMessage.mock.calls.length >= 3) {
+          resolveWhenDone?.();
+        }
+      });
+
+      const stop = pollJobProgress("job-123", onMessage, onError, onComplete, { interval: 10 });
+      await donePromise;
+      stop();
+
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123`, {
+        signal: expect.any(AbortSignal),
+      });
+      expect(onMessage).toHaveBeenCalledTimes(3);
+      expect(onError).not.toHaveBeenCalled();
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it("completed ステータスで onComplete を呼び出し、ポーリングを停止する", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: "completed",
+            progress: 1.0,
+            current_page: 2,
+            total_pages: 2,
+          }),
+          { status: 200 }
+        )
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
+
+      // 完了後はポーリングが停止するため、さらに時間を進めても fetch は増えません
+      (fetch as ReturnType<typeof vi.fn>).mockClear();
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("failed ステータスでも onComplete を呼び出す", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: "failed",
+            progress: 0.5,
+            message: "OCR 処理に失敗しました",
+          }),
+          { status: 200 }
+        )
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it("fetch エラー時に onError を呼び出す", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error("Network error")
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "Network error" }));
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it("HTTP エラー時に onError を呼び出す", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response("not found", { status: 404, statusText: "Not Found" })
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "進捗の取得に失敗しました: 404 Not Found" })
+      );
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it("停止関数を呼び出すとポーリングを停止する", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new Response(
+          JSON.stringify({ status: "processing", progress: 0.5 }),
+          { status: 200 }
+        )
+      );
+
+      const stop = pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+      expect(onMessage).toHaveBeenCalledTimes(1);
+
+      stop();
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+
+      // 停止後は fetch が増えません
+      (fetch as ReturnType<typeof vi.fn>).mockClear();
+      await vi.advanceTimersByTimeAsync(2000);
+      await flushPromises();
+      expect(fetch).not.toHaveBeenCalled();
+      expect(onComplete).not.toHaveBeenCalled();
     });
   });
 });

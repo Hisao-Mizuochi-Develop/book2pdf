@@ -5,7 +5,7 @@
 // 管理を一括して行います。
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { runOcr, subscribeJobProgress } from "@/lib/api";
+import { runOcr, subscribeJobProgress, pollJobProgress } from "@/lib/api";
 import type { ProgressEvent } from "@/types";
 
 /** useOcrJob の戻り値型です。 */
@@ -45,16 +45,21 @@ export function useOcrJob(): UseOcrJobResult {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [downloadableJobId, setDownloadableJobId] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pollStopRef = useRef<(() => void) | null>(null);
 
-  const closeEventSource = useCallback(() => {
+  const cleanupProgress = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+    if (pollStopRef.current) {
+      pollStopRef.current();
+      pollStopRef.current = null;
+    }
   }, []);
 
   const reset = useCallback(() => {
-    closeEventSource();
+    cleanupProgress();
     setJobId(null);
     setFiles([]);
     setLatestProgress(null);
@@ -63,7 +68,7 @@ export function useOcrJob(): UseOcrJobResult {
     setError("");
     setIsLoading(false);
     setDownloadableJobId(null);
-  }, [closeEventSource]);
+  }, [cleanupProgress]);
 
   const parseProgressEvent = useCallback((message: string): ProgressEvent | null => {
     try {
@@ -94,33 +99,57 @@ export function useOcrJob(): UseOcrJobResult {
       ]);
       setIsLoading(true);
 
+      // 進捗イベントの共通ハンドラです。SSE と polling の両方で使用します。
+      const handleProgressMessage = (message: string) => {
+        const event = parseProgressEvent(message);
+        if (event) {
+          setLatestProgress(event);
+          const text =
+            event.message ??
+            `${event.status} - ${Math.round(event.progress * 100)}% (${event.current_page}/${event.total_pages})`;
+          setProgressLog((prev) => [...prev, text]);
+
+          // PDF ダウンロードは OCR/PDF 生成が完了してから有効にします
+          if (event.status === "completed") {
+            setDownloadableJobId(newJobId);
+          }
+        } else {
+          setProgressLog((prev) => [...prev, message]);
+        }
+      };
+
+      // SSE エラー時に polling にフォールバックします
+      const startPollingFallback = () => {
+        setProgressLog((prev) => [...prev, "プロキシ環境を検出しました。ポーリング方式に切り替えます…"]);
+        pollStopRef.current = pollJobProgress(
+          newJobId,
+          handleProgressMessage,
+          (pollErr) => {
+            console.error("ポーリングでエラーが発生しました:", pollErr);
+            setProgressLog((prev) => [...prev, `ポーリングでエラーが発生しました: ${pollErr.message}`]);
+            setError(pollErr.message);
+            cleanupProgress();
+          },
+          () => {
+            setProgressLog((prev) => [...prev, "ポーリングによる進捗監視が完了しました"]);
+            cleanupProgress();
+          },
+        );
+      };
+
       try {
         eventSourceRef.current = subscribeJobProgress(
           newJobId,
-          (message) => {
-            const event = parseProgressEvent(message);
-            if (event) {
-              setLatestProgress(event);
-              const text =
-                event.message ??
-                `${event.status} - ${event.progress}% (${event.current_page}/${event.total_pages})`;
-              setProgressLog((prev) => [...prev, text]);
-
-              // PDF ダウンロードは OCR/PDF 生成が完了してから有効にします
-              if (event.status === "completed") {
-                setDownloadableJobId(newJobId);
-              }
-            } else {
-              setProgressLog((prev) => [...prev, message]);
-            }
-          },
-          (err) => {
-            console.error("進捗通知の接続でエラーが発生しました:", err);
+          handleProgressMessage,
+          () => {
+            // SSE 接続エラー時は polling にフォールバックします
             setProgressLog((prev) => [...prev, "進捗通知の接続でエラーが発生しました"]);
-            closeEventSource();
+            cleanupProgress();
+            startPollingFallback();
           },
           () => {
-            closeEventSource();
+            setProgressLog((prev) => [...prev, "進捗通知が完了しました"]);
+            cleanupProgress();
           },
         );
 
@@ -128,19 +157,19 @@ export function useOcrJob(): UseOcrJobResult {
         setResult(JSON.stringify(ocrResult, null, 2));
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
-        closeEventSource();
+        cleanupProgress();
       } finally {
         setIsLoading(false);
       }
     },
-    [reset, parseProgressEvent, closeEventSource],
+    [reset, parseProgressEvent, cleanupProgress],
   );
 
   useEffect(() => {
     return () => {
-      closeEventSource();
+      cleanupProgress();
     };
-  }, [closeEventSource]);
+  }, [cleanupProgress]);
 
   return {
     jobId,
