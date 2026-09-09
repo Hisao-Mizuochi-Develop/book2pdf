@@ -244,6 +244,16 @@
 |  | 【実施結果】 |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | 元タスク `SY007013`（`docs/SY-TASKS.md`）として 2026-09-09 に完了。`OT010002` により `PJ001013` へ再番号付けし、`docs/PJ-TASKS.md` に移行した |  |  |  |
+| PJ001014 | feature ブランチ作業開始前のブランチ健全性チェックルール追加 | 2026-09-09 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に「Branch Health Check Rules」セクションを追加する |  |  |  |
+|  | `.cline/skills/branch-manager/SKILL.md` に「作業開始前のブランチ健全性確認」を追加する |  |  |  |
+|  | `.cline/skills/workflow-runner/SKILL.md` の Phase 1 / Phase 4 を更新する |  |  |  |
+|  | `docs/PJ-WORK-LOG.md` に実施記録を追記する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 【移行履歴】 |  |  |  |
+|  | 新規タスク |  |  |  |
 
 ---
 
