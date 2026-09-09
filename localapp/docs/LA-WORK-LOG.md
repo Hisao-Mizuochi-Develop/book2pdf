@@ -610,25 +610,25 @@
   1. `use screenshots::Window` → `Window` struct が `screenshots` v0.8.10 でエクスポートされていない
   2. `crop_imm().as_flat_samples()` → `SubImage` に `as_flat_samples()` メソッドが存在しない
 - エラー修正は LA002007 として別タスクで対応
-- 2026-09-01: 本タスクは実質的に LA002008 に統合完了したため、完了扱いとする
-  - `localapp/docs/LA-TASKS.md` の LA002005「タスク完了日付」を 2026-08-17（LA002008 完了日）に記載
-  - `crop_insets` 機能は LA002007 / LA002008 で実装済み
-  - ウィンドウ指定キャプチャ機能は LA002008 で実装済み
+- 2026-09-01: 本タスクは実質的に LA002007 に統合完了したため、完了扱いとする
+  - `localapp/docs/LA-TASKS.md` の LA002005「タスク完了日付」を 2026-08-17（LA002007 完了日）に記載
+  - `crop_insets` 機能は LA002006 / LA002007 で実装済み
+  - ウィンドウ指定キャプチャ機能は LA002007 で実装済み
   - ブランチ: `feature/LA002005-formal-completion`
 
 ---
 
 ---
 
-## LA002008 — ウィンドウ指定キャプチャ実装（xcap crate 版）
+## LA002007 — ウィンドウ指定キャプチャ実装（xcap crate 版）
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
 - 目的: `screenshots` crate（全画面キャプチャのみ）から `xcap` crate（ウィンドウ指定キャプチャ対応）へ切り替え、プロファイルで指定されたアプリウィンドウを直接キャプチャする
 - 前提:
-  - LA002007（コンパイルエラー修正）が完了していること
-  - feature/LA002008-window-capture-xcap ブランチを作成済みであること
+  - LA002006（コンパイルエラー修正）が完了していること
+  - feature/LA002007-window-capture-xcap ブランチを作成済みであること
   - main ブランチが最新であること
 - 変更内容:
   1. `localapp/src-tauri/Cargo.toml` — `screenshots` を削除、`xcap` を追加
@@ -676,15 +676,15 @@
 - `npm run tauri dev`: 起動成功
   - 単発キャプチャで Kindle ウィンドウが正しく取得されることを確認
   - プロファイル編集で `window_title_keyword`、`process_name`、`crop_insets` の変更が即座に反映されることを確認
-- 連続キャプチャテスト中に2つのバグを発見（詳細は LA-TASKS.md LA002008-1 欄を参照）
+- 連続キャプチャテスト中に2つのバグを発見（詳細は LA-TASKS.md LA002007-1 欄を参照）
   - Bug 1: 連続キャプチャで1ページしかキャプチャできない → `calculate_mse()` が PNG 圧縮バイト列を比較しているため、ウィンドウキャプチャ後の画像サイズ縮小で MSE < 1000.0 と誤判定され「最終ページ到達」と判断される
   - Bug 2: 「キャプチャ前に最前面へ持ってくる」が機能しない → `use_bring_to_top: true` フラグがあるが `run_continuous_capture_loop()` に一切実装がない
-- LA002005 と LA002008 の重複問題の解消
+- LA002005 と LA002007 の重複問題の解消
   - LA002005 は「ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング」を目指したが、`screenshots` crate で `Window` struct が使えず実装途中で断念
-  - LA002007 でコンパイルエラー修正（全画面キャプチャ + `crop_insets` トリミングに後退）を実施
-  - LA002008 で `xcap` crate を採用し、当初 LA002005 で目指した「ウィンドウ指定キャプチャ」を実現
-  - LA-TASKS.md の LA002005 【実施結果】に「実装内容は LA002008 に引き継がれた」と明記し、重複を解消
-- ブランチ: `feature/LA002008-window-capture-xcap`
+  - LA002006 でコンパイルエラー修正（全画面キャプチャ + `crop_insets` トリミングに後退）を実施
+  - LA002007 で `xcap` crate を採用し、当初 LA002005 で目指した「ウィンドウ指定キャプチャ」を実現
+  - LA-TASKS.md の LA002005 【実施結果】に「実装内容は LA002007 に引き継がれた」と明記し、重複を解消
+- ブランチ: `feature/LA002007-window-capture-xcap`
 
 > **注意**: Git コミットはユーザーの合格確認後に実施すること（ユーザー指示）
 
@@ -692,7 +692,7 @@
 
 ---
 
-## LA002008-1 — 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
+## LA002007-1 — 連続キャプチャバグ修正（MSE計算 & 最前面化）【バグ対応】
 
 ### 【実施予定】
 
@@ -700,7 +700,7 @@
 - 目的: 連続キャプチャで発見された2つのバグを修正する
 - 前提:
   - 002008での単発キャプチャテスト成功後、連続キャプチャテスト中にBug 1・Bug 2を発見済み
-  - feature/LA002008-1-bug-fix ブランチを作成済み
+  - feature/LA002007-1-bug-fix ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/src/commands/capture.rs` — `calculate_mse()` をピクセルレベル比較に修正、`bring_window_to_front()` を新規実装
   2. `cargo check` / `npm run build`
@@ -737,7 +737,7 @@
     4. 「ウィンドウタイトルキーワード」はビルトインプロファイルでは変更不可なので表示不要
     5. 「プロセス名」はビルトインプロファイルでは変更不可なので表示不要、デフォルト値を "Kindle.exe" → "Kindle" に変更すべき
 - `.clinerules` に「コミット前にユーザーのテストと合格判定が必須」を追記
-- ブランチ: `feature/LA002008-1-bug-fix`
+- ブランチ: `feature/LA002007-1-bug-fix`
 - 2026-08-17: 前回セッションの修正が不完全に反映されていた追加修正（3点）
   1. **capture.rs: 先頭復帰処理をMSE差分検出ベースに完全書き換え**
      - 原因: 固定200回ループでは「先頭到達検出」ができない。ユーザーから「200回の根拠はなんですか？本来は先頭ページに到達するまでが正解です」と指摘
@@ -768,7 +768,7 @@
     - `npm run tauri dev`: 起動成功
     - ユーザーテスト: 「連続キャプチャ開始」ボタンクリックで `bookTitle` エラーが解消されたことを確認
 - Git コミット・マージ完了
-  - ブランチ: `feature/LA002008-window-capture-xcap`
+  - ブランチ: `feature/LA002007-window-capture-xcap`
   - コミット: `34723f6`
   - main ブランチへ Fast-forward マージ済み
 
@@ -776,14 +776,14 @@
 
 ---
 
-## LA002008-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
+## LA002007-2 — プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
 ### 【実施予定】
 
 - 日時: 2026-08-16
-- 目的: LA002008-1 の手動テストで発見したUI・UX問題を修正する
+- 目的: LA002007-1 の手動テストで発見したUI・UX問題を修正する
 - 前提:
-  - feature/LA002008-2-profile-ui-fix ブランチを作成済み
+  - feature/LA002007-2-profile-ui-fix ブランチを作成済み
 - 変更内容:
   1. `localapp/src/store/profileStore.ts` — デフォルト選択を "kindle" に固定
   2. `localapp/src/components/capture/ProfileEditor.tsx` — SelectValue に日本語ラベル表示を追加、pageWait を Input から Select に変更
@@ -828,7 +828,7 @@
 - `cd localapp && npm run build`: ビルド成功（tsc && vite build ともにエラーなし）
 - `>>>>+++ REPLACE` の混入原因: replace_in_file の SEARCH/REPLACE ブロック内に誤って SEPARATOR 文字列が含まれた
 - 以後、replace_in_file 実行時に REPLACE 区切り文字が SEARCH/REPLACE ブロック内に含まれていないか二重確認する
-- ブランチ: `feature/LA002008-2-profile-ui-fix`
+- ブランチ: `feature/LA002007-2-profile-ui-fix`
 - 2026-08-17: ユーザーテスト後のバグ修正（3点）
   1. 「先頭ページから」を選択しても先頭に戻らない（機能しない）
      - 原因: `captureStore.ts` の `invoke("start_continuous_capture")` で引数キーが camelCase (`startFromBeginning`) だったが、Rust 側コマンドの引数名は snake_case (`start_from_beginning`)
@@ -853,7 +853,7 @@
     - 下段中央: 「下 (px)」
   - トリミング入力欄に `text-center` を追加し、数字を中央揃えに
   - トリミング説明文を `text-center` に変更
-- Git コミット完了（LA002008-1/LA002008-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
+- Git コミット完了（LA002007-1/LA002007-2 統合コミット `34723f6`、main ブランチへ Fast-forward マージ済み）
 
 ---
 
@@ -1030,14 +1030,14 @@
 
 ---
 
-## LA002008-3 — 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+## LA002007-3 — 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: 「電子書籍」画面の「連続キャプチャ開始」ボタンを押下しても途中で完了してしまう不具合を調査・修正する
 - 前提:
-  - feature/LA002008-3-continuous-capture-mse-grace ブランチを作成済み
+  - feature/LA002007-3-continuous-capture-mse-grace ブランチを作成済み
 - 変更内容:
   1. `localapp/src-tauri/src/commands/capture.rs` — MSE 同一ページ判定を「連続2回閾値未満」方式に変更
   2. MSE 値・判定結果をログ出力してデバッグを強化
@@ -1062,24 +1062,24 @@
   - `cd localapp && npm run build`: ビルド成功（`tsc && vite build` ともにエラーなし）
 - 2026-08-20: ユーザーによる動作テストを実施し、合格判定を取得
 - 2026-08-20: Git コミット・main ブランチへマージ
-  - ブランチ: `feature/LA002008-3-continuous-capture-premature-completion`
+  - ブランチ: `feature/LA002007-3-continuous-capture-premature-completion`
   - コミット: `bd1afd0`
   - マージ: `main` へ Fast-forward マージ完了
-- ブランチ: `feature/LA002008-3-continuous-capture-mse-grace`
+- ブランチ: `feature/LA002007-3-continuous-capture-mse-grace`
 
 ---
 
 ---
 
-## LA002009 — 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+## LA002008 — 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
 
 ### 【実施予定】
 
 - 日時: 2026-08-20
 - 目的: 「電子書籍」画面で連続キャプチャの出力フォルダをユーザーが指定可能とし、キャプチャ完了後に「トリミング」画面に自動引き継ぐ
 - 前提:
-  - feature/LA002009-custom-output-folder ブランチを作成済み
-  - LA002008-3（連続キャプチャ途中完了バグ修正）が完了していること
+  - feature/LA002008-custom-output-folder ブランチを作成済み
+  - LA002007-3（連続キャプチャ途中完了バグ修正）が完了していること
   - tauri-plugin-dialog は LA005002 で追加済み
 - 変更内容:
   1. `localapp/src/views/CaptureView.tsx`
@@ -1134,7 +1134,7 @@
 - 2026-08-21: ドキュメント更新
   - `localapp/docs/LA-TASKS.md` に【実施結果】を追記
   - `localapp/docs/LA-WORK-LOG.md` に【実施実績】を追記（本エントリ）
-- 2026-08-21: バグ修正（LA002009-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
+- 2026-08-21: バグ修正（LA002008-1）— トリミング画面へのフォルダ引継ぎが機能しない問題
   - **事象**: キャプチャ完了後、「トリミング」画面を開いてもキャプチャした画像が自動的に読み込まれない。手動でフォルダを選び直す必要がある。
   - **調査**:
     - フロントエンド側のデータフロー（`CaptureView` → `captureStore` → `TrimView`）に問題はないことを確認

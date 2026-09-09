@@ -89,7 +89,7 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
 - 3回連続で失敗した場合のみエラーを返す
 
 ### 関連タスク
-- LA002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+- LA002007-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
 
 ---
 
@@ -120,8 +120,8 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
 3. ビルトインプロファイルの `process_name` を `"Kindle.exe"` ではなく `"Kindle"` に変更する
 
 ### 関連タスク
-- LA002008: ウィンドウ指定キャプチャ実装（xcap crate 版）
-- LA002008-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
+- LA002007: ウィンドウ指定キャプチャ実装（xcap crate 版）
+- LA002007-1: 連続キャプチャバグ修正（MSE計算 & 最前面化）
 
 ---
 
@@ -143,9 +143,9 @@ for caps in re.captures_iter(&hocr) { /* x1, y1, x2, y2, text を取得 */ }
   - Tauri plugin の公式スクリーンショット機能（将来リリース時）
 
 ### 関連タスク
-- LA002005: ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング（実装途中で本問題を発見。2026-09-01 に LA002008 へ統合されたため完了）
-- LA002007: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
-- LA002008: ウィンドウ指定キャプチャ実装（xcap crate 版）（LA002005 のウィンドウ指定キャプチャ機能を実質的に実現）
+- LA002005: ウィンドウ指定キャプチャ＋コンテンツ領域自動トリミング（実装途中で本問題を発見。2026-09-01 に LA002007 へ統合されたため完了）
+- LA002006: ウィンドウ指定キャプチャ実装のコンパイルエラー修正（本問題の対応）
+- LA002007: ウィンドウ指定キャプチャ実装（xcap crate 版）（LA002005 のウィンドウ指定キャプチャ機能を実質的に実現）
 
 ---
 
@@ -256,7 +256,7 @@ await invoke("start_continuous_capture", {
 ```
 
 ### 関連タスク
-- LA002008-2: プロファイルUI改善（`startFromBeginning` → `start_from_beginning` の修正）
+- LA002007-2: プロファイルUI改善（`startFromBeginning` → `start_from_beginning` の修正）
 
 ---
 
@@ -278,7 +278,7 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 手動で `displayLabel` を計算して children として渡す。読み込み前は `selectedProfileKey`（"kindle"）が表示され、読み込み後は正しい日本語名に切り替わる。
 
 ### 関連タスク
-- LA002008-2: プロファイルUI改善（ProfileSelector 初期表示対応）
+- LA002007-2: プロファイルUI改善（ProfileSelector 初期表示対応）
 
 ---
 
@@ -300,7 +300,7 @@ const displayLabel = selectedProfile?.name ?? selectedProfileKey ?? "プロフ�
 AI 側の入力ミスであっても、最終的にファイルに書き込まれる内容は人間が確認する必要がある。特に diff 形式の入力では、SEPARATOR の正否を必ずチェックすること。
 
 ### 関連タスク
-- LA002008-2: プロファイルUI改善（デフォルト選択・表示・バリデーション）
+- LA002007-2: プロファイルUI改善（デフォルト選択・表示・バリデーション）
 
 ---
 
@@ -566,7 +566,7 @@ if let Some(e) = save_error {
 
 ---
 
-## 連続キャプチャ — MSE 同一ページ判定の猶予（LA002008-3）
+## 連続キャプチャ — MSE 同一ページ判定の猶予（LA002007-3）
 
 ### 事象
 Kindle プロファイル等で `page_wait` が短い（0.15秒）場合、ページ送り直後に次のキャプチャが実行され、ページ遷移が完了する前に前回と同じ画像が取得されることがある。この状態で MSE（平均二乗誤差）が閾値未満となり、「最終ページ到達」と誤判定して連続キャプチャが途中で完了してしまう。
@@ -610,7 +610,7 @@ if mse < MSE_THRESHOLD {
 
 ```rust
 eprintln!(
-    "[LA002008-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
+    "[LA002007-3 DEBUG] page={} MSE={:.2} threshold={} same_page_count={}",
     page_num, mse, MSE_THRESHOLD, same_page_count
 );
 ```
@@ -621,11 +621,11 @@ eprintln!(
 - 必要に応じて `page_wait` の調整も検討する（Kindle プロファイルのデフォルト 0.15秒は現状維持）
 
 ### 関連タスク
-- LA002008-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
+- LA002007-3: 連続キャプチャ途中完了バグ修正（MSE同一ページ判定の猶予）
 
 ---
 
-## 連続キャプチャ — 出力フォルダ指定とタブ間引継ぎ（LA002009）
+## 連続キャプチャ — 出力フォルダ指定とタブ間引継ぎ（LA002008）
 
 ### 事象
 「電子書籍」画面で連続キャプチャを実行する際、出力先フォルダをユーザーが任意に指定したい。
@@ -656,11 +656,11 @@ eprintln!(
 - 既存 `create_capture_folder` 関数は `resolve_output_folder` に統合され、削除された
 
 ### 関連タスク
-- LA002009: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
+- LA002008: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ
 
 ---
 
-## serde — Tauri イベントペイロードのフィールド名変換（LA002009-1）
+## serde — Tauri イベントペイロードのフィールド名変換（LA002008-1）
 
 ### 事象
 連続キャプチャ完了後、Rust 側から `capture-progress` イベントで送信した `capture_folder` がフロントエンドで受信できず、`lastCaptureFolder` に値が設定されない。
@@ -706,7 +706,7 @@ pub struct ProgressPayload {
 - フロントエンド側の型定義（`capture-progress` イベントのペイロード型）と Rust 側の `serde` 属性が一致しているか、両ファイルを横並びで確認する
 
 ### 関連タスク
-- LA002009-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
+- LA002008-1: 連続キャプチャの出力フォルダ指定とトリミング画面への引継ぎ（バグ修正）
 
 ---
 
@@ -740,12 +740,12 @@ pub async fn create_searchable_pdf(
 
 ### 注意点
 - `#[allow(non_snake_case)]` を追加することで、Rust コンパイラの命名規約警告を抑制できる
-- 本件は task LA002008-2 (`startFromBeginning` / `start_from_beginning`) と同じパターンの不具合であり、Tauri `invoke` の引数名整合性は実装後に必ず両ファイルを横並びで確認する必要がある
+- 本件は task LA002007-2 (`startFromBeginning` / `start_from_beginning`) と同じパターンの不具合であり、Tauri `invoke` の引数名整合性は実装後に必ず両ファイルを横並びで確認する必要がある
 - 新規コマンド実装時は、フロントエンド側の `invoke()` 呼び出しコードと Rust 側の関数シグニチャを同時に開き、キー名・引数名・型の整合性を確認することを習慣化する
 
 ### 関連タスク
 - LA008001: バグ修正 — PDF作成ボタン押下後インジケータが一瞬で消える
-- LA002008-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）
+- LA002007-2: プロファイルUI改善（同様の `invoke` 引数名不一致バグ）
 
 ---
 
