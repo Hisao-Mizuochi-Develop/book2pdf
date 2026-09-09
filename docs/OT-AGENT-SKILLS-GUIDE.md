@@ -80,7 +80,7 @@
 タスク管理の基本単位と記録ルールを定めます。
 
 - タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」の計8文字とする（例：`OW003001`）
-  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
+  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `PJ`=Project/プロジェクト運用・ガバナンス・ツール連携, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
 - タスク粒度は数時間〜1日以内で完了できる単位とする
 - 記録は `<module>/docs/<モジュール識別子>-TASKS.md` と `<module>/docs/<モジュール識別子>-WORK-LOG.md` に行う
 - 【計画】欄に記載した事柄は削除せず、実施しない場合は理由を追記する

@@ -10,7 +10,7 @@
 - 詳細項目を無理に別タスクにせず、達成可能な単位でまとめる
 - 作業の記録はタスク詳細欄に箇条書きで記載する
 - タスク No は「モジュール識別子（2文字）＋ ユースケースNo（3桁）＋ 通番（3桁）」とする
-  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
+  - 識別子: `SY`=System/全体設計・仕様・横断基盤, `PJ`=Project/プロジェクト運用・ガバナンス・ツール連携, `BE`=backend, `FE`=frontend, `OW`=ocr-worker, `LA`=localapp, `OT`=横断・その他
   - 例：ユースケース001の1番目のタスク → `OT001001`
   - 例：ユースケース002の1番目のタスク → `OT002001`
 - 通番は各ユースケース内で 001 から連番で振る
@@ -191,3 +191,31 @@ localapp 単体 OCR→PDF 技術調査・選定
 |  | 2026-09-09: `FE002001` の【タスク完了日付】を削除し、訂正理由を【実施結果】欄に追記 |  |  |  |
 |  | 2026-09-09: `FE002002` の【タスク完了日付】を削除し、訂正理由を【実施結果】欄に追記 |  |  |  |
 |  | 2026-09-09: `feature/OT009001-fix-task-md-column-alignment` ブランチを `main` へ `--no-ff` マージ完了 |  |  |  |
+---
+
+## ユースケースNo | OT010
+
+ユースケース
+新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| OT010001 | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | `.clinerules` に `PJ` 識別子を追加し、`.clinerules`/AgentSkills/JIRA/Confluence/Slack 等のツール連携を `PJ` の対象とする |  |  |  |
+|  | `.clinerules` の識別子選択基準と具体例を `PJ` 対応に更新する |  |  |  |
+|  | `docs/PJ-TASKS.md` を新規作成し、`.clinerules`/AgentSkills ガバナンスのユースケース `PJ001` とツール連携のプレースホルダー `PJ002`–`PJ004` を定義する |  |  |  |
+|  | `docs/SY-TASKS.md` から `.clinerules`/AgentSkills 関連タスク `SY007001` / `SY007003` / `SY007011` / `SY007012` / `SY007013` を削除し、移行先を記録する |  |  |  |
+|  | `docs/PJ-TASKS.md` に移行元タスク `SY007001`–`SY007013`（該当 5 件）を `PJ001001`–`PJ001005` として連番で再記録する |  |  |  |
+|  | `docs/PJ-WORK-LOG.md` / `docs/PJ-CAVEATS.md` を新規作成する |  |  |  |
+|  | `docs/OT-AGENT-SKILLS-GUIDE.md` の識別子一覧に `PJ` を追加する |  |  |  |
+|  | 【実施結果】 |  |  |  |
+|  | 2026-09-09: `.clinerules` に `PJ` 識別子を追加し、識別子選択基準・具体例・スキルマトリックスを更新した |  |  |  |
+|  | 2026-09-09: `docs/PJ-TASKS.md` を新規作成し、`PJ001`（`.clinerules`/AgentSkills ガバナンス）と `PJ002`–`PJ004`（JIRA/Confluence/Slack プレースホルダー）を定義した |  |  |  |
+|  | 2026-09-09: `docs/PJ-WORK-LOG.md` / `docs/PJ-CAVEATS.md` を新規作成した |  |  |  |
+|  | 2026-09-09: `docs/SY-TASKS.md` から `SY007001` / `SY007003` / `SY007011` / `SY007012` / `SY007013` を削除し、移行履歴セクションを追加した |  |  |  |
+|  | 2026-09-09: `docs/PJ-TASKS.md` に `PJ001001`–`PJ001005` として移行元タスクを再記録した |  |  |  |
+|  | 2026-09-09: `docs/OT-AGENT-SKILLS-GUIDE.md` の `task-manager` セクション識別子リストに `PJ` を追加した |  |  |  |
+|  | 2026-09-09: `docs/OT-TASKS.md` に `OT010` ユースケースと `OT010001` タスクを追加した |  |  |  |
+

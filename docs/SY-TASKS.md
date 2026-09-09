@@ -80,16 +80,6 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| SY007001 | `SY` 識別子の運用ルールと 3 層スキル選択マトリックスを文書化する | 2026-09-05 | 2026-09-05 | 運用整備 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | `docs/SY-TASKS.md` に識別子運用ルールを明記する |  |  |  |
-|  | `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加する |  |  |  |
-|  | `workflow-runner/SKILL.md` v2.0 を新規作成し、4 フェーズワークフローと選択的スキル読込を定義する |  |  |  |
-|  | 【実施結果】 |  |  |  |
-|  | 2026-09-05: `docs/SY-TASKS.md` に識別子運用ルールとタスク粒度の方針を明記した |  |  |  |
-|  | 2026-09-05: `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加した |  |  |  |
-|  | 2026-09-05: `.cline/skills/workflow-runner/SKILL.md` を v2.0 に更新し、4 フェーズワークフローと選択的スキル読込を定義した |  |  |  |
 | SY007002 | タスク着手時確認テンプレートの追加と `.clinerules` の整備 | 2026-09-06 | 2026-09-06 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -103,23 +93,6 @@
 |  | 2026-09-06: コミット `f3a18b34` として `.clinerules`, `.cline/skills/workflow-runner/SKILL.md`, `docs/SY-TASKS.md` を一括コミットした |  |  |  |
 |  | 【移行履歴】 |  |  |  |
 |  | `.clinerules` の変更は元々 `SY007001` の一環として実施されたものだが、当時未コミットのまま残っていたため、本タスクでまとめてコミットした |  |  |  |
-| SY007003 | スキル読み込み時の `read_files` 必須ルールを `.clinerules` と `workflow-runner/SKILL.md` に追加する | 2026-09-06 | 2026-09-06 | 運用整備 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | `.clinerules` の **Workflow Runner Usage** に、スキルファイル読み込み時は必ず `read_files` で実ファイルを開く規則を追加する |  |  |  |
-|  | `.cline/skills/workflow-runner/SKILL.md` の **選択的スキル読込ルール** に、同様の `read_files` 必須規則を追加する |  |  |  |
-|  | `docs/SY-TASKS.md` に本タスクを起票する |  |  |  |
-|  | 【実施結果】 |  |  |  |
-|  | 2026-09-06: `.clinerules` に「スキルファイル読み込みは `read_files` で実ファイルを開く」ルールを追加した |  |  |  |
-|  | 2026-09-06: `.cline/skills/workflow-runner/SKILL.md` に「スキルファイル読み込みは `read_files` で実ファイルを開く」ルールを追加した |  |  |  |
-|  | 2026-09-06: `docs/SY-TASKS.md` に `SY007003` を起票した |  |  |  |
-|  | 2026-09-06: `.clinerules` に「タスクは並行実行せず、Phase 4 完了・コミット後に次のタスクを開始する」ルールを追加した |  |  |  |
-|  | 2026-09-06: `.cline/skills/task-manager/SKILL.md` に「タスクは並行実行せず、Phase 4 完了・コミット後に次のタスクを開始する」ルールを追加した |  |  |  |
-|  | 2026-09-06: `docs/SY-WORK-LOG.md` を新規作成した |  |  |  |
-|  | 2026-09-06: 本タスクの変更を一括コミット `docs(SY007003): add parallel-task prohibition rule and post-process records` として記録した |  |  |  |
-|  | 【移行履歴】 |  |  |  |
-|  | 元々 `SY007001` / `SY007002` の整備作業中に指摘された運用漏れであり、個別の修正タスクとして分離した |  |  |  |
-|  | 本タスク実施中に並行タスク禁止ルールの追加が発生したため、未コミット変更を `SY007003` に吸収して一括コミットした |  |  |  |
 | SY007004 | ブランチ運用の再発防止ルールとユーザー表現ルールを追加する | 2026-09-06 | 2026-09-06 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
@@ -241,60 +214,19 @@
 |  | `.cline/skills/workflow-runner/SKILL.md` の冒頭に「1 タスク 1 ブランチ」の大前提を追加する（`.clinerules` との重複を許容） |  |  |  |
 |  | `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記する |  |  |  |
 |  | 【実施結果】 |  |  |  |
-| SY007011 | ブランチ運用スキルの独立と承認・マージブロック強化ルールの策定 | 2026-09-08 | 2026-09-08 | 運用整備 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | `.cline/skills/branch-manager/SKILL.md` を新規作成し、分散しているブランチ運用ルールを一元化する |  |  |  |
-|  | `.clinerules` に「マージ前最終承認チェックリスト（絶対遵守）」を追加する |  |  |  |
-|  | `.clinerules` に「git 履歴の存在 ≠ タスク完了」の明文化を追加する |  |  |  |
-|  | `.clinerules` にマージブロック条件（UAT合格発言なし・完了日付なし・Gate 3未承認）を禁止事項として追加する |  |  |  |
-|  | `workflow-runner/SKILL.md` の Git 運用セクションからブランチ運用部分を削除し、`branch-manager` への参照に変更する |  |  |  |
-|  | `workflow-runner/SKILL.md` の Phase 4 に「マージブロック条件チェック」を追加する |  |  |  |
-|  | `task-manager/SKILL.md` に「タスク管理表との照合義務」を追加する |  |  |  |
-|  | `branch-naming.md` に「マージ済みブランチの再作成例外」を明記する |  |  |  |
-|  | 各種ドキュメントの重複記述を `branch-manager` への参照に一本化する |  |  |  |
-|  | 【実施結果】 |  |  |  |
-|  | 2026-09-08: `.cline/skills/branch-manager/SKILL.md` を新規作成し、ブランチ運用ルールを一元化した |  |  |  |
-|  | 2026-09-08: ブランチ命名規則を `feature/<タスクNo>-<タスクのタイトル>` に変更した |  |  |  |
-|  | 2026-09-08: ブランチ削除を AI 自動実行からユーザー手動実行に変更し、`.clinerules`・`workflow-runner`・`branch-manager` に反映した |  |  |  |
-|  | 2026-09-08: マージ前承認チェックリストの表現を「ユーザーによるUAT明示的合格発言」「Gate 3 で承認依頼を実施して承認を得る」に統一した |  |  |  |
-|  | 2026-09-08: `workflow-runner/references/branch-naming.md` の内容を整理し、`branch-manager` へのリダイレクト表記に簡潔化した |  |  |  |
-|  | 2026-09-08: Git commit 実施 |  |  |  |
-|  | 2026-09-08: `main` ブランチへ `--no-ff` でマージ完了（マージコミット: `22c1db4e`） |  |  |  |
-|  | 2026-09-08: 不要となった feature ブランチの削除はユーザーが手動で実施（AI は自動削除しない） |  |  |  |
-| SY007012 | UAT クロスモジュール不具合のタスク起票手順と優先順位ルールの明文化 | 2026-09-09 | 2026-09-09 | 運用整備 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | `.clinerules` の `Cross-Module Defect Handling` に「UAT フェーズでの適用」を追加する |  |  |  |
-|  | `workflow-runner/SKILL.md` の Phase 3-A に「UAT フェーズでの適用」を追加する |  |  |  |
-|  | `task-manager/SKILL.md` の「UAT 不具合発見時の対応」にクロスモジュールの特別対応を追加する |  |  |  |
-|  | `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記する |  |  |  |
-|  | 【実施結果】 |  |  |  |
-|  | 2026-09-09: `.clinerules` に「5. UAT フェーズでの適用」を追加した |  |  |  |
-|  | 2026-09-09: `workflow-runner/SKILL.md` の Phase 3-A に「5. UAT フェーズでの適用」を追加した |  |  |  |
-|  | 2026-09-09: `task-manager/SKILL.md` の「8. UAT 不具合発見時の対応」に「クロスモジュールの場合」を追加した |  |  |  |
-|  | 2026-09-09: `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記した |  |  |  |
-|  | 2026-09-09: Git commit 実施 |  |  |  |
-|  | 2026-09-09: `main` ブランチへ `--no-ff` でマージ完了 |  |  |  |
 
 ---
 
-## ユースケースNo | 007
+---
 
-(継続)
+## 移行履歴
 
-| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+本ファイルに記載されていた `.clinerules` / AgentSkills / ガバナンス・運用ルールに関するタスクは、新規モジュール識別子 `PJ` の設立に伴い `docs/PJ-TASKS.md` へ移行しました。
+
+| 元タスクNO | 移行先タスクNO | 移行先ファイル | 移行理由 | 移行実施日 |
 |---|---|---|---|---|
-| SY007013 | Markdown pipe-table カラムずれ防止 AgentSkill・CI 導入 | 2026-09-09 | 2026-09-09 | 運用整備 |
-|  | タスク詳細 |  |  |  |
-|  | 【計画】 |  |  |  |
-|  | AgentSkill `markdown-table-validator` を新規作成する |  |  |  |
-|  | `.clinerules` に「Markdown Pipe-Table Editing Rules」セクションを追加する |  |  |  |
-|  | `file-modifier/SKILL.md` に Markdown テーブル検証ルールを追加する |  |  |  |
-|  | `task-manager/SKILL.md` にタスク管理表更新後のカラム整合性チェックを追加する |  |  |  |
-|  | `workflow-runner/SKILL.md` の Phase 3 に Markdown テーブル検証を追加する |  |  |  |
-|  | `scripts/lint-task-md.py` を新規作成する |  |  |  |
-|  | `.github/workflows/lint-task-md.yml` を新規作成する |  |  |  |
-|  | `.pre-commit-config.yaml` を新規作成する |  |  |  |
-|  | `docs/OT-AGENT-SKILLS-GUIDE.md` に `markdown-table-validator` を追加する |  |  |  |
-|  | 【実施結果】 |  |  |  |
+| SY007001 | PJ001001 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
+| SY007003 | PJ001002 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
+| SY007011 | PJ001003 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
+| SY007012 | PJ001004 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
+| SY007013 | PJ001005 | docs/PJ-TASKS.md | `.clinerules`/AgentSkills ガバナンスは `PJ` の対象となるため | 2026-09-09 |
