@@ -285,7 +285,7 @@
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| SY007013 | Markdown pipe-table カラムずれ防止 AgentSkill・CI 導入 | 2026-09-09 |  | 運用整備 |
+| SY007013 | Markdown pipe-table カラムずれ防止 AgentSkill・CI 導入 | 2026-09-09 | 2026-09-09 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | AgentSkill `markdown-table-validator` を新規作成する |  |  |  |
