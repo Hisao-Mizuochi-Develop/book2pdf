@@ -222,6 +222,32 @@ Phase 4（最終報告）で作成する最終報告書は、以下の構成に�
 - タスク管理表や作業ログの整理のみ → `OT`
 - プロジェクト運用ミーティングの議事録作成 → `OT`
 
+## Markdown Pipe-Table Editing Rules
+
+`*-TASKS.md` およびプロジェクト内すべての Markdown ファイルにおいて、パイプテーブルのカラム整合性を厳守する。
+
+### 編集時の必須手順
+
+1. **カラム数の統一**
+   - 同一セクション内のすべてのテーブル行は、同じ数の `|` 区切りを持つこと
+   - 例: 5 列のテーブルなら `| a | b | c | d | e |` の形式（`|` 6 つ、NF=7）
+
+2. **編集後の検証**
+   - Markdown テーブルを編集した後、必ず `markdown-table-validator` スキルに従い検証を実施する
+   - または `python scripts/lint-task-md.py` を実行する
+   - 不整合があれば修正してからコミットする
+
+3. **テキスト内の `|`
+   - テーブルセル内に `|` を含める必要がある場合は、意味を損なわない範囲で表現を変更する（例: `a\|b` → `a or b`）
+
+### 再発防止の自動化
+
+- **CI**: `.github/workflows/lint-task-md.yml` により、PR 作成時・`main` push 時に自動検証
+- **pre-commit**: `.pre-commit-config.yaml` により、ローカルコミット前に自動検証
+- **AgentSkill**: `markdown-table-validator` スキルが検証手順と修正指針を定義
+
+---
+
 ## Skill Selection Matrix (3-layer)
 
 タスク実行時は、以下の 3 層マトリックスを使って必要最小限のスキルセットを選択する。

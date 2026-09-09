@@ -275,3 +275,26 @@
 |  | 2026-09-09: `task-manager/SKILL.md` の「8. UAT 不具合発見時の対応」に「クロスモジュールの場合」を追加した |  |  |  |
 |  | 2026-09-09: `docs/SY-WORK-LOG.md` に本タスクの実施記録を追記した |  |  |  |
 |  | 2026-09-09: Git commit 実施 |  |  |  |
+|  | 2026-09-09: `main` ブランチへ `--no-ff` でマージ完了 |  |  |  |
+
+---
+
+## ユースケースNo | 007
+
+(継続)
+
+| タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|---|
+| SY007013 | Markdown pipe-table カラムずれ防止 AgentSkill・CI 導入 | 2026-09-09 |  | 運用整備 |
+|  | タスク詳細 |  |  |  |
+|  | 【計画】 |  |  |  |
+|  | AgentSkill `markdown-table-validator` を新規作成する |  |  |  |
+|  | `.clinerules` に「Markdown Pipe-Table Editing Rules」セクションを追加する |  |  |  |
+|  | `file-modifier/SKILL.md` に Markdown テーブル検証ルールを追加する |  |  |  |
+|  | `task-manager/SKILL.md` にタスク管理表更新後のカラム整合性チェックを追加する |  |  |  |
+|  | `workflow-runner/SKILL.md` の Phase 3 に Markdown テーブル検証を追加する |  |  |  |
+|  | `scripts/lint-task-md.py` を新規作成する |  |  |  |
+|  | `.github/workflows/lint-task-md.yml` を新規作成する |  |  |  |
+|  | `.pre-commit-config.yaml` を新規作成する |  |  |  |
+|  | `docs/OT-AGENT-SKILLS-GUIDE.md` に `markdown-table-validator` を追加する |  |  |  |
+|  | 【実施結果】 |  |  |  |

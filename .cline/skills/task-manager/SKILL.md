@@ -57,6 +57,7 @@ metadata:
      - `<module>/docs/<モジュール識別子>-TASKS.md` の【実施結果】
      - `<module>/docs/<モジュール識別子>-WORK-LOG.md` の【実施実績】
    - 完了日付を `<module>/docs/<モジュール識別子>-TASKS.md` に記載する
+   - **タスク管理表を更新した後は、`markdown-table-validator` スキルに従いパイプテーブルのカラム整合性を検証する**
 
 8. **UAT 不具合発見時の対応**
    - 機能実装タスクの UAT で不具合が発見された場合:

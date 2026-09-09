@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint-markdown-tables
+        name: Markdown Table Validator
+        entry: python scripts/lint-task-md.py
+        language: system
+        pass_filenames: false
+        files: \.(md|markdown)$
+        always_run: true
