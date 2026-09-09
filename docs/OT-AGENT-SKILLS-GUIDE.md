@@ -28,6 +28,8 @@
       SKILL.md                       # テストデータ配置・検証レポート作成
       references/
         testdata-locations.md        # テストデータ配置の詳細リファレンス
+    markdown-table-validator/
+      SKILL.md                       # Markdown パイプテーブルのカラム整合性検証
     workflow-runner/
       SKILL.md                       # 4フェーズ実行・スキル選択・承認ゲート
 ```
@@ -49,6 +51,7 @@
 | `file-modifier` | `.cline/skills/file-modifier/SKILL.md` | ドキュメント更新 | 既存ファイル更新時の `replace_in_file` 適用ルール、末尾追記時のマーカー指定 | `docs/` や `test_cases/` 配下の既存ファイルを更新する時 |
 | `task-manager` | `.cline/skills/task-manager/SKILL.md` | タスク管理 | タスクNo体系、粒度、記録場所（`OT-TASKS.md` / `OT-WORK-LOG.md`） | タスク管理表・作業ログを作成・更新する時 |
 | `test-manager` | `.cline/skills/test-manager/SKILL.md` | テスト・検証 | テストデータ配置、検証レポート作成、PDF目視確認、README.md インデックス追加 | テストデータ配置、OCR 精度比較、検証レポート作成時 |
+| `markdown-table-validator` | `.cline/skills/markdown-table-validator/SKILL.md` | ドキュメント検証 | Markdown パイプテーブルのカラム整合性検証、不整合検出、修正指針提示 | `*-TASKS.md` や `docs/**/*.md` のテーブル編集時、CI/pre-commit 実行時 |
 | `workflow-runner` | `.cline/skills/workflow-runner/SKILL.md` | 実行・承認ゲート | タスクの4フェーズ実行、スキル選択、承認ゲート（Gate 1/2/3） | タスク開始〜完了のライフサイクル、スキル選択時 |
 
 ---
@@ -118,7 +121,19 @@
   - git log にマージコミットが存在しても、タスク管理表に完了日付がない場合は「未完了」とする
   - 矛盾発見時はマージ巻き戻しまたはユーザー確認
 
-### 3.6 `workflow-runner`
+### 3.6 `markdown-table-validator`
+
+`*-TASKS.md` やプロジェクト内のすべての `*.md` ファイルにおいて、Markdown パイプテーブルのカラム整合性を検証するスキルです。
+
+- **検証対象**: `docs/**/*.md`、`*/docs/**/*.md`、およびプロジェクト内すべての `*.md`
+- **検証内容**: 同一セクション内のテーブル行の `|` の数が統一されているかチェック
+- **自動化連携**:
+  - CI: `.github/workflows/lint-task-md.yml`（PR/push 時）
+  - pre-commit: `.pre-commit-config.yaml`（コミット前）
+  - 手動: `python scripts/lint-task-md.py`
+- **スキル呼び出し元**: `file-modifier`、`task-manager`、`workflow-runner` の Phase 3
+
+### 3.7 `workflow-runner`
 
 タスク全体のライフサイクルと Git 運用を定めます。
 
@@ -242,6 +257,7 @@ workflow-runner Phase 3
 | `.cline/skills/task-manager/SKILL.md` | タスク管理表・作業ログ運用 |
 | `.cline/skills/test-manager/SKILL.md` | テスト実施・検証レポート作成 |
 | `.cline/skills/test-manager/references/testdata-locations.md` | テストデータ配置詳細 |
+| `.cline/skills/markdown-table-validator/SKILL.md` | Markdown パイプテーブル整合性検証 |
 | `.cline/skills/workflow-runner/SKILL.md` | 4フェーズ実行・スキル選択・承認ゲート |
 
 ---

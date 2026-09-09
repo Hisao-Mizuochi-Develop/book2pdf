@@ -143,15 +143,15 @@ OCR 読み取り精度向上
 |  | ``` |  |  |  |
 |  | #### 4. OCR 実行 |  |  |  |
 |  | ```bash |  |  |  |
-|  | JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ | jq -r '.job_id') |  |  |  |
-|  | curl -s -X POST -F "file=@benchmark-ocr-OW003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload | jq . |  |  |  |
-|  | curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr | jq . |  |  |  |
-|  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
+|  | JOB_ID=$(curl -s -X POST http://localhost:8000/api/jobs/ \| jq -r '.job_id') |  |  |  |
+|  | curl -s -X POST -F "file=@benchmark-ocr-OW003002.zip;type=application/zip" http://localhost:8000/api/jobs/$JOB_ID/upload \| jq . |  |  |  |
+|  | curl -s --max-time 1800 -X POST http://localhost:8000/api/jobs/$JOB_ID/ocr \| jq . |  |  |  |
+|  | curl -s http://localhost:8000/api/jobs/$JOB_ID \| jq . |  |  |  |
 |  | ``` |  |  |  |
 |  | #### 5. 成果物取得 |  |  |  |
 |  | ```bash |  |  |  |
 |  | # ジョブ情報から output_dir と pdf_path を特定 |  |  |  |
-|  | curl -s http://localhost:8000/api/jobs/$JOB_ID | jq . |  |  |  |
+|  | curl -s http://localhost:8000/api/jobs/$JOB_ID \| jq . |  |  |  |
 |  | # 例：ocr-worker 出力をホストにコピー |  |  |  |
 |  | docker compose cp ocr-worker:/data/ocr_output/<job_dir>/ ./ocr-results-OW003002/ |  |  |  |
 |  | docker compose cp backend:/data/pdfs/<pdf_file> ./ocr-results-OW003002/ |  |  |  |
@@ -322,10 +322,10 @@ OCR 読み取り精度向上
 |  | 2026-08-14: ocr-worker コンテナをリビルドし、config.yml の `layout_extraction.score_thr` を 0.2 / 0.1 / 0.5 に変更して OCR 実行。score_thr=0.2 と 0.1 は同一結果、score_thr=0.5 では低 CONF の見出し行が欠落し TEXTBLOCK 数が減少することを確認（config.yml の値が反映された） |  |  |  |
 |  | 2026-08-14: **※本タスクの検証は ocr-worker コンテナ内での `OcrInferrer` 直接実行により行われており、backend API 経由のフルフローではなかったため、backend 生成 PDF が取得できていなかった** |  |  |  |
 |  | 2026-08-14: `.clinerules` 第10章「テスト・検証・調査系タスクのルール」を新設し、今後の検証・調査タスクでは backend API 経由のフルフローと PDF 目視確認を必須とした |  |  |  |
-|  | 2026-08-14: pattern-A/B/C を backend API 経由フルフローで再実行し、生成 PDF を取得して目視確認を実施
+|  | 2026-08-14: pattern-A/B/C を backend API 経由フルフローで再実行し、生成 PDF を取得して目視確認を実施 |  |  |  |
 |  | 2026-08-14: 精度比較レポート [ocr-results-OW003005/config-comparison-report-OW003005.md](ocr-results-OW003005/config-comparison-report-OW003005.md) を作成した |  |  |  |
 |  | 2026-08-14: 自動前処理統合（sharpen_light_upscale_2x）と表紙ページの残存誤認識対策は、本タスクでは score_thr 修正・再検証にスコープを絞り、今後のタスクとして保留とする |  |  |  |
-|  | 2026-08-14: `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-CAVEATS.md` を更新
+|  | 2026-08-14: `ocr-worker/docs/OW-WORK-LOG.md` / `ocr-worker/docs/OW-CAVEATS.md` を更新 |  |  |  |
 |  | 2026-08-14: タスク完了日付を記載 |  |  |  |
 | OW003006 | sharpen_light_upscale_2x 自動前処理の ocr-worker 組み込み | 2026-08-14 | 2026-08-14 | 機能実装 |
 |  | タスク詳細 |  |  |  |
