@@ -20,6 +20,7 @@
 |---|---|
 | [SY001](#sy001) | プロジェクト全体のドキュメント整備と横断基盤の確立 |
 | [SY002](#sy002) | 進捗通知方式の全体仕様策定 |
+| [SY007](#sy007) | `.clinerules`、AgentSkills の Phase 4 必須報告ルール整備 |
 
 ---
 
@@ -84,4 +85,49 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > - 2026-09-03: `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
 > - 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に文書化した
 > - 2026-09-03: `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した
+>
+
+---
+
+<a id="sy007"></a>
+## ユースケースNo | 007
+
+ユースケース
+`.clinerules`、AgentSkills の Phase 4 必須報告ルール整備
+
+`.clinerules` と AgentSkills に Phase 4 の必須報告ルールを追加し、標準化されたタスクリストテンプレートを整備する。
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [SY007005](#sy007005) `.clinerules`、AgentSkills の Phase 4 必須報告ルール整備 | 2026-09-10 | 2026-09-10 | 設計 |
+| [SY007006](#sy007006) テスト関連ワークフローのAgentSkills改善 | 2026-09-10 | 2026-09-10 | 設計 |
+
+<a id="sy007005"></a>
+### SY007005 `.clinerules`、AgentSkills の Phase 4 必須報告ルール整備
+
+<div align="right"><a href="#sy007">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `.clinerules` に Phase 4 必須報告ルールを追加する
+> - `workflow-runner/SKILL.md` に Phase 4 必須報告ルールを追加する
+> - `test-manager/SKILL.md` に Phase 4 必須報告ルールを追加する
+>
+> 【実施結果】
+> - 2026-09-10: `.clinerules` に Phase 4 必須報告ルールを追加した
+> - 2026-09-10: `workflow-runner/SKILL.md` に Phase 4 必須報告ルールを追加した
+> - 2026-09-10: `test-manager/SKILL.md` に Phase 4 必須報告ルールを追加した
+>
+
+<a id="sy007006"></a>
+### SY007006 テスト関連ワークフローのAgentSkills改善
+
+<div align="right"><a href="#sy007">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - テスト関連ワークフローを AgentSkills に統合する
+>
+> 【実施結果】
+> - 2026-09-10: テスト関連ワークフローを AgentSkills に統合した
 >

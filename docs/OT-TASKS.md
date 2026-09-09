@@ -293,7 +293,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 |  | 2026-09-10: テンプレートにはタスク管理ファイルのタイトル・タスク粒度の方針・ユースケース一覧テーブル・タスクサマリテーブル・タスク詳細セクションの構造を含め、具体的なタスク内容はプレースホルダーのみとした |  |  |  |
 |  | 2026-09-10: `.cline/skills/task-manager/SKILL.md` に `TEMPLATE-TASKS.md` と `task-id-format.md` の参照リンクを追加した |  |  |  |
 |  | 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した |  |  |  |
-| OT010010 | `SY-TASKS.md` を TEMPLATE-TASKS.md 形式に移行する | 2026-09-10 | 2026-09-10 | 文書整備 |
+| OT010010 | `SY-TASKS.md` を TEMPLATE-TASKS.md 形式に移行する | 2026-09-10 | | 文書整備 |
 | | タスク詳細 |  |  |  |
 | | 【計画】 |  |  |  |
 | | `docs/SY-TASKS.md` の形式を TEMPLATE-TASKS.md 形式に移行する |  |  |  |
@@ -304,11 +304,6 @@ localapp 単体 OCR→PDF 技術調査・選定
 | | 【移行履歴】セクションは削除する |  |  |  |
 | | `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する |  |  |  |
 | | 【実施結果】 |  |  |  |
-| | 2026-09-10: `SY-TASKS.md` をテンプレート形式に移行 |  |  |  |
-| | 2026-09-10: タイトル変更・ユースケース一覧追加・4列テーブル化・ブロッククォート化を実施 |  |  |  |
-| | 2026-09-10: HTML アンカー・ページ内リンクの整合性検証を実施し、ALL VALID を確認 |  |  |  |
-| | 2026-09-10: テンプレート構造対照検証を実施し、ALL MATCH を確認 |  |  |  |
-| | 2026-09-10: `python scripts/lint-task-md.py` で 37/37 ALL PASS を確認 |  |  |  |
 
 ---
 
