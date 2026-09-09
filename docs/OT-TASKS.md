@@ -272,7 +272,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 |  | 2026-09-10: LA-TASKS.md 内の全 55 箇所の戻りリンクを HTML `<a>` アンカーに一括置換した |  |  |  |
 |  | 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した |  |  |  |
 |  | 2026-09-10: feature ブランチを `main` へ `--no-ff` マージし、リモートへ push 完了 |  |  |  |
-| OT010008 | `OT010005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消 | 2026-09-10 | | 不具合修正 |
+| OT010008 | `OT010005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消 | 2026-09-10 | 2026-09-10 | 不具合修正 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `localapp/docs/LA-TASKS.md` に残存していた `feature/OT010005-task-md-format-unify` マージ時のコンフリクトマーカー（`<<<<<<< HEAD` / `=======` / `>>>>>>>`）を解消する |  |  |  |
@@ -281,7 +281,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 |  | 【実施結果】 |  |  |  |
 |  | 2026-09-10: `localapp/docs/LA-TASKS.md` の 9 箇所のコンフリクトブロックを main 側（HTML アンカー・4列テーブル・ブロッククォート形式）で解消し、27 個のコンフリクトマーカーを全削除した |  |  |  |
 |  | 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した |  |  |  |
-| OT010009 | タスク管理ファイルのテンプレート作成 | 2026-09-10 | | ドキュメント整備 |
+| OT010009 | タスク管理ファイルのテンプレート作成 | 2026-09-10 | 2026-09-10 | ドキュメント整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `localapp/docs/LA-TASKS.md` の構造を元に、`*.clinerules/skills/task-manager/references/TEMPLATE-TASKS.md` を新規作成する |  |  |  |
