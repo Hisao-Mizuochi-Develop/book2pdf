@@ -165,6 +165,18 @@ OCR 処理の進捗をリアルタイムで確認する
 |  | 2026-09-08: `backend/app/services/ocr_engine.py`: `RemoteNdloCrOcrEngine.run` が `enable_progress: False` を ocr-worker に送信するよう変更 |  |  |  |
 |  | 2026-09-08: `backend/app/routers/jobs.py`: `_write_progress` ヘルパーを追加し、`_run_ocr_and_generate_pdf` 内で 1/3→2/3→3/3 の段階的進捗を書き込むように変更 |  |  |  |
 |  | 2026-09-08: `backend/tests/test_ocr.py`: 段階的進捗書き込みと `enable_progress=False` 送信を検証するテスト 2 件を追加。backend pytest 全32件 PASS |  |  |  |
+|  | 2026-09-09: **進捗メッセージ順序・内容の修正（追加対応）** |  |  |  |
+|  | 内容: UAT 中に backend の段階的進捗メッセージの順序と内容が不自然であることが発覚（例: OCR 開始時に「（1/3）」が付与され、OCR 完了と PDF 開始が同じメッセージに含まれていた） |  |  |  |
+|  | 対応: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` を書き換え、以下の順序で進捗を書き込むように変更 |  |  |  |
+|  | 1. `OCR 処理を開始しました` |  |  |  |
+|  | 2. `OCR 処理中です（1/M）` … `OCR 処理中です（M/M）`（ndlocr_cli はページ単位コールバックを提供しないため、開始直前のステージマーカーとして一括書き込み） |  |  |  |
+|  | 3. `OCR 処理が完了しました（M/M）` |  |  |  |
+|  | 4. `PDF を生成中です` |  |  |  |
+|  | 5. `PDF 生成が完了しました` |  |  |  |
+|  | 対応: `frontend/src/hooks/useOcrJob.ts` から `[DONE]` 受信時の `進捗通知が完了しました` ログ出力を削除 |  |  |  |
+|  | 対応: `backend/tests/test_ocr.py` のアサーションを修正（`current_page==3` を実際の画像枚数に合わせて `1` に変更） |  |  |  |
+|  | 検証: frontend `npm run test -- --run` で 7 files / 47 tests 全件 PASS |  |  |  |
+|  | 検証: backend pytest で 7 tests 全件 PASS |  |  |  |
 
 ---
 

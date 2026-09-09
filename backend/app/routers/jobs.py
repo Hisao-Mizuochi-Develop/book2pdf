@@ -260,15 +260,31 @@ async def _run_ocr_and_generate_pdf(
             for image_file in image_files
         ]
 
-        # ① OCR 開始前に段階的進捗（1/3）を書き込みます
+        total_pages = len(image_files)
+
+        # OCR 処理開始を記録します
         _write_progress(
             job_id,
             status="processing",
-            progress=0.33,
-            current_page=1,
-            total_pages=3,
-            message="OCR 処理を開始しました（1/3）",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="OCR 処理を開始しました",
         )
+
+        # 各ページの処理マーカーを書き込みます
+        # ndlocr_cli はページ単位のコールバックを提供しないため、
+        # 開始直前に一括書き込みを行います（ステージマーカーとして表示されます）
+        for i in range(1, total_pages + 1):
+            progress = round(0.1 + 0.5 * (i / total_pages), 2)
+            _write_progress(
+                job_id,
+                status="processing",
+                progress=progress,
+                current_page=i,
+                total_pages=total_pages,
+                message=f"OCR 処理中です（{i}/{total_pages}）",
+            )
 
         # OCR 処理は同期ブロッキングなので別スレッドで実行します
         result = await asyncio.to_thread(
@@ -285,7 +301,7 @@ async def _run_ocr_and_generate_pdf(
             status="failed",
             progress=0.0,
             current_page=0,
-            total_pages=3,
+            total_pages=total_pages,
             message=f"OCR 処理に失敗しました: {exc}",
         )
         job_manager.update_job_with_ocr_result(
@@ -306,14 +322,24 @@ async def _run_ocr_and_generate_pdf(
         output_dir=str(result.output_dir),
     )
 
-    # ② OCR 完了後に段階的進捗（2/3）を書き込みます
+    # OCR 処理完了を記録します
     _write_progress(
         job_id,
         status="processing",
-        progress=0.66,
-        current_page=2,
-        total_pages=3,
-        message="OCR 処理が完了しました（2/3）。PDF を生成中です。",
+        progress=0.7,
+        current_page=total_pages,
+        total_pages=total_pages,
+        message=f"OCR 処理が完了しました（{total_pages}/{total_pages}）",
+    )
+
+    # PDF を生成中です
+    _write_progress(
+        job_id,
+        status="processing",
+        progress=0.9,
+        current_page=total_pages,
+        total_pages=total_pages,
+        message="PDF を生成中です",
     )
 
     # OCR 結果から検索可能 PDF を生成します
@@ -337,14 +363,14 @@ async def _run_ocr_and_generate_pdf(
             JobStatus.COMPLETED,
             message="PDF 生成が完了しました",
         )
-        # ③ PDF 生成完了後に段階的進捗（3/3）を書き込みます
+        # PDF 生成完了を記録します
         _write_progress(
             job_id,
             status="completed",
             progress=1.0,
-            current_page=3,
-            total_pages=3,
-            message="PDF 生成が完了しました（3/3）",
+            current_page=total_pages,
+            total_pages=total_pages,
+            message="PDF 生成が完了しました",
         )
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します
@@ -352,9 +378,9 @@ async def _run_ocr_and_generate_pdf(
         _write_progress(
             job_id,
             status="failed",
-            progress=0.66,
-            current_page=2,
-            total_pages=3,
+            progress=0.7,
+            current_page=total_pages,
+            total_pages=total_pages,
             message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
         )
         job_manager.update_job_with_pdf_path(

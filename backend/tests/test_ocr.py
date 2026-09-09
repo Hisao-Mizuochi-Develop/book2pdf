@@ -285,9 +285,10 @@ def test_run_ocr_writes_staged_progress(
     progress_data = json.loads(progress_file.read_text(encoding="utf-8"))
     assert progress_data["status"] == "completed"
     assert progress_data["progress"] == 1.0
-    assert progress_data["current_page"] == 3
-    assert progress_data["total_pages"] == 3
-    assert "PDF 生成が完了しました" in progress_data["message"]
+    # current_page は実際の画像枚数に等しい（テストは 1 枚のアップロード）
+    assert progress_data["current_page"] == 1
+    assert progress_data["total_pages"] == 1
+    assert progress_data["message"] == "PDF 生成が完了しました"
 
 
 def test_ocr_engine_sends_disable_progress(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

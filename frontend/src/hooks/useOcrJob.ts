@@ -120,7 +120,6 @@ export function useOcrJob(): UseOcrJobResult {
             closeEventSource();
           },
           () => {
-            setProgressLog((prev) => [...prev, "進捗通知が完了しました"]);
             closeEventSource();
           },
         );
