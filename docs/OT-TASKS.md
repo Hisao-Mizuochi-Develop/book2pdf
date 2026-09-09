@@ -200,7 +200,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスクNO | タスクタイトル | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|---|
-| OT010001 | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 | 2026-09-09 |  | 運用整備 |
+| OT010001 | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
 |  | タスク詳細 |  |  |  |
 |  | 【計画】 |  |  |  |
 |  | `.clinerules` に `PJ` 識別子を追加し、`.clinerules`/AgentSkills/JIRA/Confluence/Slack 等のツール連携を `PJ` の対象とする |  |  |  |
