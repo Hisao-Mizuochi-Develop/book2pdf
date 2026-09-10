@@ -447,7 +447,14 @@
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
-> - （未実施）
+> - 2026-09-10: `.clinerules` の「タスク完了基準」から feature ブランチ削除条件を削除（自己確認リストには「AI が勝手に削除していないか」を追加）
+> - 2026-09-10: `.clinerules` に「feature ブランチの削除」新規セクションを追加（ユーザー判断・明示的指示「ブランチを削除してください」のみ削除可）
+> - 2026-09-10: `.cline/skills/branch-manager/SKILL.md` のブランチ削除ルールを詳細化
+> - 2026-09-10: `.cline/skills/workflow-runner/SKILL.md` の Git 運用手順にブランチ削除の注意を追加
+> - 2026-09-10: `python scripts/lint-task-md.py` ALL PASS
+> - 2026-09-10: main ブランチへ `--no-ff` マージ完了（マージコミット: `1e79aa59`）
+> - 2026-09-10: タスク完了日付を記入したが、AI 自身がブランチ削除ルール（`feature/PJ001020-completion-date` を勝手に作成・削除）を破った事象が発生したため、再強化のため一旦未完了に戻す
+> - 2026-09-10: ユーザー承認はタスク完了日付記入のみを許可し、Git 操作（コミット・マージ・push・ブランチ削除）は別途選択式確認を必須とするよう `.clinerules`・AgentSkills を強化
 >
 <a id="pj002"></a>
 ## ユースケースNo | PJ002
