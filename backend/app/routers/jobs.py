@@ -411,7 +411,11 @@ _PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
 
 # 進捗ファイルのポーリング間隔（秒）です
 # テスト時は PROGRESS_POLL_INTERVAL 環境変数で短縮できます
-_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.5"))
+_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.1"))
+
+# SSE ハートビート間隔（秒）です
+# 長時間データが流れない場合にプロキシ/ブラウザのタイムアウト切断を防ぐため一定間隔で送信します
+_HEARTBEAT_INTERVAL = 15.0
 
 
 def _write_progress(
@@ -438,6 +442,7 @@ def _write_progress(
     """
     _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
     progress_file = _PROGRESS_DIR / f"{job_id}.json"
+    temp_file = _PROGRESS_DIR / f"{job_id}.json.tmp"
     now = datetime.now(timezone.utc).isoformat()
     data = {
         "status": status,
@@ -447,7 +452,10 @@ def _write_progress(
         "message": message,
         "timestamp": now,
     }
-    progress_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    # 原子書き込み: 一時ファイルに書き込んでから rename で入れ替え
+    # Docker ボリューム共有環境で書き込み途中の不完全なファイルが読み込まれるのを防ぎます
+    temp_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    temp_file.replace(progress_file)
 
 
 @router.get("/{job_id}/pdf")
@@ -537,11 +545,16 @@ async def _progress_event_generator(job_id: str):
     # 前回読み込んだ進捗データを保持します
     last_data: dict | None = None
 
+    # 前回イベント（またはハートビート）を送信した時刻を保持します
+    last_send_time = asyncio.get_event_loop().time()
+
     # イベントループに制御を渡し、TestClient がレスポンスを受信できるようにします
     await asyncio.sleep(0)
 
     # ジョブが完了または失敗するまでポーリングを続けます
     while True:
+        event_sent = False
+
         # 進捗ファイルが存在する場合は読み込みます
         if progress_file.exists():
             content = progress_file.read_text(encoding="utf-8")
@@ -550,6 +563,8 @@ async def _progress_event_generator(job_id: str):
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
                 last_data = data
+                last_send_time = asyncio.get_event_loop().time()
+                event_sent = True
 
                 # 進捗イベントモデルを作成します
                 event = ProgressEvent(
@@ -578,6 +593,16 @@ async def _progress_event_generator(job_id: str):
                     # クライアントに正常終了を示す [DONE] シグナルを送信します
                     yield "data: [DONE]\n\n"
                     break
+
+        # 進捗イベントが送信されず、ハートビート間隔が経過していたら keepalive を送信します
+        # プロキシやブラウザのタイムアウト切断を防ぎます
+        if not event_sent:
+            now = asyncio.get_event_loop().time()
+            if now - last_send_time >= _HEARTBEAT_INTERVAL:
+                last_send_time = now
+                # SSE コメント行としてハートビートを送信（クライアント側では無視される）
+                yield ": keepalive\n\n"
+                await asyncio.sleep(0)
 
         # 次のポーリングまで短時間スリープします
         await asyncio.sleep(_POLL_INTERVAL)
@@ -608,7 +633,13 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
 
     # SSE 形式でストリーミングレスポンスを返します
+    # Cache-Control: no-cache → プロキシやブラウザがレスポンスをキャッシュしないようにします
+    # X-Accel-Buffering: no → Nginx 等のリバースプロキシが SSE ストリームをバッファリングしないようにします
     return StreamingResponse(
         _progress_event_generator(job_id),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
