@@ -202,6 +202,12 @@ OCR 処理の進捗をリアルタイムで確認する
 >   内容: `src/hooks/useOcrJob.ts` の `handleUploaded` 内で「OCR 処理を開始しました」ログが複数回出力されていた
 >   経緯: FE002001 実施中（2026-09-08）にコードレビュー時に発見し、重複していたログ出力を削除した
 >
+> #### バグ 4: ZIP アップロード後に進捗インジケータが 0/3 から 1/3/2/3 を経由せず一気に (3/3) へ遷移する
+>   内容: backend `jobs.py` が OCR 実行前に 1/3→2/3→3/3 の進捗マーカーを一括書き込むため、ブラウザ側で即座に最終値しか観測できていなかった
+>   経緯: UAT 中に `ProgressPanel` のページ表示が一瞬で `(3/3)` になって中間ステップが見えないことが発覚
+>   対応方針: backend に `ocr_progress_step_delay` 設定を追加し、OCR 処理と並行して非同期タスクで段階的にマーカーを書き込むように変更。frontend では中間状態をそのまま受信・表示するためコード変更は不要（テスト追加のみ）
+>   2026-09-11 追記: UAT 実施中に段階的進捗（0/3→1/3→2/3→3/3）が表示されない不具合が再発。原因は `_run_ocr_and_generate_pdf` の `finally` で `progress_task.cancel()` により `_emit_page_progress` が `1/3` で中断されていたこと。対応として、`_emit_page_progress` は OCR 完了後も残りマーカーを短縮間隔（0.1 秒）で書き込み、`_run_ocr_and_generate_pdf` は `cancel()` をせずタスク完了を待つように変更
+>
 > #### テスト更新方針
 > - `src/lib/__tests__/api.test.ts` の File System Access API パスのテストが、バグ 1 修正後の close 後の状態を正しく検証できるよう更新する
 >
@@ -224,6 +230,15 @@ OCR 処理の進捗をリアルタイムで確認する
 >   対応: `backend/tests/test_ocr.py` のアサーションを修正（`current_page==3` を実際の画像枚数に合わせて `1` に変更）
 >   検証: frontend `npm run test -- --run` で 7 files / 47 tests 全件 PASS
 >   検証: backend pytest で 7 tests 全件 PASS
+> - 2026-09-11: 【バグ 4 対応】backend `app/core/config.py` に `ocr_progress_step_delay: float = 0.5` を追加。環境変数 `OCR_PROGRESS_STEP_DELAY` で上書可能
+> - 2026-09-11: 【バグ 4 対応】backend `app/routers/jobs.py` に `_emit_page_progress` ヘルパーを追加し、`_run_ocr_and_generate_pdf` 内で OCR 実行と並行して段階的進捗マーカーを書き込むよう変更
+> - 2026-09-11: 【バグ 4 対応】backend `tests/test_ocr.py` に `_emit_page_progress` の段階的書き込みと早期終了を検証するテスト 2 件を追加
+> - 2026-09-11: 【バグ 4 対応】frontend `src/hooks/__tests__/useOcrJob.test.ts` に 0/3→1/3→2/3→3/3 の SSE シーケンスがログに反映されることを検証するテストを追加
+> - 2026-09-11: UAT 実施中に段階的進捗が表示されない不具合を確認。`_run_ocr_and_generate_pdf` の `finally` で `progress_task.cancel()` により `_emit_page_progress` が `1/3` で中断されていたことが原因
+> - 2026-09-11: `backend/app/routers/jobs.py` の `_emit_page_progress` を OCR 完了後も最後まで実行するよう変更。OCR 完了後は待機間隔を 0.1 秒に短縮
+> - 2026-09-11: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` の `finally` から `cancel()` を削除し、`stop_event.set()` 後にタスク完了を待つよう変更
+> - 2026-09-11: `backend/tests/test_ocr.py` の `test_emit_page_progress_stops_early_on_event` を `test_emit_page_progress_accelerates_on_event` に変更し、OCR 完了後も残りマーカーが書き込まれることを検証
+> - 2026-09-11: 検証: backend pytest 36 passed / frontend `npm run test -- --run` 59 passed / `npm run build` 成功 / `scripts/lint-task-md.py` ALL PASS
 >
 
 ---

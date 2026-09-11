@@ -36,3 +36,11 @@ httpx
 # 注意: 本パッケージは GitHub リポジトリから別途インストールする
 #       公式 Docker スクリプトを参考に、Docker 環境で構築予定
 # ndlocr_cli
+
+# pytest-anyio: pytest で非同期関数をテストするためのプラグイン
+# 用途: 段階的進捗テストなどの async テスト実行
+pytest-anyio
+
+# pytest-timeout: テストの実行時間上限を設けるためのプラグイン
+# 用途: 非同期進捗テストでのタイムアウト制御
+pytest-timeout

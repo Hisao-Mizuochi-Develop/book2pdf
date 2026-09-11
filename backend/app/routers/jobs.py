@@ -66,6 +66,9 @@ from app.services import zip_extractor
 # OCR エンジンを読み込みます
 from app.services.ocr_engine import create_ocr_engine
 
+# アプリケーション設定を読み込みます
+from app.core.config import settings
+
 # 検索可能 PDF 生成サービスを読み込みます
 from app.services.pdf_generator import generate_searchable_pdf
 
@@ -236,6 +239,46 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     )
 
 
+async def _emit_page_progress(
+    job_id: str,
+    total_pages: int,
+    step_delay: float,
+    stop_event: asyncio.Event,
+) -> None:
+    """OCR 実行中に段階的なページマーカーを書き込みます。
+
+    ページ単位の OCR コールバックがないため、OCR 実行と並行して
+    一定間隔ごとに current_page をインクリメントし、フロントエンドに
+    0/M -> 1/M -> ... -> M/M の遷移を届けます。
+
+    Args:
+        job_id: 対象ジョブ ID
+        total_pages: 総ページ数
+        step_delay: ページマーカー間の待機秒数
+        stop_event: OCR 本体が完了したことを知らせるイベント
+    """
+    for i in range(1, total_pages + 1):
+        progress = round(0.1 + 0.5 * (i / total_pages), 2)
+        _write_progress(
+            job_id,
+            status="processing",
+            progress=progress,
+            current_page=i,
+            total_pages=total_pages,
+            message=f"OCR 処理中です（{i}/{total_pages}）",
+        )
+
+        # 最後のページマーカーまで到達したら終了します。
+        if i == total_pages:
+            break
+
+        # OCR 本体が先に終了していた場合は短い間隔で残りのマーカーを書き込み、
+        # そうでなければ通常の step_delay 待機します。
+        # これにより、高速な OCR 環境でも 1/3→2/3→3/3 の遷移が観測可能になります。
+        wait_seconds = 0.1 if stop_event.is_set() else step_delay
+        await asyncio.sleep(wait_seconds)
+
+
 async def _run_ocr_and_generate_pdf(
     job_id: str,
     extract_dir: str,
@@ -272,27 +315,44 @@ async def _run_ocr_and_generate_pdf(
             message="OCR 処理を開始しました",
         )
 
-        # 各ページの処理マーカーを書き込みます
+        # 各ページの処理マーカーを段階的に書き込む非同期タスクを開始します
         # ndlocr_cli はページ単位のコールバックを提供しないため、
-        # 開始直前に一括書き込みを行います（ステージマーカーとして表示されます）
-        for i in range(1, total_pages + 1):
-            progress = round(0.1 + 0.5 * (i / total_pages), 2)
-            _write_progress(
-                job_id,
-                status="processing",
-                progress=progress,
-                current_page=i,
-                total_pages=total_pages,
-                message=f"OCR 処理中です（{i}/{total_pages}）",
+        # OCR 実行と並行して時間をあけてマーカーを更新し、
+        # フロントエンドに 0/3 -> 1/3 -> 2/3 -> 3/3 の遷移を届けます
+        stop_event = asyncio.Event()
+        progress_task: asyncio.Task | None = None
+        if settings.ocr_progress_step_delay > 0 and total_pages > 0:
+            progress_task = asyncio.create_task(
+                _emit_page_progress(
+                    job_id,
+                    total_pages,
+                    settings.ocr_progress_step_delay,
+                    stop_event,
+                )
             )
 
-        # OCR 処理は同期ブロッキングなので別スレッドで実行します
-        result = await asyncio.to_thread(
-            ocr_engine.run,
-            image_files=absolute_image_files,
-            work_dir=Path(extract_dir),
-            job_id=job_id,
-        )
+        try:
+            # OCR 処理は同期ブロッキングなので別スレッドで実行します
+            result = await asyncio.to_thread(
+                ocr_engine.run,
+                image_files=absolute_image_files,
+                work_dir=Path(extract_dir),
+                job_id=job_id,
+            )
+        finally:
+            # 進捗マーカータスクに OCR 完了を通知します
+            stop_event.set()
+            if progress_task is not None:
+                # 残りの進捗マーカーが書き込まれるのを待ってから終了します。
+                # タイムアウトした場合のみ強制キャンセルします。
+                try:
+                    await asyncio.wait_for(progress_task, timeout=5.0)
+                except asyncio.TimeoutError:
+                    progress_task.cancel()
+                    try:
+                        await progress_task
+                    except asyncio.CancelledError:
+                        pass
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)

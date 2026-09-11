@@ -585,3 +585,80 @@ npm run test -- --run      # 7 files / 47 tests passed
 
 - バグ 1 の修正完了。バグ 2・3 は FE002001 実施中に既に修正済み。
 
+---
+
+## 2026-09-11 FE002002 続き：Bug 4 段階的進捗表示修正
+
+### 目的
+
+ZIP アップロード後の OCR 進捗が `0/3 → 1/3 → 2/3 → 3/3` と段階的に表示されるようにする。
+
+### 実施内容
+
+1. `backend/app/core/config.py`
+   - `ocr_progress_step_delay: float = 0.5` を追加
+2. `backend/app/routers/jobs.py`
+   - `_emit_page_progress` ヘルパーを追加
+   - `_run_ocr_and_generate_pdf` 内で OCR 実行と並行して段階的進捗マーカーを書き込むよう変更
+3. `backend/tests/test_ocr.py`
+   - 段階的書き込みと早期終了を検証するテストを追加
+4. `frontend/src/hooks/__tests__/useOcrJob.test.ts`
+   - 0/3→1/3→2/3→3/3 の SSE シーケンスがログに反映されることを検証するテストを追加
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+.venv/bin/python -m pytest -v   # 36 passed
+
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run test -- --run           # 7 files / 59 tests passed
+npm run build                   # 成功
+
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+python scripts/lint-task-md.py  # ALL PASS
+```
+
+### 状態
+
+- UAT 実施中に段階的進捗が表示されない不具合が再発。
+
+---
+
+## 2026-09-11 FE002002 続き：Bug 4 UAT 不具合修正
+
+### 目的
+
+UAT で発覚した「段階的進捗が表示されない」不具合を修正する。
+
+### 原因
+
+`_run_ocr_and_generate_pdf` の `finally` ブロックで `progress_task.cancel()` により、`_emit_page_progress` が `1/3` の書き込み後に強制中断され、`2/3` 以降のマーカーが書き込まれていなかった。
+
+### 実施内容
+
+1. `backend/app/routers/jobs.py`
+   - `_emit_page_progress`: OCR 完了後も最後まで実行するよう変更。OCR 完了後は待機間隔を 0.1 秒に短縮
+   - `_run_ocr_and_generate_pdf`: `finally` ブロックから `cancel()` を削除し、`stop_event.set()` 後にタスク完了を待つよう変更
+2. `backend/tests/test_ocr.py`
+   - `test_emit_page_progress_stops_early_on_event` を `test_emit_page_progress_accelerates_on_event` に変更
+   - OCR 完了後も残りマーカーが書き込まれることを検証
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+.venv/bin/python -m pytest -v   # 36 passed
+
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run test -- --run           # 7 files / 59 tests passed
+npm run build                   # 成功
+
+cd /Users/hisao/Documents/work4/sakura/book2pdf
+python scripts/lint-task-md.py  # ALL PASS
+```
+
+### 状態
+
+- UAT 待ち（ユーザーにブラウザでの動作確認を依頼中）
+

@@ -241,4 +241,60 @@ describe("useOcrJob", () => {
 
     expect(mockInstances[0].close).toHaveBeenCalled();
   });
+
+  it("段階的な進捗イベント（0/3 → 1/3 → 2/3 → 3/3）がログに反映される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", [
+        "page_001.png",
+        "page_002.png",
+        "page_003.png",
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const messages = [
+        { current_page: 0, message: "OCR 0/3" },
+        { current_page: 1, message: "OCR 1/3" },
+        { current_page: 2, message: "OCR 2/3" },
+        { current_page: 3, message: "OCR 3/3" },
+      ];
+      for (const item of messages) {
+        mockInstances[0].simulateMessage(
+          JSON.stringify({
+            job_id: "job-123",
+            status: "processing",
+            progress: item.current_page / 3,
+            current_page: item.current_page,
+            total_pages: 3,
+            message: item.message,
+          }),
+        );
+      }
+
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.latestProgress).toEqual({
+        job_id: "job-123",
+        status: "processing",
+        progress: 1,
+        current_page: 3,
+        total_pages: 3,
+        message: "OCR 3/3",
+      });
+    });
+
+    expect(result.current.progressLog).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("OCR 0/3"),
+        expect.stringContaining("OCR 1/3"),
+        expect.stringContaining("OCR 2/3"),
+        expect.stringContaining("OCR 3/3"),
+      ]),
+    );
+  });
 });

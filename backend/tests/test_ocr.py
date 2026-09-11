@@ -16,6 +16,9 @@ import json
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
+# 非同期処理で待機・イベントを扱うための標準ライブラリです
+import asyncio
+
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
@@ -322,3 +325,84 @@ def test_ocr_engine_sends_disable_progress(monkeypatch: pytest.MonkeyPatch, tmp_
     assert captured_payload is not None, "リクエストボディが送信されていません"
     assert captured_payload.get("enable_progress") is False, "enable_progress=False が含まれていません"
     assert captured_payload.get("job_id") == "test-job-id"
+
+
+def test_emit_page_progress_writes_all_markers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """_emit_page_progress が stop_event 待機中に 1/M ~ M/M のマーカーを書き込むことを確認します。"""
+    from app.routers import jobs as jobs_router
+
+    captured_pages: list[int] = []
+
+    def fake_write_progress(
+        job_id: str,
+        status: str,
+        progress: float,
+        current_page: int,
+        total_pages: int,
+        message: str,
+    ) -> None:
+        captured_pages.append(current_page)
+
+    monkeypatch.setattr(jobs_router, "_write_progress", fake_write_progress)
+
+    async def runner() -> None:
+        stop_event = asyncio.Event()
+        task = asyncio.create_task(
+            jobs_router._emit_page_progress(
+                job_id="test-job",
+                total_pages=3,
+                step_delay=0.01,
+                stop_event=stop_event,
+            )
+        )
+        # 3 ページすべてのマーカーが書き込まれるまで待機します
+        await asyncio.sleep(0.05)
+        stop_event.set()
+        await task
+
+    asyncio.run(runner())
+
+    assert captured_pages == [1, 2, 3], f"期待 [1, 2, 3] だが取得 {captured_pages}"
+
+
+def test_emit_page_progress_accelerates_on_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """OCR 本体が先に終了した場合、残りのマーカーを短縮間隔で書き込むことを確認します。"""
+    from app.routers import jobs as jobs_router
+
+    captured_pages: list[int] = []
+
+    def fake_write_progress(
+        job_id: str,
+        status: str,
+        progress: float,
+        current_page: int,
+        total_pages: int,
+        message: str,
+    ) -> None:
+        captured_pages.append(current_page)
+
+    monkeypatch.setattr(jobs_router, "_write_progress", fake_write_progress)
+
+    async def runner() -> None:
+        stop_event = asyncio.Event()
+        task = asyncio.create_task(
+            jobs_router._emit_page_progress(
+                job_id="test-job",
+                total_pages=3,
+                step_delay=1.0,
+                stop_event=stop_event,
+            )
+        )
+        # 最初のマーカー書き込み後に OCR 完了をシミュレートします
+        await asyncio.sleep(0.01)
+        stop_event.set()
+        await task
+
+    asyncio.run(runner())
+
+    # OCR 完了後も残りのマーカーがすべて書き込まれることを確認します
+    assert captured_pages == [1, 2, 3], f"期待 [1, 2, 3] だが取得 {captured_pages}"
