@@ -133,6 +133,7 @@ RUN sed -i 's/accelerator: gpu/accelerator: cpu/g' ${PROJECT_DIR}/submodules/tex
 # ndlocr_cli にページごとの OCR 処理時間 DEBUG ログを追加します
 # オリジナルの cli/core/inference.py は logging を使用していないため、修正版を上書きします
 COPY ndlocr_cli_patches/inference.py ${PROJECT_DIR}/cli/core/inference.py
+COPY ndlocr_cli_patches/progress_reporter.py ${PROJECT_DIR}/cli/core/progress_reporter.py
 
 # FIX(OW003005): config.yml の score_thr が無視される問題を修正
 # ndl_layout submodule の process_textblock.py をパッチ版で上書きします

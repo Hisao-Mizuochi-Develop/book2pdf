@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, within, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "../page";
-import { MOCK_JOB_ID, MOCK_FILES } from "@/mocks/handlers";
+import { MOCK_JOB_ID } from "@/mocks/handlers";
 
 type MockEventSource = EventSource & {
   simulateMessage: (data: string) => void;
@@ -58,18 +58,12 @@ describe("Home page MSW integration", () => {
     await userEvent.upload(screen.getByTestId("zip-file-input"), file);
     await userEvent.click(screen.getByTestId("upload-button"));
 
-    // 2. アップロード完了後、ジョブ情報が表示される
-    const jobInfoPanel = await screen.findByTestId("job-info-panel");
-    await waitFor(() => {
-      expect(jobInfoPanel).toHaveTextContent(`ジョブ ID: ${MOCK_JOB_ID}`);
-    });
-    expect(within(jobInfoPanel).getByText(MOCK_FILES[0])).toBeInTheDocument();
-
-    // 3. SSE 経由で processing 進捗イベントを送信する
+    // 2. アップロード完了後、SSE 接続が確立される
     await waitFor(() => {
       expect(mockInstances).toHaveLength(1);
     });
 
+    // 3. SSE 経由で processing 進捗イベントを送信する
     await act(async () => {
       mockInstances[0].simulateMessage(
         JSON.stringify({

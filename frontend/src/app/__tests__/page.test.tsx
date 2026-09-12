@@ -35,7 +35,7 @@ describe("Home page", () => {
     expect(screen.getByTestId("zip-file-input")).toBeInTheDocument();
   });
 
-  it("アップロード完了後にジョブ情報と進捗が表示される", () => {
+  it("アップロード完了後に進捗と結果が表示される", () => {
     vi.mocked(useOcrJob).mockReturnValue({
       jobId: "job-123",
       files: ["page_001.png", "page_002.png"],
@@ -57,9 +57,6 @@ describe("Home page", () => {
 
     render(<Home />);
 
-    expect(screen.getByText("ジョブ ID: job-123")).toBeInTheDocument();
-    expect(screen.getByText("page_001.png")).toBeInTheDocument();
-    expect(screen.getByText("page_002.png")).toBeInTheDocument();
     expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.getByText(/ocr result/)).toBeInTheDocument();
     expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();

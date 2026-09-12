@@ -11,10 +11,7 @@ import { downloadPdf } from "@/lib/api";
 
 export default function Home() {
   const {
-    jobId,
-    files,
     latestProgress,
-    progressLog,
     result,
     error,
     downloadableJobId,
@@ -44,29 +41,7 @@ export default function Home() {
           </div>
         )}
 
-        {jobId && (
-          <div
-            data-testid="job-info-panel"
-            className="rounded-2xl border border-border bg-card p-6 shadow-sm"
-          >
-            <h2 className="text-lg font-semibold text-card-foreground">ジョブ情報</h2>
-            <p className="mt-1 text-sm text-muted-foreground">ジョブ ID: {jobId}</p>
-            {files.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-card-foreground">
-                  アップロードされた画像
-                </h3>
-                <ul className="mt-1 max-h-32 overflow-auto rounded-lg border border-border bg-background p-2 text-sm text-foreground">
-                  {files.map((name) => (
-                    <li key={name}>{name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        <ProgressPanel latest={latestProgress} log={progressLog} />
+        <ProgressPanel latest={latestProgress} />
 
         {result && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">

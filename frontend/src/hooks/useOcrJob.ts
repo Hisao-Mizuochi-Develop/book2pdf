@@ -76,7 +76,6 @@ export function useOcrJob(): UseOcrJobResult {
       if (
         parsed !== null &&
         typeof parsed === "object" &&
-        "job_id" in parsed &&
         "status" in parsed &&
         "progress" in parsed
       ) {
@@ -93,10 +92,7 @@ export function useOcrJob(): UseOcrJobResult {
       reset();
       setJobId(newJobId);
       setFiles(uploadedFiles);
-      setProgressLog([
-        `ジョブを作成しました: ${newJobId}`,
-        `画像を ${uploadedFiles.length} 枚検出しました`,
-      ]);
+      setProgressLog([`画像を ${uploadedFiles.length} 枚検出しました`]);
       setIsLoading(true);
 
       // 進捗イベントの共通ハンドラです。SSE と polling の両方で使用します。
@@ -131,7 +127,6 @@ export function useOcrJob(): UseOcrJobResult {
             cleanupProgress();
           },
           () => {
-            setProgressLog((prev) => [...prev, "ポーリングによる進捗監視が完了しました"]);
             cleanupProgress();
           },
         );
@@ -148,7 +143,6 @@ export function useOcrJob(): UseOcrJobResult {
             startPollingFallback();
           },
           () => {
-            setProgressLog((prev) => [...prev, "進捗通知が完了しました"]);
             cleanupProgress();
           },
         );

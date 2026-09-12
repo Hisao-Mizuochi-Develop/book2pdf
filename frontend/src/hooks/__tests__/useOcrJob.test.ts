@@ -96,7 +96,6 @@ describe("useOcrJob", () => {
 
     expect(result.current.jobId).toBe("job-123");
     expect(result.current.files).toEqual(["page_001.png"]);
-    expect(result.current.progressLog).toContain("ジョブを作成しました: job-123");
     expect(result.current.progressLog).toContain("画像を 1 枚検出しました");
     expect(subscribeJobProgress).toHaveBeenCalledWith(
       "job-123",
