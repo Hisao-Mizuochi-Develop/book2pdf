@@ -191,22 +191,22 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Start([イベント生成]) --> ReadBE[読込: {job_id}.json<br/>フェーズ進捗]
-    Start --> ReadOW[読込: GET /progress/{id}<br/>per-page進捗]
+    Start(["イベント生成"]) --> ReadBE["読込: {job_id}.json<br/>フェーズ進捗"]
+    Start --> ReadOW["読込: GET /progress/{id}<br/>per-page進捗"]
 
-    ReadBE --> Merge{マージ}
+    ReadBE --> Merge{"マージ"}
     ReadOW --> Merge
 
-    Merge -->|job_id| F1[backend値を採用]
-    Merge -->|status| F2[backend値を採用]
-    Merge -->|stage| F3[backend値を採用]
-    Merge -->|progress| F4[ocr-worker値を採用]
-    Merge -->|current_page| F5[ocr-worker値を採用]
-    Merge -->|total_pages| F6[ocr-worker値を採用]
-    Merge -->|message| F7[ocr-worker値を採用]
-    Merge -->|error| F8[backend値を採用]
+    Merge -->|job_id| F1["backend値を採用"]
+    Merge -->|status| F2["backend値を採用"]
+    Merge -->|stage| F3["backend値を採用"]
+    Merge -->|progress| F4["ocr-worker値を採用"]
+    Merge -->|current_page| F5["ocr-worker値を採用"]
+    Merge -->|total_pages| F6["ocr-worker値を採用"]
+    Merge -->|message| F7["ocr-worker値を採用"]
+    Merge -->|error| F8["backend値を採用"]
 
-    F1 --> Output([SSEイベント出力])
+    F1 --> Output(["SSEイベント出力"])
     F2 --> Output
     F3 --> Output
     F4 --> Output
