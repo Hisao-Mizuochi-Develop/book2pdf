@@ -2,13 +2,17 @@
 
 OW004001: backend の SSE 連携のため、ocr-worker と backend が
 同じファイル形式・パス規約で進捗を共有できるようにします。
+
+SY002002: ocr-worker コンテナ内の in-memory ストアとして機能します。
+backend コンテナから HTTP (GET /progress/{job_id}) で参照されます。
 """
 from __future__ import annotations
 
-import json
-import os
 from datetime import datetime, timezone
-from pathlib import Path
+
+# SY002002: in-memory 進捗ストア
+# 複数スレッドからアクセスされる可能性があるため、将来的に threading.Lock の導入を検討
+_progress_store: dict[str, dict] = {}
 
 
 def write_progress(
@@ -17,12 +21,12 @@ def write_progress(
     total_pages: int,
     message: str,
 ) -> None:
-    """OCR ページ処理の進捗をファイルに書き込みます。
+    """OCR ページ処理の進捗を in-memory ストアに書き込みます。
 
     Parameters
     ----------
     job_id : str | None
-        進捗ファイル名に使用するジョブ ID。
+        進捗を保存するジョブ ID。
     current_page : int
         現在処理済みのページ数。
     total_pages : int
@@ -32,12 +36,8 @@ def write_progress(
     """
     if not job_id:
         return
-    progress_dir = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
-    progress_dir.mkdir(parents=True, exist_ok=True)
-    progress_file = progress_dir / f"{job_id}.json"
-    temp_file = progress_dir / f"{job_id}.json.tmp"
     progress = round(0.1 + 0.5 * (current_page / total_pages), 2) if total_pages > 0 else 0.0
-    data = {
+    _progress_store[job_id] = {
         "status": "processing",
         "progress": progress,
         "current_page": current_page,
@@ -45,6 +45,19 @@ def write_progress(
         "message": message,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
-    # 原子書き込み: 一時ファイルに書き込んでから rename で入れ替え
-    temp_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    temp_file.replace(progress_file)
+
+
+def get_progress(job_id: str) -> dict | None:
+    """指定したジョブ ID の進捗を取得します。
+
+    Parameters
+    ----------
+    job_id : str
+        ジョブ ID。
+
+    Returns
+    -------
+    dict | None
+        進捗データ。存在しない場合は None。
+    """
+    return _progress_store.get(job_id)
