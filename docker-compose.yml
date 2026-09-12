@@ -106,7 +106,8 @@ services:
       - backend
     healthcheck:
       # Next.js 開発サーバーの起動を確認します
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      # node:22-slim には wget が含まれていないため、Node.js 標準の http モジュールを使用します
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })\""]
       interval: 10s
       timeout: 5s
       retries: 30

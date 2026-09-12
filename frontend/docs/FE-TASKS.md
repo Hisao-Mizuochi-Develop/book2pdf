@@ -23,6 +23,7 @@
 | [FE002](#fe002) | `OCR 処理の進捗をリアルタイムで確認する` |
 | [FE003](#fe003) | `OCR 完了後に検索可能 PDF をダウンロードする` |
 | [FE004](#fe004) | `プロキシ環境でも進捗通知を受け取る` |
+| [FE005](#fe005) | `frontend コンテナの健全性を維持する` |
 
 <a id="fe001"></a>
 ## ユースケースNo | 001
@@ -308,3 +309,35 @@ OCR 完了後に検索可能 PDF をダウンロードする
 <div align="right"><a href="#fe004">タスク一覧へ↩︎</a></div>
 
 > SSE とポーリングを切り替えられる設定 UI を作成する
+---
+
+<a id="fe005"></a>
+## ユースケースNo | 005
+
+ユースケース
+frontend コンテナの健全性を維持する
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [FE005001](#fe005001) frontend Docker healthcheck wget 不足修正 | 2026-09-13 |  | バグ修正 |
+
+<a id="fe005001"></a>
+### FE005001 frontend Docker healthcheck wget 不足修正
+
+<div align="right"><a href="#fe005">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `docker-compose.yml` の frontend healthcheck を修正する
+>   - `wget` を使用しているが、`node:22-slim` イメージには `wget` が含まれていないため healthcheck が失敗している
+>   - `node -e` を使用した HTTP GET チェックに変更する（Node.js はイメージに確実に含まれる）
+> - 修正後、`docker compose up -d` を実行し、frontend コンテナの `STATUS` が `healthy` になることを確認する
+> - frontend アプリケーションコードの変更は一切不要
+>
+> 【実施結果】
+> - 2026-09-13: `docker-compose.yml` の frontend healthcheck を `wget` から `node -e` ベースに変更
+> - `FE-TASKS.md` の lint (`python scripts/lint-task-md.py`) PASS
+> - Docker Desktop for Mac のパフォーマンス問題により、コンテナ再起動での real-time 確認は未完了（`docker compose up` がタイムアウト）
+>   - 修正後のコマンド構文は `node:22-slim` コンテナ上でパース可能であることを確認済み
+>
