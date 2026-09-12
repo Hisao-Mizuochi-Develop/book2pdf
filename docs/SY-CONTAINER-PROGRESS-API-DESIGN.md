@@ -206,7 +206,14 @@ flowchart TD
     Merge -->|message| F7[ocr-worker値を採用]
     Merge -->|error| F8[backend値を採用]
 
-    F1 & F2 & F3 & F4 & F5 & F6 & F7 & F8 --> Output([SSEイベント出力])
+    F1 --> Output([SSEイベント出力])
+    F2 --> Output
+    F3 --> Output
+    F4 --> Output
+    F5 --> Output
+    F6 --> Output
+    F7 --> Output
+    F8 --> Output
 ```
 
 ### フィールド別優先ソース
