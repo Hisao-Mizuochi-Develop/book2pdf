@@ -59,15 +59,16 @@
 ## ユースケースNo | SY002
 
 ユースケース
-進捗通知方式の全体仕様策定
+コンテナ間進捗通知のREST API連携方式仕様策定
 
-OCR 処理などの長時間処理に対する進捗通知方式の全体仕様を策定する。
+OCR 処理などの長時間処理に対する進捗通知方式の全体仕様を策定し、コンテナ間の連携を REST API に統一する。
 
 <div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 | 2026-09-03 | 仕様 |
+| [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 |  | 仕様 |
+| [SY002002](#sy002002) コンテナ間進捗通知のREST API連携方式実装 | 2026-09-12 |  | 横断実装 |
 
 <a id="sy002001"></a>
 ### SY002001 進捗通知のポーリング方式全体仕様策定
@@ -85,4 +86,35 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > - 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に文書化した
 > - 2026-09-03: `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した
 >
+> ---
 >
+> <a id="sy002002"></a>
+> ### SY002002 コンテナ間進捗通知のREST API連携方式実装
+>
+> <div align="right"><a href="#sy002">タスク一覧へ↩︎</a></div>
+>
+> > 【計画】
+> > #### 問題の整理
+> >   - ocr-worker と backend が両方とも `/data/progress/{job_id}.json` に書き込んでおり、ファイル上書きによる競合が発生している
+> >   - ocr-worker は `OCR 処理を開始します（1/3）`→`OCR 処理中です（2/3）` の per-page 進捗を書き込む
+> >   - backend は「OCR 処理を開始しました」「OCR 処理が完了しました」「PDF を生成中です」のジョブフェーズ進捗を書き込む
+> >   - 結果として、ocr-worker のメッセージが backend のメッセージで上書きされ、frontend で per-page 進捗が観測できない
+> >   - ファイル共有はコンテナ間の疎結合に反し、将来的な別ホスト・別 Pod 移行を阻害する
+> >
+> > #### 解決方針（REST API 連携方式）
+> >   - ocr-worker に `/progress/{job_id}` GET エンドポイントを追加し、per-page 進捗を内部辞書で管理する
+> >   - backend の `_progress_event_generator` は `{job_id}.json`（ジョブフェーズ進捗）と ocr-worker の `/progress/{job_id}`（per-page 進捗）の両方を監視する
+> >   - 両ソースをマージして SSE イベントを生成する
+> >   - マージ戦略: ocr-worker の per-page 進捗（progress / current_page / message）を優先、status は backend のフェーズ値を優先
+> >
+> > #### 対象ファイル
+> >   - `ocr-worker/ndlocr_cli_patches/progress_reporter.py`: ファイル書き込みを内部辞書更新に変更
+> >   - `ocr-worker/app/main.py`: `/progress/{job_id}` GET エンドポイント追加
+> >   - `backend/app/routers/jobs.py`: `_progress_event_generator` の ocr-worker HTTP API ポーリングロジック追加
+> >   - `backend/app/services/ocr_engine.py`: ocr-worker ホスト設定確認・更新
+> >   - `backend/tests/test_progress.py`: ocr-worker HTTP API 連携テスト
+> >   - `frontend/src/hooks/__tests__/useOcrJob.test.ts`: 統合テストの更新
+> >   - `docs/SY-PROGRESS-NOTIFICATION-SPEC.md`: 仕様文書の更新
+> >
+> > 【実施結果】
+> >
