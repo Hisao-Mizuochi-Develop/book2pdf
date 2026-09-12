@@ -30,6 +30,8 @@ services:
       - progress:/data/progress
       # ソースコードをホストと共有し、ホットリロードを有効にします
       - ./backend:/app
+      # ocr-worker の progress_reporter をテストでインポートできるようにマウントします
+      - ./ocr-worker/ndlocr_cli_patches:/opt/ndlocr_cli_patches:ro
     environment:
       # 本番環境では実際の秘密鍵を設定してください
       - SECRET_KEY=change-me-in-production
@@ -39,6 +41,9 @@ services:
       - OCR_WORKER_REQUEST_TIMEOUT=3600
       # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
       - LOG_LEVEL=DEBUG
+      # ocr-worker の progress_reporter をテストでインポートできるように PYTHONPATH を設定します
+      # /opt 配下に ndlocr_cli_patches パッケージがマウントされているため、親ディレクトリを指定します
+      - PYTHONPATH=/opt
     depends_on:
       # ocr-worker コンテナの起動を待ちます
       # ただし、起動を待つだけで OCR 処理の完了は待ちません

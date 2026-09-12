@@ -438,6 +438,9 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
 
         # OCR 推論インスタンスを作成します
         inferrer = await run_in_threadpool(OcrInferrer, infer_cfg)
+        # FIX(OW004001): backend の SSE 連携のため job_id を設定します
+        if job_id:
+            inferrer.job_id = job_id
 
         # OCR 処理の実行時間を計測します
         logger.debug("OCR 処理を開始します: job_id=%s, total_pages=%d", job_id, total_pages)

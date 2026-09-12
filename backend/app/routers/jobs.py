@@ -66,6 +66,9 @@ from app.services import zip_extractor
 # OCR エンジンを読み込みます
 from app.services.ocr_engine import create_ocr_engine
 
+# アプリケーション設定を読み込みます
+from app.core.config import settings
+
 # 検索可能 PDF 生成サービスを読み込みます
 from app.services.pdf_generator import generate_searchable_pdf
 
@@ -236,6 +239,46 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     )
 
 
+async def _emit_page_progress(
+    job_id: str,
+    total_pages: int,
+    step_delay: float,
+    stop_event: asyncio.Event,
+) -> None:
+    """OCR 実行中に段階的なページマーカーを書き込みます。
+
+    ページ単位の OCR コールバックがないため、OCR 実行と並行して
+    一定間隔ごとに current_page をインクリメントし、フロントエンドに
+    0/M -> 1/M -> ... -> M/M の遷移を届けます。
+
+    Args:
+        job_id: 対象ジョブ ID
+        total_pages: 総ページ数
+        step_delay: ページマーカー間の待機秒数
+        stop_event: OCR 本体が完了したことを知らせるイベント
+    """
+    for i in range(1, total_pages + 1):
+        progress = round(0.1 + 0.5 * (i / total_pages), 2)
+        _write_progress(
+            job_id,
+            status="processing",
+            progress=progress,
+            current_page=i,
+            total_pages=total_pages,
+            message=f"OCR 処理中です（{i}/{total_pages}）",
+        )
+
+        # 最後のページマーカーまで到達したら終了します。
+        if i == total_pages:
+            break
+
+        # OCR 本体が先に終了していた場合は短い間隔で残りのマーカーを書き込み、
+        # そうでなければ通常の step_delay 待機します。
+        # これにより、高速な OCR 環境でも 1/3→2/3→3/3 の遷移が観測可能になります。
+        wait_seconds = 0.1 if stop_event.is_set() else step_delay
+        await asyncio.sleep(wait_seconds)
+
+
 async def _run_ocr_and_generate_pdf(
     job_id: str,
     extract_dir: str,
@@ -272,27 +315,42 @@ async def _run_ocr_and_generate_pdf(
             message="OCR 処理を開始しました",
         )
 
-        # 各ページの処理マーカーを書き込みます
-        # ndlocr_cli はページ単位のコールバックを提供しないため、
-        # 開始直前に一括書き込みを行います（ステージマーカーとして表示されます）
-        for i in range(1, total_pages + 1):
-            progress = round(0.1 + 0.5 * (i / total_pages), 2)
-            _write_progress(
-                job_id,
-                status="processing",
-                progress=progress,
-                current_page=i,
-                total_pages=total_pages,
-                message=f"OCR 処理中です（{i}/{total_pages}）",
-            )
+        # FIX(OW004001): ocr-worker からページ単位の実進捗が書き込まれるため、
+        # タイマーベースの疑似進捗は使用しません。_emit_page_progress 関数本体は
+        # フォールバック用途で残しており、必要に応じて再度有効化できます。
+        # stop_event = asyncio.Event()
+        # progress_task: asyncio.Task | None = None
+        # if settings.ocr_progress_step_delay > 0 and total_pages > 0:
+        #     progress_task = asyncio.create_task(
+        #         _emit_page_progress(
+        #             job_id,
+        #             total_pages,
+        #             settings.ocr_progress_step_delay,
+        #             stop_event,
+        #         )
+        #     )
 
-        # OCR 処理は同期ブロッキングなので別スレッドで実行します
-        result = await asyncio.to_thread(
-            ocr_engine.run,
-            image_files=absolute_image_files,
-            work_dir=Path(extract_dir),
-            job_id=job_id,
-        )
+        try:
+            # OCR 処理は同期ブロッキングなので別スレッドで実行します
+            result = await asyncio.to_thread(
+                ocr_engine.run,
+                image_files=absolute_image_files,
+                work_dir=Path(extract_dir),
+                job_id=job_id,
+            )
+        finally:
+            # 進捗マーカータスクに OCR 完了を通知します
+            # stop_event.set()
+            # if progress_task is not None:
+            #     try:
+            #         await asyncio.wait_for(progress_task, timeout=5.0)
+            #     except asyncio.TimeoutError:
+            #         progress_task.cancel()
+            #         try:
+            #             await progress_task
+            #         except asyncio.CancelledError:
+            #             pass
+            pass
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
@@ -411,7 +469,11 @@ _PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
 
 # 進捗ファイルのポーリング間隔（秒）です
 # テスト時は PROGRESS_POLL_INTERVAL 環境変数で短縮できます
-_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.5"))
+_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.1"))
+
+# SSE ハートビート間隔（秒）です
+# 長時間データが流れない場合にプロキシ/ブラウザのタイムアウト切断を防ぐため一定間隔で送信します
+_HEARTBEAT_INTERVAL = 15.0
 
 
 def _write_progress(
@@ -438,6 +500,7 @@ def _write_progress(
     """
     _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
     progress_file = _PROGRESS_DIR / f"{job_id}.json"
+    temp_file = _PROGRESS_DIR / f"{job_id}.json.tmp"
     now = datetime.now(timezone.utc).isoformat()
     data = {
         "status": status,
@@ -447,7 +510,10 @@ def _write_progress(
         "message": message,
         "timestamp": now,
     }
-    progress_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    # 原子書き込み: 一時ファイルに書き込んでから rename で入れ替え
+    # Docker ボリューム共有環境で書き込み途中の不完全なファイルが読み込まれるのを防ぎます
+    temp_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    temp_file.replace(progress_file)
 
 
 @router.get("/{job_id}/pdf")
@@ -537,11 +603,16 @@ async def _progress_event_generator(job_id: str):
     # 前回読み込んだ進捗データを保持します
     last_data: dict | None = None
 
+    # 前回イベント（またはハートビート）を送信した時刻を保持します
+    last_send_time = asyncio.get_event_loop().time()
+
     # イベントループに制御を渡し、TestClient がレスポンスを受信できるようにします
     await asyncio.sleep(0)
 
     # ジョブが完了または失敗するまでポーリングを続けます
     while True:
+        event_sent = False
+
         # 進捗ファイルが存在する場合は読み込みます
         if progress_file.exists():
             content = progress_file.read_text(encoding="utf-8")
@@ -550,6 +621,8 @@ async def _progress_event_generator(job_id: str):
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
                 last_data = data
+                last_send_time = asyncio.get_event_loop().time()
+                event_sent = True
 
                 # 進捗イベントモデルを作成します
                 event = ProgressEvent(
@@ -578,6 +651,16 @@ async def _progress_event_generator(job_id: str):
                     # クライアントに正常終了を示す [DONE] シグナルを送信します
                     yield "data: [DONE]\n\n"
                     break
+
+        # 進捗イベントが送信されず、ハートビート間隔が経過していたら keepalive を送信します
+        # プロキシやブラウザのタイムアウト切断を防ぎます
+        if not event_sent:
+            now = asyncio.get_event_loop().time()
+            if now - last_send_time >= _HEARTBEAT_INTERVAL:
+                last_send_time = now
+                # SSE コメント行としてハートビートを送信（クライアント側では無視される）
+                yield ": keepalive\n\n"
+                await asyncio.sleep(0)
 
         # 次のポーリングまで短時間スリープします
         await asyncio.sleep(_POLL_INTERVAL)
@@ -608,7 +691,13 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
 
     # SSE 形式でストリーミングレスポンスを返します
+    # Cache-Control: no-cache → プロキシやブラウザがレスポンスをキャッシュしないようにします
+    # X-Accel-Buffering: no → Nginx 等のリバースプロキシが SSE ストリームをバッファリングしないようにします
     return StreamingResponse(
         _progress_event_generator(job_id),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )

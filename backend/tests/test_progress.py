@@ -201,3 +201,150 @@ async def test_stream_job_events_failed(monkeypatch, tmp_path) -> None:
     assert len(events) == 1
     assert events[0]["status"] == "failed"
     assert events[0]["message"] == "OCR 処理に失敗しました"
+
+
+@pytest.mark.anyio
+@pytest.mark.timeout(5)
+async def test_stream_job_events_heartbeat(monkeypatch, tmp_path) -> None:
+    """長時間進捗が変化しない場合にハートビートが送信されることを確認します。"""
+    # テスト用の進捗ディレクトリを作成します
+    progress_dir = tmp_path / "progress"
+    progress_dir.mkdir()
+
+    # ルーターモジュールの進捗ディレクトリを一時ディレクトリに差し替えます
+    monkeypatch.setattr(jobs_router, "_PROGRESS_DIR", progress_dir)
+
+    # ルーターモジュールのポーリング間隔を短く差し替えます
+    monkeypatch.setattr(jobs_router, "_POLL_INTERVAL", 0.05)
+
+    # ハートビート間隔を短く差し替えます（テスト用に 0.3 秒）
+    monkeypatch.setattr(jobs_router, "_HEARTBEAT_INTERVAL", 0.3)
+
+    job_id = "test-job-heartbeat"
+
+    # 進捗ファイルを processing 状態で作成します
+    _write_progress_file(
+        progress_dir,
+        job_id,
+        status="processing",
+        progress=0.33,
+        current_page=1,
+        total_pages=3,
+        message="OCR 処理中です",
+    )
+
+    # 進捗イベントジェネレータを直接非同期イテレーションします
+    events: list[str] = []
+    heartbeat_received = False
+
+    async for event_text in _progress_event_generator(job_id):
+        events.append(event_text)
+
+        # ハートビート（SSE コメント行）を受信したか確認します
+        if ": keepalive" in event_text:
+            heartbeat_received = True
+            break
+
+    # ハートビートが受信されたことを確認します
+    assert heartbeat_received is True
+    assert any(": keepalive" in e for e in events)
+
+
+@pytest.mark.anyio
+@pytest.mark.timeout(5)
+async def test_stream_job_events_atomic_write(monkeypatch, tmp_path) -> None:
+    """原子書き込み後に進捗ファイルが正しく読み取れることを確認します。"""
+    # テスト用の進捗ディレクトリを作成します
+    progress_dir = tmp_path / "progress"
+    progress_dir.mkdir()
+
+    # ルーターモジュールの進捗ディレクトリを一時ディレクトリに差し替えます
+    monkeypatch.setattr(jobs_router, "_PROGRESS_DIR", progress_dir)
+
+    # ルーターモジュールのポーリング間隔を短く差し替えます
+    monkeypatch.setattr(jobs_router, "_POLL_INTERVAL", 0.05)
+
+    job_id = "test-job-atomic"
+
+    # _write_progress を呼び出して進捗ファイルを作成します
+    jobs_router._write_progress(
+        job_id=job_id,
+        status="processing",
+        progress=0.66,
+        current_page=2,
+        total_pages=3,
+        message="原子書き込みテスト",
+    )
+
+    # 進捗ファイルが存在することを確認します
+    progress_file = progress_dir / f"{job_id}.json"
+    assert progress_file.exists()
+
+    # 内容が正しいことを確認します
+    content = progress_file.read_text(encoding="utf-8")
+    data = json.loads(content)
+    assert data["status"] == "processing"
+    assert data["progress"] == 0.66
+    assert data["current_page"] == 2
+    assert data["total_pages"] == 3
+    assert data["message"] == "原子書き込みテスト"
+
+    # 一時ファイルが残っていないことを確認します
+    temp_file = progress_dir / f"{job_id}.json.tmp"
+    assert not temp_file.exists()
+
+    # 進捗イベントジェネレータが正しく読み取れることを確認します
+    events: list[dict] = []
+    async for event_text in _progress_event_generator(job_id):
+        event = _parse_event(event_text)
+        events.append(event)
+        if event["status"] == "processing":
+            break
+
+    assert len(events) >= 1
+    assert events[0]["progress"] == 0.66
+
+
+def test_worker_update_progress_writes_per_page_progress(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """ocr-worker の progress_reporter.write_progress がページ単位の進捗ファイルを正しく書き込むことを確認します。
+
+    OW004001: ocr-worker の inference.py 内で各ページ処理後に進捗ファイルを書き込み、
+    backend の SSE ストリームが実際の処理進捗を返すことができるようにします。
+    """
+    import json
+    from ndlocr_cli_patches.progress_reporter import write_progress
+
+    # 進捗ファイルの出力先を一時ディレクトリに向けます
+    progress_dir = tmp_path / "progress"
+    monkeypatch.setenv("PROGRESS_DIR", str(progress_dir))
+
+    job_id = "test-ow-001"
+
+    # 1/3 ページ目の進捗を書き込みます
+    write_progress(
+        job_id=job_id,
+        current_page=1,
+        total_pages=3,
+        message="OCR 処理中です（1/3）",
+    )
+
+    progress_file = progress_dir / f"{job_id}.json"
+    assert progress_file.exists(), "進捗ファイルが作成されていません"
+
+    data = json.loads(progress_file.read_text(encoding="utf-8"))
+    assert data["status"] == "processing"
+    assert data["progress"] == pytest.approx(0.27, abs=0.01)
+    assert data["current_page"] == 1
+    assert data["total_pages"] == 3
+    assert data["message"] == "OCR 処理中です（1/3）"
+    assert "timestamp" in data
+
+    # 一時ファイルが残っていないことを確認します
+    assert not (progress_dir / f"{job_id}.json.tmp").exists()
+
+    # job_id が未設定の場合は何も書き込まれないことを確認します
+    write_progress(job_id=None, current_page=1, total_pages=3, message="no-job")
+    assert not (progress_dir / "None.json").exists()

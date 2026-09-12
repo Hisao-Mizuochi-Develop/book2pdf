@@ -82,8 +82,6 @@ export interface JobInfoPanelProps {
 export interface ProgressPanelProps {
   /** 最新の進捗イベントです。 */
   latest: ProgressEvent | null;
-  /** 時系列順の進捗メッセージログです。 */
-  log: string[];
 }
 
 /** ResultPanel コンポーネントの props 型です。 */

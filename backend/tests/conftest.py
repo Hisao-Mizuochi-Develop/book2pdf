@@ -14,10 +14,19 @@ import os
 import shutil
 
 # 一時ディレクトリを作成するための標準ライブラリです
+import sys
 import tempfile
+from pathlib import Path
 
 # pytest の型ヒント用です
 import pytest
+
+# ocr-worker の ndlocr_cli_patches をインポートできるようにパスを追加します
+# OW004001: テストで OcrInferrer._update_progress を直接検証するため
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_OCR_WORKER_DIR = _BACKEND_DIR.parent / "ocr-worker"
+if str(_OCR_WORKER_DIR) not in sys.path:
+    sys.path.insert(0, str(_OCR_WORKER_DIR))
 
 
 def pytest_configure(config: pytest.Config) -> None:
