@@ -239,6 +239,15 @@ OCR 処理の進捗をリアルタイムで確認する
 > - 2026-09-11: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` の `finally` から `cancel()` を削除し、`stop_event.set()` 後にタスク完了を待つよう変更
 > - 2026-09-11: `backend/tests/test_ocr.py` の `test_emit_page_progress_stops_early_on_event` を `test_emit_page_progress_accelerates_on_event` に変更し、OCR 完了後も残りマーカーが書き込まれることを検証
 > - 2026-09-11: 検証: backend pytest 36 passed / frontend `npm run test -- --run` 59 passed / `npm run build` 成功 / `scripts/lint-task-md.py` ALL PASS
+> - 2026-09-12: backend の `_emit_page_progress` 呼び出しを停止し、ocr-worker による per-page 進捗ファイル書き込みに移行
+> - 2026-09-12: ocr-worker の `inference.py` に `self.job_id` と `_update_progress` を追加。`_update_progress` は `progress_reporter.write_progress` を呼び出すようリファクタリング
+> - 2026-09-12: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` を新規作成。`_update_progress` のロジックを分離し、backend テストからもインポート可能にした
+> - 2026-09-12: ocr-worker の `main.py` で `inferrer.job_id = job_id` を設定し、OCR 処理中に進捗ファイルが書き込まれるようにした
+> - 2026-09-12: `backend/app/services/ocr_engine.py` から `enable_progress: False` を削除
+> - 2026-09-12: `backend/tests/test_ocr.py` の `test_ocr_engine_sends_disable_progress` を `test_ocr_engine_sends_job_id` に変更
+> - 2026-09-12: `backend/tests/test_progress.py` に `test_worker_update_progress_writes_per_page_progress` を追加。`progress_reporter.write_progress` の動作を検証
+> - 2026-09-12: `backend/tests/conftest.py` に `ocr-worker` への `sys.path` を追加し、`progress_reporter` のインポートを可能にした
+> - 2026-09-12: 検証: backend pytest 37 passed（全テスト PASS）
 >
 
 ---

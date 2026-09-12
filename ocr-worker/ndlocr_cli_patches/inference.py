@@ -115,6 +115,8 @@ class OcrInferrer:
         for proc in self.proc_list:
             self.proc_time_statistics[proc.proc_name] = []
         self.xml_template = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<OCRDATASET></OCRDATASET>'
+        # FIX(OW004001): backend と連携するための進捗通知用 job_id です
+        self.job_id = None
 
     def run(self):
         """
@@ -268,6 +270,7 @@ class OcrInferrer:
                 proc_dump_dir = os.path.join(dump_dir, proc.proc_name)
                 os.makedirs(proc_dump_dir, exist_ok=True)
 
+        total_pages = len(single_outputdir_data['img_list'])
         for page_idx, img_path in enumerate(single_outputdir_data['img_list'], start=1):
             single_image_file_data = self._get_single_image_file_data(img_path, single_outputdir_data)
             output_dir = single_outputdir_data['output_dir']
@@ -278,6 +281,9 @@ class OcrInferrer:
             print('######## START PAGE INFERENCE PROCESS ########')
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')
+            # FIX(OW004001): 各ページ処理開始時に進捗を通知します
+            self._update_progress(page_idx - 1, total_pages, f'OCR 処理を開始します（{page_idx}/{total_pages}）')
+
 
             for proc in self.proc_list:
                 start_proc = time.time()
@@ -297,6 +303,8 @@ class OcrInferrer:
             self.total_time_statistics.append(elapsed_page)
             # DEBUG ログ: 1 ページあたりの OCR 処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了: page={page_idx}, img_path={img_path}, elapsed={elapsed_page:.3f}s')
+            # FIX(OW004001): 各ページ処理完了後に進捗を通知します
+            self._update_progress(page_idx, total_pages, f'OCR 処理中です（{page_idx}/{total_pages}）')
 
             if self.cfg['save_image'] or self.cfg['partial_infer']:
                 # save inferenced result drawn image in pred_img directory
@@ -348,6 +356,11 @@ class OcrInferrer:
             _cleanup_memory()
 
         return pred_list
+
+    def _update_progress(self, current_page: int, total_pages: int, message: str) -> None:
+        """OCR ページ処理の進捗をファイルに書き込みます。"""
+        from .progress_reporter import write_progress
+        write_progress(self.job_id, current_page, total_pages, message)
 
     def _get_single_dir_data(self, input_dir):
         """

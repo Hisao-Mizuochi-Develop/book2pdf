@@ -303,3 +303,48 @@ async def test_stream_job_events_atomic_write(monkeypatch, tmp_path) -> None:
 
     assert len(events) >= 1
     assert events[0]["progress"] == 0.66
+
+
+def test_worker_update_progress_writes_per_page_progress(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """ocr-worker の progress_reporter.write_progress がページ単位の進捗ファイルを正しく書き込むことを確認します。
+
+    OW004001: ocr-worker の inference.py 内で各ページ処理後に進捗ファイルを書き込み、
+    backend の SSE ストリームが実際の処理進捗を返すことができるようにします。
+    """
+    import json
+    from ndlocr_cli_patches.progress_reporter import write_progress
+
+    # 進捗ファイルの出力先を一時ディレクトリに向けます
+    progress_dir = tmp_path / "progress"
+    monkeypatch.setenv("PROGRESS_DIR", str(progress_dir))
+
+    job_id = "test-ow-001"
+
+    # 1/3 ページ目の進捗を書き込みます
+    write_progress(
+        job_id=job_id,
+        current_page=1,
+        total_pages=3,
+        message="OCR 処理中です（1/3）",
+    )
+
+    progress_file = progress_dir / f"{job_id}.json"
+    assert progress_file.exists(), "進捗ファイルが作成されていません"
+
+    data = json.loads(progress_file.read_text(encoding="utf-8"))
+    assert data["status"] == "processing"
+    assert data["progress"] == pytest.approx(0.27, abs=0.01)
+    assert data["current_page"] == 1
+    assert data["total_pages"] == 3
+    assert data["message"] == "OCR 処理中です（1/3）"
+    assert "timestamp" in data
+
+    # 一時ファイルが残っていないことを確認します
+    assert not (progress_dir / f"{job_id}.json.tmp").exists()
+
+    # job_id が未設定の場合は何も書き込まれないことを確認します
+    write_progress(job_id=None, current_page=1, total_pages=3, message="no-job")
+    assert not (progress_dir / "None.json").exists()

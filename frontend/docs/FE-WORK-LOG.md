@@ -660,5 +660,56 @@ python scripts/lint-task-md.py  # ALL PASS
 
 ### 状態
 
-- UAT 待ち（ユーザーにブラウザでの動作確認を依頼中）
+- UAT 実施中に「段階的進捗が ocr-worker の実処理進捗と一致しない」不具合を確認。backend の `_emit_page_progress` は推定進捗であり、実際の OCR 処理状況とずれていた。
+
+---
+
+## 2026-09-12 FE002002 続き：per-page 進捗ファイル書き込み実装
+
+### 目的
+
+ocr-worker が実際のページ処理進捗をファイルに書き込み、backend SSE がそれを読み取って正確な進捗を返すようにする。
+
+### 実施内容
+
+1. `ocr-worker/ndlocr_cli_patches/progress_reporter.py`
+   - `write_progress()` 関数を新規作成。原子書き込みで `/data/progress/{job_id}.json` に進捗 JSON を書き込む
+2. `ocr-worker/ndlocr_cli_patches/inference.py`
+   - `OcrInferrer.__init__` に `self.job_id = None` を追加
+   - `_update_progress()` を追加。内部で `progress_reporter.write_progress()` を呼び出す
+3. `ocr-worker/app/main.py`
+   - `inferrer.job_id = job_id` を設定
+4. `backend/app/services/ocr_engine.py`
+   - `enable_progress: False` を削除
+5. `backend/app/routers/jobs.py`
+   - `_emit_page_progress` の呼び出しをコメントアウト（定義は残存）
+6. `backend/tests/test_ocr.py`
+   - `test_ocr_engine_sends_disable_progress` を `test_ocr_engine_sends_job_id` に変更
+7. `backend/tests/test_progress.py`
+   - `test_worker_update_progress_writes_per_page_progress` を追加
+8. `backend/tests/conftest.py`
+   - `sys.path` に `ocr-worker` を追加し、`progress_reporter` のインポートを可能にした
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+source .venv/bin/activate
+python -m pytest tests/ -v   # 37 passed
+```
+
+### 変更ファイル
+
+- `ocr-worker/ndlocr_cli_patches/progress_reporter.py`（新規）
+- `ocr-worker/ndlocr_cli_patches/inference.py`
+- `ocr-worker/app/main.py`
+- `backend/app/services/ocr_engine.py`
+- `backend/app/routers/jobs.py`
+- `backend/tests/test_ocr.py`
+- `backend/tests/test_progress.py`
+- `backend/tests/conftest.py`
+
+### 状態
+
+- backend 単体テスト全件 PASS。UAT 待ち（ユーザーにブラウザでの動作確認を依頼中）
 

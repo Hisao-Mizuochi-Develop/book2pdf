@@ -315,21 +315,20 @@ async def _run_ocr_and_generate_pdf(
             message="OCR 処理を開始しました",
         )
 
-        # 各ページの処理マーカーを段階的に書き込む非同期タスクを開始します
-        # ndlocr_cli はページ単位のコールバックを提供しないため、
-        # OCR 実行と並行して時間をあけてマーカーを更新し、
-        # フロントエンドに 0/3 -> 1/3 -> 2/3 -> 3/3 の遷移を届けます
-        stop_event = asyncio.Event()
-        progress_task: asyncio.Task | None = None
-        if settings.ocr_progress_step_delay > 0 and total_pages > 0:
-            progress_task = asyncio.create_task(
-                _emit_page_progress(
-                    job_id,
-                    total_pages,
-                    settings.ocr_progress_step_delay,
-                    stop_event,
-                )
-            )
+        # FIX(OW004001): ocr-worker からページ単位の実進捗が書き込まれるため、
+        # タイマーベースの疑似進捗は使用しません。_emit_page_progress 関数本体は
+        # フォールバック用途で残しており、必要に応じて再度有効化できます。
+        # stop_event = asyncio.Event()
+        # progress_task: asyncio.Task | None = None
+        # if settings.ocr_progress_step_delay > 0 and total_pages > 0:
+        #     progress_task = asyncio.create_task(
+        #         _emit_page_progress(
+        #             job_id,
+        #             total_pages,
+        #             settings.ocr_progress_step_delay,
+        #             stop_event,
+        #         )
+        #     )
 
         try:
             # OCR 処理は同期ブロッキングなので別スレッドで実行します
@@ -341,18 +340,17 @@ async def _run_ocr_and_generate_pdf(
             )
         finally:
             # 進捗マーカータスクに OCR 完了を通知します
-            stop_event.set()
-            if progress_task is not None:
-                # 残りの進捗マーカーが書き込まれるのを待ってから終了します。
-                # タイムアウトした場合のみ強制キャンセルします。
-                try:
-                    await asyncio.wait_for(progress_task, timeout=5.0)
-                except asyncio.TimeoutError:
-                    progress_task.cancel()
-                    try:
-                        await progress_task
-                    except asyncio.CancelledError:
-                        pass
+            # stop_event.set()
+            # if progress_task is not None:
+            #     try:
+            #         await asyncio.wait_for(progress_task, timeout=5.0)
+            #     except asyncio.TimeoutError:
+            #         progress_task.cancel()
+            #         try:
+            #             await progress_task
+            #         except asyncio.CancelledError:
+            #             pass
+            pass
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)

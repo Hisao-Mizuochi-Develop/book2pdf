@@ -294,8 +294,8 @@ def test_run_ocr_writes_staged_progress(
     assert progress_data["message"] == "PDF 生成が完了しました"
 
 
-def test_ocr_engine_sends_disable_progress(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """RemoteNdloCrOcrEngine が ocr-worker に enable_progress=False を送信することを確認します。"""
+def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """RemoteNdloCrOcrEngine が ocr-worker に job_id を送信することを確認します。"""
     from app.services.ocr_engine import RemoteNdloCrOcrEngine
     import httpx
 
@@ -323,8 +323,9 @@ def test_ocr_engine_sends_disable_progress(monkeypatch: pytest.MonkeyPatch, tmp_
     )
 
     assert captured_payload is not None, "リクエストボディが送信されていません"
-    assert captured_payload.get("enable_progress") is False, "enable_progress=False が含まれていません"
     assert captured_payload.get("job_id") == "test-job-id"
+    # OW004001: enable_progress は ocr-worker 側のファイル書き込み制御に使われていたが、
+    # inference.py 内で直接書き込むようになったため、リクエストボディからは削除された
 
 
 def test_emit_page_progress_writes_all_markers(
