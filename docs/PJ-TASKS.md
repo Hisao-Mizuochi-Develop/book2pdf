@@ -56,6 +56,7 @@
 | [PJ001018](#pj001018) `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する | 2026-09-10 | 2026-09-10 | 運用整備 |
 | [PJ001019](#pj001019) 「コミット・マージ ≠ タスク完了」を徹底するための `.clinerules`・AgentSkills 改修 | 2026-09-10 | 2026-09-10 | 運用整備 |
 | [PJ001020](#pj001020) feature ブランチの削除判断・実行をユーザーに委ねるよう `.clinerules`・AgentSkills を改修 | 2026-09-10 | 2026-09-10 | 運用整備 |
+| [PJ001021](#pj001021) Mermaid 構文検証 AgentSkill 作成と `.clinerules`・ドキュメント反映 | 2026-09-13 | | 運用整備 |
 
 <a id="pj001001"></a>
 ### PJ001001 `SY` 識別子の運用ルールと 3 層スキル選択マトリックスを文書化する
@@ -455,6 +456,25 @@
 > - 2026-09-10: main ブランチへ `--no-ff` マージ完了（マージコミット: `1e79aa59`）
 > - 2026-09-10: タスク完了日付を記入したが、AI 自身がブランチ削除ルール（`feature/PJ001020-completion-date` を勝手に作成・削除）を破った事象が発生したため、再強化のため一旦未完了に戻す
 > - 2026-09-10: ユーザー承認はタスク完了日付記入のみを許可し、Git 操作（コミット・マージ・push・ブランチ削除）は別途選択式確認を必須とするよう `.clinerules`・AgentSkills を強化
+>
+<a id="pj001021"></a>
+### PJ001021 Mermaid 構文検証 AgentSkill 作成と `.clinerules`・ドキュメント反映
+
+<div align="right"><a href="#pj001">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `.cline/skills/mermaid-doc-validator/SKILL.md` を新規作成する
+>   - Mermaid 図の構文エラーパターンと修正指針を定義する
+>   - `{}` 波括弧、`[]` 角括弧、`class` 予約語などの衝突パターンを網羅する
+>   - 図種別別（sequenceDiagram / flowchart / stateDiagram / classDiagram）の注意点テーブルを作成する
+> - `.clinerules` の末尾に「Mermaid Diagram Editing Rules」セクションを追加する
+>   - 波括弧使用制限、編集後の検証手順、図種別の一貫性ルールを定義する
+> - `docs/OT-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加する
+> - `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md` に `/mermaid` スラッシュコマンド（12番目）を追加する
+>   - 必ず 10 個の利用例を含める
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
 >
 <a id="pj002"></a>
 ## ユースケースNo | PJ002

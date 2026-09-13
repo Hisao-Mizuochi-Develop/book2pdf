@@ -536,3 +536,26 @@ AI はユーザーからの明示的な承認なしに、いかなる理由が�
 - Plan / Act モードの切り替えは同一タスク内の実装開始を意味し、異なるタスクの承認ゲートをスキップするものではない
 - スキルファイルを読み込む際は、必ず `read_files` で実ファイルを開き、記憶や要約に頼らないこと。
 
+## Mermaid Diagram Editing Rules
+
+プロジェクト内のシステム設計文書（`docs/SY-*.md` など）では Mermaid 図を多用します。
+Mermaid 構文エラーを防ぐため、以下を遵守する。
+
+### 1. `{}` 波括弧の使用制限
+
+- `sequenceDiagram` の `participant` 宣言、`flowchart` / `graph` のノードラベルでは、波括弧を含むテキストは必ずダブルクォートで囲む
+- 例: `/data/progress/{job_id}.json` → `"/data/progress/{job_id}.json"`
+
+### 2. `[]` 角括弧の使用制限
+
+- `flowchart` / `graph` のノードラベル `[label]` では、角括弧を含むテキストはダブルクォートで囲むか、代替表現を使用する
+
+### 3. 編集後の検証
+
+- Mermaid 図を含む Markdown ファイルを編集した後、`mermaid-doc-validator` スキルに従い構文チェックを実施する
+- または VS Code の Mermaid プレビュー拡張機能でレンダリング確認を行う
+
+### 4. 図種別の一貫性
+
+- 同一文書内では、図の目的に応じて図種別を統一する（フローには `flowchart`、相互作用には `sequenceDiagram`、状態遷移には `stateDiagram`）
+

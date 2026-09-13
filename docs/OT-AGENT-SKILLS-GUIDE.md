@@ -52,6 +52,7 @@
 | `task-manager` | `.cline/skills/task-manager/SKILL.md` | タスク管理 | タスクNo体系、粒度、記録場所（`OT-TASKS.md` / `OT-WORK-LOG.md`） | タスク管理表・作業ログを作成・更新する時 |
 | `test-manager` | `.cline/skills/test-manager/SKILL.md` | テスト・検証 | テストデータ配置、検証レポート作成、PDF目視確認、README.md インデックス追加 | テストデータ配置、OCR 精度比較、検証レポート作成時 |
 | `markdown-table-validator` | `.cline/skills/markdown-table-validator/SKILL.md` | ドキュメント検証 | Markdown パイプテーブルのカラム整合性検証、不整合検出、修正指針提示 | `*-TASKS.md` や `docs/**/*.md` のテーブル編集時、CI/pre-commit 実行時 |
+| `mermaid-doc-validator` | `.cline/skills/mermaid-doc-validator/SKILL.md` | ドキュメント検証 | Mermaid 図の構文エラー検出、波括弧・角括弧衝突防止、図種別別の注意点提示 | `docs/**/*.md` の Mermaid 図を作成・編集する時 |
 | `workflow-runner` | `.cline/skills/workflow-runner/SKILL.md` | 実行・承認ゲート | タスクの4フェーズ実行、スキル選択、承認ゲート（Gate 1/2/3） | タスク開始〜完了のライフサイクル、スキル選択時 |
 
 ---
