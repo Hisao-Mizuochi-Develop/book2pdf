@@ -24,8 +24,8 @@
 | [`OT-AGENT-SKILLS-GUIDE.md`](OT-AGENT-SKILLS-GUIDE.md) | Cline AgentSkills の構成定義・各スキル役割・運用方法 |
 | [`OT-OCR-PREPROCESSING-GUIDE.md`](OT-OCR-PREPROCESSING-GUIDE.md) | OCR 前処理・画像サイズ制御ガイド |
 | [`OT-DEBUG-LOGGING-GUIDE.md`](OT-DEBUG-LOGGING-GUIDE.md) | デバッグログの設定・確認方法 |
-| [`OT-TASKS.md`](OT-TASKS.md) | プロジェクト全体のタスク管理表 |
-| [`OT-WORK-LOG.md`](OT-WORK-LOG.md) | プロジェクト全体の作業ログ |
+| [`OT-TASKS.md`](OT-TASKS.md) | 機能・性能以外のタスク管理表 |
+| [`OT-WORK-LOG.md`](OT-WORK-LOG.md) | 機能・性能以外の作業ログ |
 | [`SY-CAVEATS.md`](SY-CAVEATS.md) | 全体横断の注意事項 |
 
 ## Cline Agent Skills

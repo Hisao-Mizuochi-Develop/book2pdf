@@ -1,6 +1,6 @@
 # OT タスク管理表
 
-本ファイルは、`backend` / `frontend` / `ocr-worker` / `localapp` を横断するプロジェクト全体のタスクを追記型で管理するものです。
+本ファイルは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
 ## タスク粒度の方針
@@ -21,11 +21,11 @@
 | [OT001](#ot001) | プロジェクト全体のドキュメント整備 |
 | [OT002](#ot002) | 複数モジュールにまたがる注意事項の一元管理 |
 | [OT003](#ot003) | 進捗通知方式の整備と localapp ポーリングの改善 |
-| [OT007](#ot007) | `OT` に誤分類された System / 全体設計タスクの切り出しと運用ルール整備 |
-| [OT008](#ot008) | localapp 単体 OCR→PDF 技術調査・選定 |
-| [OT009](#ot009) | タスク管理ファイルのカラムずれ・空行整備 |
-| [OT010](#ot010) | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 |
-| [OT011](#ot011) | タスク管理ファイルフォーマット統一と整合性全チェック |
+| [OT004](#ot004) | `OT` に誤分類された System / 全体設計タスクの切り出しと運用ルール整備 |
+| [OT005](#ot005) | localapp 単体 OCR→PDF 技術調査・選定 |
+| [OT006](#ot006) | タスク管理ファイルのカラムずれ・空行整備 |
+| [OT007](#ot007) | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 |
+| [OT008](#ot008) | タスク管理ファイルフォーマット統一と整合性全チェック |
 
 ---
 
@@ -57,33 +57,6 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-11: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を新規作成し、システム全体構成・アーキテクチャ・処理フローを記載した
-> - 2026-08-11: `docs/SY-DESIGN-DECISIONS.md` を新規作成し、技術選定と将来の課題を記載した
-> - 2026-08-11: `docs/OT-CODING-CONVENTIONS.md` を新規作成し、各言語のコーディング規約を定めた
->
 <a id="ot001002"></a>
 ### OT001002 結合テスト手順書の作成
 
@@ -100,38 +73,6 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-12: `./docs/OT-INTEGRATION-TEST-GUIDE.md` を新規作成し、Docker Compose 起動から PDF ダウンロードまでの手順を記載した
-> - 2026-08-12: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の「フォルダ・ファイル構成」に `OT-INTEGRATION-TEST-GUIDE.md` を追加し、関連ドキュメントセクションへのリンクを含めた
-> - 2026-08-12: トラブルシューティングとして backend 再ビルド、`GlobalHydra` エラー、CORS、PDF `ERR_ABORTED`、OCR タイムアウトについて記載した
-> - 2026-08-12: `.clinerules` の「フォルダ・ドキュメント配置ルール」に `./docs/` 用の `OT-TASKS.md` / `OT-WORK-LOG.md` / `OT-CAVEATS.md` 配置ルールを追加した
-> - 2026-08-12: `./docs/OT-TASKS.md` / `./docs/OT-WORK-LOG.md` / `./docs/OT-CAVEATS.md` を新規作成し、backend/docs/ に誤作成した横断タスク OT003001 を移行した
->
----
-
-<a id="ot002"></a>
 ## ユースケースNo | OT002
 
 ユースケース
@@ -159,32 +100,6 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-08-12: `./docs/OT-CAVEATS.md` を新規作成し、Docker Compose 上での結合テストに関する全体横断の注意事項を記載した
-> - 2026-08-12: 各モジュール固有の注意事項については `backend/docs/BE-CAVEATS.md` / `ocr-worker/docs/OW-CAVEATS.md` へのリンクを設置した
->
 <a id="ot002002"></a>
 ### OT002002 `OT-CAVEATS.md` の分離設計と移行計画策定
 
@@ -202,34 +117,6 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-06: `docs/OT-CAVEATS.md` の内容を分類し、モジュール固有の項目と横断的な項目に分離した
-> - 2026-09-06: 各モジュールの `*-CAVEATS.md` への移行先と `docs/SY-CAVEATS.md` の構成を決定した
-> - 2026-09-06: `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` に OT002002 として記録した
-> - 2026-09-06: `docs/README.md` の dead link を `SY-CAVEATS.md` に修正した
->
 <a id="ot002003"></a>
 ### OT002003 `docs/OT-CAVEATS.md` の内容を各モジュールの `*-CAVEATS.md` に再配布し、OT-CAVEATS.md を削除する
 
@@ -246,38 +133,6 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-06: `backend/docs/BE-CAVEATS.md` に OCR タイムアウト設定、性能テストの `LOG_LEVEL=DEBUG` 前提、進捗通知の `JobResponse` 拡張と将来の `/progress` エンドポイント方針を追加した
-> - 2026-09-06: `localapp/docs/LA-CAVEATS.md` に HTTP ポーリング優先、1 秒間隔 / 10 秒タイムアウト、指数関数的バックオフリトライ、リトライ前の進捗メッセージを追加した
-> - 2026-09-06: `ocr-worker/docs/OW-CAVEATS.md` に OCR 呼び出し側の `--max-time 600` タイムアウト設定を追加した
-> - 2026-09-06: `docs/SY-CAVEATS.md` を新規作成し、`docs/SY-PROGRESS-NOTIFICATION-SPEC.md` への横断的な参照を集約した
-> - 2026-09-06: `docs/OT-CAVEATS.md` を削除した
->
----
-
-<a id="ot003"></a>
 ## ユースケースNo | OT003
 
 ユースケース
@@ -307,44 +162,7 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-03: `docs/progress-notification-polling-design.md` を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に統合し、前者を削除した
-> - 2026-09-03: `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
-> - 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に文書化した
-> - 2026-09-03: `localapp/src-tauri/src/commands/backend_api/backend_api_impl.rs` に `poll_job_status` ヘルパーを追加し、per-request タイムアウトと指数関数的バックオフによるリトライを実装した
-> - 2026-09-03: `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` / `docs/OT-CAVEATS.md` / `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` を更新した
-> - 2026-09-03: `cargo check --tests` と `cargo test backend_api_impl -- --nocapture` にてコンパイル・テストを確認した
-> - 2026-09-03: localapp OCR タイムアウトの原因調査を実施し、タイムアウト値の管理方法（設定ファイル vs ハードコード vs 環境変数）を明確化した — 調査報告書 [localapp/docs/LA-TIMEOUT-INVESTIGATION-REPORT-OT003001.md](../localapp/docs/LA-TIMEOUT-INVESTIGATION-REPORT-OT003001.md)
-> - 2026-09-03: `localapp/src-tauri/src/config.rs` に `http_client_timeout_sec` / `upload_timeout_sec` / `ocr_request_timeout_sec` / `poll_request_timeout_sec` を追加し、すべてのタイムアウト値を設定ファイルで一元管理できるようにした
-> - 2026-09-03: `localapp/src-tauri/src/commands/backend_api.rs` と `backend_api_impl.rs` のハードコードされたタイムアウト値を、設定ファイルから読み込んだ値を参照するように変更した
-> - 2026-09-03: 本タスク完了。タスク完了日付を 2026-09-03 に記入
->
----
-
-<a id="ot007"></a>
-## ユースケースNo | OT007
+## ユースケースNo | OT004
 
 ユースケース
 `OT` に誤分類された System / 全体設計タスクの切り出しと運用ルール整備
@@ -353,15 +171,15 @@
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT007001](#ot007001) `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する | 2026-09-05 | 2026-09-05 | 運用整備 |
+| [OT004001](#ot004001) `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する | 2026-09-05 | 2026-09-05 | 運用整備 |
 
-<a id="ot007001"></a>
-### OT007001 `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する
+<a id="ot004001"></a>
+### OT004001 `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する
 
-<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
-> - `docs/OT-TASKS.md` に本タスク（OT007001）を追記する
+> - `docs/OT-TASKS.md` に本タスク（OT004001）を追記する
 > - `docs/SY-TASKS.md` を新規作成し、元 `OT001001` / `OT003001` に含まれていた System / 全体設計・仕様策定部分を `SY` タスクとして移行記録する
 > - `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加する
 > - `workflow-runner/SKILL.md` v2.0 を新規作成し、4 フェーズワークフローと選択的スキル読込を定義する
@@ -371,38 +189,7 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-05: `docs/OT-TASKS.md` に本タスク（OT007001）を追記した
-> - 2026-09-05: `docs/SY-TASKS.md` を新規作成し、元 `OT001001` / `OT003001` の System / 全体設計・仕様策定部分を `SY` タスクとして分離記録した
-> - 2026-09-05: `.clinerules` に `SY` / `OT` の使い分けルールと 3 層スキル選択マトリックスを追加した
-> - 2026-09-05: `.cline/skills/workflow-runner/SKILL.md` を v2.0 に更新し、4 フェーズワークフローと選択的スキル読込を定義した
->
----
-
-<a id="ot008"></a>
-## ユースケースNo | OT008
+## ユースケースNo | OT005
 
 ユースケース
 localapp 単体 OCR→PDF 技術調査・選定
@@ -411,12 +198,12 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT008001](#ot008001) localapp 単体 OCR→PDF 技術調査・選定（LA008007 連携） | 2026-09-03 | 2026-09-04 | 調査 / 設計 |
+| [OT005001](#ot005001) localapp 単体 OCR→PDF 技術調査・選定（LA008007 連携） | 2026-09-03 | 2026-09-04 | 調査 / 設計 |
 
-<a id="ot008001"></a>
-### OT008001 localapp 単体 OCR→PDF 技術調査・選定（LA008007 連携）
+<a id="ot005001"></a>
+### OT005001 localapp 単体 OCR→PDF 技術調査・選定（LA008007 連携）
 
-<div align="right"><a href="#ot008">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot005">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - localapp 単体で動作する OCR→PDF パイプラインの技術調査と選定を行う
@@ -429,36 +216,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-04: LA008007 の技術調査・選定が完了した。`printpdf` 0.7.0（画像→A4 PDF 埋め込み）と `leptess` 0.14.0（Tesseract 5.x ラッパー）を採用した
-> - 2026-09-04: 調査レポート `localapp/docs/LA-OCR-TECHNOLOGY-SURVEY-LA008007.md` を作成した
->
----
-
-<a id="ot009"></a>
-## ユースケースNo | OT009
+## ユースケースNo | OT006
 
 ユースケース
 タスク管理ファイルのカラムずれ・空行整備
@@ -467,12 +225,12 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT009001](#ot009001) タスク管理ファイルのカラムずれ・空行整備 | 2026-09-09 | 2026-09-09 | 文書整備 |
+| [OT006001](#ot006001) タスク管理ファイルのカラムずれ・空行整備 | 2026-09-09 | 2026-09-09 | 文書整備 |
 
-<a id="ot009001"></a>
-### OT009001 タスク管理ファイルのカラムずれ・空行整備
+<a id="ot006001"></a>
+### OT006001 タスク管理ファイルのカラムずれ・空行整備
 
-<div align="right"><a href="#ot009">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot006">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `frontend/docs/FE-TASKS.md` のカラムずれを修正する
@@ -490,37 +248,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - `FE002002` の作業再開（ブランチ `feature/FE002002-fe002001-uat-bugfix` の実装作業）は本 OT タスクとは分けて実施する
-> - 2026-09-09: `frontend/docs/FE-TASKS.md` の行98-109（FE001002の実施結果）のカラムずれを修正（末尾の空セル4つを追加）
-> - 2026-09-09: `feature/OT009001-fix-task-md-column-alignment` ブランチを `main` へ `--no-ff` マージ完了
->
----
-
-<a id="ot010"></a>
-## ユースケースNo | OT010
+## ユースケースNo | OT007
 
 ユースケース
 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行
@@ -529,20 +257,20 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT010001](#ot010001) 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
-| [OT010002](#ot010002) `OT010001` UAT 対応：`SY007` 残存タスクの `PJ` 番号振り直しと追加移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
-| [OT010003](#ot010003) `docs/SY-TASKS.md` の「識別子運用ルール」セクション削除と `.clinerules` 参照整理 | 2026-09-09 | 2026-09-09 | 運用整備 |
-| [OT010004](#ot010004) 各 `<識別子>-TASKS.md` の「タスク粒度の方針」を自識別子のみの記述に統一する | 2026-09-09 | 2026-09-09 | 運用整備 |
-| [OT010005](#ot010005) タスク管理ファイルフォーマット統一と整合性全チェック | 2026-09-09 | 2026-09-09 | ドキュメント整理 |
-| [OT010006](#ot010006) `localapp/docs/LA-TASKS.md` レイアウト改善（見出しアンカー・ブロッククォート・4列テーブル化・ユースケース一覧） | 2026-09-09 | 2026-09-10 | 文書整備 |
-| [OT010007](#ot010007) `OT010006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正 | 2026-09-10 | 2026-09-10 | 不具合修正 |
-| [OT010008](#ot010008) `OT010005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消 | 2026-09-10 | 2026-09-10 | 不具合修正 |
-| [OT010009](#ot010009) タスク管理ファイルのテンプレート作成 | 2026-09-10 | 2026-09-10 | ドキュメント整備 |
+| [OT007001](#ot007001) 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
+| [OT007002](#ot007002) `OT007001` UAT 対応：`SY007` 残存タスクの `PJ` 番号振り直しと追加移行 | 2026-09-09 | 2026-09-09 | 運用整備 |
+| [OT007003](#ot007003) `docs/SY-TASKS.md` の「識別子運用ルール」セクション削除と `.clinerules` 参照整理 | 2026-09-09 | 2026-09-09 | 運用整備 |
+| [OT007004](#ot007004) 各 `<識別子>-TASKS.md` の「タスク粒度の方針」を自識別子のみの記述に統一する | 2026-09-09 | 2026-09-09 | 運用整備 |
+| [OT007005](#ot007005) タスク管理ファイルフォーマット統一と整合性全チェック | 2026-09-09 | 2026-09-09 | ドキュメント整理 |
+| [OT007006](#ot007006) `localapp/docs/LA-TASKS.md` レイアウト改善（見出しアンカー・ブロッククォート・4列テーブル化・ユースケース一覧） | 2026-09-09 | 2026-09-10 | 文書整備 |
+| [OT007007](#ot007007) `OT007006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正 | 2026-09-10 | 2026-09-10 | 不具合修正 |
+| [OT007008](#ot007008) `OT007005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消 | 2026-09-10 | 2026-09-10 | 不具合修正 |
+| [OT007009](#ot007009) タスク管理ファイルのテンプレート作成 | 2026-09-10 | 2026-09-10 | ドキュメント整備 |
 
-<a id="ot010001"></a>
-### OT010001 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行
+<a id="ot007001"></a>
+### OT007001 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行
 
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `.clinerules` に `PJ` 識別子を追加し、`.clinerules`/AgentSkills/JIRA/Confluence/Slack 等のツール連携を `PJ` の対象とする
@@ -558,41 +286,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007002"></a>
+### OT007002 `OT007001` UAT 対応：`SY007` 残存タスクの `PJ` 番号振り直しと追加移行
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: `.clinerules` に `PJ` 識別子を追加し、識別子選択基準・具体例・スキルマトリックスを更新した
-> - 2026-09-09: `docs/PJ-TASKS.md` を新規作成し、`PJ001`（`.clinerules`/AgentSkills ガバナンス）と `PJ002`–`PJ004`（JIRA/Confluence/Slack プレースホルダー）を定義した
-> - 2026-09-09: `docs/PJ-WORK-LOG.md` / `docs/PJ-CAVEATS.md` を新規作成した
-> - 2026-09-09: `docs/SY-TASKS.md` から `SY007001` / `SY007003` / `SY007011` / `SY007012` / `SY007013` を削除し、移行履歴セクションを追加した
-> - 2026-09-09: `docs/PJ-TASKS.md` に `PJ001001`–`PJ001005` として移行元タスクを再記録した（後に `OT010002` にて `PJ001001`–`PJ001013` に番号振り直し）
-> - 2026-09-09: `docs/OT-AGENT-SKILLS-GUIDE.md` の `task-manager` セクション識別子リストに `PJ` を追加した
-> - 2026-09-09: `docs/OT-TASKS.md` に `OT010` ユースケースと `OT010001` タスクを追加した
->
-<a id="ot010002"></a>
-### OT010002 `OT010001` UAT 対応：`SY007` 残存タスクの `PJ` 番号振り直しと追加移行
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `docs/SY-TASKS.md` に残存していた `SY007002` / `SY007004` / `SY007005` / `SY007006` / `SY007007` / `SY007008` / `SY007009` / `SY007010` の 8 タスクを `docs/PJ-TASKS.md` に追加移行する
@@ -604,39 +301,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007003"></a>
+### OT007003 `docs/SY-TASKS.md` の「識別子運用ルール」セクション削除と `.clinerules` 参照整理
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - `docs/PJ-WORK-LOG.md` に振り直し・追加移行の作業記録を追記する
-> - 2026-09-09: `docs/SY-TASKS.md` から `SY007002`–`SY007010` の 8 タスクを削除し、`docs/PJ-TASKS.md` に `PJ001002` / `PJ001004`–`PJ001010` として追加移行した
-> - 2026-09-09: `docs/PJ-TASKS.md` の既存 `PJ001002`–`PJ001005` を `PJ001003` / `PJ001011`–`PJ001013` に番号振り直しした
-> - 2026-09-09: `docs/SY-TASKS.md` の移行履歴テーブルを 13 件分に更新した
-> - 2026-09-09: `docs/PJ-WORK-LOG.md` に振り直し・追加移行の作業記録を追記した
->
-<a id="ot010003"></a>
-### OT010003 `docs/SY-TASKS.md` の「識別子運用ルール」セクション削除と `.clinerules` 参照整理
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `docs/SY-TASKS.md` の「識別子運用ルール」セクションを削除し、`.clinerules` の **Task Identifier Rules** を正とする
@@ -646,35 +314,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007004"></a>
+### OT007004 各 `<識別子>-TASKS.md` の「タスク粒度の方針」を自識別子のみの記述に統一する
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: `docs/SY-TASKS.md` から「識別子運用ルール」セクションを削除した
->
-<a id="ot010004"></a>
-### OT010004 各 `<識別子>-TASKS.md` の「タスク粒度の方針」を自識別子のみの記述に統一する
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `docs/SY-TASKS.md` / `docs/OT-TASKS.md` / `frontend/docs/FE-TASKS.md` / `localapp/docs/LA-TASKS.md` / `backend/docs/BE-TASKS.md` / `ocr-worker/docs/OW-TASKS.md` の「タスク粒度の方針」の識別子説明を自識別子のみに統一する
@@ -685,35 +328,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007005"></a>
+### OT007005 タスク管理ファイルフォーマット統一と整合性全チェック
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-09: 上記 6 ファイルの識別子説明を自識別子のみに統一し、例を 1 つに整理した
->
-<a id="ot010005"></a>
-### OT010005 タスク管理ファイルフォーマット統一と整合性全チェック
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `ocr-worker/docs/OW-TASKS.md` のヘッダー番号ミスを修正する
@@ -725,10 +343,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-09: `localapp/docs/LA-TASKS.md` のテーブル外 `### LAxxx` セクション（48 個）をテーブル内に統合し、他の `*-TASKS.md` とフォーマットを統一
 > - 2026-09-09: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
 >
-<a id="ot010006"></a>
-### OT010006 `localapp/docs/LA-TASKS.md` レイアウト改善（見出しアンカー・ブロッククォート・4列テーブル化・ユースケース一覧）
+<a id="ot007006"></a>
+### OT007006 `localapp/docs/LA-TASKS.md` レイアウト改善（見出しアンカー・ブロッククォート・4列テーブル化・ユースケース一覧）
 
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `localapp/docs/LA-TASKS.md` にユースケース見出し・タスク見出しの `<a id="...">` アンカーを挿入する
@@ -746,35 +364,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007007"></a>
+### OT007007 `OT007006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` にユースケース見出し・タスク見出しの `<a id="...">` アンカーを挿入し、4列タスク一覧テーブルを構築した
->
-<a id="ot010007"></a>
-### OT010007 `OT010006` UATバグ対応：ページ内リンクを Markdown 構文から HTML アンカーに修正
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `localapp/docs/LA-TASKS.md` の「ユースケース一覧へ↩︎」「タスク一覧へ↩︎」戻りリンクを Markdown `[text](#anchor)` 構文から生の HTML `<a href="#anchor">text</a>` に変更する
@@ -786,40 +379,13 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007008"></a>
+### OT007008 `OT007005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: LA-TASKS.md 内の全 55 箇所の戻りリンクを HTML `<a>` アンカーに一括置換した
-> - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
-> - 2026-09-10: feature ブランチを `main` へ `--no-ff` マージし、リモートへ push 完了
->
-<a id="ot010008"></a>
-### OT010008 `OT010005` UATバグ対応：LA-TASKS.md のコンフリクトマーカー解消
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
-> - `localapp/docs/LA-TASKS.md` に残存していた `feature/OT010005-task-md-format-unify` マージ時のコンフリクトマーカー（`<<<<<<< HEAD` / `=======` / `>>>>>>>`）を解消する
+> - `localapp/docs/LA-TASKS.md` に残存していた `feature/OT007005-task-md-format-unify` マージ時のコンフリクトマーカー（`<<<<<<< HEAD` / `=======` / `>>>>>>>`）を解消する
 > - main 側（HTML アンカー・4列テーブル・ブロッククォート形式）を採用し、feature 側の旧形式を破棄する
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
@@ -828,36 +394,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot007009"></a>
+### OT007009 タスク管理ファイルのテンプレート作成
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` の 9 箇所のコンフリクトブロックを main 側（HTML アンカー・4列テーブル・ブロッククォート形式）で解消し、27 個のコンフリクトマーカーを全削除した
-> - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
->
-<a id="ot010009"></a>
-### OT010009 タスク管理ファイルのテンプレート作成
-
-<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot007">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `localapp/docs/LA-TASKS.md` の構造を元に、`*.clinerules/skills/task-manager/references/TEMPLATE-TASKS.md` を新規作成する
@@ -869,37 +409,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
-
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
-> - タイトルを 「# backend タスク管理表」に変更する
-> - `## ユースケース一覧` セクションを追加する
-> - 各ユースケースに HTML アンカー・戻りリンクを追加する
-> - タスクサマリーテーブルを4列形式に変更する
-> - タスク詳細を独立セクションに移行する
-> - `BE003` の分割を統合する
-> - `python scripts/lint-task-md.py` で ALL PASS を確認する
->
-> 【実施結果】
-> - 2026-09-10: `backend/docs/BE-TASKS.md` のタイトルを 「# backend タスク管理表」に変更した
-> - 2026-09-10: `## ユースケース一覧` セクションを追加し、BE001〜BE008 をリンク化した
-> - 2026-09-10: 各ユースケースに HTML アンカー `<a id="be00x">` を追加した
-> - 2026-09-10: 各ユースケースに `ユースケース一覧へ↩︎` 戻りリンクを追加した
-> - 2026-09-10: タスクサマリーテーブルを4列形式（タスク/起票日付/完了日付/種別）に変更した
-> - 2026-09-10: タスク詳細を独立セクション `### BE00x00x タスクタイトル` に移行した
-> - 2026-09-10: `BE003` / `BE003 続き` を統合した
-> - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した - 2026-09-10: `localapp/docs/LA-TASKS.md` の構造を元に `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` を新規作成した
-> - 2026-09-10: `.cline/skills/task-manager/SKILL.md` に `TEMPLATE-TASKS.md` と `task-id-format.md` の参照リンクを追加した
-> - 2026-09-10: `python scripts/lint-task-md.py` で全 37 ファイルを検証し ALL PASS を確認した
->
----
-
-<a id="ot011"></a>
-## ユースケースNo | OT011
+## ユースケースNo | OT008
 
 ユースケース
 タスク管理ファイルフォーマット統一と整合性全チェック
@@ -908,13 +418,13 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT011005](#ot011005) タスク管理ファイルフォーマット統一と整合性全チェック | 2026-09-09 | 2026-09-09 | ドキュメント整理 |
-| [OT011006](#ot011006) `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行 | 2026-09-10 |  | 運用整備 |
+| [OT008001](#ot008001) タスク管理ファイルフォーマット統一と整合性全チェック | 2026-09-09 | 2026-09-09 | ドキュメント整理 |
+| [OT008002](#ot008002) `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行 | 2026-09-10 |  | 運用整備 |
 
-<a id="ot011005"></a>
-### OT011005 タスク管理ファイルフォーマット統一と整合性全チェック
+<a id="ot008001"></a>
+### OT008001 タスク管理ファイルフォーマット統一と整合性全チェック
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `ocr-worker/docs/OW-TASKS.md` のヘッダー番号ミスを修正する
@@ -930,10 +440,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot008003"></a>
+### OT008003 `backend/docs/BE-TASKS.md` のテンプレート形式移行
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
@@ -960,10 +470,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-09: `docs/SY-TASKS.md` の末尾移行履歴セクション（SY007001〜SY007013 の PJ 移行記録）を削除
 > - 2026-09-09: `localapp/docs/LA-TASKS.md` の LA002008-1/2/3 を LA002008 に統合（完了日を 2026-08-20 に更新し、詳細欄に各派生修正の実施日・内容・種別を追記）
 >
-<a id="ot011006"></a>
-### OT011006 `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行
+<a id="ot008002"></a>
+### OT008002 `SY-TASKS.md` から `SY007` を削除し、`SY007005`/`SY007006` を `PJ-TASKS.md` に統合移行
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `docs/SY-TASKS.md` から `SY007` ユースケースを削除する
@@ -975,10 +485,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
-<a id="ot011007"></a>
-### OT011007 `backend/docs/BE-TASKS.md` のテンプレート形式移行
+<a id="ot008003"></a>
+### OT008003 `backend/docs/BE-TASKS.md` のテンプレート形式移行
 
-<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#ot008">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `backend/docs/BE-TASKS.md` を `TEMPLATE-TASKS.md` 構造に移行する
