@@ -67,7 +67,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 |  | 仕様 |
+| [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 | 2026-09-03 | 仕様 |
 | [SY002002](#sy002002) コンテナ間進捗通知のREST API連携方式実装 | 2026-09-12 |  | 横断実装 |
 
 <a id="sy002001"></a>
@@ -85,6 +85,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > - 2026-09-03: `OcrProgressPayload` を `stage` / `message` / `current` / `total` に統一し、`progress_percent` を廃止した
 > - 2026-09-03: ポーリングプロトコル（10 秒タイムアウト、1/2/4 秒バックオフ、最大 3 回リトライ）を `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` に文書化した
 > - 2026-09-03: `docs/README.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を更新した
+> - 2026-09-13: `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` を全面再構成。backend SSE 詳細設計・frontend REST ポーリング方式・システムアーキテクチャを Mermaid 図を活用して詳細化
+> - 2026-09-13: `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` を REST API 実装レベル仕様書として再構成。エンドポイント定義・スキーマ・エラーハンドリングを厳密化
 >
 > ---
 >
@@ -117,4 +119,14 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > >   - `docs/SY-PROGRESS-NOTIFICATION-SPEC.md`: 仕様文書の更新
 > >
 > > 【実施結果】
+> > - 2026-09-12: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` を in-memory dict (`_progress_store`) 方式に変更し、ファイル書き込みを廃止
+> > - 2026-09-12: `ocr-worker/app/main.py` に `GET /progress/{job_id}` エンドポイントを追加
+> > - 2026-09-12: `backend/app/routers/jobs.py` の `_progress_event_generator` を ocr-worker HTTP API ポーリング方式に変更
+> > - 2026-09-12: `backend/app/services/ocr_engine.py` の ocr-worker ホスト設定を確認・更新
+> > - 2026-09-12: `backend/tests/test_progress.py` に ocr-worker HTTP API 連携テストを追加
+> > - 2026-09-12: `frontend/src/hooks/__tests__/useOcrJob.test.ts` を更新
+> > - 2026-09-12: `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` を更新
+> > - 2026-09-13: UAT 中に発見された `ocr-worker/app/main.py` の import 不整合を修正（`ndlocr_cli_patches.progress_reporter` → `cli.core.progress_reporter`）
+> > - 2026-09-13: `backend/tests/test_progress.py` を in-memory store 方式に合わせて更新（6 passed）
+> > - 2026-09-13: E2E 検証で `POST /ocr` → `GET /progress/{job_id}` の連携が正常に動作することを確認（progress データが in-memory store に書き込まれ、API で取得可能）
 > >

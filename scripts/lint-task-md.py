@@ -79,7 +79,7 @@ def validate_file(file_path: Path) -> List[Tuple[int, int, int]]:
             continue
 
         # Section boundary: ## / ### heading or --- (but not table delimiter like |---|)
-        if stripped.startswith("## ") or stripped.startswith("### "):
+        if stripped.startswith("## ") or stripped.startswith("### ") or stripped.startswith("#### "):
             section_expected_nf = None
             continue
 

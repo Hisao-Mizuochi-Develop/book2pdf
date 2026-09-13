@@ -16,9 +16,6 @@ from pathlib import Path
 # 進捗ファイルに更新時刻を記録するために使用します
 from datetime import datetime, timezone
 
-# JSON 形式で進捗ファイルを書き出すための標準ライブラリです
-import json
-
 # 標準ライブラリ — OS とのファイルシステム操作を提供する
 # os.makedirs() で出力ディレクトリを作成するために使用する
 import os
@@ -77,11 +74,6 @@ logger = logging.getLogger(__name__)
 # 前処理の有無を環境変数で制御します
 # デフォルトは ON（true）です
 PREPROCESS_ENABLED = os.environ.get("PREPROCESS_ENABLED", "true").lower() in ("true", "1", "yes", "on")
-
-# 進捗ファイルの保存先ディレクトリです
-# docker-compose.yml で backend と共有しています
-# テスト時は PROGRESS_DIR 環境変数で上書きできます
-PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
 
 # FastAPI アプリケーションを作成します
 app = FastAPI(title="ocr-worker")
@@ -312,7 +304,10 @@ def _write_progress(
     total_pages: int = 0,
     message: str = "",
 ) -> None:
-    """進捗情報を共有ファイルに書き出します。
+    """進捗情報を in-memory ストアに書き出します。
+
+    SY002002: ocr-worker コンテナ内の in-memory ストアに保存します。
+    backend コンテナから HTTP (GET /progress/{job_id}) で参照されます。
 
     Args:
         job_id: 進捗通知対象のジョブ ID（未設定時は何もしません）
@@ -322,38 +317,63 @@ def _write_progress(
         total_pages: 処理対象の総ページ数
         message: 補足メッセージ
     """
-    # job_id が指定されていない場合は進捗書き出しを行いません
     if job_id is None:
         return
 
-    # 進捗ファイルの保存先ディレクトリです
-    # docker-compose.yml で backend と共有しています
-    progress_dir = Path("/data/progress")
+    from ndlocr_cli_patches.progress_reporter import _progress_store
 
-    # ディレクトリが存在しない場合は作成します
-    progress_dir.mkdir(parents=True, exist_ok=True)
-
-    # ジョブ ID ごとに JSON ファイルを作成します
-    progress_file = progress_dir / f"{job_id}.json"
-
-    # 現在時刻を UTC で ISO 8601 形式で取得します
-    now = datetime.now(timezone.utc).isoformat()
-
-    # 進捗情報を辞書にまとめます
-    data = {
+    _progress_store[job_id] = {
         "job_id": job_id,
         "status": status,
-        "progress": progress,
+        "progress": round(progress, 2),
         "current_page": current_page,
         "total_pages": total_pages,
         "message": message,
-        "timestamp": now,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    # JSON 形式でファイルに書き出します
-    progress_file.write_text(
-        json.dumps(data, ensure_ascii=False),
-        encoding="utf-8",
+
+class OcrProgressResponse(BaseModel):
+    """OCR 進捗取得レスポンスのモデルです。"""
+
+    job_id: str = Field(..., description="ジョブ ID")
+    current_page: int = Field(..., description="現在処理済みのページ数")
+    total_pages: int = Field(..., description="処理対象の総ページ数")
+    progress: float = Field(..., description="進捗率（0.0〜1.0）")
+    status: str = Field(..., description="処理状態")
+    message: str = Field(..., description="進捗メッセージ")
+    timestamp: str = Field(..., description="更新時刻（ISO 8601）")
+
+
+@app.get("/progress/{job_id}")
+async def get_progress(job_id: str) -> OcrProgressResponse:
+    """指定したジョブの OCR 処理進捗を取得します。
+
+    SY002002: backend の _progress_event_generator から 1秒間隔でポーリングされます。
+
+    Args:
+        job_id: ジョブ ID。
+
+    Returns:
+        進捗情報。
+
+    Raises:
+        HTTPException: 進捗情報が見つからない場合（404）。
+    """
+    from ndlocr_cli_patches.progress_reporter import _progress_store
+
+    data = _progress_store.get(job_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="進捗情報が見つかりません")
+
+    return OcrProgressResponse(
+        job_id=data["job_id"],
+        current_page=data["current_page"],
+        total_pages=data["total_pages"],
+        progress=data["progress"],
+        status=data["status"],
+        message=data["message"],
+        timestamp=data["timestamp"],
     )
 
 
