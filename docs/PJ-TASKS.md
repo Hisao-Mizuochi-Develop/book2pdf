@@ -56,7 +56,7 @@
 | [PJ001018](#pj001018) `.clinerules` と `task-manager` AgentSkill に `TEMPLATE-TASKS.md` 参照義務を追加する | 2026-09-10 | 2026-09-10 | 運用整備 |
 | [PJ001019](#pj001019) 「コミット・マージ ≠ タスク完了」を徹底するための `.clinerules`・AgentSkills 改修 | 2026-09-10 | 2026-09-10 | 運用整備 |
 | [PJ001020](#pj001020) feature ブランチの削除判断・実行をユーザーに委ねるよう `.clinerules`・AgentSkills を改修 | 2026-09-10 | 2026-09-10 | 運用整備 |
-| [PJ001021](#pj001021) Mermaid 構文検証 AgentSkill 作成と `.clinerules`・ドキュメント反映 | 2026-09-13 | | 運用整備 |
+| [PJ001021](#pj001021) Mermaid 構文検証 AgentSkill 作成と `.clinerules`・ドキュメント反映 | 2026-09-13 | 2026-09-13 | 運用整備 |
 
 <a id="pj001001"></a>
 ### PJ001001 `SY` 識別子の運用ルールと 3 層スキル選択マトリックスを文書化する
@@ -475,6 +475,12 @@
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
+> - 2026-09-13: `.cline/skills/mermaid-doc-validator/SKILL.md` を新規作成（{}波括弧、[]角括弧、class予約語などの衝突パターンと図種別別注意点を定義）
+> - 2026-09-13: `.clinerules` に「Mermaid Diagram Editing Rules」セクションを追加
+> - 2026-09-13: `docs/OT-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加
+> - 2026-09-13: `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md` に `/mermaid` スラッシュコマンド（12番目）を追加（10個の利用例含む）
+> - 2026-09-13: `python scripts/lint-task-md.py` ALL PASS（変更対象ファイル）
+> - 2026-09-13: main ブランチへ `--no-ff` マージ完了
 >
 <a id="pj002"></a>
 ## ユースケースNo | PJ002
