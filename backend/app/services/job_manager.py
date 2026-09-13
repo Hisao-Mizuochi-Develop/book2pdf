@@ -30,6 +30,63 @@ from app.models.job import JobStatus
 # 現時点ではプロセス再起動すると内容は失われます
 _jobs: dict[str, dict] = {}
 
+# フェーズ進捗を保存する辞書です。
+# キー: job_id（文字列）、値: 進捗イベントデータの辞書。
+# ocr-worker からの per-page 進捗とは分離され、
+# backend 自身が管理するジョブフェーズ進捗を保持します。
+# SY002002: ファイル共有方式から in-memory 方式に変更しました。
+_progress_data: dict[str, dict] = {}
+
+
+def update_progress(
+    job_id: str,
+    status: str,
+    progress: float,
+    current_page: int,
+    total_pages: int,
+    message: str,
+) -> None:
+    """指定されたジョブのフェーズ進捗を in-memory ストアに書き込みます。
+
+    Args:
+        job_id: 対象ジョブ ID
+        status: ジョブ状態（processing / completed / failed）
+        progress: 進捗率（0.0〜1.0）
+        current_page: 現在のページ（フェーズ番号として使用）
+        total_pages: 総ページ数（フェーズ総数として使用）
+        message: 進捗メッセージ
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    _progress_data[job_id] = {
+        "status": status,
+        "progress": progress,
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "message": message,
+        "timestamp": now,
+    }
+
+
+def get_progress(job_id: str) -> dict | None:
+    """指定されたジョブのフェーズ進捗を取得します。
+
+    Args:
+        job_id: 取得対象のジョブ ID
+
+    Returns:
+        進捗データの辞書。存在しない場合は None。
+    """
+    return _progress_data.get(job_id)
+
+
+def delete_progress(job_id: str) -> None:
+    """指定されたジョブのフェーズ進捗を in-memory ストアから削除します。
+
+    Args:
+        job_id: 削除対象のジョブ ID
+    """
+    _progress_data.pop(job_id, None)
+
 
 def create_job() -> str:
     """新しい OCR ジョブを作成します。

@@ -49,20 +49,9 @@ def pytest_configure(config: pytest.Config) -> None:
     pdf_output_dir = tempfile.mkdtemp()
     os.environ["PDF_OUTPUT_DIR"] = pdf_output_dir
 
-    # テスト中に進捗ファイル用の環境変数を設定します
-    progress_dir = tempfile.mkdtemp()
-    os.environ["PROGRESS_DIR"] = progress_dir
-
-    # テスト中は進捗ファイルのポーリング間隔を短くします
-    # これにより SSE 配信のテストを高速に実行できます
-    # 0.01 秒では TestClient の非同期 I/O と競合しやすいため、
-    # 0.05 秒に設定しています
-    os.environ["PROGRESS_POLL_INTERVAL"] = "0.05"
-
     # クリーンアップ時に使用できるよう、config オブジェクトに保存します
     config._test_extract_dir = extract_dir  # type: ignore[attr-defined]
     config._test_pdf_output_dir = pdf_output_dir  # type: ignore[attr-defined]
-    config._test_progress_dir = progress_dir  # type: ignore[attr-defined]
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:
@@ -79,7 +68,3 @@ def pytest_unconfigure(config: pytest.Config) -> None:
     pdf_output_dir = getattr(config, "_test_pdf_output_dir", None)
     if isinstance(pdf_output_dir, str):
         shutil.rmtree(pdf_output_dir, ignore_errors=True)
-
-    progress_dir = getattr(config, "_test_progress_dir", None)
-    if isinstance(progress_dir, str):
-        shutil.rmtree(progress_dir, ignore_errors=True)

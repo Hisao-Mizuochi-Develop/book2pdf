@@ -124,7 +124,7 @@ GET /api/jobs/{job_id}
 ### 7.1 backend
 
 - `GET /api/jobs/{job_id}/events` は `StreamingResponse` で SSE を返す
-- 進捗情報は `/data/progress/{job_id}.json` またはジョブステータスを参照する
+- 進捗情報は in-memory `job_manager.get_progress()` と ocr-worker の `GET /progress/{job_id}` をマージして参照する（ファイルベースの共有は廃止）
 - `GET /api/jobs/{job_id}` は通常の JSON レスポンスを返す
 - 両方のエンドポイントで同一のジョブ状態を参照し、整合性を保つ
 

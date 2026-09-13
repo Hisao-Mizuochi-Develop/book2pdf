@@ -13,14 +13,11 @@ from __future__ import annotations
 import zipfile
 
 # 非同期処理でスリープするための標準ライブラリです
-# SSE 配信中の進捗ファイルポーリング間隔で使用します
+# SSE 配信中の進捗ポーリング間隔で使用します
 import asyncio
 
-# JSON 形式の進捗ファイルを読み込むための標準ライブラリです
-import json
-
 # 環境変数を読み込むための標準ライブラリです
-# 進捗ファイルディレクトリをテスト時に変更するために使用します
+# ポーリング間隔をテスト時に変更するために使用します
 import os
 
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
@@ -45,6 +42,10 @@ from fastapi import APIRouter, HTTPException, UploadFile
 # FileResponse: ファイルダウンロード用レスポンス
 # StreamingResponse: SSE 配信用レスポンス
 from fastapi.responses import FileResponse, StreamingResponse
+
+# ocr-worker への HTTP ポーリング用非同期クライアントです
+# SY002002: per-page 進捗を ocr-worker の REST API から取得するために使用します
+import httpx
 
 # ジョブ関連の Pydantic モデルを読み込みます
 # リクエスト・レスポンスの型とルールを定義しています
@@ -259,7 +260,7 @@ async def _emit_page_progress(
     """
     for i in range(1, total_pages + 1):
         progress = round(0.1 + 0.5 * (i / total_pages), 2)
-        _write_progress(
+        job_manager.update_progress(
             job_id,
             status="processing",
             progress=progress,
@@ -306,7 +307,7 @@ async def _run_ocr_and_generate_pdf(
         total_pages = len(image_files)
 
         # OCR 処理開始を記録します
-        _write_progress(
+        job_manager.update_progress(
             job_id,
             status="processing",
             progress=0.0,
@@ -354,7 +355,7 @@ async def _run_ocr_and_generate_pdf(
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
-        _write_progress(
+        job_manager.update_progress(
             job_id,
             status="failed",
             progress=0.0,
@@ -381,7 +382,7 @@ async def _run_ocr_and_generate_pdf(
     )
 
     # OCR 処理完了を記録します
-    _write_progress(
+    job_manager.update_progress(
         job_id,
         status="processing",
         progress=0.7,
@@ -391,7 +392,7 @@ async def _run_ocr_and_generate_pdf(
     )
 
     # PDF を生成中です
-    _write_progress(
+    job_manager.update_progress(
         job_id,
         status="processing",
         progress=0.9,
@@ -422,7 +423,7 @@ async def _run_ocr_and_generate_pdf(
             message="PDF 生成が完了しました",
         )
         # PDF 生成完了を記録します
-        _write_progress(
+        job_manager.update_progress(
             job_id,
             status="completed",
             progress=1.0,
@@ -433,7 +434,7 @@ async def _run_ocr_and_generate_pdf(
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します
         logger.exception("PDF 生成に失敗しました: job_id=%s", job_id)
-        _write_progress(
+        job_manager.update_progress(
             job_id,
             status="failed",
             progress=0.7,
@@ -462,58 +463,61 @@ async def _run_ocr_and_generate_pdf(
     )
 
 
-# 進捗ファイルの保存先ディレクトリです
-# docker-compose.yml で ocr-worker と共有しています
-# テスト時は PROGRESS_DIR 環境変数で上書きできます
-_PROGRESS_DIR = Path(os.environ.get("PROGRESS_DIR", "/data/progress"))
+# ocr-worker の per-page 進捗ポーリング間隔（秒）です。
+# SY002002: §5.2.2 に従い 1 秒間隔でポーリングします。
+_OCR_WORKER_POLL_INTERVAL = float(
+    os.environ.get("OCR_WORKER_POLL_INTERVAL", "1.0")
+)
 
-# 進捗ファイルのポーリング間隔（秒）です
-# テスト時は PROGRESS_POLL_INTERVAL 環境変数で短縮できます
-_POLL_INTERVAL = float(os.environ.get("PROGRESS_POLL_INTERVAL", "0.1"))
+# ocr-worker への HTTP リクエストタイムアウト（秒）です。
+# SY002002: §5.2.2 に従い 3 秒とします。
+_OCR_WORKER_TIMEOUT = float(os.environ.get("OCR_WORKER_TIMEOUT", "3.0"))
 
 # SSE ハートビート間隔（秒）です
 # 長時間データが流れない場合にプロキシ/ブラウザのタイムアウト切断を防ぐため一定間隔で送信します
 _HEARTBEAT_INTERVAL = 15.0
 
 
-def _write_progress(
-    job_id: str,
-    status: str,
-    progress: float,
-    current_page: int,
-    total_pages: int,
-    message: str,
-) -> None:
-    """進捗ファイルを書き込みます。
+def _merge_progress_data(
+    backend_data: dict | None,
+    worker_data: dict | None,
+) -> dict:
+    """backend のフェーズ進捗と ocr-worker の per-page 進捗をマージします。
 
-    backend 側が自ら SSE 用の進捗イベントを発行するために使用します。
-    ocr-worker 側の進捗書き込みを無効化した代わりに、
-    こちらで 1/3 → 2/3 → 3/3 の段階的進捗を管理します。
+    SY002002 §5.4 のマージルールに従います:
+    - status / timestamp → backend (フェーズ進捗) 優先
+    - progress / current_page / total_pages / message
+      → ocr-worker (per-page 進捗) 優先
 
     Args:
-        job_id: 対象ジョブ ID
-        status: ジョブ状態（processing / completed / failed）
-        progress: 進捗率（0.0〜1.0）
-        current_page: 現在のページ（フェーズ番号として使用）
-        total_pages: 総ページ数（フェーズ総数として使用）
-        message: 進捗メッセージ
+        backend_data: backend の in-memory フェーズ進捗。None の場合は worker のみ。
+        worker_data: ocr-worker から取得した per-page 進捗。None の場合は backend のみ。
+
+    Returns:
+        マージされた進捗データ辞書。
     """
-    _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
-    progress_file = _PROGRESS_DIR / f"{job_id}.json"
-    temp_file = _PROGRESS_DIR / f"{job_id}.json.tmp"
-    now = datetime.now(timezone.utc).isoformat()
-    data = {
+    backend_data = backend_data or {}
+    worker_data = worker_data or {}
+
+    # backend 優先フィールド（status / timestamp）
+    # ocr-worker の status はページ単位処理中固定の可能性があるため
+    status = backend_data.get("status", worker_data.get("status", "processing"))
+    timestamp = backend_data.get("timestamp", worker_data.get("timestamp", ""))
+
+    # ocr-worker 優先フィールド（per-page 進捗）
+    progress = worker_data.get("progress", backend_data.get("progress", 0.0))
+    current_page = worker_data.get("current_page", backend_data.get("current_page", 0))
+    total_pages = worker_data.get("total_pages", backend_data.get("total_pages", 0))
+    message = worker_data.get("message", backend_data.get("message", ""))
+
+    return {
         "status": status,
         "progress": progress,
         "current_page": current_page,
         "total_pages": total_pages,
         "message": message,
-        "timestamp": now,
+        "timestamp": timestamp,
     }
-    # 原子書き込み: 一時ファイルに書き込んでから rename で入れ替え
-    # Docker ボリューム共有環境で書き込み途中の不完全なファイルが読み込まれるのを防ぎます
-    temp_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    temp_file.replace(progress_file)
 
 
 @router.get("/{job_id}/pdf")
@@ -587,8 +591,10 @@ async def download_pdf(job_id: str) -> FileResponse:
 async def _progress_event_generator(job_id: str):
     """SSE 配信用の進捗イベントジェネレータです。
 
-    /data/progress/{job_id}.json をポーリングし、
-    更新があれば Server-Sent Events 形式でクライアントに送信します。
+    SY002002:
+    - backend の in-memory フェーズ進捗 (job_manager.get_progress)
+    - ocr-worker の per-page 進捗 (GET /progress/{job_id})
+    をマージして Server-Sent Events 形式でクライアントに送信します。
     ジョブが completed または failed になったら配信を終了します。
 
     Args:
@@ -597,8 +603,15 @@ async def _progress_event_generator(job_id: str):
     Yields:
         SSE 形式の進捗イベント文字列
     """
-    # 進捗ファイルのパスを作成します
-    progress_file = _PROGRESS_DIR / f"{job_id}.json"
+    # ocr-worker のベース URL を設定から取得します
+    ocr_worker_url = (
+        settings.ocr_worker_url
+        if settings.ocr_worker_url
+        else "http://ocr-worker:8000"
+    )
+
+    # ocr-worker への非同期 HTTP クライアントです
+    client = httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT)
 
     # 前回読み込んだ進捗データを保持します
     last_data: dict | None = None
@@ -609,18 +622,59 @@ async def _progress_event_generator(job_id: str):
     # イベントループに制御を渡し、TestClient がレスポンスを受信できるようにします
     await asyncio.sleep(0)
 
-    # ジョブが完了または失敗するまでポーリングを続けます
-    while True:
-        event_sent = False
+    try:
+        # ジョブが完了または失敗するまでポーリングを続けます
+        while True:
+            event_sent = False
 
-        # 進捗ファイルが存在する場合は読み込みます
-        if progress_file.exists():
-            content = progress_file.read_text(encoding="utf-8")
-            data = json.loads(content)
+            # 1. backend のフェーズ進捗を in-memory ストアから取得します
+            backend_data = job_manager.get_progress(job_id)
+
+            # 2. ocr-worker の per-page 進捗を HTTP GET でポーリングします
+            worker_data: dict | None = None
+            try:
+                response = await client.get(
+                    f"{ocr_worker_url}/progress/{job_id}"
+                )
+                if response.status_code == 200:
+                    worker_data = response.json()
+                elif response.status_code == 404:
+                    # ocr-worker にまだデータがない（処理開始前など）は正常系です
+                    logger.info(
+                        "ocr-worker に進捗データが見つかりません: job_id=%s",
+                        job_id,
+                    )
+                else:
+                    logger.warning(
+                        "ocr-worker から予期しないステータス: job_id=%s, status=%d",
+                        job_id,
+                        response.status_code,
+                    )
+            except httpx.TimeoutException:
+                logger.warning(
+                    "ocr-worker へのポーリングがタイムアウトしました: job_id=%s",
+                    job_id,
+                )
+            except httpx.ConnectError:
+                logger.error(
+                    "ocr-worker への接続に失敗しました: job_id=%s",
+                    job_id,
+                )
+            except Exception as exc:
+                logger.error(
+                    "ocr-worker へのポーリング中にエラー: job_id=%s, error=%s",
+                    job_id,
+                    exc,
+                )
+
+            # 3. 両方のデータソースをマージします
+            # backend はステータス（フェーズ遷移）の権威、
+            # ocr-worker は per-page 進捗の権威です
+            data = _merge_progress_data(backend_data, worker_data)
 
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
-                last_data = data
+                last_data = data.copy()
                 last_send_time = asyncio.get_event_loop().time()
                 event_sent = True
 
@@ -645,28 +699,34 @@ async def _progress_event_generator(job_id: str):
                 await asyncio.sleep(0)
 
                 # 完了または失敗状態になったら配信を終了します
-                if data["status"] in (JobStatus.COMPLETED.value, JobStatus.FAILED.value):
+                if data["status"] in (
+                    JobStatus.COMPLETED.value,
+                    JobStatus.FAILED.value,
+                ):
                     # ストリーム終了前に制御を渡し、最後のチャンクが確実に送信されるようにします
                     await asyncio.sleep(0)
                     # クライアントに正常終了を示す [DONE] シグナルを送信します
                     yield "data: [DONE]\n\n"
                     break
 
-        # 進捗イベントが送信されず、ハートビート間隔が経過していたら keepalive を送信します
-        # プロキシやブラウザのタイムアウト切断を防ぎます
-        if not event_sent:
-            now = asyncio.get_event_loop().time()
-            if now - last_send_time >= _HEARTBEAT_INTERVAL:
-                last_send_time = now
-                # SSE コメント行としてハートビートを送信（クライアント側では無視される）
-                yield ": keepalive\n\n"
-                await asyncio.sleep(0)
+            # 進捗イベントが送信されず、ハートビート間隔が経過していたら keepalive を送信します
+            # プロキシやブラウザのタイムアウト切断を防ぎます
+            if not event_sent:
+                now = asyncio.get_event_loop().time()
+                if now - last_send_time >= _HEARTBEAT_INTERVAL:
+                    last_send_time = now
+                    # SSE コメント行としてハートビートを送信（クライアント側では無視される）
+                    yield ": keepalive\n\n"
+                    await asyncio.sleep(0)
 
-        # 次のポーリングまで短時間スリープします
-        await asyncio.sleep(_POLL_INTERVAL)
+            # 次のポーリングまでスリープします
+            await asyncio.sleep(_OCR_WORKER_POLL_INTERVAL)
 
-    # ジェネレータ終了時に最後の制御を渡し、ストリームのクリーンアップを助けます
-    await asyncio.sleep(0)
+    finally:
+        # httpx クライアントを確実にクローズします
+        await client.aclose()
+        # ジェネレータ終了時に最後の制御を渡し、ストリームのクリーンアップを助けます
+        await asyncio.sleep(0)
 
 
 @router.get("/{job_id}/events")
@@ -686,9 +746,6 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     job = job_manager.get_job(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="指定されたジョブが見つかりません")
-
-    # 進捗ファイル保存ディレクトリが存在しない場合は作成します
-    _PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
 
     # SSE 形式でストリーミングレスポンスを返します
     # Cache-Control: no-cache → プロキシやブラウザがレスポンスをキャッシュしないようにします

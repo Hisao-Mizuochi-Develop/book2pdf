@@ -341,43 +341,41 @@ SSE イベントのペイロードは**マージ後の unified 形式**を維持
 
 ---
 
-## 7. 実装計画
+## 7. 実装結果
 
-### 7.1 ocr-worker（Phase 1）
+### 7.1 ocr-worker（Phase 1）— 完了
 
-1. `ndlocr_cli_patches/progress_reporter.py` の変更:
-   - `_progress_store: dict[str, dict]` をグローバルに追加
-   - `write_progress()` をファイル書き込みから in-memory dict 更新に変更
-   - 既存のファイル書き込みは削除（backend のフェーズ進捗ファイルとの競合を避けるため）
-
-2. `ocr-worker/app/main.py` の変更:
+1. `ocr-worker/app/main.py` の変更:
    - `OcrProgressResponse` Pydantic モデルを追加
    - `GET /progress/{job_id}` エンドポイントを追加
-   - `_write_progress()` の呼び出しを維持（互換性のため、ただし内部動作が変わる）
+   - `_write_progress()` の内部動作は in-memory dict (`_progress_store`) への書き込みに変更（ファイル書き込みは削除）
 
-### 7.2 backend（Phase 2）
+### 7.2 backend（Phase 2）— 完了
 
 1. `backend/app/routers/jobs.py` の変更:
    - `_poll_ocr_worker_progress()` 関数を追加（HTTP クライアントで ocr-worker をポーリング）
-   - `_progress_event_generator()` を拡張:
-     - `{job_id}.json`（フェーズ進捗）の監視を維持
-     - ocr-worker の `GET /progress/{job_id}` を 1秒間隔でポーリング
-     - 両ソースをマージして SSE イベントを生成
-   - マージ戦略を実装（フィールド別優先ソース）
+   - ファイルベース進捗（`_PROGRESS_DIR`、`{job_id}.json`）を完全に削除
+   - `_progress_event_generator()` を in-memory `job_manager.get_progress()` と ocr-worker の `GET /progress/{job_id}` をマージする方式に再実装
+   - マージ戦略を実装（フィールド別優先ソース: `progress` / `current_page` / `message` は ocr-worker 優先、`status` は backend 優先）
    - オフライン時のフォールバック（フェーズ進捗のみ送信）
+   - デッドコード `_POLL_INTERVAL` / `PROGRESS_POLL_INTERVAL` を削除
 
 2. `backend/app/services/ocr_engine.py` の変更:
-   - ocr-worker のホスト・ポート設定を確認・必要に応じて更新
+   - ocr-worker へのリクエストに `enable_progress: False` を送信し、独立した進捗管理を維持
 
-### 7.3 テスト（Phase 3）
+3. `backend/tests/conftest.py` の変更:
+   - `PROGRESS_DIR`、`PROGRESS_POLL_INTERVAL`、`_test_progress_dir` の不要な設定を削除
+
+### 7.3 テスト（Phase 3）— 完了
 
 1. `backend/tests/test_progress.py` の更新:
-   - ocr-worker HTTP API モックを使ったマージテスト
-   - オフライン時のフォールバックテスト
+   - backend only / merged / worker 404 / worker timeout / completed / failed / heartbeat の 7 テストを追加・修正し全件 PASS
 
-2. `frontend` の更新:
-   - backend の SSE 出力形式に変更がないため原則変更なし
-   - 必要に応じて統合テストを更新
+2. `backend/tests/test_ocr.py` の更新:
+   - `test_run_ocr_writes_staged_progress` を in-memory `job_manager.get_progress()` 検証に書き換え
+
+3. `frontend` の更新:
+   - backend の SSE 出力形式に変更がないため変更なし
 
 ---
 
