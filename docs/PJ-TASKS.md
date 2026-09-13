@@ -481,6 +481,10 @@
 > - 2026-09-13: `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md` に `/mermaid` スラッシュコマンド（12番目）を追加（10個の利用例含む）
 > - 2026-09-13: `python scripts/lint-task-md.py` ALL PASS（変更対象ファイル）
 > - 2026-09-13: main ブランチへ `--no-ff` マージ完了
+> - 2026-09-13: `mermaid-doc-validator/SKILL.md` に「図作成前の自己確認リスト」を追加（7項目の事前チェック項目）
+> - 2026-09-13: `.clinerules` の「Mermaid Diagram Editing Rules」に「編集前の事前確認」セクションを追加（自己確認リスト参照を必須化）
+> - 2026-09-13: `python scripts/lint-task-md.py` ALL PASS
+> - 2026-09-13: main ブランチへ `--no-ff` マージ完了（追加修正分）
 >
 <a id="pj002"></a>
 ## ユースケースNo | PJ002
