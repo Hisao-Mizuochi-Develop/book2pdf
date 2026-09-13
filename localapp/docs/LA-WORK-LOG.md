@@ -1,5 +1,7 @@
 # localapp 作業ログ
 
+> 最終更新: 2026/09/13
+
 ---
 
 ## .clinerules §8 — import/use/from 宣言に初学者向けコメントを追加

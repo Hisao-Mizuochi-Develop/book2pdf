@@ -2,6 +2,8 @@
 
 本ドキュメントは、`reference/docs/config-reference.md` および `CHANGELOG-20250815.md` の「変換（OCR）」に関する記載を参考にし、book2pdf（ndlocr_cli + FastAPI 構成）で活用できる知見をまとめたものです。
 
+> 最終更新: 2026/09/13
+
 ---
 
 ## 1. 取り込み済み（実装・検証済み）

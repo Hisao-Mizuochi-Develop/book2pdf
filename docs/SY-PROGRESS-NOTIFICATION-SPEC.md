@@ -4,6 +4,8 @@
 
 実装レベルの REST API エンドポイント定義・スキーマ詳細は、`docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` を参照してください。
 
+> 最終更新: 2026/09/13
+
 ---
 
 ## 1. 概要・目的・設計原則

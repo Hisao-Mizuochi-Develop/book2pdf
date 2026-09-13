@@ -2,6 +2,8 @@
 
 本ドキュメントは、book2pdf プロジェクトの frontend（Next.js + TypeScript + Tailwind CSS）に関する環境差異、トラブルシューティング、回避策をまとめたものです。
 
+> 最終更新: 2026/09/13
+
 ---
 
 ## 1. Next.js / React / Tailwind CSS のバージョンと構成
