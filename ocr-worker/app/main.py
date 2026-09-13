@@ -320,7 +320,7 @@ def _write_progress(
     if job_id is None:
         return
 
-    from ndlocr_cli_patches.progress_reporter import _progress_store
+    from cli.core.progress_reporter import _progress_store
 
     _progress_store[job_id] = {
         "job_id": job_id,
@@ -360,7 +360,7 @@ async def get_progress(job_id: str) -> OcrProgressResponse:
     Raises:
         HTTPException: 進捗情報が見つからない場合（404）。
     """
-    from ndlocr_cli_patches.progress_reporter import _progress_store
+    from cli.core.progress_reporter import _progress_store
 
     data = _progress_store.get(job_id)
     if not data:

@@ -596,6 +596,7 @@ OCR 処理中のページ単位進捗通知精度を向上させる
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [OW009001](#ow009001) ページ単位進捗通知精度の向上 | 2026-09-08 |  | 機能実装 |
+| [OW009002](#ow009002) ocr-worker progress endpoint の import パス修正 | 2026-09-13 | 2026/09/13 | バグ修正 |
 
 <a id="ow009001"></a>
 ### OW009001 ページ単位進捗通知精度の向上
@@ -609,5 +610,24 @@ OCR 処理中のページ単位進捗通知精度を向上させる
 > - frontend の ProgressPanel にページ進捗表示を追加する
 >
 > 【実施結果】
+>
+
+<a id="ow009002"></a>
+### OW009002 ocr-worker progress endpoint の import パス修正
+<div align="right"><a href="#ow009">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - UAT 不具合発見元: SY002002
+> - `ocr-worker/app/main.py` の `get_progress` と `_write_progress_to_store` 内で `from ndlocr_cli_patches.progress_reporter import _progress_store` としているが、パッチファイルは `${PROJECT_DIR}/cli/core/progress_reporter.py` に COPY されるため、実行時に `ModuleNotFoundError` が発生する
+> - import パスを `from cli.core.progress_reporter import _progress_store` に修正する
+> - ocr-worker コンテナを再ビルド・再起動する
+> - backend コンテナから `GET /progress/{job_id}` が 404（データなし正常応答）を返すことを確認する
+>
+> 【実施結果】
+> - 2026-09-13: `ocr-worker/app/main.py` の `from ndlocr_cli_patches.progress_reporter import _progress_store` を 2 箇所 `from cli.core.progress_reporter import _progress_store` に修正
+> - 2026-09-13: ocr-worker コンテナを再ビルド・再起動
+> - 2026-09-13: backend コンテナから `GET /progress/{job_id}` が 404（データなし正常応答）を返すことを確認（500 Internal Server Error が解消）
+> - 2026-09-13: backend 単体テスト `test_progress.py` 8/8 PASS、全体 38/39 PASS（1 fail は `test_pdf.py` の Unicode 問題で事前確認済み）
+> - 2026-09-13: UAT で発覚した in-memory `_progress_store` のプロセス間共有問題について、別途調査要（FastAPI プロセスと OCR 実行プロセスが同じプロセス空間を共有するか確認が必要）
 >
 
