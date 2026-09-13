@@ -1,8 +1,11 @@
 # OT タスク管理表
 
-> 最終更新: 2026/09/13
 本ファイルは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
+
+> 最終更新: 2026/09/13
+
+---
 
 ## タスク粒度の方針
 
@@ -576,4 +579,5 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-13: `.clinerules` に「Document Last-Updated Metadata Rule」セクションを追加し、日付形式・追加対象・更新ルールを定めた
 > - 2026-09-13: `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` に「最終更新: yyyy/mm/dd」プレースホルダーを追加した
 > - 2026-09-13: `python scripts/lint-task-md.py` でパイプテーブル整合性を検証し、OT-TASKS.md は ALL PASS を確認した
+> - 2026-09-13: 全ドキュメントのヘッダー構成を `docs/README.md` と統一した。タイトル → 説明文 → `> 最終更新:` メタデータ → `---` セパレータ の構成とし、config-reference.md・CHANGELOG-20250815.md（reference/localapp/docs/）も含めた 40 ファイルを一括修正した
 >

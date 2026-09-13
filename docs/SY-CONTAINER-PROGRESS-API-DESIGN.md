@@ -9,6 +9,8 @@
 - `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` — backend 側実装詳細
 - `ocr-worker/docs/OW-OCR-WORKER-SYSTEM-SPEC.md` — ocr-worker 側実装詳細
 
+> 最終更新: 2026/09/13
+
 ---
 
 ## 1. 背景・目的
