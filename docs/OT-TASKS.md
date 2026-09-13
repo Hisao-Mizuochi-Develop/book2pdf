@@ -557,7 +557,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT009001](#ot009001) すべてのドキュメントに「最終更新」メタデータを追加し、更新時の運用ルールを `.clinerules` と AgentSkills に定める | 2026-09-13 | | 運用整備 |
+| [OT009001](#ot009001) すべてのドキュメントに「最終更新」メタデータを追加し、更新時の運用ルールを `.clinerules` と AgentSkills に定める | 2026-09-13 | 2026-09-13 | 運用整備 |
 
 <a id="ot009001"></a>
 ### OT009001 すべてのドキュメントに「最終更新」メタデータを追加し、更新時の運用ルールを `.clinerules` と AgentSkills に定める
@@ -580,4 +580,5 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-13: `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` に「最終更新: yyyy/mm/dd」プレースホルダーを追加した
 > - 2026-09-13: `python scripts/lint-task-md.py` でパイプテーブル整合性を検証し、OT-TASKS.md は ALL PASS を確認した
 > - 2026-09-13: 全ドキュメントのヘッダー構成を `docs/README.md` と統一した。タイトル → 説明文 → `> 最終更新:` メタデータ → `---` セパレータ の構成とし、config-reference.md・CHANGELOG-20250815.md（reference/localapp/docs/）も含めた 40 ファイルを一括修正した
+> - 2026-09-13: `.clinerules` のタスク完了確定フローを強化（承認→日付記入→git作業→最終報告の厳密なステップ化）。`task-manager/SKILL.md`・`branch-manager/SKILL.md` も新フローに整合して更新した
 >
