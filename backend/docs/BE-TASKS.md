@@ -85,7 +85,7 @@ ZIP アーカイブをアップロードして OCR ジョブを開始する
 > - pytest を実行し、既存テストを含む 8 件すべて pass した
 > - backend/docs/BE-BACKEND-SYSTEM-SPEC.md のフォルダ・ファイル構成を更新した
 > - 各ソースファイルの import 部分に、初学者向けに「何をインポートし、なぜ必要か」のコメントを追加した
-> - docs/OT-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
+> - docs/PJ-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
 > - 作成済みのすべての backend ソースコードに新ルールを適用し、import 行・変数宣言・制御構文・関数呼び出し・return 文などにコメントを追加した
 >
 
@@ -505,7 +505,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - ZIP 解凍時間・PDF 生成時間は `backend/app/services/zip_extractor.py` / `pdf_generator.py` の DEBUG ログから取得する
 > - 1 ページごとの OCR 処理時間は `ocr-worker` / `ndlocr_cli` の DEBUG ログから取得する
 > - 計測結果を CSV（`/tmp/book2pdf-benchmark/results.csv`）とテキスト（`/tmp/book2pdf-benchmark/results.txt`）に出力する
-> - 性能テスト仕様を `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` と `docs/OT-INTEGRATION-TEST-GUIDE.md` に記載する
+> - 性能テスト仕様を `backend/docs/BE-BACKEND-SYSTEM-SPEC.md` と `docs/SY-INTEGRATION-TEST-GUIDE.md` に記載する
 > - 結果を `backend/docs/BE-WORK-LOG.md` と `ocr-worker/docs/OW-WORK-LOG.md` に記載する
 >
 > 【実施結果】
@@ -517,7 +517,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - 2026-09-01: `feature/BE004003-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行
 > - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
 > - 2026-09-01: 精度比較レポート [backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md](../test-results/benchmark-BE004003/performance-test-report-BE004003.md) を作成
-> - 2026-09-01: `docs/OT-INTEGRATION-TEST-GUIDE.md` の性能テスト結果セクションを更新
+> - 2026-09-01: `docs/SY-INTEGRATION-TEST-GUIDE.md` の性能テスト結果セクションを更新
 >
 
 <a id="be005"></a>

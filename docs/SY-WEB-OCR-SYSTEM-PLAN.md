@@ -227,11 +227,11 @@ book2pdf/
 │       └── OT-TASKS.md                   # ocr-worker タスク管理表
 ├── docs/                        # プロジェクト全体の設計・決定事項
 │   ├── OT-CAVEATS.md               # 全体横断の注意事項
-│   ├── OT-CODING-CONVENTIONS.md    # コーディング規約
+│   ├── PJ-CODING-CONVENTIONS.md    # コーディング規約
 │   ├── SY-DESIGN-DECISIONS.md      # 設計決定事項
 │   ├── SY-PROGRESS-NOTIFICATION-SPEC.md  # 進捗通知方式仕様書
 │   ├── README.md                # ドキュメントインデックス
-│   ├── OT-INTEGRATION-TEST-GUIDE.md  # 結合テスト手順書
+│   ├── SY-INTEGRATION-TEST-GUIDE.md  # 結合テスト手順書
 │   ├── OT-TASKS.md                 # 全体横断のタスク管理表
 │   ├── SY-WEB-OCR-SYSTEM-PLAN.md   # 本ドキュメント
 │   └── OT-WORK-LOG.md              # 全体横断の作業ログ

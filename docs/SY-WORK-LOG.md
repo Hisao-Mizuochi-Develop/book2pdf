@@ -337,7 +337,7 @@
 - `.cline/skills/task-manager/SKILL.md` を更新した
   - 「9. タスク完了判定時の照合義務」を追加
   - git 履歴とタスク管理表の矛盾発見時の対応表を追加
-- `docs/OT-AGENT-SKILLS-GUIDE.md` を更新した
+- `docs/PJ-AGENT-SKILLS-GUIDE.md` を更新した
   - ディレクトリ構造・スキル一覧表に `branch-manager` を追加
   - セクション 3.5/3.6 を整理（`branch-manager` / `workflow-runner`）
   - 付録Aの新旧対比表に `branch-manager` 追加・再構成ポイント更新
