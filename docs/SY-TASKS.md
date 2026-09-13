@@ -1,5 +1,7 @@
 # System タスク管理表
 
+> 最終更新: 2026/09/14
+
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
@@ -140,3 +142,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-13: `backend/tests/test_progress.py` の 7 テストを修正・追加し全件 PASS（8/8）、`backend/tests/test_ocr.py` を in-memory 検証に書き換え
 > > - 2026-09-13: backend 全テスト 39/39 PASS を確認
 > > - 2026-09-13: `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` / `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` を更新し、ファイルベース進捗の廃止を反映
+> > - 2026-09-14: `backend/app/routers/jobs.py` から `_emit_page_progress` 関数本体を削除
+> > - 2026-09-14: `backend/app/routers/jobs.py` から `_run_ocr_and_generate_pdf` 内のコメントアウトされた疑似進捗呼び出し dead code を削除
+> > - 2026-09-14: `backend/app/routers/jobs.py` から OCR 完了後の疑似進捗更新（progress=0.7）と PDF 生成中の疑似進捗更新（progress=0.9）を削除
+> > - 2026-09-14: `backend/tests/test_ocr.py` から `_emit_page_progress` のテスト 2 件を削除
+> > - 2026-09-14: backend 全テスト 37/37 PASS を確認

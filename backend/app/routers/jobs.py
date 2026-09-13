@@ -240,46 +240,6 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     )
 
 
-async def _emit_page_progress(
-    job_id: str,
-    total_pages: int,
-    step_delay: float,
-    stop_event: asyncio.Event,
-) -> None:
-    """OCR 実行中に段階的なページマーカーを書き込みます。
-
-    ページ単位の OCR コールバックがないため、OCR 実行と並行して
-    一定間隔ごとに current_page をインクリメントし、フロントエンドに
-    0/M -> 1/M -> ... -> M/M の遷移を届けます。
-
-    Args:
-        job_id: 対象ジョブ ID
-        total_pages: 総ページ数
-        step_delay: ページマーカー間の待機秒数
-        stop_event: OCR 本体が完了したことを知らせるイベント
-    """
-    for i in range(1, total_pages + 1):
-        progress = round(0.1 + 0.5 * (i / total_pages), 2)
-        job_manager.update_progress(
-            job_id,
-            status="processing",
-            progress=progress,
-            current_page=i,
-            total_pages=total_pages,
-            message=f"OCR 処理中です（{i}/{total_pages}）",
-        )
-
-        # 最後のページマーカーまで到達したら終了します。
-        if i == total_pages:
-            break
-
-        # OCR 本体が先に終了していた場合は短い間隔で残りのマーカーを書き込み、
-        # そうでなければ通常の step_delay 待機します。
-        # これにより、高速な OCR 環境でも 1/3→2/3→3/3 の遷移が観測可能になります。
-        wait_seconds = 0.1 if stop_event.is_set() else step_delay
-        await asyncio.sleep(wait_seconds)
-
-
 async def _run_ocr_and_generate_pdf(
     job_id: str,
     extract_dir: str,
@@ -316,23 +276,8 @@ async def _run_ocr_and_generate_pdf(
             message="OCR 処理を開始しました",
         )
 
-        # FIX(OW004001): ocr-worker からページ単位の実進捗が書き込まれるため、
-        # タイマーベースの疑似進捗は使用しません。_emit_page_progress 関数本体は
-        # フォールバック用途で残しており、必要に応じて再度有効化できます。
-        # stop_event = asyncio.Event()
-        # progress_task: asyncio.Task | None = None
-        # if settings.ocr_progress_step_delay > 0 and total_pages > 0:
-        #     progress_task = asyncio.create_task(
-        #         _emit_page_progress(
-        #             job_id,
-        #             total_pages,
-        #             settings.ocr_progress_step_delay,
-        #             stop_event,
-        #         )
-        #     )
-
+        # OCR 処理は同期ブロッキングなので別スレッドで実行します
         try:
-            # OCR 処理は同期ブロッキングなので別スレッドで実行します
             result = await asyncio.to_thread(
                 ocr_engine.run,
                 image_files=absolute_image_files,
@@ -340,17 +285,8 @@ async def _run_ocr_and_generate_pdf(
                 job_id=job_id,
             )
         finally:
-            # 進捗マーカータスクに OCR 完了を通知します
-            # stop_event.set()
-            # if progress_task is not None:
-            #     try:
-            #         await asyncio.wait_for(progress_task, timeout=5.0)
-            #     except asyncio.TimeoutError:
-            #         progress_task.cancel()
-            #         try:
-            #             await progress_task
-            #         except asyncio.CancelledError:
-            #             pass
+            # ocr-worker から per-page 進捗が書き込まれるため、
+            # ここでは追加の進捗更新を行いません。
             pass
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
@@ -379,26 +315,6 @@ async def _run_ocr_and_generate_pdf(
         job_id,
         text=result.text,
         output_dir=str(result.output_dir),
-    )
-
-    # OCR 処理完了を記録します
-    job_manager.update_progress(
-        job_id,
-        status="processing",
-        progress=0.7,
-        current_page=total_pages,
-        total_pages=total_pages,
-        message=f"OCR 処理が完了しました（{total_pages}/{total_pages}）",
-    )
-
-    # PDF を生成中です
-    job_manager.update_progress(
-        job_id,
-        status="processing",
-        progress=0.9,
-        current_page=total_pages,
-        total_pages=total_pages,
-        message="PDF を生成中です",
     )
 
     # OCR 結果から検索可能 PDF を生成します
