@@ -44,6 +44,9 @@ from app.main import app
 # モック OCR エンジンを読み込みます
 from app.services.ocr_engine import MockOcrEngine
 
+# ジョブ状態管理サービスを読み込みます
+from app.services import job_manager
+
 
 # FastAPI のテストクライアントを作成します
 # 各テスト関数で利用できるように fixture として定義します
@@ -256,12 +259,8 @@ def test_run_ocr_writes_staged_progress(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """OCR・PDF 生成完了後に段階的進捗ファイルが書き込まれることを確認します（3/3）。"""
-    from app.routers import jobs as jobs_router
-
-    # 進捗ファイルの保存先をテスト用一時ディレクトリに差し替えます
-    progress_dir = tmp_path / "progress"
-    monkeypatch.setattr(jobs_router, "_PROGRESS_DIR", progress_dir)
+    """OCR・PDF 生成完了後に in-memory 進捗ストアが completed 状態に更新されることを確認します。"""
+    from app.services import job_manager
 
     # ジョブを作成して ZIP をアップロードします
     response = client.post("/api/jobs/")
@@ -281,11 +280,9 @@ def test_run_ocr_writes_staged_progress(
     data = _wait_for_terminal_status(client, job_id)
     assert data["status"] == "completed"
 
-    # 進捗ファイルが書き込まれていることを確認します
-    progress_file = progress_dir / f"{job_id}.json"
-    assert progress_file.exists(), "進捗ファイルが作成されていません"
-
-    progress_data = json.loads(progress_file.read_text(encoding="utf-8"))
+    # in-memory 進捗ストアが completed 状態になっていることを確認します
+    progress_data = job_manager.get_progress(job_id)
+    assert progress_data is not None, "in-memory 進捗データが存在しません"
     assert progress_data["status"] == "completed"
     assert progress_data["progress"] == 1.0
     # current_page は実際の画像枚数に等しい（テストは 1 枚のアップロード）
@@ -336,17 +333,17 @@ def test_emit_page_progress_writes_all_markers(
 
     captured_pages: list[int] = []
 
-    def fake_write_progress(
+    def fake_update_progress(
         job_id: str,
         status: str,
-        progress: float,
-        current_page: int,
-        total_pages: int,
-        message: str,
+        progress: float = 0.0,
+        current_page: int = 0,
+        total_pages: int = 0,
+        message: str = "",
     ) -> None:
         captured_pages.append(current_page)
 
-    monkeypatch.setattr(jobs_router, "_write_progress", fake_write_progress)
+    monkeypatch.setattr(job_manager, "update_progress", fake_update_progress)
 
     async def runner() -> None:
         stop_event = asyncio.Event()
@@ -376,17 +373,17 @@ def test_emit_page_progress_accelerates_on_event(
 
     captured_pages: list[int] = []
 
-    def fake_write_progress(
+    def fake_update_progress(
         job_id: str,
         status: str,
-        progress: float,
-        current_page: int,
-        total_pages: int,
-        message: str,
+        progress: float = 0.0,
+        current_page: int = 0,
+        total_pages: int = 0,
+        message: str = "",
     ) -> None:
         captured_pages.append(current_page)
 
-    monkeypatch.setattr(jobs_router, "_write_progress", fake_write_progress)
+    monkeypatch.setattr(job_manager, "update_progress", fake_update_progress)
 
     async def runner() -> None:
         stop_event = asyncio.Event()

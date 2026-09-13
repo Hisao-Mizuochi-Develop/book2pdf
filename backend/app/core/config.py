@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # 0 に設定すると書き込み間隔なし（従来と同じ挙動）になります。
     ocr_progress_step_delay: float = 0.5
 
+    # ocr-worker のベース URL です。
+    # 設定されていない場合はデフォルトで http://ocr-worker:8000 を使用します。
+    ocr_worker_url: str = ""
+
 
 # アプリケーション全体で使う設定インスタンスです
 # この変数を他のモジュールからインポートして使います

@@ -129,4 +129,10 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-13: UAT 中に発見された `ocr-worker/app/main.py` の import 不整合を修正（`ndlocr_cli_patches.progress_reporter` → `cli.core.progress_reporter`）
 > > - 2026-09-13: `backend/tests/test_progress.py` を in-memory store 方式に合わせて更新（6 passed）
 > > - 2026-09-13: E2E 検証で `POST /ocr` → `GET /progress/{job_id}` の連携が正常に動作することを確認（progress データが in-memory store に書き込まれ、API で取得可能）
-> >
+> > - 2026-09-13: backend のファイルベース進捗共有（`_PROGRESS_DIR` / `{job_id}.json`）を完全に削除し、in-memory `job_manager.get_progress()` に移行
+> > - 2026-09-13: `_progress_event_generator()` を in-memory データ + ocr-worker HTTP API ポーリング方式に再実装
+> > - 2026-09-13: ocr-worker の `GET /progress/{job_id}` エンドポイントを活かしたマージ戦略を実装（`progress` / `current_page` / `message` は ocr-worker 優先、`status` は backend 優先）
+> > - 2026-09-13: デッドコード `_POLL_INTERVAL` と `PROGRESS_POLL_INTERVAL` 環境変数、テスト用 `_test_progress_dir` を削除
+> > - 2026-09-13: `backend/tests/test_progress.py` の 7 テストを修正・追加し全件 PASS（8/8）、`backend/tests/test_ocr.py` を in-memory 検証に書き換え
+> > - 2026-09-13: backend 全テスト 39/39 PASS を確認
+> > - 2026-09-13: `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` / `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` を更新し、ファイルベース進捗の廃止を反映

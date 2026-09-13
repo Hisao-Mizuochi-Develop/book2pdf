@@ -25,9 +25,6 @@ services:
       - extracted:/data/extracted
       - ocr_output:/data/ocr_output
       - pdfs:/data/pdfs
-      # 進捗通知用ファイルの共有ディレクトリです
-      # backend と ocr-worker が進捗 JSON をやり取りするために使用します
-      - progress:/data/progress
       # ソースコードをホストと共有し、ホットリロードを有効にします
       - ./backend:/app
       # ocr-worker の progress_reporter をテストでインポートできるようにマウントします
@@ -66,8 +63,6 @@ services:
       - extracted:/data/extracted
       - ocr_output:/data/ocr_output
       - pdfs:/data/pdfs
-      # 進捗通知用ファイルの共有ディレクトリです
-      - progress:/data/progress
       # ソースコードをホストと共有し、ホットリロードを有効にします
       # Dockerfile の WORKDIR /opt/ocr-worker と一致させ、app/ ディレクトリのみマウントします
       # cli/ などの依存モジュールはイメージ内のものを使用するため、上書きしないよう注意してください
@@ -120,4 +115,3 @@ volumes:
   extracted:
   ocr_output:
   pdfs:
-  progress:

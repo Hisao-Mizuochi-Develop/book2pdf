@@ -284,9 +284,7 @@ flowchart TD
 ### 7.1 backend
 
 - `GET /api/jobs/{job_id}/events` は `StreamingResponse` で SSE を返す
-- `_progress_event_generator` は以下の両方を監視する：
-  - `/data/progress/{job_id}.json`（backend のジョブフェーズ進捗）
-  - ocr-worker `GET /progress/{job_id}`（ocr-worker の per-page 進捗）
+- 進捗情報は in-memory `job_manager.get_progress()` と ocr-worker の `GET /progress/{job_id}` をマージして参照する（ファイルベースの共有は廃止）
 - 両ソースをマージして SSE イベントを生成し、統一されたペイロードでフロントエンドに配信する
 - `GET /api/jobs/{job_id}` は通常の JSON レスポンスを返す
 
