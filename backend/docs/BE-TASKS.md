@@ -150,7 +150,7 @@ OCR 処理の進捗をリアルタイムで確認する
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [BE002001](#be002001) SSE 進捗通知機能の実装 | 2026-08-11 |  | 機能実装 |
+| [BE002001](#be002001) SSE 進捗通知機能の実装 | 2026-08-11 | 2026-08-11 | 機能実装 |
 
 <a id="be002001"></a>
 ### BE002001 SSE 進捗通知機能の実装
@@ -162,9 +162,15 @@ OCR 処理の進捗をリアルタイムで確認する
 > - フロントエンドで SSE を受信して進捗バーを表示する
 >
 > 【実施結果】
-> - （未実施）
+> - 2026-08-11: `GET /api/jobs/{job_id}/events` エンドポイントを `StreamingResponse` で SSE 形式で実装
+> - 2026-08-11: `_progress_event_generator` 非同期ジェネレータを実装。`/data/progress/{job_id}.json` をポーリングし、更新があれば SSE イベントを yield
+> - 2026-08-11: ハートビート（`: keepalive`）を実装し、プロキシ・ブラウザのタイムアウト切断を防止
+> - 2026-08-11: ジョブ完了・失敗時に `data: [DONE]` シグナルを送信してストリームを正常終了
+> - 2026-08-11: `_write_progress` 関数を実装。原子書き込み（tmp → rename）で進捗ファイルを更新
+> - 2026-08-11: `backend/tests/test_progress.py` を新規作成し、SSE イベントジェネレータのテストを追加
+> - 2026-08-11: `frontend/src/lib/api.ts` に `subscribeJobProgress` 関数を実装し、`EventSource` で SSE イベントを受信
+> - 2026-08-11: `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` に SSE 方式の設計を反映
 >
-
 <a id="be003"></a>
 ## ユースケースNo | 003
 
