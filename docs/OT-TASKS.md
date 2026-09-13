@@ -570,4 +570,10 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
 >
 > 【実施結果】
+> - 2026-09-13: プロジェクト内54ファイルの Markdown ドキュメントに「最終更新: 2026/09/13」メタデータを追加した
+> - 2026-09-13: `docs/` 配下、`backend/docs/`、`frontend/docs/`、`localapp/docs/`、`ocr-worker/docs/` 配下の全ファイルを対象とした
+> - 2026-09-13: `memo/` 配下（git 対象外）の全 Markdown ファイルにも同様に「最終更新」メタデータを追加した
+> - 2026-09-13: `.clinerules` に「Document Last-Updated Metadata Rule」セクションを追加し、日付形式・追加対象・更新ルールを定めた
+> - 2026-09-13: `.cline/skills/task-manager/references/TEMPLATE-TASKS.md` に「最終更新: yyyy/mm/dd」プレースホルダーを追加した
+> - 2026-09-13: `python scripts/lint-task-md.py` でパイプテーブル整合性を検証し、OT-TASKS.md は ALL PASS を確認した
 >
