@@ -73,6 +73,7 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot002"></a>
 ## ユースケースNo | OT002
 
 ユースケース
@@ -133,6 +134,7 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot003"></a>
 ## ユースケースNo | OT003
 
 ユースケース
@@ -162,6 +164,7 @@
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot004"></a>
 ## ユースケースNo | OT004
 
 ユースケース
@@ -212,6 +215,7 @@
 > - 2026-09-13: `python scripts/lint-task-md.py` でパイプテーブル整合性を検証し ALL PASS を確認した
 > - 2026-09-13: 変更を `feature/OT004002-ot-docs-reclassify` および `feature/OT004002-ot-docs-reclassify-followup` でコミットし、`main` へ `--no-ff` マージ・push した
 >
+<a id="ot005"></a>
 ## ユースケースNo | OT005
 
 ユースケース
@@ -239,6 +243,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot006"></a>
 ## ユースケースNo | OT006
 
 ユースケース
@@ -271,6 +276,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot007"></a>
 ## ユースケースNo | OT007
 
 ユースケース
@@ -432,6 +438,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
 >
+<a id="ot008"></a>
 ## ユースケースNo | OT008
 
 ユースケース
