@@ -214,6 +214,8 @@
 > - 2026-09-13: `docs/README.md` の最終更新日を `2026/09/13` に更新した
 > - 2026-09-13: `python scripts/lint-task-md.py` でパイプテーブル整合性を検証し ALL PASS を確認した
 > - 2026-09-13: 変更を `feature/OT004002-ot-docs-reclassify` および `feature/OT004002-ot-docs-reclassify-followup` でコミットし、`main` へ `--no-ff` マージ・push した
+> - 2026-09-13: `docs/OT-TASKS.md` のユースケース一覧（OT002～OT008）にページ内リンク用 HTML アンカー `<a id="ot00X">` を追加し、一覧からの遷移が機能するように修正した
+> - 2026-09-13: `OT002003` のタイトルを修正し（`OT-CAVEATS.md` を削除する → 内容を各モジュールに再配布する）、ファイル削除の意図をより正確に表現した
 >
 <a id="ot005"></a>
 ## ユースケースNo | OT005
