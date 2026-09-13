@@ -134,7 +134,7 @@ AI ・LLMの実務でつかえるRAG精度改善/
 
 ## 関連ドキュメント
 
-- [統合テストガイド](../docs/OT-INTEGRATION-TEST-GUIDE.md) — フルフロー手順
+- [統合テストガイド](../docs/SY-INTEGRATION-TEST-GUIDE.md) — フルフロー手順
 - [backend/docs/BE-TASKS.md](../backend/docs/BE-TASKS.md) — backend タスク管理表
 - [ocr-worker/docs/OW-TASKS.md](../ocr-worker/docs/OW-TASKS.md) — ocr-worker タスク管理表
 - [localapp/docs/LA-TASKS.md](../localapp/docs/LA-TASKS.md) — localapp タスク管理表

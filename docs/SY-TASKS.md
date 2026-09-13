@@ -45,12 +45,12 @@
 > 【計画】
 > - プロジェクト全体の構成を `docs/SY-WEB-OCR-SYSTEM-PLAN.md` にまとめる
 > - 技術選定の理由を `docs/SY-DESIGN-DECISIONS.md` にまとめる
-> - Python / TypeScript / Rust のコーディング規約を `docs/OT-CODING-CONVENTIONS.md` にまとめる
+> - Python / TypeScript / Rust のコーディング規約を `docs/PJ-CODING-CONVENTIONS.md` にまとめる
 >
 > 【実施結果】
 > - 2026-08-11: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` を新規作成し、システム全体構成・アーキテクチャ・処理フローを記載した
 > - 2026-08-11: `docs/SY-DESIGN-DECISIONS.md` を新規作成し、技術選定と将来の課題を記載した
-> - 2026-08-11: `docs/OT-CODING-CONVENTIONS.md` を新規作成し、各言語のコーディング規約を定めた
+> - 2026-08-11: `docs/PJ-CODING-CONVENTIONS.md` を新規作成し、各言語のコーディング規約を定めた
 >
 
 ---

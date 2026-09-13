@@ -50,7 +50,7 @@
 > 【計画】
 > - プロジェクト全体の構成を `docs/SY-WEB-OCR-SYSTEM-PLAN.md` にまとめる
 > - 技術選定の理由を `docs/SY-DESIGN-DECISIONS.md` にまとめる
-> - Python / TypeScript / Rust のコーディング規約を `docs/OT-CODING-CONVENTIONS.md` にまとめる
+> - Python / TypeScript / Rust のコーディング規約を `docs/PJ-CODING-CONVENTIONS.md` にまとめる
 >
 > 【実施結果】
 > - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
@@ -63,9 +63,9 @@
 <div align="right"><a href="#ot001">タスク一覧へ↩︎</a></div>
 
 > 【計画】
-> - `frontend` / `backend` / `ocr-worker` を横断した結合テスト手順を `./docs/OT-INTEGRATION-TEST-GUIDE.md` にまとめる
+> - `frontend` / `backend` / `ocr-worker` を横断した結合テスト手順を `./docs/SY-INTEGRATION-TEST-GUIDE.md` にまとめる
 > - テスト準備、コンテナ起動、UI / cURL による手順、トラブルシューティング、終了処理を含める
-> - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のフォルダ・ファイル構成と関連ドキュメントに `OT-INTEGRATION-TEST-GUIDE.md` へのリンクを追加する
+> - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のフォルダ・ファイル構成と関連ドキュメントに `SY-INTEGRATION-TEST-GUIDE.md` へのリンクを追加する
 > - `.clinerules` に `./docs/` 配下にも `OT-TASKS.md` / `OT-WORK-LOG.md` / `OT-CAVEATS.md` を配置するルールを明記する
 >
 > 【実施結果】
@@ -172,6 +172,7 @@
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [OT004001](#ot004001) `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する | 2026-09-05 | 2026-09-05 | 運用整備 |
+| [OT004002](#ot004002) `OT` の識別子を名乗るが内容が `PJ`/`OW`/`SY` 系のガイド文書を正しい識別子に再分類する | 2026-09-13 |  | 運用整備 |
 
 <a id="ot004001"></a>
 ### OT004001 `OT` に誤分類された System タスクを `SY` に分離し、運用ルールとスキルマトリックスを整備する
@@ -188,6 +189,22 @@
 > - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した
 > - 2026-09-10: `SY007005` と `SY007006` を統合し、`docs/PJ-TASKS.md` に `PJ001017` として追加した
 > - 2026-09-10: `python scripts/lint-task-md.py` で 37 ファイル ALL PASS を確認した
+>
+<a id="ot004002"></a>
+### OT004002 `OT` の識別子を名乗るが内容が `PJ`/`OW`/`SY` 系のガイド文書を正しい識別子に再分類する
+
+<div align="right"><a href="#ot004">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `docs/OT-AGENT-SKILLS-GUIDE.md` を `docs/PJ-AGENT-SKILLS-GUIDE.md` に改名する
+> - `docs/OT-OCR-PREPROCESSING-GUIDE.md` を `docs/OW-OCR-PREPROCESSING-GUIDE.md` に改名する
+> - `docs/OT-INTEGRATION-TEST-GUIDE.md` を `docs/SY-INTEGRATION-TEST-GUIDE.md` に改名する
+> - `docs/OT-DEBUG-LOGGING-GUIDE.md` を `docs/SY-DEBUG-LOGGING-GUIDE.md` に改名する
+> - `docs/OT-CODING-CONVENTIONS.md` を `docs/PJ-CODING-CONVENTIONS.md` に改名する
+> - 上記ファイル名を参照しているすべてのドキュメント内リンクを新ファイル名に更新する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
 >
 ## ユースケースNo | OT005
 
@@ -279,7 +296,7 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - `docs/SY-TASKS.md` から `.clinerules`/AgentSkills 関連タスク `SY007001` / `SY007003` / `SY007011` / `SY007012` / `SY007013` を削除し、移行先を記録する
 > - `docs/PJ-TASKS.md` に移行元タスク `SY007001`–`SY007013`（該当 5 件）を `PJ001001`–`PJ001005` として連番で再記録する
 > - `docs/PJ-WORK-LOG.md` / `docs/PJ-CAVEATS.md` を新規作成する
-> - `docs/OT-AGENT-SKILLS-GUIDE.md` の識別子一覧に `PJ` を追加する
+> - `docs/PJ-AGENT-SKILLS-GUIDE.md` の識別子一覧に `PJ` を追加する
 >
 > 【実施結果】
 > - 2026-09-10: `docs/SY-TASKS.md` から `SY007` ユースケースを削除した

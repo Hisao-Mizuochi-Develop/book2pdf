@@ -315,7 +315,7 @@
 > - `scripts/lint-task-md.py` を新規作成する
 > - `.github/workflows/lint-task-md.yml` を新規作成する
 > - `.pre-commit-config.yaml` を新規作成する
-> - `docs/OT-AGENT-SKILLS-GUIDE.md` に `markdown-table-validator` を追加する
+> - `docs/PJ-AGENT-SKILLS-GUIDE.md` に `markdown-table-validator` を追加する
 >
 > 【実施結果】
 > - `markdown-table-validator` AgentSkill と `scripts/lint-task-md.py` を新規作成した
@@ -469,7 +469,7 @@
 >   - 図種別別（sequenceDiagram / flowchart / stateDiagram / classDiagram）の注意点テーブルを作成する
 > - `.clinerules` の末尾に「Mermaid Diagram Editing Rules」セクションを追加する
 >   - 波括弧使用制限、編集後の検証手順、図種別の一貫性ルールを定義する
-> - `docs/OT-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加する
+> - `docs/PJ-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加する
 > - `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md` に `/mermaid` スラッシュコマンド（12番目）を追加する
 >   - 必ず 10 個の利用例を含める
 > - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
@@ -477,7 +477,7 @@
 > 【実施結果】
 > - 2026-09-13: `.cline/skills/mermaid-doc-validator/SKILL.md` を新規作成（{}波括弧、[]角括弧、class予約語などの衝突パターンと図種別別注意点を定義）
 > - 2026-09-13: `.clinerules` に「Mermaid Diagram Editing Rules」セクションを追加
-> - 2026-09-13: `docs/OT-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加
+> - 2026-09-13: `docs/PJ-AGENT-SKILLS-GUIDE.md` に `mermaid-doc-validator` をスキル一覧テーブルに追加
 > - 2026-09-13: `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md` に `/mermaid` スラッシュコマンド（12番目）を追加（10個の利用例含む）
 > - 2026-09-13: `python scripts/lint-task-md.py` ALL PASS（変更対象ファイル）
 > - 2026-09-13: main ブランチへ `--no-ff` マージ完了

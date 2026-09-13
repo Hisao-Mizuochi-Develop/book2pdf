@@ -182,7 +182,7 @@ python -m pytest tests/ -v
   - `backend/docs/BE-TASKS.md`：タスク001002 の完了日付と実施結果を追記
 - `pytest` を実行し、既存テストを含む 8 件すべて pass した
 - フィードバックを受け、各ソースファイルの import 部分に初学者向けのコメントを追加した
-- さらに、docs/OT-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
+- さらに、docs/PJ-CODING-CONVENTIONS.md の 2.4 コメントに「コメント行以外のプログラムの各行に原則コメントを記載する」ルールを追加した
 - 新ルールに従い、作成済みのすべての backend ソースコードにコメントを追加した
   - 対象ファイル: app/main.py, app/core/config.py, app/models/job.py, app/services/job_manager.py, app/services/zip_extractor.py, app/routers/jobs.py, tests/test_main.py, tests/test_jobs.py
 

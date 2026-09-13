@@ -13,17 +13,17 @@
 |---|---|
 | [`SY-WEB-OCR-SYSTEM-PLAN.md`](SY-WEB-OCR-SYSTEM-PLAN.md) | プロジェクト全体のシステム構成・アーキテクチャ・処理フロー |
 | [`SY-DESIGN-DECISIONS.md`](SY-DESIGN-DECISIONS.md) | 技術選定の理由と将来の課題 |
-| [`OT-CODING-CONVENTIONS.md`](OT-CODING-CONVENTIONS.md) | Python / TypeScript / Rust のコーディング規約 |
+| [`PJ-CODING-CONVENTIONS.md`](PJ-CODING-CONVENTIONS.md) | Python / TypeScript / Rust のコーディング規約 |
 | [`SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md) | 進捗通知方式（SSE / ポーリング）の全体仕様 |
 
 ## 運用・手順・ガイド
 
 | ドキュメント | 内容 |
 |---|---|
-| [`OT-INTEGRATION-TEST-GUIDE.md`](OT-INTEGRATION-TEST-GUIDE.md) | Docker Compose 上での結合テスト手順 |
-| [`OT-AGENT-SKILLS-GUIDE.md`](OT-AGENT-SKILLS-GUIDE.md) | Cline AgentSkills の構成定義・各スキル役割・運用方法 |
-| [`OT-OCR-PREPROCESSING-GUIDE.md`](OT-OCR-PREPROCESSING-GUIDE.md) | OCR 前処理・画像サイズ制御ガイド |
-| [`OT-DEBUG-LOGGING-GUIDE.md`](OT-DEBUG-LOGGING-GUIDE.md) | デバッグログの設定・確認方法 |
+| [`SY-INTEGRATION-TEST-GUIDE.md`](SY-INTEGRATION-TEST-GUIDE.md) | Docker Compose 上での結合テスト手順 |
+| [`PJ-AGENT-SKILLS-GUIDE.md`](PJ-AGENT-SKILLS-GUIDE.md) | Cline AgentSkills の構成定義・各スキル役割・運用方法 |
+| [`OW-OCR-PREPROCESSING-GUIDE.md`](OW-OCR-PREPROCESSING-GUIDE.md) | OCR 前処理・画像サイズ制御ガイド |
+| [`SY-DEBUG-LOGGING-GUIDE.md`](SY-DEBUG-LOGGING-GUIDE.md) | デバッグログの設定・確認方法 |
 | [`OT-TASKS.md`](OT-TASKS.md) | 機能・性能以外のタスク管理表 |
 | [`OT-WORK-LOG.md`](OT-WORK-LOG.md) | 機能・性能以外の作業ログ |
 | [`SY-CAVEATS.md`](SY-CAVEATS.md) | 全体横断の注意事項 |
