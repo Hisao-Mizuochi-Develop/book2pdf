@@ -3,7 +3,7 @@
 本ファイルは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
 
 ---
 
@@ -31,6 +31,7 @@
 | [OT007](#ot007) | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 |
 | [OT008](#ot008) | タスク管理ファイルフォーマット統一と整合性全チェック |
 | [OT009](#ot009) | ドキュメント最終更新日メタデータ標準化と運用ルール整備 |
+| [OT010](#ot010) | docs/ 配下の図を Mermaid 化する |
 
 ---
 
@@ -582,3 +583,32 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-13: 全ドキュメントのヘッダー構成を `docs/README.md` と統一した。タイトル → 説明文 → `> 最終更新:` メタデータ → `---` セパレータ の構成とし、config-reference.md・CHANGELOG-20250815.md（reference/localapp/docs/）も含めた 40 ファイルを一括修正した
 > - 2026-09-13: `.clinerules` のタスク完了確定フローを強化（承認→日付記入→git作業→最終報告の厳密なステップ化）。`task-manager/SKILL.md`・`branch-manager/SKILL.md` も新フローに整合して更新した
 >
+<a id="ot010"></a>
+## ユースケースNo | OT010
+
+ユースケース
+docs/ 配下の図を Mermaid 化する
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [OT010001](#ot010001) `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する | 2026-09-14 | | ドキュメント |
+
+<a id="ot010001"></a>
+### OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
+
+<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - プロジェクト内の `docs/` 配下（backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/）の Markdown ファイルを精査し、Mermaid 化されていない図を特定する
+> - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図を Mermaid `flowchart TD` に変換する
+> - `.clinerules` の Mermaid ルールに従い、波括弧 `{}`・角括弧 `[]` を含むラベルはダブルクォートで囲む
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-14: backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/ の Markdown ファイルを精査し、未 Mermaid 化の図が `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の 1 箇所のみであることを確認
+> - 2026-09-14: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図を Mermaid `flowchart TD` に変換
+> - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を確認（memo/ 配下の既存 2 ファイルを除き ALL PASS）
+>
+

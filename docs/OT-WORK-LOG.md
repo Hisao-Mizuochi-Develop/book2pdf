@@ -2,7 +2,32 @@
 
 本ドキュメントは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外の作業の経緯を時系列で記録するものです。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
+
+---
+
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
+
+### 目的
+
+プロジェクト内の `docs/` 配下にある Mermaid 化されていない図を特定し、`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の ASCII アート図を Mermaid 構文に変換する。
+
+### 実施内容
+
+- backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/ の各 Markdown ファイルを精査し、未 Mermaid 化の図を特定
+- 対象は `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図のみであることを確認
+- ASCII アート図を Mermaid `flowchart TD` に変換
+- `docs/OT-TASKS.md` に OT010 ユースケースと OT010001 タスクを新規追加
+- `python scripts/lint-task-md.py` でパイプテーブル整合性を検証
+
+### 結果
+
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図が Mermaid 化された
+- `docs/OT-TASKS.md` に OT010001 タスクが記録された
+
+### コミット
+
+`docs(OT010001): convert SY-WEB-OCR-SYSTEM-PLAN architecture diagram to Mermaid`
 
 ---
 
