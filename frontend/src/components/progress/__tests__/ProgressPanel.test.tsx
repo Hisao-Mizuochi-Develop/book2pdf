@@ -65,15 +65,15 @@ describe("ProgressPanel", () => {
     expect(screen.getByText("完了")).toBeInTheDocument();
   });
 
-  it("progress < 0.33 の場合はステップ1がアクティブ", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.1 })} />);
+  it("status=uploaded の場合はステップ1がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ status: "uploaded", progress: 0 })} />);
 
     const dot0 = screen.getByTestId("stage-dot-0");
     expect(dot0).toHaveClass("bg-primary", "ring-2");
   });
 
-  it("0.33 <= progress < 0.66 の場合はステップ2がアクティブ", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.5 })} />);
+  it("status=processing かつ progress < 0.75 の場合はステップ2がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ status: "processing", progress: 0.5 })} />);
 
     const dot0 = screen.getByTestId("stage-dot-0");
     const dot1 = screen.getByTestId("stage-dot-1");
@@ -81,15 +81,30 @@ describe("ProgressPanel", () => {
     expect(dot1).toHaveClass("bg-primary", "ring-2");
   });
 
-  it("0.66 <= progress < 1.0 の場合はステップ3がアクティブ", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: 0.75 })} />);
+  it("status=processing かつ progress >= 0.75 の場合はステップ3がアクティブ", () => {
+    render(<ProgressPanel latest={makeProgressEvent({ status: "processing", progress: 0.75 })} />);
 
     const dot2 = screen.getByTestId("stage-dot-2");
     expect(dot2).toHaveClass("bg-primary", "ring-2");
   });
 
-  it("progress >= 1.0 の場合はステップ4が完了状態", () => {
-    render(<ProgressPanel latest={makeProgressEvent({ progress: 1.0, status: "completed" })} />);
+  it("status=completed の場合はステップ4が完了状態", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "completed", progress: 1.0 })}
+      />,
+    );
+
+    const dot3 = screen.getByTestId("stage-dot-3");
+    expect(dot3).toHaveClass("bg-green-500");
+  });
+
+  it("status=completed でも progress が低い場合は完了ステップを維持する", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "completed", progress: 0.5 })}
+      />,
+    );
 
     const dot3 = screen.getByTestId("stage-dot-3");
     expect(dot3).toHaveClass("bg-green-500");
@@ -149,7 +164,7 @@ describe("ProgressPanel", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          message: "PDF 生成が完了しました",
+          message: "PDF ファイル生成が完了しました",
           status: "completed",
           progress: 1.0,
         })}

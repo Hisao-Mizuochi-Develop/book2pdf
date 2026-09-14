@@ -304,17 +304,22 @@ async def _run_ocr_and_generate_pdf(
         )
 
         # OCR 処理は同期ブロッキングなので別スレッドで実行します
-        try:
-            result = await asyncio.to_thread(
-                ocr_engine.run,
-                image_files=absolute_image_files,
-                work_dir=Path(extract_dir),
-                job_id=job_id,
-            )
-        finally:
-            # ocr-worker から per-page 進捗が書き込まれるため、
-            # ここでは追加の進捗更新を行いません。
-            pass
+        result = await asyncio.to_thread(
+            ocr_engine.run,
+            image_files=absolute_image_files,
+            work_dir=Path(extract_dir),
+            job_id=job_id,
+        )
+
+        # OCR 全ページ処理が完了したら PDF 生成フェーズに移行します
+        job_manager.update_progress(
+            job_id,
+            status="processing",
+            progress=0.75,
+            current_page=total_pages,
+            total_pages=total_pages,
+            message="PDF ファイル生成中です",
+        )
     except Exception as exc:
         # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
@@ -355,7 +360,7 @@ async def _run_ocr_and_generate_pdf(
         job_manager.update_job_with_pdf_path(
             job_id,
             pdf_path=str(pdf_path),
-            message="PDF 生成が完了しました",
+            message="PDF ファイル生成が完了しました",
         )
         # PDF 生成が完了してから COMPLETED に遷移します
         # これにより、フロントエンドが completed を検出した時点では
@@ -363,7 +368,7 @@ async def _run_ocr_and_generate_pdf(
         job_manager.update_job_status(
             job_id,
             JobStatus.COMPLETED,
-            message="PDF 生成が完了しました",
+            message="PDF ファイル生成が完了しました",
         )
         # PDF 生成完了を記録します
         job_manager.update_progress(
@@ -372,7 +377,7 @@ async def _run_ocr_and_generate_pdf(
             progress=1.0,
             current_page=total_pages,
             total_pages=total_pages,
-            message="PDF 生成が完了しました",
+            message="PDF ファイル生成が完了しました",
         )
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します

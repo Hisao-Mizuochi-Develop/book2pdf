@@ -91,7 +91,7 @@ describe("Home page MSW integration", () => {
           progress: 1.0,
           current_page: 1,
           total_pages: 1,
-          message: "PDF 生成が完了しました",
+          message: "PDF ファイル生成が完了しました",
         })
       );
     });

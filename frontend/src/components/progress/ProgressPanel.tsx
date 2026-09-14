@@ -15,15 +15,23 @@ const STAGES = [
 ] as const;
 
 /**
- * 現在の進捗値（0〜1）に基づき、どのステップがアクティブかを判定します。
+ * 現在の進捗値とステータスに基づき、どのステップがアクティブかを判定します。
  * @param progress 進捗値（0.0〜1.0）
+ * @param status 進捗ステータス（uploaded / processing / completed / failed）
  * @returns アクティブなステップの 0-based インデックス
  */
-function getActiveStageIndex(progress: number): number {
-  for (let i = STAGES.length - 1; i >= 0; i--) {
-    if (progress >= STAGES[i].threshold) {
-      return i;
+function getActiveStageIndex(progress: number, status: string): number {
+  if (status === "completed") {
+    return STAGES.length - 1;
+  }
+  if (status === "uploaded") {
+    return 0;
+  }
+  if (status === "processing") {
+    if (progress >= 0.75) {
+      return 2; // PDF生成中
     }
+    return 1; // OCR処理中
   }
   return 0;
 }
@@ -60,8 +68,7 @@ export function ProgressPanel({ latest, error = "" }: ProgressPanelProps) {
   // backend からは 0.0〜1.0 の float で送られてくるため、×100 してパーセンテージに変換します
   const progressPercent = Math.min(100, Math.max(0, Math.round(progress * 100)));
 
-  const allCompleted = progress >= 1.0;
-  const activeStageIndex = allCompleted ? STAGES.length - 1 : getActiveStageIndex(progress);
+  const activeStageIndex = getActiveStageIndex(progress, status);
 
   const errorFromState = hasErrorState(message, status);
   const shouldShowError = Boolean(error) || errorFromState;
@@ -77,9 +84,9 @@ export function ProgressPanel({ latest, error = "" }: ProgressPanelProps) {
       {/* 1. 段階的なステップ表示 */}
       <div className="mt-4 flex items-center justify-between" data-testid="progress-stages">
         {STAGES.map((stage, index) => {
-          const isCompleted = allCompleted || index < activeStageIndex;
-          const isActive = !allCompleted && index === activeStageIndex;
-          const isPending = !allCompleted && index > activeStageIndex;
+          const isCompleted = index < activeStageIndex || status === "completed";
+          const isActive = index === activeStageIndex && status !== "completed";
+          const isPending = index > activeStageIndex && status !== "completed";
 
           return (
             <div key={stage.label} className="flex flex-1 items-center">

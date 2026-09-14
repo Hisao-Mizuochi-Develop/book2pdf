@@ -282,7 +282,7 @@ class OcrInferrer:
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')
             # FIX(OW004001): 各ページ処理開始時に進捗を通知します
-            self._update_progress(page_idx - 1, total_pages, f'OCR 処理を開始します（{page_idx}/{total_pages}）')
+            self._update_progress(page_idx - 1, total_pages, f'OCR 処理中です（{page_idx}/{total_pages}）')
 
 
             for proc in self.proc_list:

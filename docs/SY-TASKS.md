@@ -186,4 +186,9 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS、frontend build PASS を目指す
 > >
 > > 【実施結果】
+> > - 2026-09-15: `frontend/src/components/progress/ProgressPanel.tsx` のステップ判定を `status`（uploaded / processing / completed）と `progress` の両方で行うように修正。`status=completed` 時は最終ステップを完了表示とし、`status=processing` 時は `progress >= 0.75` で PDF 生成中ステップをアクティブにする
+> > - 2026-09-15: `ocr-worker/ndlocr_cli_patches/inference.py` line 285 のページ処理開始時メッセージを「OCR 処理を開始します（n/n）」から「OCR 処理中です（n/n）」に変更
+> > - 2026-09-15: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で OCR 全ページ完了後に `progress=0.75, message="PDF ファイル生成中です"` の進捗更新を追加。PDF 生成完了時のメッセージを「PDF ファイル生成が完了しました」に統一
+> > - 2026-09-15: 影響を受けるテストを更新：`backend/tests/test_ocr.py` の完了メッセージアサーションを修正、`frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` に status ベースのステップ遷移テストを追加、`frontend/src/hooks/__tests__/useOcrJob.test.ts` / `frontend/src/app/__tests__/page.msw.test.tsx` の完了メッセージを修正
+> > - 2026-09-15: backend 全テスト 40/40 PASS、frontend 全テスト 62/62 PASS、`npm run build` PASS、`npx tsc --noEmit` PASS
 >
