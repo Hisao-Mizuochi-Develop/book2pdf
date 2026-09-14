@@ -282,7 +282,7 @@ class OcrInferrer:
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')
             # FIX(OW004001): 各ページ処理開始時に進捗を通知します
-            self._update_progress(page_idx - 1, total_pages, f'OCR 処理中です（{page_idx}/{total_pages}）')
+            self._update_progress(page_idx - 1, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
 
 
             for proc in self.proc_list:
@@ -304,7 +304,7 @@ class OcrInferrer:
             # DEBUG ログ: 1 ページあたりの OCR 処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了: page={page_idx}, img_path={img_path}, elapsed={elapsed_page:.3f}s')
             # FIX(OW004001): 各ページ処理完了後に進捗を通知します
-            self._update_progress(page_idx, total_pages, f'OCR 処理中です（{page_idx}/{total_pages}）')
+            self._update_progress(page_idx, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
 
             if self.cfg['save_image'] or self.cfg['partial_infer']:
                 # save inferenced result drawn image in pred_img directory

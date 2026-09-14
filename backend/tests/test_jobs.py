@@ -258,7 +258,7 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
         "total_pages": 2,
         "progress": 0.6,
         "status": "processing",
-        "message": "OCR 処理中です（2/2）",
+        "message": "OCR処理中です（2/2）",
         "timestamp": "2026-09-13T12:00:00+00:00",
     }
 
@@ -279,8 +279,84 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     assert data["job_id"] == created_job_id
     # status は backend のフェーズ値を優先（uploaded）
     assert data["status"] == "uploaded"
-    # progress / current_page / total_pages / message は ocr-worker 優先
+    # progress / message は大きい方を優先、current_page / total_pages は ocr-worker 優先
     assert data["progress"] == pytest.approx(0.6, abs=0.01)
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
-    assert data["message"] == "OCR 処理中です（2/2）"
+    assert data["message"] == "OCR処理中です（2/2）"
+
+
+def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkeypatch) -> None:
+    """backend のフェーズ進捗が ocr-worker より進んでいる場合は backend を優先します。
+
+    SY002003: PDF 生成中/完了時は backend が管理する progress/message を表示するため、
+    ocr-worker の per-page 進捗（0.6 など）より backend の値（0.75 / 1.0）を優先します。
+    """
+    from app.routers import jobs as jobs_router
+    from app.services import job_manager
+
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    job_id = response.json()["job_id"]
+
+    zip_buffer = create_zip_buffer(["page1.png", "page2.png"])
+    client.post(
+        f"/api/jobs/{job_id}/upload",
+        files={"file": ("images.zip", zip_buffer, "application/zip")},
+    )
+
+    # ocr-worker は最後のページ進捗を返します
+    fake_progress = {
+        "job_id": job_id,
+        "current_page": 2,
+        "total_pages": 2,
+        "progress": 0.6,
+        "status": "processing",
+        "message": "OCR処理中です（2/2）",
+        "timestamp": "2026-09-13T12:00:00+00:00",
+    }
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            status_code = 200
+            def json(self):
+                return fake_progress
+        return FakeResponse()
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "get", fake_get)
+
+    # backend が PDF 生成中の進捗を書き込んだ場合
+    job_manager.update_progress(
+        job_id,
+        status="processing",
+        progress=0.75,
+        current_page=2,
+        total_pages=2,
+        message="PDFファイル生成中です",
+    )
+
+    response = client.get(f"/api/jobs/{job_id}")
+    assert response.status_code == 200
+    data = response.json()
+    # backend の進捗の方が大きいので backend の message を優先
+    assert data["progress"] == pytest.approx(0.75, abs=0.01)
+    assert data["message"] == "PDFファイル生成中です"
+    # current_page / total_pages は ocr-worker 優先
+    assert data["current_page"] == 2
+    assert data["total_pages"] == 2
+
+    # backend が完了進捗を書き込んだ場合も backend を優先
+    job_manager.update_progress(
+        job_id,
+        status="completed",
+        progress=1.0,
+        current_page=2,
+        total_pages=2,
+        message="PDFファイル生成が完了しました",
+    )
+
+    response = client.get(f"/api/jobs/{job_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["progress"] == pytest.approx(1.0, abs=0.01)
+    assert data["message"] == "PDFファイル生成が完了しました"

@@ -114,13 +114,13 @@ describe("ProgressPanel", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          message: "OCR 処理中です（1/2）",
+          message: "OCR処理中です（1/2）",
         })}
       />
     );
 
     expect(screen.getByTestId("progress-message-line")).toHaveTextContent(
-      "OCR 処理中です（1/2）"
+      "OCR処理中です（1/2）"
     );
   });
 
@@ -164,7 +164,7 @@ describe("ProgressPanel", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          message: "PDF ファイル生成が完了しました",
+          message: "PDFファイル生成が完了しました",
           status: "completed",
           progress: 1.0,
         })}

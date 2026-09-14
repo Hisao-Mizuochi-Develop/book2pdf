@@ -140,18 +140,21 @@ async def get_job(job_id: str) -> JobResponse:
         # ocr-worker へのアクセスに失敗しても、backend のジョブ情報は返します
         pass
 
+    # backend のフェーズ進捗を取得します
+    backend_progress = job_manager.get_progress(job_id) or {}
+
     # 取得した状態をレスポンスモデルに変換して返します
     # job["status"] は文字列なので、JobStatus 列挙型に変換します
-    # progress / current_page / total_pages / message は ocr-worker のデータを優先します
+    merged = _merge_progress_data(backend_progress, progress_data)
     return JobResponse(
         job_id=job_id,
         status=JobStatus(job["status"]),
-        message=progress_data.get("message", job.get("message", "")),
+        message=merged["message"],
         files=job.get("files", []),
         text=job.get("text", ""),
-        progress=progress_data.get("progress", 0.0),
-        current_page=progress_data.get("current_page", 0),
-        total_pages=progress_data.get("total_pages", 0),
+        progress=merged["progress"],
+        current_page=merged["current_page"],
+        total_pages=merged["total_pages"],
     )
 
 
@@ -263,7 +266,7 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
         job_id=job_id,
         status=JobStatus.PROCESSING,
         text="",
-        message="OCR 処理を開始しました",
+        message="OCR処理を開始しました",
     )
 
 
@@ -300,7 +303,7 @@ async def _run_ocr_and_generate_pdf(
             progress=0.0,
             current_page=0,
             total_pages=total_pages,
-            message="OCR 処理を開始しました",
+            message="OCR処理を開始しました",
         )
 
         # OCR 処理は同期ブロッキングなので別スレッドで実行します
@@ -318,27 +321,27 @@ async def _run_ocr_and_generate_pdf(
             progress=0.75,
             current_page=total_pages,
             total_pages=total_pages,
-            message="PDF ファイル生成中です",
+            message="PDFファイル生成中です",
         )
     except Exception as exc:
-        # OCR 処理中にエラーが発生した場合は FAILED 状態に更新します
-        logger.exception("OCR 処理に失敗しました: job_id=%s", job_id)
+        # OCR処理中にエラーが発生した場合は FAILED 状態に更新します
+        logger.exception("OCR処理に失敗しました: job_id=%s", job_id)
         job_manager.update_progress(
             job_id,
             status="failed",
             progress=0.0,
             current_page=0,
             total_pages=total_pages,
-            message=f"OCR 処理に失敗しました: {exc}",
+            message=f"OCR処理に失敗しました: {exc}",
         )
         job_manager.update_job_with_ocr_result(
             job_id,
-            message=f"OCR 処理に失敗しました: {exc}",
+            message=f"OCR処理に失敗しました: {exc}",
         )
         job_manager.update_job_status(
             job_id,
             JobStatus.FAILED,
-            message=f"OCR 処理に失敗しました: {exc}",
+            message=f"OCR処理に失敗しました: {exc}",
         )
         return
 
@@ -360,7 +363,7 @@ async def _run_ocr_and_generate_pdf(
         job_manager.update_job_with_pdf_path(
             job_id,
             pdf_path=str(pdf_path),
-            message="PDF ファイル生成が完了しました",
+            message="PDFファイル生成が完了しました",
         )
         # PDF 生成が完了してから COMPLETED に遷移します
         # これにより、フロントエンドが completed を検出した時点では
@@ -368,16 +371,16 @@ async def _run_ocr_and_generate_pdf(
         job_manager.update_job_status(
             job_id,
             JobStatus.COMPLETED,
-            message="PDF ファイル生成が完了しました",
+            message="PDFファイル生成が完了しました",
         )
-        # PDF 生成完了を記録します
+        # PDF生成完了を記録します
         job_manager.update_progress(
             job_id,
             status="completed",
             progress=1.0,
             current_page=total_pages,
             total_pages=total_pages,
-            message="PDF ファイル生成が完了しました",
+            message="PDFファイル生成が完了しました",
         )
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します
@@ -434,8 +437,9 @@ def _merge_progress_data(
 
     SY002002 §5.4 のマージルールに従います:
     - status / timestamp → backend (フェーズ進捗) 優先
-    - progress / current_page / total_pages / message
-      → ocr-worker (per-page 進捗) 優先
+    - progress / message → 値の大きい方を優先
+      (OCR 中は ocr-worker の per-page 進捗を、PDF 生成中は backend のフェーズ進捗を優先)
+    - current_page / total_pages → ocr-worker (per-page 進捗) 優先
 
     Args:
         backend_data: backend の in-memory フェーズ進捗。None の場合は worker のみ。
@@ -453,10 +457,18 @@ def _merge_progress_data(
     timestamp = backend_data.get("timestamp", worker_data.get("timestamp", ""))
 
     # ocr-worker 優先フィールド（per-page 進捗）
-    progress = worker_data.get("progress", backend_data.get("progress", 0.0))
+    # ただし、backend のフェーズ進捗（PDF 生成など）が ocr-worker の進捗より
+    # 進んでいる場合は backend の値を優先して、正しいメッセージを表示します。
+    worker_progress = worker_data.get("progress", 0.0)
+    backend_progress = backend_data.get("progress", 0.0)
+    if backend_progress >= worker_progress:
+        progress = backend_progress
+        message = backend_data.get("message", worker_data.get("message", ""))
+    else:
+        progress = worker_progress
+        message = worker_data.get("message", backend_data.get("message", ""))
     current_page = worker_data.get("current_page", backend_data.get("current_page", 0))
     total_pages = worker_data.get("total_pages", backend_data.get("total_pages", 0))
-    message = worker_data.get("message", backend_data.get("message", ""))
 
     return {
         "status": status,

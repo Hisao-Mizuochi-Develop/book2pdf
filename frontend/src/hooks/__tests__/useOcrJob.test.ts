@@ -167,7 +167,7 @@ describe("useOcrJob", () => {
           progress: 1.0,
           current_page: 2,
           total_pages: 2,
-          message: "PDF ファイル生成が完了しました",
+          message: "PDFファイル生成が完了しました",
         }),
       );
       await handlePromise;
@@ -177,7 +177,7 @@ describe("useOcrJob", () => {
       expect(result.current.latestProgress?.status).toBe("completed");
     });
     expect(result.current.downloadableJobId).toBe("job-123");
-    expect(result.current.progressLog).toContain("PDF ファイル生成が完了しました");
+    expect(result.current.progressLog).toContain("PDFファイル生成が完了しました");
   });
 
   it("SSE エラー時はログに追加し EventSource を閉じる", async () => {

@@ -288,7 +288,7 @@ def test_run_ocr_writes_staged_progress(
     # current_page は実際の画像枚数に等しい（テストは 1 枚のアップロード）
     assert progress_data["current_page"] == 1
     assert progress_data["total_pages"] == 1
-    assert progress_data["message"] == "PDF ファイル生成が完了しました"
+    assert progress_data["message"] == "PDFファイル生成が完了しました"
 
 
 def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
