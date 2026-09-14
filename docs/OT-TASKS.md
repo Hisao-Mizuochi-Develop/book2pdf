@@ -593,7 +593,7 @@ docs/ 配下の図を Mermaid 化する
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [OT010001](#ot010001) `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する | 2026-09-14 | | ドキュメント |
+| [OT010001](#ot010001) `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する | 2026-09-14 | 2026-09-14 | ドキュメント |
 
 <a id="ot010001"></a>
 ### OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
@@ -609,6 +609,8 @@ docs/ 配下の図を Mermaid 化する
 > 【実施結果】
 > - 2026-09-14: backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/ の Markdown ファイルを精査し、未 Mermaid 化の図が `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の 1 箇所のみであることを確認
 > - 2026-09-14: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図を Mermaid `flowchart TD` に変換
+> - 2026-09-14: §10・§11 のすべてのファイル・フォルダに trailing comment を追加し、`.cline/skills/` 以下の実ファイル構成を反映
+> - 2026-09-14: `docs/OT-WORK-LOG.md` にコメント追記作業のログを追加
 > - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を確認（memo/ 配下の既存 2 ファイルを除き ALL PASS）
 >
 
