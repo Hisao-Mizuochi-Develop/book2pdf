@@ -64,6 +64,23 @@ class JobResponse(BaseModel):
     # 処理中や失敗時、未実行時は空文字列になります
     text: str = Field(default="", description="OCR 認識結果のテキスト")
 
+    # 全体に対する進捗率です
+    # 0.0（開始時）から 1.0（完了時）までの値を取ります
+    progress: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="進捗率（0.0 〜 1.0）",
+    )
+
+    # 現在処理済みのページ番号です
+    # 1 から始まるページ番号で、未開始時は 0 になります
+    current_page: int = Field(default=0, ge=0, description="現在処理済みのページ番号")
+
+    # 処理対象の総ページ数です
+    # ZIP 展開後に確定します
+    total_pages: int = Field(default=0, ge=0, description="処理対象の総ページ数")
+
 
 class JobUploadResponse(BaseModel):
     """ZIP アップロード API のレスポンスモデルです。"""

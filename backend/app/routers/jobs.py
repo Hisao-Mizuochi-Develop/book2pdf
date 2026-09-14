@@ -98,14 +98,19 @@ def create_job() -> JobCreateResponse:
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: str) -> JobResponse:
+async def get_job(job_id: str) -> JobResponse:
     """指定されたジョブ ID の状態を取得します。
+
+    SY002002:
+    - backend の in-memory ジョブ状態と ocr-worker の per-page 進捗をマージして返します
+    - ocr-worker から取得する progress / current_page / total_pages / message を優先します
+    - status は backend のフェーズ値を優先します
 
     Args:
         job_id: 確認したいジョブの ID
 
     Returns:
-        ジョブの現在の状態
+        ジョブの現在の状態（進捗情報を含む）
 
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
@@ -117,14 +122,36 @@ def get_job(job_id: str) -> JobResponse:
     if job is None:
         raise HTTPException(status_code=404, detail="指定されたジョブが見つかりません")
 
+    # ocr-worker のベース URL を設定から取得します
+    ocr_worker_url = (
+        settings.ocr_worker_url
+        if settings.ocr_worker_url
+        else "http://ocr-worker:8001"
+    )
+
+    # ocr-worker から per-page 進捗を取得してマージします
+    progress_data: dict = {}
+    try:
+        async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
+            response = await client.get(f"{ocr_worker_url}/progress/{job_id}")
+            if response.status_code == 200:
+                progress_data = response.json()
+    except Exception:
+        # ocr-worker へのアクセスに失敗しても、backend のジョブ情報は返します
+        pass
+
     # 取得した状態をレスポンスモデルに変換して返します
     # job["status"] は文字列なので、JobStatus 列挙型に変換します
+    # progress / current_page / total_pages / message は ocr-worker のデータを優先します
     return JobResponse(
         job_id=job_id,
         status=JobStatus(job["status"]),
-        message=job.get("message", ""),
+        message=progress_data.get("message", job.get("message", "")),
         files=job.get("files", []),
         text=job.get("text", ""),
+        progress=progress_data.get("progress", 0.0),
+        current_page=progress_data.get("current_page", 0),
+        total_pages=progress_data.get("total_pages", 0),
     )
 
 

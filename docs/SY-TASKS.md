@@ -155,3 +155,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-14: `useOcrJob` の `handleUploaded` でアップロード完了時に `latestProgress` を初期化し、OCR 実行前に `processing`/`progress=0.1` の仮進捗を注入
 > > - 2026-09-14: 影響を受けるテスト（`ProgressPanel.test.tsx`、`useOcrJob.test.ts`、`page.test.tsx`、`page.msw.test.tsx`）を新しい挙動に合わせて更新
 > > - 2026-09-14: frontend 全テスト 61/61 PASS、`npm run build` 成功、`npx tsc --noEmit` 成功を確認
+> > - 2026-09-14: UAT（ユーザー検証テスト）を再実行。job_id=`b95649e2-152a-4755-9e71-26af1ee4c580` で 1 枚画像の ZIP アップロード → OCR 実行 → 完了までの一連フローを検証
+> > - 2026-09-14: backend `GET /api/jobs/{job_id}` と ocr-worker `GET /progress/{job_id}` の進捗値が一致し、`completed` 時に `progress=1.0 / current_page=1 / total_pages=1` となることを確認
+> > - 2026-09-14: SSE (`GET /api/jobs/{job_id}/events`) から `processing` / `progress=0.1` / `completed` / `[DONE]` が順に配信されることを確認
+> > - 2026-09-14: PDF ダウンロード (`GET /api/jobs/{job_id}/pdf`) が `200 application/pdf` で 18 MB の有効な PDF を返すことを確認
+> > - 2026-09-14: backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS を UAT 直前に再確認

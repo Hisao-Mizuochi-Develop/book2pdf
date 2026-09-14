@@ -172,3 +172,115 @@ def test_get_job_after_upload(client: TestClient) -> None:
 
     # 画像ファイル一覧が期待通りであることを確認します
     assert data["files"] == ["page1.png"]
+
+    # SY002002: progress フィールドが含まれていることを確認します
+    # ocr-worker へ接続できない場合はデフォルト値になります
+    assert "progress" in data
+    assert "current_page" in data
+    assert "total_pages" in data
+    assert data["progress"] == 0.0
+    assert data["current_page"] == 0
+    assert data["total_pages"] == 0
+
+
+def test_get_job_not_found(client: TestClient) -> None:
+    """存在しないジョブ ID に対して 404 エラーが返ることを確認します。"""
+    response = client.get("/api/jobs/00000000-0000-0000-0000-000000000000")
+    assert response.status_code == 404
+    assert "ジョブが見つかりません" in response.json()["detail"]
+
+
+def test_get_job_with_progress_fallback(client: TestClient, monkeypatch) -> None:
+    """ocr-worker へ接続できない場合、progress=0.0 でフォールバックすることを確認します。
+
+    SY002002:
+    - get_job() は ocr-worker へ HTTP GET を行いますが、接続エラー時は
+      progress=0.0 / current_page=0 / total_pages=0 でフォールバックします。
+    """
+    import httpx
+    import importlib
+    from app.routers import jobs as jobs_router
+
+    job_id = "test-job-progress-fallback"
+
+    # ジョブを作成します
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    created_job_id = response.json()["job_id"]
+
+    # ocr-worker への接続を失敗させます
+    async def fake_connect_error(self, url, **kwargs):
+        raise httpx.ConnectError("Connection refused")
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "get", fake_connect_error)
+
+    # ジョブ状態を取得します
+    response = client.get(f"/api/jobs/{created_job_id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["job_id"] == created_job_id
+    assert data["status"] == "pending"
+    # ocr-worker へ接続できない場合、progress フィールドはデフォルト値になります
+    assert data["progress"] == 0.0
+    assert data["current_page"] == 0
+    assert data["total_pages"] == 0
+
+
+def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
+    """ocr-worker から progress データを取得してマージすることを確認します。
+
+    SY002002:
+    - get_job() は ocr-worker の GET /progress/{job_id} をポーリングします
+    - progress / current_page / total_pages / message は ocr-worker データを優先します
+    - status は backend のフェーズ値を優先します
+    """
+    import httpx
+    from app.routers import jobs as jobs_router
+
+    job_id = "test-job-progress-merged"
+
+    # ジョブを作成してアップロード状態にします
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    created_job_id = response.json()["job_id"]
+
+    zip_buffer = create_zip_buffer(["page1.png", "page2.png"])
+    client.post(
+        f"/api/jobs/{created_job_id}/upload",
+        files={"file": ("images.zip", zip_buffer, "application/zip")},
+    )
+
+    # ocr-worker のレスポンスをモックします
+    fake_progress = {
+        "job_id": created_job_id,
+        "current_page": 2,
+        "total_pages": 2,
+        "progress": 0.6,
+        "status": "processing",
+        "message": "OCR 処理中です（2/2）",
+        "timestamp": "2026-09-13T12:00:00+00:00",
+    }
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            status_code = 200
+            def json(self):
+                return fake_progress
+        return FakeResponse()
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "get", fake_get)
+
+    # ジョブ状態を取得します
+    response = client.get(f"/api/jobs/{created_job_id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["job_id"] == created_job_id
+    # status は backend のフェーズ値を優先（uploaded）
+    assert data["status"] == "uploaded"
+    # progress / current_page / total_pages / message は ocr-worker 優先
+    assert data["progress"] == pytest.approx(0.6, abs=0.01)
+    assert data["current_page"] == 2
+    assert data["total_pages"] == 2
+    assert data["message"] == "OCR 処理中です（2/2）"

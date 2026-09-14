@@ -32,24 +32,19 @@
 
 ### ジョブ情報
 
-- job_id: `2a92c602-9955-48cf-a139-d99a8b031773`
+- job_id: `b95649e2-152a-4755-9e71-26af1ee4c580`
 - アップロードファイル: `001.png`
 - 最終ステータス: `completed`
-- 最終メッセージ: `PDF 生成が完了しました`
+- 最終メッセージ: `OCR 処理が完了しました`
 
 ### SSE 進捗イベント
 
-`/tmp/sy002002_uat2/sse.log` に記録された主要イベントは以下の通りです。
+`/tmp/sse_events.log` および追加検証時の `/tmp/sse_test.log` に記録された主要イベントは以下の通りです。
 
 ```text
-data: {"job_id":"2a92c602-9955-48cf-a139-d99a8b031773","status":"processing","progress":0.0,"current_page":0,"total_pages":1,"message":"OCR 処理を開始しました","timestamp":"2026-09-14T01:02:30.533764+00:00"}
+data: {"job_id":"b95649e2-152a-4755-9e71-26af1ee4c580","status":"processing","progress":0.1,"current_page":0,"total_pages":1,"message":"OCR 処理を開始します（1/1）","timestamp":"2026-09-14T12:59:17.891801+00:00"}
 
-data: {"job_id":"2a92c602-9955-48cf-a139-d99a8b031773","status":"processing","progress":0.1,"current_page":0,"total_pages":1,"message":"OCR 処理を開始します（1/1）","timestamp":"2026-09-14T01:02:30.533764+00:00"}
-
-: keepalive
-（中略）
-
-data: {"job_id":"2a92c602-9955-48cf-a139-d99a8b031773","status":"completed","progress":1.0,"current_page":1,"total_pages":1,"message":"OCR 処理が完了しました","timestamp":"2026-09-14T01:04:14.869290+00:00"}
+data: {"job_id":"b95649e2-152a-4755-9e71-26af1ee4c580","status":"completed","progress":1.0,"current_page":1,"total_pages":1,"message":"OCR 処理が完了しました","timestamp":"2026-09-14T13:01:27.847767+00:00"}
 
 data: [DONE]
 ```
@@ -62,10 +57,18 @@ data: [DONE]
 
 ### PDF ダウンロード
 
-- ダウンロード先: `/tmp/sy002002_uat2/out.pdf`
+- ダウンロード先: `/tmp/uat_out.pdf`
 - ファイルサイズ: 18 MB
-- ファイル形式: `PDF document, version 1.7, 2 pages`
+- HTTP ステータス: `200 application/pdf`
+- ファイル形式: `PDF document, version 1.7`
 - 内容確認: 表紙テキストが検索・抽出可能な状態で含まれていることを確認
+
+### 自動テスト結果
+
+- backend 全テスト: `40 passed, 2 warnings`（対象: `tests/test_jobs.py`, `tests/test_progress.py` 含む）
+- frontend 全テスト: `61 passed`
+- frontend ビルド: 成功
+- frontend TypeScript 型検査: 成功
 
 ## 合否判定
 
