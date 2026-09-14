@@ -594,6 +594,7 @@ docs/ 配下の図を Mermaid 化する
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [OT010001](#ot010001) `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する | 2026-09-14 | 2026-09-14 | ドキュメント |
+| [OT010002](#ot010002) `docs/README.md` のインデックスが各 docs 配下のドキュメントを網羅しているか確認と修正 | 2026-09-14 | | ドキュメント |
 
 <a id="ot010001"></a>
 ### OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
@@ -612,5 +613,19 @@ docs/ 配下の図を Mermaid 化する
 > - 2026-09-14: §10・§11 のすべてのファイル・フォルダに trailing comment を追加し、`.cline/skills/` 以下の実ファイル構成を反映
 > - 2026-09-14: `docs/OT-WORK-LOG.md` にコメント追記作業のログを追加
 > - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を確認（memo/ 配下の既存 2 ファイルを除き ALL PASS）
+
+<a id="ot010002"></a>
+### OT010002 `docs/README.md` のインデックスが各 docs 配下のドキュメントを網羅しているか確認と修正
+
+<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `docs/` 配下、各モジュール `docs/` 配下の `.md` ファイルを一覧取得し、`docs/README.md` と比較する
+> - `docs/README.md` に不足しているドキュメントを追加する
+> - `docs/README.md` から重複エントリを削除する
+> - `docs/README.md` の最終更新日を更新する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
 >
 
