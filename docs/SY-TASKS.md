@@ -1,11 +1,11 @@
 # System タスク管理表
 
-> 最終更新: 2026/09/14
+> 最終更新: 2026/09/15
 
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/14
+> 最終更新: 2026/09/15
 
 ---
 
@@ -75,6 +75,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 |---|---|---|---|
 | [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 | 2026-09-03 | 仕様 |
 | [SY002002](#sy002002) コンテナ間進捗通知のREST API連携方式実装 | 2026-09-12 |  | 横断実装 |
+| [SY002003](#sy002003) SY002002 UATバグ対応 | 2026-09-15 |  | 横断実装 |
 
 <a id="sy002001"></a>
 ### SY002001 進捗通知のポーリング方式全体仕様策定
@@ -160,3 +161,29 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-14: SSE (`GET /api/jobs/{job_id}/events`) から `processing` / `progress=0.1` / `completed` / `[DONE]` が順に配信されることを確認
 > > - 2026-09-14: PDF ダウンロード (`GET /api/jobs/{job_id}/pdf`) が `200 application/pdf` で 18 MB の有効な PDF を返すことを確認
 > > - 2026-09-14: backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS を UAT 直前に再確認
+>
+> <a id="sy002003"></a>
+> ### SY002003 SY002002 UATバグ対応
+>
+> <div align="right"><a href="#sy002">タスク一覧へ↩︎</a></div>
+>
+> > 【計画】
+> > #### バグ 1: 大容量ジョブでステップが「ZIPアップロード中」のまま
+> >   内容: `frontend/src/components/progress/ProgressPanel.tsx` が progress 値の閾値だけでステップを判定しているため、1〜999 枚のジョブで正しいステップ遷移にならない場合がある
+> >   対応方針: `status`（uploaded / processing / completed）と `progress` の両方を使ってアクティブステップを判定する
+> >
+> > #### バグ 2: OCR サブステップメッセージが「OCR処理を開始します」
+> >   内容: `ocr-worker/ndlocr_cli_patches/inference.py` line 285 のページ処理開始時メッセージが「OCR 処理を開始します」になっている
+> >   対応方針: メッセージを「OCR 処理中です（n/n）」に変更する
+> >
+> > #### バグ 3: PDF 生成中/完了メッセージが欠落
+> >   内容: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で PDF 生成中と完了の進捗更新がない
+> >   対応方針: PDF 生成開始時に `progress=0.75, message="PDF ファイル生成中です"` を発行し、完了時に `message="PDF ファイル生成が完了しました"` に変更する
+> >
+> > #### テスト更新方針
+> > - `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`: status ベースのステップ遷移テストを追加
+> > - `backend/tests/test_progress.py`: PDF 生成フェーズの進捗更新テストを追加
+> > - backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS、frontend build PASS を目指す
+> >
+> > 【実施結果】
+>
