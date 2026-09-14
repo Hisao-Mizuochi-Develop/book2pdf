@@ -6,6 +6,36 @@
 
 ---
 
+## 2026-09-14 OT010002 `docs/README.md` のインデックスが各 docs 配下のドキュメントを網羅しているか確認と修正
+
+### 目的
+
+`docs/README.md` が `docs/` 配下および各モジュール `docs/` 配下のドキュメントを網羅していることを確認し、不足・重複を修正する。
+
+### 実施内容
+
+- `docs/` 配下・各モジュール `docs/` 配下の `.md` ファイルを一覧化し、`docs/README.md` と比較
+- `docs/README.md` に以下の不足ドキュメントを追加
+  - `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md`
+  - `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md`
+  - `docs/SY-SSE-PROGRESS-DELIVERY-GUIDE.md`
+  - `docs/SY-STORAGE-MIGRATION-GUIDE.md`
+  - `docs/SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md`
+  - `backend/docs/BE007001-report.md`
+- `docs/README.md` から `SY-CAVEATS.md` の重複エントリを削除
+- `docs/README.md` の最終更新日を `2026/09/14` に更新
+- `feature/SY002002-get-job-progress-integration` ブランチから `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md` と `docs/SY-STORAGE-MIGRATION-GUIDE.md` を復元・追加
+- Cline checkpoint から `docs/SY-SSE-PROGRESS-DELIVERY-GUIDE.md` を復元・追加
+
+### 結果
+
+- `docs/README.md` が現在の `.md` ファイル構成を網羅
+- `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/README.md` のパイプテーブル整合性を検証し PASS
+
+### コミット
+
+`[OT010002] docs/README.md インデックスの網羅性を修正し、不足ドキュメントを復元`
+
 ## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 にコメントを追加する
 
 ### 目的

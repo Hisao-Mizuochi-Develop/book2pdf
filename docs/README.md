@@ -3,7 +3,7 @@
 本リポジトリの各種ドキュメントへの入口です。
 システム全体の設計書、運用手順、各モジュールの仕様・タスク・作業ログを下記から参照してください。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
 
 ---
 
@@ -16,6 +16,10 @@
 | [`PJ-CODING-CONVENTIONS.md`](PJ-CODING-CONVENTIONS.md) | Python / TypeScript / Rust のコーディング規約 |
 | [`SY-PROGRESS-NOTIFICATION-SPEC.md`](SY-PROGRESS-NOTIFICATION-SPEC.md) | 進捗通知方式（SSE / ポーリング）の全体仕様 |
 | [`SY-CAVEATS.md`](SY-CAVEATS.md) | 全体横断の注意事項 |
+| [`SY-CONTAINER-3LAYER-ARCHITECTURE.md`](SY-CONTAINER-3LAYER-ARCHITECTURE.md) | コンテナ3層構造設計書 |
+| [`SY-CONTAINER-PROGRESS-API-DESIGN.md`](SY-CONTAINER-PROGRESS-API-DESIGN.md) | コンテナ間進捗通知のREST API連携方式設計書 |
+| [`SY-SSE-PROGRESS-DELIVERY-GUIDE.md`](SY-SSE-PROGRESS-DELIVERY-GUIDE.md) | 進捗配信 SSE 解説書 |
+| [`SY-STORAGE-MIGRATION-GUIDE.md`](SY-STORAGE-MIGRATION-GUIDE.md) | 共有ファイルシステム代替方針（AWS 移行時） |
 
 ## 運用・手順・ガイド
 
@@ -23,6 +27,7 @@
 |---|---|
 | [`SY-INTEGRATION-TEST-GUIDE.md`](SY-INTEGRATION-TEST-GUIDE.md) | Docker Compose 上での結合テスト手順 |
 | [`PJ-AGENT-SKILLS-GUIDE.md`](PJ-AGENT-SKILLS-GUIDE.md) | Cline AgentSkills の構成定義・各スキル役割・運用方法 |
+| [`SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md`](SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md) | Agent Skills 操作マニュアル |
 | [`OW-OCR-PREPROCESSING-GUIDE.md`](OW-OCR-PREPROCESSING-GUIDE.md) | OCR 前処理・画像サイズ制御ガイド |
 | [`SY-DEBUG-LOGGING-GUIDE.md`](SY-DEBUG-LOGGING-GUIDE.md) | デバッグログの設定・確認方法 |
 
@@ -35,7 +40,6 @@
 | [`PJ-CAVEATS.md`](PJ-CAVEATS.md) | プロジェクト運用・ガバナンス固有の注意事項 |
 | [`PJ-TASKS.md`](PJ-TASKS.md) | プロジェクト運用・ガバナンスタスク管理表 |
 | [`PJ-WORK-LOG.md`](PJ-WORK-LOG.md) | プロジェクト運用・ガバナンス作業ログ |
-| [`SY-CAVEATS.md`](SY-CAVEATS.md) | 全体横断の注意事項 |
 | [`SY-TASKS.md`](SY-TASKS.md) | 全体設計・横断タスク管理表 |
 | [`SY-WORK-LOG.md`](SY-WORK-LOG.md) | 全体設計・横断作業ログ |
 | [`backend/docs/BE-CAVEATS.md`](../backend/docs/BE-CAVEATS.md) | backend 固有の注意事項 |
@@ -66,6 +70,7 @@
 | ドキュメント | 内容 |
 |---|---|
 | [`backend/docs/BE-BACKEND-SYSTEM-SPEC.md`](../backend/docs/BE-BACKEND-SYSTEM-SPEC.md) | バックエンド仕様書（FastAPI + ndlocr_cli） |
+| [`backend/docs/BE007001-report.md`](../backend/docs/BE007001-report.md) | BE007001 最終報告書 |
 
 ## frontend ドキュメント
 
