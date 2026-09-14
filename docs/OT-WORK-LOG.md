@@ -2,7 +2,82 @@
 
 本ドキュメントは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外の作業の経緯を時系列で記録するものです。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
+
+---
+
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 にコメントを追加する
+
+### 目的
+
+`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 において、コメントが欠けていたファイル・フォルダに trailing comment を追加し、`.cline/skills/` 以下の実ファイル構成を反映させる。
+
+### 実施内容
+
+- §10: backend / frontend / localapp / ocr-worker の未コメント項目に trailing comment を追加
+- §11: `.github/workflows/`、`.vscode/settings.json`、`memo/*`、`localapp/poc_printpdf/*`、`.cline/skills/` 以下すべてのファイル・フォルダに trailing comment を追加
+- `.cline/skills/` は `references/` サブディレクトリも含め実ファイル構成をツリーに反映
+- `.gitignore` 対象（`.DS_Store` 等）はツリーから除外
+- `python scripts/lint-task-md.py` で `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を検証
+
+### 結果
+
+- §10・§11 のすべてのファイル・フォルダに trailing comment が付与された
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` は lint PASS
+
+### コミット
+
+`docs(OT010001): add comments to all files in system and non-system trees`
+
+---
+
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 をコメント付きファイルツリー化する
+
+### 目的
+
+`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10「フォルダ・ファイル構成」を、全ファイルコメント付きのシステム構成ツリーに書き換え、同じ形式の §11「システム関連外ファイル構成」を新設し、既存 §11「注意事項」を §12 へ繰り上げる。
+
+### 実施内容
+
+- `.gitignore` 対象（`old/` `reference/` 等）はツリーから除外
+- backend / frontend / localapp / ocr-worker の主要ファイルを §10 にコメント付きで整理
+- docs / scripts / memo / test_cases / localapp/poc_printpdf / .cline/skills 等を §11 に整理
+- `## 11. 注意事項` を `## 12. 注意事項` に変更
+- `python scripts/lint-task-md.py` で `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を検証
+
+### 結果
+
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 がコメント付きファイルツリー化された
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` は lint PASS
+
+### コミット
+
+`docs(OT010001): rewrite SY-WEB-OCR-SYSTEM-PLAN sections 10-11 as commented file trees`
+
+---
+
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
+
+### 目的
+
+プロジェクト内の `docs/` 配下にある Mermaid 化されていない図を特定し、`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の ASCII アート図を Mermaid 構文に変換する。
+
+### 実施内容
+
+- backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/ の各 Markdown ファイルを精査し、未 Mermaid 化の図を特定
+- 対象は `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図のみであることを確認
+- ASCII アート図を Mermaid `flowchart TD` に変換
+- `docs/OT-TASKS.md` に OT010 ユースケースと OT010001 タスクを新規追加
+- `python scripts/lint-task-md.py` でパイプテーブル整合性を検証
+
+### 結果
+
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図が Mermaid 化された
+- `docs/OT-TASKS.md` に OT010001 タスクが記録された
+
+### コミット
+
+`docs(OT010001): convert SY-WEB-OCR-SYSTEM-PLAN architecture diagram to Mermaid`
 
 ---
 
