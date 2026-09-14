@@ -62,7 +62,7 @@ describe("Home page", () => {
     expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();
   });
 
-  it("OCR エラー時にエラーメッセージが表示される", () => {
+  it("OCR エラー時に進捗パネル内のエラー表示エリアにメッセージが表示される", () => {
     vi.mocked(useOcrJob).mockReturnValue({
       jobId: "job-123",
       files: [],
@@ -78,7 +78,8 @@ describe("Home page", () => {
 
     render(<Home />);
 
-    expect(screen.getByText("OCR 処理に失敗しました")).toBeInTheDocument();
+    const errorLine = screen.getByTestId("progress-error-line");
+    expect(errorLine).toHaveTextContent("OCR 処理に失敗しました");
   });
 
   it("PDF ダウンロードボタンを押すと showSaveFilePicker と downloadPdf が呼ばれる", async () => {

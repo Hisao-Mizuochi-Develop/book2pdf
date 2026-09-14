@@ -92,6 +92,15 @@ export function useOcrJob(): UseOcrJobResult {
       reset();
       setJobId(newJobId);
       setFiles(uploadedFiles);
+      setLatestProgress({
+        job_id: newJobId,
+        status: "uploaded",
+        progress: 0,
+        current_page: 0,
+        total_pages: uploadedFiles.length,
+        message: "ZIP アップロードが完了しました",
+        timestamp: new Date().toISOString(),
+      });
       setProgressLog([`画像を ${uploadedFiles.length} 枚検出しました`]);
       setIsLoading(true);
 
@@ -146,6 +155,18 @@ export function useOcrJob(): UseOcrJobResult {
             cleanupProgress();
           },
         );
+
+        // OCR 処理開始直前に仮の進捗をセットし、パネルが表示されたまま遷移します
+        setLatestProgress((prev) => ({
+          ...prev,
+          job_id: newJobId,
+          status: "processing",
+          progress: 0.1,
+          current_page: 0,
+          total_pages: uploadedFiles.length,
+          message: "OCR 処理を開始しました",
+          timestamp: new Date().toISOString(),
+        }));
 
         const ocrResult = await runOcr(newJobId);
         setResult(JSON.stringify(ocrResult, null, 2));

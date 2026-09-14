@@ -19,18 +19,22 @@ function makeProgressEvent(overrides: Partial<ProgressEvent> = {}): ProgressEven
 }
 
 describe("ProgressPanel", () => {
-  it("進捗データがない場合は何も描画しない", () => {
-    const { container } = render(<ProgressPanel latest={null} />);
+  it("進捗データが未受信でもパネルは描画される", () => {
+    render(<ProgressPanel latest={null} />);
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByTestId("progress-panel")).toBeInTheDocument();
+    expect(screen.getByText("進捗")).toBeInTheDocument();
+    expect(screen.getByText("0%")).toBeInTheDocument();
+
+    // ステップ1（ZIPアップロード中）がアクティブ
+    const dot0 = screen.getByTestId("stage-dot-0");
+    expect(dot0).toHaveClass("bg-primary", "ring-2");
   });
 
   it("最新進捗をプログレスバー付きで表示する", () => {
     render(<ProgressPanel latest={makeProgressEvent()} />);
 
     expect(screen.getByText("進捗")).toBeInTheDocument();
-    expect(screen.getByText("状態: processing")).toBeInTheDocument();
-    expect(screen.getByText("1 / 2 ページ")).toBeInTheDocument();
     expect(screen.getByText("50%")).toBeInTheDocument();
 
     const bar = screen.getByTestId("progress-bar");
@@ -51,23 +55,13 @@ describe("ProgressPanel", () => {
     expect(screen.getByTestId("progress-bar")).toHaveStyle({ width: "100%" });
   });
 
-  it("total_pages が 0 の場合は安全に表示する", () => {
-    render(
-      <ProgressPanel
-        latest={makeProgressEvent({ current_page: 0, total_pages: 0 })}
-      />
-    );
-
-    expect(screen.getByText("0 / ? ページ")).toBeInTheDocument();
-  });
-
   it("段階的なステップ表示がレンダリングされる", () => {
     render(<ProgressPanel latest={makeProgressEvent({ progress: 0.5 })} />);
 
     expect(screen.getByTestId("progress-stages")).toBeInTheDocument();
-    expect(screen.getByText("アップロード")).toBeInTheDocument();
-    expect(screen.getByText("OCR 処理")).toBeInTheDocument();
-    expect(screen.getByText("PDF 生成")).toBeInTheDocument();
+    expect(screen.getByText("ZIPアップロード中")).toBeInTheDocument();
+    expect(screen.getByText("OCR処理中")).toBeInTheDocument();
+    expect(screen.getByText("PDF生成中")).toBeInTheDocument();
     expect(screen.getByText("完了")).toBeInTheDocument();
   });
 
@@ -101,7 +95,7 @@ describe("ProgressPanel", () => {
     expect(dot3).toHaveClass("bg-green-500");
   });
 
-  it("OCR 処理中の進捗メッセージを単一行で表示する", () => {
+  it("進捗メッセージを1行表示エリアに表示する", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
@@ -110,67 +104,58 @@ describe("ProgressPanel", () => {
       />
     );
 
-    expect(screen.getByTestId("ocr-status-line")).toHaveTextContent(
+    expect(screen.getByTestId("progress-message-line")).toHaveTextContent(
       "OCR 処理中です（1/2）"
     );
   });
 
-  it("OCR 完了の進捗メッセージを単一行で表示する", () => {
+  it("error Props をエラー表示エリアに表示する", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} error="エラーが発生しました" />);
+
+    expect(screen.getByTestId("progress-error-line")).toHaveTextContent("エラーが発生しました");
+  });
+
+  it("status が failed の場合はメッセージをエラー表示エリアに表示する", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          progress: 1.0,
-          status: "completed",
-          message: "OCR 処理が完了しました（2/2）",
+          status: "failed",
+          progress: 0.5,
+          message: "OCR 処理に失敗しました",
         })}
       />
     );
 
-    expect(screen.getByTestId("ocr-status-line")).toHaveTextContent(
-      "OCR 処理が完了しました（2/2）"
+    expect(screen.getByTestId("progress-error-line")).toHaveTextContent(
+      "OCR 処理に失敗しました"
     );
   });
 
-  it("PDF 生成中の進捗メッセージを単一行で表示する", () => {
+  it("メッセージに『エラー』が含まれる場合はエラー表示エリアに表示する", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          message: "PDF を生成中です",
+          message: "接続エラーが発生しました",
         })}
       />
     );
 
-    expect(screen.getByTestId("pdf-status-line")).toHaveTextContent(
-      "PDF 作成中です"
+    expect(screen.getByTestId("progress-error-line")).toHaveTextContent(
+      "接続エラーが発生しました"
     );
   });
 
-  it("PDF 生成完了の進捗メッセージを単一行で表示する", () => {
+  it("通常のメッセージはエラー表示エリアに表示しない", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({
-          progress: 1.0,
-          status: "completed",
           message: "PDF 生成が完了しました",
+          status: "completed",
+          progress: 1.0,
         })}
       />
     );
 
-    expect(screen.getByTestId("pdf-status-line")).toHaveTextContent(
-      "PDF 作成しました"
-    );
-  });
-
-  it("認識できないメッセージは OCR／PDF 行に表示しない", () => {
-    render(
-      <ProgressPanel
-        latest={makeProgressEvent({
-          message: "一般的なログメッセージ",
-        })}
-      />
-    );
-
-    expect(screen.queryByTestId("ocr-status-line")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("pdf-status-line")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("progress-error-line")).not.toBeInTheDocument();
   });
 });

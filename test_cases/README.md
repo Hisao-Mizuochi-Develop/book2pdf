@@ -65,6 +65,7 @@ test_cases/
 | [OWOW003005/config-comparison-report-OW003005.md](results/OWOW003005/config-comparison-report-OW003005.md) | OW003005 | 2026-08-14 | score_thr 修正後の再検証 | `score_thr=0.2` + `sharpen_light_upscale_2x` の組み合わせで精度向上を確認 |
 | [OWOW003006/preprocess-integration-report-OW003006.md](results/OWOW003006/preprocess-integration-report-OW003006.md) | [OW003006](../ocr-worker/docs/OW-TASKS.md) | 2026-08-14 | `sharpen_light_upscale_2x` の ocr-worker 組み込み検証 | ocr-worker 自動前処理として採用決定 |
 | [OWOW003007/additional-preprocess-report-OW003007.md](results/OWOW003007/additional-preprocess-report-OW003007.md) | [OW003007](../ocr-worker/docs/OW-TASKS.md) | 2026-09-01 | 追加前処理効果検証 | `sharpen_light_upscale_2x` を超える前処理は見つからず、現状の方式を維持 |
+| [ocr-results-SY002002/uat-report-SY002002.md](results/ocr-results-SY002002/uat-report-SY002002.md) | [SY002002](../docs/SY-TASKS.md) | 2026-09-14 | 進捗通知 REST API 連携の UAT | SSE / ポーリング / PDF ダウンロード連携が正常に動作 |
 
 ---
 

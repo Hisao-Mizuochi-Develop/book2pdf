@@ -35,13 +35,7 @@ export default function Home() {
           </div>
         </div>
 
-        {error && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <ProgressPanel latest={latestProgress} />
+        <ProgressPanel latest={latestProgress} error={error} />
 
         {result && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -84,7 +78,6 @@ export default function Home() {
                   if (error instanceof DOMException && error.name === "AbortError") {
                     return;
                   }
-                  // eslint-disable-next-line no-console
                   console.error("PDF ダウンロードに失敗しました:", error);
                 }
               }}

@@ -16,19 +16,26 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  * fetch にタイムアウトを付与して実行します
  * @param input リクエスト URL
  * @param init fetch オプション
+ * @param timeoutMs タイムアウト（ミリ秒）。0 以下を指定するとタイムアウトしません。
  * @returns Response
  */
 async function fetchWithTimeout(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const timeoutId =
+    timeoutMs > 0
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : undefined;
   try {
     const response = await fetch(input, { ...init, signal: controller.signal });
     return response;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -278,7 +285,11 @@ export async function downloadPdf(
   // fileHandle が提供されている場合は、ピッカーをスキップして直接ストリーミング書き込みします。
   // これによりクリックのユーザージェスチャ文脈を保持し、ダイアログが確実に表示されます。
   if (fileHandle) {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/api/jobs/${jobId}/pdf`,
+      undefined,
+      0
+    );
     if (!response.ok) {
       throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
     }
@@ -314,7 +325,11 @@ export async function downloadPdf(
       throw error;
     }
 
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/api/jobs/${jobId}/pdf`,
+      undefined,
+      0
+    );
     if (!response.ok) {
       throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
     }
@@ -330,7 +345,11 @@ export async function downloadPdf(
 
   // フォールバック: Blob URL + <a download> 方式
   // （File System Access API に対応していないブラウザ用）
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/pdf`);
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/jobs/${jobId}/pdf`,
+    undefined,
+    0
+  );
   if (!response.ok) {
     throw new Error(`PDF のダウンロードに失敗しました: ${response.status} ${response.statusText}`);
   }

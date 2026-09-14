@@ -2,15 +2,15 @@
 
 // OCR 処理の進捗を表示する機能単位のコンポーネントです。
 // useOcrJob から受け取った最新進捗イベントを、ステップ表示・プログレスバー・
-// 単一行の OCR/PDF 状態テキストで描画します。
+// 1行専用メッセージエリア・エラーメッセージエリアで描画します。
 
 import type { ProgressPanelProps } from "@/types";
 
 /** 進捗段階を表すステップ定義です。 */
 const STAGES = [
-  { label: "アップロード", threshold: 0 },
-  { label: "OCR 処理", threshold: 0.33 },
-  { label: "PDF 生成", threshold: 0.66 },
+  { label: "ZIPアップロード中", threshold: 0 },
+  { label: "OCR処理中", threshold: 0.33 },
+  { label: "PDF生成中", threshold: 0.66 },
   { label: "完了", threshold: 1.0 },
 ] as const;
 
@@ -29,63 +29,43 @@ function getActiveStageIndex(progress: number): number {
 }
 
 /**
- * PDF 関連のメッセージをフロント用表示テキストに変換します。
+ * メッセージまたは状態がエラーを示すかどうかを判定します。
  */
-function formatPdfMessage(message: string | undefined): string | null {
-  if (!message) return null;
-  if (message.includes("PDF を生成中です") || message.includes("PDF 生成中")) {
-    return "PDF 作成中です";
-  }
-  if (message.includes("PDF 生成が完了しました") || message.includes("PDF 作成しました")) {
-    return "PDF 作成しました";
-  }
-  return null;
-}
-
-/**
- * OCR 関連のメッセージかどうかを判定し、表示可能ならそのまま返します。
- */
-function formatOcrMessage(message: string | undefined): string | null {
-  if (!message) return null;
-  // ページ単位進捗「OCR 処理中です（N/M）」
-  if (message.startsWith("OCR 処理中です（")) {
-    return message;
-  }
-  // 完了メッセージ「OCR 処理が完了しました（N/M）」
-  if (message.startsWith("OCR 処理が完了しました")) {
-    return message;
-  }
-  return null;
+function hasErrorState(message: string | undefined, status: string): boolean {
+  if (status === "failed") return true;
+  if (!message) return false;
+  return message.includes("失敗") || message.includes("エラー");
 }
 
 /**
  * OCR 処理の進捗を表示します。
  *
- * 最新の進捗イベントに基づき、段階的なステップ表示・プログレスバー・
- * OCR/PDF の単一行状態テキストを表示します。表示データがない場合は何も描画しません。
+ * 最新の進捗イベントに基づき、以下の4領域で描画します。
+ *   1. 段階的ステップ表示（ZIPアップロード中 → OCR処理中 → PDF生成中 → 完了）
+ *   2. プログレスバー + パーセンテージ
+ *   3. 1行専用メッセージエリア
+ *   4. エラーメッセージ表示エリア
+ *
+ * `latest` が未受信でもパネル自体は描画され、ステップ1「ZIPアップロード中」を
+ * アクティブに表示します。
  *
  * @param latest 最新の進捗イベント。未受信時は null です。
- * @param log 時系列順の進捗メッセージログです。（本コンポーネントでは非表示にしますが、
- *            将来の拡張やデバッグ用途で Props として保持しています。）
+ * @param error 表示するエラーメッセージ。省略時は表示しません。
  */
-export function ProgressPanel({ latest }: ProgressPanelProps) {
-  if (!latest) {
-    return null;
-  }
+export function ProgressPanel({ latest, error = "" }: ProgressPanelProps) {
+  const progress = latest?.progress ?? 0;
+  const status = latest?.status ?? "uploaded";
+  const message = latest?.message ?? "";
 
-  // progress が範囲外の値を返した場合でも UI が崩れないよう 0〜100 にクランプします
   // backend からは 0.0〜1.0 の float で送られてくるため、×100 してパーセンテージに変換します
-  const progressPercent = Math.min(100, Math.max(0, Math.round(latest.progress * 100)));
+  const progressPercent = Math.min(100, Math.max(0, Math.round(progress * 100)));
 
-  // total_pages が 0 や未設定の場合に備え、安全な表示文字列を用意します
-  const totalPages = latest.total_pages > 0 ? latest.total_pages : "?";
-  const currentPage = latest.current_page ?? "?";
+  const allCompleted = progress >= 1.0;
+  const activeStageIndex = allCompleted ? STAGES.length - 1 : getActiveStageIndex(progress);
 
-  const allCompleted = latest.progress >= 1.0;
-  const activeStageIndex = allCompleted ? 0 : getActiveStageIndex(latest.progress);
-
-  const ocrDisplay = formatOcrMessage(latest.message);
-  const pdfDisplay = formatPdfMessage(latest.message);
+  const errorFromState = hasErrorState(message, status);
+  const shouldShowError = Boolean(error) || errorFromState;
+  const errorMessage = error || (errorFromState ? message : "");
 
   return (
     <div
@@ -94,7 +74,7 @@ export function ProgressPanel({ latest }: ProgressPanelProps) {
     >
       <h2 className="text-lg font-semibold text-card-foreground">進捗</h2>
 
-      {/* 段階的なステップ表示 */}
+      {/* 1. 段階的なステップ表示 */}
       <div className="mt-4 flex items-center justify-between" data-testid="progress-stages">
         {STAGES.map((stage, index) => {
           const isCompleted = allCompleted || index < activeStageIndex;
@@ -118,7 +98,7 @@ export function ProgressPanel({ latest }: ProgressPanelProps) {
                 </div>
                 <span
                   className={`
-                    mt-1 text-xs font-medium
+                    mt-1 text-center text-xs font-medium
                     ${isCompleted || isActive ? "text-foreground" : "text-muted-foreground"}
                   `}
                 >
@@ -139,16 +119,11 @@ export function ProgressPanel({ latest }: ProgressPanelProps) {
         })}
       </div>
 
-      <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between text-sm text-card-foreground">
-          <span>状態: {latest.status}</span>
-          <span>
-            {currentPage} / {totalPages} ページ
-          </span>
-        </div>
+      {/* 2. プログレスバー + %（横並び） */}
+      <div className="mt-6 flex items-center gap-3">
         <div
           data-testid="progress-track"
-          className="h-2 w-full overflow-hidden rounded-full bg-muted"
+          className="h-3 flex-1 overflow-hidden rounded-full bg-muted"
         >
           <div
             data-testid="progress-bar"
@@ -156,27 +131,33 @@ export function ProgressPanel({ latest }: ProgressPanelProps) {
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-sm text-muted-foreground">{progressPercent}%</p>
+        <span className="text-sm font-semibold text-card-foreground tabular-nums">
+          {progressPercent}%
+        </span>
       </div>
 
-      {/* OCR 進捗（単一行・インライン更新） */}
-      {ocrDisplay && (
-        <p
-          data-testid="ocr-status-line"
-          className="mt-4 text-sm font-medium text-card-foreground"
-        >
-          {ocrDisplay}
-        </p>
+      {/* 3. 1行専用メッセージエリア */}
+      {message && !shouldShowError && (
+        <div className="mt-4 rounded-lg border border-border bg-muted/40 px-4 py-2">
+          <p
+            data-testid="progress-message-line"
+            className="text-sm font-medium text-card-foreground"
+          >
+            📄 {message}
+          </p>
+        </div>
       )}
 
-      {/* PDF 進捗（単一行・インライン更新） */}
-      {pdfDisplay && (
-        <p
-          data-testid="pdf-status-line"
-          className="mt-2 text-sm font-medium text-card-foreground"
-        >
-          {pdfDisplay}
-        </p>
+      {/* 4. エラーメッセージ表示エリア */}
+      {shouldShowError && errorMessage && (
+        <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2">
+          <p
+            data-testid="progress-error-line"
+            className="text-sm font-medium text-destructive"
+          >
+            ⚠️ {errorMessage}
+          </p>
+        </div>
       )}
     </div>
   );
