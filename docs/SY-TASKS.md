@@ -158,6 +158,12 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-14: frontend 全テスト 61/61 PASS、`npm run build` 成功、`npx tsc --noEmit` 成功を確認
 > > - 2026-09-14: UAT（ユーザー検証テスト）を再実行。job_id=`b95649e2-152a-4755-9e71-26af1ee4c580` で 1 枚画像の ZIP アップロード → OCR 実行 → 完了までの一連フローを検証
 > > - 2026-09-14: backend `GET /api/jobs/{job_id}` と ocr-worker `GET /progress/{job_id}` の進捗値が一致し、`completed` 時に `progress=1.0 / current_page=1 / total_pages=1` となることを確認
+> > - 2026-09-15: frontend のポーリング間隔を `NEXT_PUBLIC_POLL_INTERVAL_MS` 環境変数から読み込むように変更（デフォルト 1000 ms）。`frontend/src/lib/api.ts` のハードコード 2000 ms を置換
+> > - 2026-09-15: `docker-compose.yml` に `NEXT_PUBLIC_POLL_INTERVAL_MS=1000`（frontend サービス）と `OCR_WORKER_POLL_INTERVAL=1.0`（backend サービス）を追加
+> > - 2026-09-15: frontend 単体テスト（`npm test -- --run`）、backend 単体テスト（`.venv/bin/pytest`）、frontend ビルド（`npm run build`）、frontend Docker リビルドを実施し、いずれも成功
+> > - 2026-09-15: 実行中の `frontend` / `backend` コンテナ内で、それぞれ `NEXT_PUBLIC_POLL_INTERVAL_MS=1000` / `OCR_WORKER_POLL_INTERVAL=1.0` が反映されていることを確認
+> > - 2026-09-15: 実際の OCR ジョブ（job_id=`91f5de94-7f37-4cd5-8f8e-b382ae283f67`）で backend → ocr-worker の進捗ポーリングが約 1 秒間隔で動作することを確認
+> > - 2026-09-15: `backend/tests/test_jobs.py` において `PDFファイル生成中です` メッセージが進捗マージロジックとして検証されていることを確認（実環境では PDF 生成が 1 秒未満で完了しポーリングで観測できなかったため、テストレベルで担保）
 > > - 2026-09-14: SSE (`GET /api/jobs/{job_id}/events`) から `processing` / `progress=0.1` / `completed` / `[DONE]` が順に配信されることを確認
 > > - 2026-09-14: PDF ダウンロード (`GET /api/jobs/{job_id}/pdf`) が `200 application/pdf` で 18 MB の有効な PDF を返すことを確認
 > > - 2026-09-14: backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS を UAT 直前に再確認
@@ -186,9 +192,27 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS、frontend build PASS を目指す
 > >
 > > 【実施結果】
+> > #### 追加対応: ポーリング間隔の設定外部化
+> > - Frontend→Backend の polling 間隔を `NEXT_PUBLIC_POLL_INTERVAL_MS` 環境変数で設定可能にし、デフォルトを 1000ms にする
+> > - Backend→ocr-worker の polling 間隔を `OCR_WORKER_POLL_INTERVAL` 環境変数で設定可能にし、デフォルトを 1.0 秒にする
+> > - `docker-compose.yml` に両方の環境変数を追加し、設定値の一元管理を行う
+> >
+> > #### 追加対応: 「OCR 結果」表示エリアの削除
+> > - ユーザー確認の結果、OCR 生テキストの表示は不要と判断
+> > - `frontend/src/app/page.tsx` の OCR 結果 `<pre>` 表示ブロックを削除
+> > - `frontend/src/hooks/useOcrJob.ts` の `result` 状態・`setResult` 呼び出し・戻り値からの `result` を削除
+> > - `frontend/src/types/index.ts` の未使用 `ResultPanelProps` 型を削除
+> > - 影響テスト（`frontend/src/app/__tests__/page.test.tsx`、`frontend/src/hooks/__tests__/useOcrJob.test.ts`）を更新
+> >
+
 > > - 2026-09-15: `frontend/src/components/progress/ProgressPanel.tsx` のステップ判定を `status`（uploaded / processing / completed）と `progress` の両方で行うように修正。`status=completed` 時は最終ステップを完了表示とし、`status=processing` 時は `progress >= 0.75` で PDF 生成中ステップをアクティブにする
 > > - 2026-09-15: `ocr-worker/ndlocr_cli_patches/inference.py` line 285 のページ処理開始時メッセージを「OCR 処理を開始します（n/n）」から「OCR 処理中です（n/n）」に変更
 > > - 2026-09-15: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で OCR 全ページ完了後に `progress=0.75, message="PDF ファイル生成中です"` の進捗更新を追加。PDF 生成完了時のメッセージを「PDF ファイル生成が完了しました」に統一
 > > - 2026-09-15: 影響を受けるテストを更新：`backend/tests/test_ocr.py` の完了メッセージアサーションを修正、`frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` に status ベースのステップ遷移テストを追加、`frontend/src/hooks/__tests__/useOcrJob.test.ts` / `frontend/src/app/__tests__/page.msw.test.tsx` の完了メッセージを修正
-> > - 2026-09-15: backend 全テスト 40/40 PASS、frontend 全テスト 62/62 PASS、`npm run build` PASS、`npx tsc --noEmit` PASS
+> > - 2026-09-15: backend 全テスト 41/41 PASS、frontend 全テスト 62/62 PASS、`npm run build` PASS、`npx tsc --noEmit` PASS
+> > - 2026-09-15: UAT 不具合発見：プログレスバーが表示されない。原因は `frontend/src/app/globals.css` に `--primary` / `--muted` など shadcn/ui 標準 CSS 変数が未定義だったため。これらを追加しライト/ダーク両モードで定義。frontend build PASS、テスト 62/62 PASS を確認
+> > - 2026-09-15: `frontend/src/lib/api.ts` の `POLL_INTERVAL_MS` を環境変数 `NEXT_PUBLIC_POLL_INTERVAL_MS` から取得するように変更。無効値時のデフォルトを 1000ms に設定
+> > - 2026-09-15: `docker-compose.yml` に `OCR_WORKER_POLL_INTERVAL=1.0` と `NEXT_PUBLIC_POLL_INTERVAL_MS=1000` を追加し、コンテナ間ポーリング間隔を一元管理
+> > - 2026-09-15: `frontend/src/app/page.tsx` から「OCR 結果」表示エリアを削除。`useOcrJob` から `result` 状態を削除し、`frontend/src/types/index.ts` の未使用 `ResultPanelProps` 型も削除。影響テストを更新
+> > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 41/41 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
 >

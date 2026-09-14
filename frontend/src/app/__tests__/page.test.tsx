@@ -18,7 +18,6 @@ describe("Home page", () => {
       files: [],
       latestProgress: null,
       progressLog: [],
-      result: "",
       error: "",
       isLoading: false,
       downloadableJobId: null,
@@ -35,7 +34,7 @@ describe("Home page", () => {
     expect(screen.getByTestId("zip-file-input")).toBeInTheDocument();
   });
 
-  it("アップロード完了後に進捗と結果が表示される", () => {
+  it("アップロード完了後に進捗とダウンロードボタンが表示される", () => {
     vi.mocked(useOcrJob).mockReturnValue({
       jobId: "job-123",
       files: ["page_001.png", "page_002.png"],
@@ -47,7 +46,6 @@ describe("Home page", () => {
         total_pages: 2,
       },
       progressLog: ["ジョブを作成しました: job-123", "50% 完了"],
-      result: JSON.stringify({ text: "ocr result" }, null, 2),
       error: "",
       isLoading: false,
       downloadableJobId: "job-123",
@@ -58,7 +56,6 @@ describe("Home page", () => {
     render(<Home />);
 
     expect(screen.getByText("50%")).toBeInTheDocument();
-    expect(screen.getByText(/ocr result/)).toBeInTheDocument();
     expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();
   });
 
@@ -68,7 +65,6 @@ describe("Home page", () => {
       files: [],
       latestProgress: null,
       progressLog: [],
-      result: "",
       error: "OCR 処理に失敗しました",
       isLoading: false,
       downloadableJobId: null,
@@ -93,7 +89,6 @@ describe("Home page", () => {
       files: [],
       latestProgress: null,
       progressLog: [],
-      result: "",
       error: "",
       isLoading: false,
       downloadableJobId: "job-123",

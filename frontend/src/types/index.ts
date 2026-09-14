@@ -86,12 +86,6 @@ export interface ProgressPanelProps {
   error?: string;
 }
 
-/** ResultPanel コンポーネントの props 型です。 */
-export interface ResultPanelProps {
-  /** 表示する OCR 結果文字列。空文字列の場合は何も描画しません。 */
-  result: string;
-}
-
 /** DownloadButton コンポーネントの props 型です。 */
 export interface DownloadButtonProps {
   /** ダウンロード対象のジョブ ID。null の場合は何も描画しません。 */

@@ -12,7 +12,6 @@ import { downloadPdf } from "@/lib/api";
 export default function Home() {
   const {
     latestProgress,
-    result,
     error,
     downloadableJobId,
     handleUploaded,
@@ -36,15 +35,6 @@ export default function Home() {
         </div>
 
         <ProgressPanel latest={latestProgress} error={error} />
-
-        {result && (
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-card-foreground">OCR 結果</h2>
-            <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-border bg-background p-3 text-sm text-foreground">
-              {result}
-            </pre>
-          </div>
-        )}
 
         {downloadableJobId && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">

@@ -18,8 +18,6 @@ export interface UseOcrJobResult {
   latestProgress: ProgressEvent | null;
   /** 時系列順の進捗メッセージログです。 */
   progressLog: string[];
-  /** OCR 結果の文字列表現です。 */
-  result: string;
   /** エラーメッセージです。 */
   error: string;
   /** 処理中フラグです。 */
@@ -40,7 +38,6 @@ export function useOcrJob(): UseOcrJobResult {
   const [files, setFiles] = useState<string[]>([]);
   const [latestProgress, setLatestProgress] = useState<ProgressEvent | null>(null);
   const [progressLog, setProgressLog] = useState<string[]>([]);
-  const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [downloadableJobId, setDownloadableJobId] = useState<string | null>(null);
@@ -64,7 +61,6 @@ export function useOcrJob(): UseOcrJobResult {
     setFiles([]);
     setLatestProgress(null);
     setProgressLog([]);
-    setResult("");
     setError("");
     setIsLoading(false);
     setDownloadableJobId(null);
@@ -168,8 +164,7 @@ export function useOcrJob(): UseOcrJobResult {
           timestamp: new Date().toISOString(),
         }));
 
-        const ocrResult = await runOcr(newJobId);
-        setResult(JSON.stringify(ocrResult, null, 2));
+        await runOcr(newJobId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
         cleanupProgress();
@@ -191,7 +186,6 @@ export function useOcrJob(): UseOcrJobResult {
     files,
     latestProgress,
     progressLog,
-    result,
     error,
     isLoading,
     downloadableJobId,

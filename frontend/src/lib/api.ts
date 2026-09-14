@@ -134,9 +134,18 @@ export function subscribeJobProgress(
 }
 
 /**
- * ポーリング間隔（ミリ秒）です
+ * ポーリング間隔（ミリ秒）です。
+ * Next.js の公開環境変数 `NEXT_PUBLIC_POLL_INTERVAL_MS` から取得します。
+ * 未設定または無効な値の場合は 1000ms をデフォルトとします。
  */
-const POLL_INTERVAL_MS = 2_000;
+const POLL_INTERVAL_MS = (() => {
+  const envValue = process.env.NEXT_PUBLIC_POLL_INTERVAL_MS;
+  if (!envValue) {
+    return 1_000;
+  }
+  const parsed = Number.parseInt(envValue, 10);
+  return Number.isNaN(parsed) || parsed <= 0 ? 1_000 : parsed;
+})();
 
 /**
  * 指定したジョブの進捗をポーリングで監視します。
@@ -148,7 +157,7 @@ const POLL_INTERVAL_MS = 2_000;
  * @returns ポーリングを停止するための関数
  */
 export interface PollJobProgressOptions {
-  /** ポーリング間隔（ミリ秒）。デフォルトは 2000ms です。 */
+  /** ポーリング間隔（ミリ秒）。デフォルトは 1000ms です。 */
   interval?: number;
 }
 

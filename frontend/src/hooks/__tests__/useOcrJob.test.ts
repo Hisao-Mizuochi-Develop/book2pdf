@@ -79,7 +79,6 @@ describe("useOcrJob", () => {
     expect(result.current.files).toEqual([]);
     expect(result.current.latestProgress).toBeNull();
     expect(result.current.progressLog).toEqual([]);
-    expect(result.current.result).toBe("");
     expect(result.current.error).toBe("");
     expect(result.current.isLoading).toBe(false);
     expect(result.current.downloadableJobId).toBeNull();
@@ -111,7 +110,6 @@ describe("useOcrJob", () => {
       expect.any(Function),
     );
     expect(runOcr).toHaveBeenCalledWith("job-123");
-    expect(result.current.result).toBe(JSON.stringify({ text: "ocr result" }, null, 2));
     expect(result.current.error).toBe("");
     expect(result.current.downloadableJobId).toBeNull();
     expect(result.current.isLoading).toBe(false);
@@ -227,7 +225,6 @@ describe("useOcrJob", () => {
     expect(result.current.jobId).toBeNull();
     expect(result.current.files).toEqual([]);
     expect(result.current.progressLog).toEqual([]);
-    expect(result.current.result).toBe("");
     expect(result.current.downloadableJobId).toBeNull();
   });
 
