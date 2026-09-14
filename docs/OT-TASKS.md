@@ -3,7 +3,7 @@
 本ファイルは、`backend` / `frontend` / `ocr-worker` / `localapp` の個別の機能や性能、または全体の機能や性能に関すること以外のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
 
 ---
 
@@ -31,6 +31,7 @@
 | [OT007](#ot007) | 新規モジュール識別子 `PJ` の設立と `.clinerules`/AgentSkills ガバナンスの移行 |
 | [OT008](#ot008) | タスク管理ファイルフォーマット統一と整合性全チェック |
 | [OT009](#ot009) | ドキュメント最終更新日メタデータ標準化と運用ルール整備 |
+| [OT010](#ot010) | docs/ 配下の図を Mermaid 化する |
 
 ---
 
@@ -582,3 +583,56 @@ localapp 単体 OCR→PDF 技術調査・選定
 > - 2026-09-13: 全ドキュメントのヘッダー構成を `docs/README.md` と統一した。タイトル → 説明文 → `> 最終更新:` メタデータ → `---` セパレータ の構成とし、config-reference.md・CHANGELOG-20250815.md（reference/localapp/docs/）も含めた 40 ファイルを一括修正した
 > - 2026-09-13: `.clinerules` のタスク完了確定フローを強化（承認→日付記入→git作業→最終報告の厳密なステップ化）。`task-manager/SKILL.md`・`branch-manager/SKILL.md` も新フローに整合して更新した
 >
+<a id="ot010"></a>
+## ユースケースNo | OT010
+
+ユースケース
+docs/ 配下の図を Mermaid 化する
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [OT010001](#ot010001) `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する | 2026-09-14 | 2026-09-14 | ドキュメント |
+| [OT010002](#ot010002) `docs/README.md` のインデックスが各 docs 配下のドキュメントを網羅しているか確認と修正 | 2026-09-14 | 2026-09-14 | ドキュメント |
+
+<a id="ot010001"></a>
+### OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
+
+<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - プロジェクト内の `docs/` 配下（backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/）の Markdown ファイルを精査し、Mermaid 化されていない図を特定する
+> - `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図を Mermaid `flowchart TD` に変換する
+> - `.clinerules` の Mermaid ルールに従い、波括弧 `{}`・角括弧 `[]` を含むラベルはダブルクォートで囲む
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-14: backend/docs/、frontend/docs/、localapp/docs/、ocr-worker/docs/、docs/ の Markdown ファイルを精査し、未 Mermaid 化の図が `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の 1 箇所のみであることを確認
+> - 2026-09-14: `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の `## 3. 全体アーキテクチャ` にある ASCII アート図を Mermaid `flowchart TD` に変換
+> - 2026-09-14: §10・§11 のすべてのファイル・フォルダに trailing comment を追加し、`.cline/skills/` 以下の実ファイル構成を反映
+> - 2026-09-14: `docs/OT-WORK-LOG.md` にコメント追記作業のログを追加
+> - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/OT-WORK-LOG.md` / `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を確認（memo/ 配下の既存 2 ファイルを除き ALL PASS）
+
+<a id="ot010002"></a>
+### OT010002 `docs/README.md` のインデックスが各 docs 配下のドキュメントを網羅しているか確認と修正
+
+<div align="right"><a href="#ot010">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `docs/` 配下、各モジュール `docs/` 配下の `.md` ファイルを一覧取得し、`docs/README.md` と比較する
+> - `docs/README.md` に不足しているドキュメントを追加する
+> - `docs/README.md` から重複エントリを削除する
+> - `docs/README.md` の最終更新日を更新する
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-14: `docs/` 配下・各モジュール `docs/` 配下の `.md` ファイルを一覧取得し、`docs/README.md` と比較
+> - 2026-09-14: `docs/README.md` に不足していた `SY-CONTAINER-3LAYER-ARCHITECTURE.md`、`SY-CONTAINER-PROGRESS-API-DESIGN.md`、`SY-SSE-PROGRESS-DELIVERY-GUIDE.md`、`SY-STORAGE-MIGRATION-GUIDE.md`、`SY-BOOK2PDF_AGENT_SKILLS_MANUAL.md`、`backend/docs/BE007001-report.md` を追加
+> - 2026-09-14: `docs/README.md` から `SY-CAVEATS.md` の重複エントリを削除
+> - 2026-09-14: `docs/README.md` の最終更新日を `2026/09/14` に更新
+> - 2026-09-14: `feature/SY002002-get-job-progress-integration` ブランチから `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md` と `docs/SY-STORAGE-MIGRATION-GUIDE.md` を復元・追加
+> - 2026-09-14: Cline checkpoint から `docs/SY-SSE-PROGRESS-DELIVERY-GUIDE.md` を復元・追加
+> - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/README.md` のパイプテーブル整合性を確認（ALL PASS）
+>
+
