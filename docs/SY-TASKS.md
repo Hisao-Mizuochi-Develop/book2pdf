@@ -5,7 +5,7 @@
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/14
 
 ---
 
@@ -123,6 +123,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > >   - `backend/tests/test_progress.py`: ocr-worker HTTP API 連携テスト
 > >   - `frontend/src/hooks/__tests__/useOcrJob.test.ts`: 統合テストの更新
 > >   - `docs/SY-PROGRESS-NOTIFICATION-SPEC.md`: 仕様文書の更新
+> >   - `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md`: コンテナ3層構造を Mermaid 図で文書化（新規作成）
+> >   - `docs/SY-STORAGE-MIGRATION-GUIDE.md`: 共有ファイルシステムの EFS/S3 移行方針を文書化（新規作成）
 > >
 > > 【実施結果】
 > > - 2026-09-12: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` を in-memory dict (`_progress_store`) 方式に変更し、ファイル書き込みを廃止
@@ -147,3 +149,9 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-14: `backend/app/routers/jobs.py` から OCR 完了後の疑似進捗更新（progress=0.7）と PDF 生成中の疑似進捗更新（progress=0.9）を削除
 > > - 2026-09-14: `backend/tests/test_ocr.py` から `_emit_page_progress` のテスト 2 件を削除
 > > - 2026-09-14: backend 全テスト 37/37 PASS を確認
+> > - 2026-09-14: frontend `ProgressPanel` を4領域構成にリデザイン（段階的ステップ表示、プログレスバー＋パーセンテージ、1行メッセージエリア、エラー表示エリア）
+> > - 2026-09-14: `ProgressPanel` を常時表示に変更し、`latest` が null の場合はステップ1「ZIPアップロード中」/0% で描画
+> > - 2026-09-14: `ProgressPanelProps` に `error?: string` を追加し、`page.tsx` からエラーを Props 経由で渡すように変更
+> > - 2026-09-14: `useOcrJob` の `handleUploaded` でアップロード完了時に `latestProgress` を初期化し、OCR 実行前に `processing`/`progress=0.1` の仮進捗を注入
+> > - 2026-09-14: 影響を受けるテスト（`ProgressPanel.test.tsx`、`useOcrJob.test.ts`、`page.test.tsx`、`page.msw.test.tsx`）を新しい挙動に合わせて更新
+> > - 2026-09-14: frontend 全テスト 61/61 PASS、`npm run build` 成功、`npx tsc --noEmit` 成功を確認
