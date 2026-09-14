@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 にコメントを追加する
+
+### 目的
+
+`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 において、コメントが欠けていたファイル・フォルダに trailing comment を追加し、`.cline/skills/` 以下の実ファイル構成を反映させる。
+
+### 実施内容
+
+- §10: backend / frontend / localapp / ocr-worker の未コメント項目に trailing comment を追加
+- §11: `.github/workflows/`、`.vscode/settings.json`、`memo/*`、`localapp/poc_printpdf/*`、`.cline/skills/` 以下すべてのファイル・フォルダに trailing comment を追加
+- `.cline/skills/` は `references/` サブディレクトリも含め実ファイル構成をツリーに反映
+- `.gitignore` 対象（`.DS_Store` 等）はツリーから除外
+- `python scripts/lint-task-md.py` で `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を検証
+
+### 結果
+
+- §10・§11 のすべてのファイル・フォルダに trailing comment が付与された
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` は lint PASS
+
+### コミット
+
+`docs(OT010001): add comments to all files in system and non-system trees`
+
+---
+
+## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 をコメント付きファイルツリー化する
+
+### 目的
+
+`docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10「フォルダ・ファイル構成」を、全ファイルコメント付きのシステム構成ツリーに書き換え、同じ形式の §11「システム関連外ファイル構成」を新設し、既存 §11「注意事項」を §12 へ繰り上げる。
+
+### 実施内容
+
+- `.gitignore` 対象（`old/` `reference/` 等）はツリーから除外
+- backend / frontend / localapp / ocr-worker の主要ファイルを §10 にコメント付きで整理
+- docs / scripts / memo / test_cases / localapp/poc_printpdf / .cline/skills 等を §11 に整理
+- `## 11. 注意事項` を `## 12. 注意事項` に変更
+- `python scripts/lint-task-md.py` で `docs/SY-WEB-OCR-SYSTEM-PLAN.md` のパイプテーブル整合性を検証
+
+### 結果
+
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の §10・§11 がコメント付きファイルツリー化された
+- `docs/SY-WEB-OCR-SYSTEM-PLAN.md` は lint PASS
+
+### コミット
+
+`docs(OT010001): rewrite SY-WEB-OCR-SYSTEM-PLAN sections 10-11 as commented file trees`
+
+---
+
 ## 2026-09-14 OT010001 `docs/SY-WEB-OCR-SYSTEM-PLAN.md` の全体アーキテクチャ図を Mermaid 化する
 
 ### 目的
