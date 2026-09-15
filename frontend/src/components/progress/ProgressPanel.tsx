@@ -24,6 +24,9 @@ function getActiveStageIndex(progress: number, status: string): number {
   if (status === "completed") {
     return STAGES.length - 1;
   }
+  if (status === "cancelled" || status === "failed") {
+    return -1;
+  }
   if (status === "uploaded") {
     return 0;
   }
@@ -60,7 +63,12 @@ function hasErrorState(message: string | undefined, status: string): boolean {
  * @param latest 最新の進捗イベント。未受信時は null です。
  * @param error 表示するエラーメッセージ。省略時は表示しません。
  */
-export function ProgressPanel({ latest, error = "" }: ProgressPanelProps) {
+export function ProgressPanel({
+  latest,
+  error = "",
+  showCancel = false,
+  onCancel,
+}: ProgressPanelProps) {
   const progress = latest?.progress ?? 0;
   const status = latest?.status ?? "uploaded";
   const message = latest?.message ?? "";
@@ -164,6 +172,20 @@ export function ProgressPanel({ latest, error = "" }: ProgressPanelProps) {
           >
             ⚠️ {errorMessage}
           </p>
+        </div>
+      )}
+
+      {/* 5. キャンセルボタン */}
+      {showCancel && onCancel && status !== "cancelled" && status !== "completed" && (
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            data-testid="cancel-button"
+            className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20"
+          >
+            キャンセル
+          </button>
         </div>
       )}
     </div>

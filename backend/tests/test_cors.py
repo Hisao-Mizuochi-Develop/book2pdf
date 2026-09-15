@@ -11,12 +11,12 @@ from __future__ import annotations
 # テスト関数や fixture を書くためのライブラリです
 import pytest
 
+# テスト対象の FastAPI アプリケーションを読み込みます
+from app.main import app
+
 # FastAPI のテスト用 HTTP クライアントです
 # サーバーを起動せずに API をテストできます
 from fastapi.testclient import TestClient
-
-# テスト対象の FastAPI アプリケーションを読み込みます
-from app.main import app
 
 
 # FastAPI のテストクライアントを作成します

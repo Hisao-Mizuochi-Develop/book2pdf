@@ -13,7 +13,8 @@ export type JobStatus =
   | "uploaded"
   | "processing"
   | "completed"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 /** `POST /api/jobs/` のレスポンス型です。 */
 export interface JobCreateResponse {
@@ -84,6 +85,10 @@ export interface ProgressPanelProps {
   latest: ProgressEvent | null;
   /** 表示するエラーメッセージです。空文字列または undefined の場合は表示しません。 */
   error?: string;
+  /** キャンセルボタンを表示するかどうかです。 */
+  showCancel?: boolean;
+  /** キャンセルボタン押下時のコールバックです。 */
+  onCancel?: () => void;
 }
 
 /** DownloadButton コンポーネントの props 型です。 */

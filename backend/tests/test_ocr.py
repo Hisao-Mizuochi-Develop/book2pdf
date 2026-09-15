@@ -10,18 +10,11 @@ ndlocr_cli はローカル開発環境にインストールされていないた
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# JSON 形式のデータを扱うための標準ライブラリです
-import json
-
+# 非同期処理で待機・イベントを扱うための標準ライブラリです
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
-# 非同期処理で待機・イベントを扱うための標準ライブラリです
-import asyncio
-
-# ファイルパスをオブジェクトとして扱うための標準ライブラリです
-from pathlib import Path
-
+# JSON 形式のデータを扱うための標準ライブラリです
 # 一時ファイルを作成するための標準ライブラリです
 import tempfile
 
@@ -31,21 +24,24 @@ import time
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
+# ファイルパスをオブジェクトとして扱うための標準ライブラリです
+from pathlib import Path
+
 # テスト関数や fixture を書くためのライブラリです
 import pytest
-
-# FastAPI のテスト用 HTTP クライアントです
-# サーバーを起動せずに API をテストできます
-from fastapi.testclient import TestClient
 
 # テスト対象の FastAPI アプリケーションを読み込みます
 from app.main import app
 
+# ジョブ状態管理サービスを読み込みます
+from app.services import job_manager
+
 # モック OCR エンジンを読み込みます
 from app.services.ocr_engine import MockOcrEngine
 
-# ジョブ状態管理サービスを読み込みます
-from app.services import job_manager
+# FastAPI のテスト用 HTTP クライアントです
+# サーバーを起動せずに API をテストできます
+from fastapi.testclient import TestClient
 
 
 # FastAPI のテストクライアントを作成します
@@ -107,12 +103,12 @@ def mock_pdf_generator(monkeypatch: pytest.MonkeyPatch) -> None:
     この fixture で PDF 生成をモックすることで、OCR 成功 → PDF 成功 → COMPLETED
     というフロー全体をテストできます。
     """
-    mock_pdf = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-    mock_pdf.write(b"%PDF-1.4\n")
-    mock_pdf.close()
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as mock_pdf:
+        mock_pdf.write(b"%PDF-1.4\n")
+        mock_pdf_name = mock_pdf.name
 
     def mock_generate(job_id: str, output_dir: Path, extract_dir: Path) -> Path:
-        return Path(mock_pdf.name)
+        return Path(mock_pdf_name)
 
     monkeypatch.setattr(
         "app.routers.jobs.generate_searchable_pdf",
@@ -260,7 +256,6 @@ def test_run_ocr_writes_staged_progress(
     tmp_path: Path,
 ) -> None:
     """OCR・PDF 生成完了後に in-memory 進捗ストアが completed 状態に更新されることを確認します。"""
-    from app.services import job_manager
 
     # ジョブを作成して ZIP をアップロードします
     response = client.post("/api/jobs/")
@@ -293,8 +288,8 @@ def test_run_ocr_writes_staged_progress(
 
 def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """RemoteNdloCrOcrEngine が ocr-worker に job_id を送信することを確認します。"""
-    from app.services.ocr_engine import RemoteNdloCrOcrEngine
     import httpx
+    from app.services.ocr_engine import RemoteNdloCrOcrEngine
 
     captured_payload: dict | None = None
 

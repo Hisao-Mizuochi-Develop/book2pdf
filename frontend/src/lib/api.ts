@@ -229,6 +229,20 @@ export function getPdfDownloadUrl(jobId: string): string {
 }
 
 /**
+ * 指定したジョブの OCR 処理をキャンセルし、関連リソースをクリーンアップします
+ * SY002002: ユーザーが進行中のジョブをキャンセルするために使用します。
+ * @param jobId ジョブ ID
+ */
+export async function cancelJob(jobId: string): Promise<void> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(`ジョブのキャンセルに失敗しました: ${response.status} ${response.statusText}`);
+  }
+}
+
+/**
  * File System Access API の型定義です
  * TypeScript の標準 lib に含まれていない可能性があるため、最小限の型を定義します
  */

@@ -8,6 +8,10 @@
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
+# 非同期タスクを管理するための標準ライブラリです
+# SY002002: OCR バックグラウンドタスクのキャンセルに使用します
+import asyncio
+
 # UUID（汎用一意識別子）を生成するための import です
 # ジョブ ID に重複しにくい識別子を発行するために使用します
 import uuid
@@ -24,7 +28,6 @@ from pathlib import Path
 # 同じ models パッケージ内の job.py で定義しています
 from app.models.job import JobStatus
 
-
 # ジョブ状態を保存する辞書です
 # キー: job_id（文字列）、値: ジョブの情報を持つ辞書
 # 現時点ではプロセス再起動すると内容は失われます
@@ -36,6 +39,11 @@ _jobs: dict[str, dict] = {}
 # backend 自身が管理するジョブフェーズ進捗を保持します。
 # SY002002: ファイル共有方式から in-memory 方式に変更しました。
 _progress_data: dict[str, dict] = {}
+
+# 実行中の OCR バックグラウンドタスクを追跡する辞書です。
+# キー: job_id（文字列）、値: asyncio.Task インスタンス。
+# SY002002: ジョブキャンセル時にタスクを停止するために使用します。
+_running_tasks: dict[str, asyncio.Task] = {}
 
 
 def update_progress(
@@ -320,3 +328,78 @@ def get_job_progress(job_id: str) -> dict | None:
         # 最終更新時刻です
         "updated_at": job.get("updated_at", ""),
     }
+
+
+def register_task(job_id: str, task: asyncio.Task) -> None:
+    """指定されたジョブのバックグラウンドタスクを登録します。
+
+    SY002002: OCR 処理などの長時間非同期タスクを追跡し、
+    キャンセル時に停止できるようにします。
+
+    Args:
+        job_id: タスクに紐づくジョブ ID
+        task: 登録する asyncio.Task インスタンス
+    """
+    _running_tasks[job_id] = task
+
+
+def get_task(job_id: str) -> asyncio.Task | None:
+    """指定されたジョブの実行中タスクを取得します。
+
+    Args:
+        job_id: 取得対象のジョブ ID
+
+    Returns:
+        実行中の asyncio.Task インスタンス。存在しない場合は None。
+    """
+    return _running_tasks.get(job_id)
+
+
+def delete_task(job_id: str) -> None:
+    """指定されたジョブの実行中タスクを追跡辞書から削除します。
+
+    Args:
+        job_id: 削除対象のジョブ ID
+    """
+    _running_tasks.pop(job_id, None)
+
+
+def cancel_task(job_id: str) -> bool:
+    """指定されたジョブの実行中タスクにキャンセルを要求します。
+
+    SY002002: 協調的キャンセルを行います。タスク内部でキャンセルチェック
+    （await asyncio.sleep(0) など）を行っている場合にのみ即座に停止します。
+    同期ブロッキング処理中は、処理が完了するまで停止しない場合があります。
+
+    Args:
+        job_id: キャンセル対象のジョブ ID
+
+    Returns:
+        キャンセル要求が行われた場合は True、タスクが存在しなかった場合は False
+    """
+    task = _running_tasks.get(job_id)
+    if task is None:
+        return False
+
+    task.cancel()
+    return True
+
+
+def delete_job(job_id: str) -> bool:
+    """指定されたジョブの情報を in-memory ストアから削除します。
+
+    SY002002: ジョブキャンセル時にジョブ情報と進捗情報の両方を削除します。
+
+    Args:
+        job_id: 削除対象のジョブ ID
+
+    Returns:
+        削除に成功した場合は True、ジョブが存在しなかった場合は False
+    """
+    if job_id not in _jobs:
+        return False
+
+    _jobs.pop(job_id, None)
+    _progress_data.pop(job_id, None)
+    _running_tasks.pop(job_id, None)
+    return True

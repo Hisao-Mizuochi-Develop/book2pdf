@@ -13,20 +13,20 @@
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# 抽象基底クラスを定義するための import です
-# 異なる OCR エンジン実装を共通のインターフェースで扱えるようにします
-from abc import ABC, abstractmethod
-
 # 環境変数を読み込むための標準ライブラリです
 # ocr-worker の URL を取得するために使用します
 import os
 
-# ファイルをコピーするための標準ライブラリです
-# ndlocr_cli 用の入力ディレクトリを作成する際に使用します
-from shutil import copy2
+# 抽象基底クラスを定義するための import です
+# 異なる OCR エンジン実装を共通のインターフェースで扱えるようにします
+from abc import ABC, abstractmethod
 
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
+
+# ファイルをコピーするための標準ライブラリです
+# ndlocr_cli 用の入力ディレクトリを作成する際に使用します
+from shutil import copy2
 
 # HTTP クライアントです
 # ocr-worker コンテナの API を呼び出すために使用します
@@ -40,7 +40,7 @@ try:
 
     # import に成功した場合は True を設定します
     _NDLOCR_AVAILABLE = True
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     # ndlocr_cli がインストールされていないか、依存 submodule が不足しています
     _NDLOCR_AVAILABLE = False
 

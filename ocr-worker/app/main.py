@@ -8,45 +8,29 @@ backend コンテナから HTTP で OCR 実行をリクエストされ、
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# ファイルパスをオブジェクトとして扱うための標準ライブラリです
-# Path("/data/jobs") のように OS 非依存のパス操作を提供する
-from pathlib import Path
-
-# 現在日時を取得するための標準ライブラリです
-# 進捗ファイルに更新時刻を記録するために使用します
-from datetime import datetime, timezone
+# 標準ライブラリ — アプリケーションのログ出力を管理する
+# 環境変数 LOG_LEVEL で出力レベルを切り替える
+import logging
 
 # 標準ライブラリ — OS とのファイルシステム操作を提供する
 # os.makedirs() で出力ディレクトリを作成するために使用する
 import os
 
-# 標準ライブラリ — アプリケーションのログ出力を管理する
-# 環境変数 LOG_LEVEL で出力レベルを切り替える
-import logging
+# 標準ライブラリ — 一時ディレクトリと一時ファイルの作成を行う
+# 前処理済み画像の一時保存先として tempfile.mkdtemp() を使用する
+import tempfile
 
 # 標準ライブラリ — 処理時間を計測する
 # OCR 実行開始・終了時刻の差分を計測してログに出力する
 import time
 
-# 標準ライブラリ — 一時ディレクトリと一時ファイルの作成を行う
-# 前処理済み画像の一時保存先として tempfile.mkdtemp() を使用する
-import tempfile
+# 現在日時を取得するための標準ライブラリです
+# 進捗ファイルに更新時刻を記録するために使用します
+from datetime import datetime, timezone
 
-# 外部ライブラリ — Python Imaging Library（画像処理）
-# Image.open(): 画像ファイルを開く, ImageFilter: 画像フィルタ（シャープ化等）
-from PIL import Image, ImageFilter
-
-# 外部ライブラリ — FastAPI Web フレームワーク
-# FastAPI: アプリケーション本体を構築, HTTPException: HTTP エラーレスポンスを返す
-from fastapi import FastAPI, HTTPException
-
-# 外部ライブラリ — FastAPI の非同期処理補助機能
-# run_in_threadpool: 同期処理（OCR 等の重い処理）をスレッドプールで実行し、イベントループをブロックしないようにする
-from fastapi.concurrency import run_in_threadpool
-
-# 外部ライブラリ — データ検証・シリアライズライブラリ
-# BaseModel: API のリクエスト・レスポンス型を定義, Field: フィールドの制約（デフォルト値等）を設定
-from pydantic import BaseModel, Field
+# ファイルパスをオブジェクトとして扱うための標準ライブラリです
+# Path("/data/jobs") のように OS 非依存のパス操作を提供する
+from pathlib import Path
 
 # 外部ライブラリ（ndlocr_cli）— OCR 推論エンジン
 # OcrInferrer: 画像からテキストを抽出するメインクラス
@@ -56,9 +40,35 @@ from cli.core import OcrInferrer
 # 画像の前処理・後処理に使用する補助関数
 from cli.core import utils as ndlocr_utils
 
+# SY002002: in-memory 進捗ストア操作とキャンセル管理を行うモジュールです
+from cli.core.progress_reporter import (
+    delete_progress,
+    is_cancelled,
+    mark_cancelled,
+)
+from cli.core.progress_reporter import (
+    get_progress as get_progress_from_store,
+)
+
+# 外部ライブラリ — FastAPI Web フレームワーク
+# FastAPI: アプリケーション本体を構築, HTTPException: HTTP エラーレスポンスを返す
+from fastapi import FastAPI, HTTPException
+
+# 外部ライブラリ — FastAPI の非同期処理補助機能
+# run_in_threadpool: 同期処理（OCR 等の重い処理）をスレッドプールで実行し、イベントループをブロックしないようにする
+from fastapi.concurrency import run_in_threadpool
+
 # 外部ライブラリ（Hydra）— 設定管理フレームワークのグローバルインスタンス
 # GlobalHydra.instance().clear(): 同一プロセス内で複数回 ndlocr_cli を実行する際に、設定の再初期化を可能にする
 from hydra.core.global_hydra import GlobalHydra
+
+# 外部ライブラリ — Python Imaging Library（画像処理）
+# Image.open(): 画像ファイルを開く, ImageFilter: 画像フィルタ（シャープ化等）
+from PIL import Image, ImageFilter
+
+# 外部ライブラリ — データ検証・シリアライズライブラリ
+# BaseModel: API のリクエスト・レスポンス型を定義, Field: フィールドの制約（デフォルト値等）を設定
+from pydantic import BaseModel, Field
 
 # アプリケーション全体のログレベルを設定します
 # uvicorn 起動前に設定することで、各モジュールの DEBUG ログも出力されます
@@ -333,6 +343,43 @@ def _write_progress(
     }
 
 
+@app.post("/cancel/{job_id}")
+async def cancel_ocr(job_id: str) -> dict[str, str]:
+    """指定したジョブの OCR 処理をキャンセルマークします。
+
+    SY002002: backend からのキャンセル要求を受け取り、OCR 処理が完了した際に
+    結果を破棄するために使用します。処理中のスレッドを強制終了することはできないため、
+    協調的キャンセルとして動作します。
+
+    Args:
+        job_id: キャンセル対象のジョブ ID。
+
+    Returns:
+        キャンセル受付結果。
+    """
+    mark_cancelled(job_id)
+    logger.info("OCR キャンセルを受け付けました: job_id=%s", job_id)
+    return {"message": "キャンセル要求を受け付けました", "job_id": job_id}
+
+
+@app.delete("/progress/{job_id}")
+async def delete_progress_endpoint(job_id: str) -> dict[str, str]:
+    """指定したジョブの進捗データを削除します。
+
+    SY002002: backend からのクリーンアップ要求を受け取り、ocr-worker 内の
+    in-memory 進捗ストアから該当ジョブのデータを削除します。
+
+    Args:
+        job_id: 削除対象のジョブ ID。
+
+    Returns:
+        削除結果。
+    """
+    delete_progress(job_id)
+    logger.info("進捗データを削除しました: job_id=%s", job_id)
+    return {"message": "進捗データを削除しました", "job_id": job_id}
+
+
 class OcrProgressResponse(BaseModel):
     """OCR 進捗取得レスポンスのモデルです。"""
 
@@ -360,9 +407,7 @@ async def get_progress(job_id: str) -> OcrProgressResponse:
     Raises:
         HTTPException: 進捗情報が見つからない場合（404）。
     """
-    from cli.core.progress_reporter import _progress_store
-
-    data = _progress_store.get(job_id)
+    data = get_progress_from_store(job_id)
     if not data:
         raise HTTPException(status_code=404, detail="進捗情報が見つかりません")
 
@@ -484,6 +529,26 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             _collect_text,
             Path(infer_cfg["output_root"]),
         )
+
+        # キャンセル済みの場合は結果を破棄し cancelled 状態を返します
+        # OCR 処理中のスレッドを強制終了できないため、完了後に協調的に破棄します
+        if is_cancelled(job_id):
+            logger.info("キャンセル済みジョブの結果を破棄します: job_id=%s", job_id)
+            if request.enable_progress:
+                _write_progress(
+                    job_id,
+                    status="cancelled",
+                    progress=0.0,
+                    current_page=0,
+                    total_pages=total_pages,
+                    message="ジョブがキャンセルされました",
+                )
+            return OcrResponse(
+                success=False,
+                text="",
+                output_dir="",
+                message="ジョブがキャンセルされました",
+            )
 
         # OCR 処理完了を進捗ファイルに記録します
         if request.enable_progress:
