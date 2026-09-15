@@ -26,7 +26,7 @@ describe("ProgressPanel", () => {
     expect(screen.getByText("進捗")).toBeInTheDocument();
     expect(screen.getByText("0%")).toBeInTheDocument();
 
-    // ステップ1（ZIPアップロード中）がアクティブ
+    // ステップ1（ZIPアップロード）がアクティブ
     const dot0 = screen.getByTestId("stage-dot-0");
     expect(dot0).toHaveClass("bg-primary", "ring-2");
   });
@@ -59,9 +59,9 @@ describe("ProgressPanel", () => {
     render(<ProgressPanel latest={makeProgressEvent({ progress: 0.5 })} />);
 
     expect(screen.getByTestId("progress-stages")).toBeInTheDocument();
-    expect(screen.getByText("ZIPアップロード中")).toBeInTheDocument();
-    expect(screen.getByText("OCR処理中")).toBeInTheDocument();
-    expect(screen.getByText("PDF生成中")).toBeInTheDocument();
+    expect(screen.getByText("ZIPアップロード")).toBeInTheDocument();
+    expect(screen.getByText("OCR処理")).toBeInTheDocument();
+    expect(screen.getByText("PDF生成")).toBeInTheDocument();
     expect(screen.getByText("完了")).toBeInTheDocument();
   });
 

@@ -8,9 +8,9 @@ import type { ProgressPanelProps } from "@/types";
 
 /** 進捗段階を表すステップ定義です。 */
 const STAGES = [
-  { label: "ZIPアップロード中", threshold: 0 },
-  { label: "OCR処理中", threshold: 0.33 },
-  { label: "PDF生成中", threshold: 0.66 },
+  { label: "ZIPアップロード", threshold: 0 },
+  { label: "OCR処理", threshold: 0.33 },
+  { label: "PDF生成", threshold: 0.66 },
   { label: "完了", threshold: 1.0 },
 ] as const;
 
@@ -29,9 +29,9 @@ function getActiveStageIndex(progress: number, status: string): number {
   }
   if (status === "processing") {
     if (progress >= 0.75) {
-      return 2; // PDF生成中
+      return 2; // PDF生成
     }
-    return 1; // OCR処理中
+    return 1; // OCR処理
   }
   return 0;
 }
@@ -49,12 +49,12 @@ function hasErrorState(message: string | undefined, status: string): boolean {
  * OCR 処理の進捗を表示します。
  *
  * 最新の進捗イベントに基づき、以下の4領域で描画します。
- *   1. 段階的ステップ表示（ZIPアップロード中 → OCR処理中 → PDF生成中 → 完了）
+ *   1. 段階的ステップ表示（ZIPアップロード → OCR処理 → PDF生成 → 完了）
  *   2. プログレスバー + パーセンテージ
  *   3. 1行専用メッセージエリア
  *   4. エラーメッセージ表示エリア
  *
- * `latest` が未受信でもパネル自体は描画され、ステップ1「ZIPアップロード中」を
+ * `latest` が未受信でもパネル自体は描画され、ステップ1「ZIPアップロード」を
  * アクティブに表示します。
  *
  * @param latest 最新の進捗イベント。未受信時は null です。

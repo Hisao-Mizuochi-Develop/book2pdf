@@ -214,5 +214,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-15: `frontend/src/lib/api.ts` の `POLL_INTERVAL_MS` を環境変数 `NEXT_PUBLIC_POLL_INTERVAL_MS` から取得するように変更。無効値時のデフォルトを 1000ms に設定
 > > - 2026-09-15: `docker-compose.yml` に `OCR_WORKER_POLL_INTERVAL=1.0` と `NEXT_PUBLIC_POLL_INTERVAL_MS=1000` を追加し、コンテナ間ポーリング間隔を一元管理
 > > - 2026-09-15: `frontend/src/app/page.tsx` から「OCR 結果」表示エリアを削除。`useOcrJob` から `result` 状態を削除し、`frontend/src/types/index.ts` の未使用 `ResultPanelProps` 型も削除。影響テストを更新
-> > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 41/41 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+> > - 2026-09-15: `frontend/src/components/upload/ImageList.tsx` の「アップロードされた画像」ファイル名一覧を縦3行固定・横スクロールバーのグリッドレイアウトに変更。`frontend/src/components/upload/__tests__/ImageList.test.tsx` は既存アサートで維持
+> > - 2026-09-15: UAT 不具合発見：ZIP アップロード時に `__MACOSX/._*` などの macOS リソースフォークファイルが画像一覧に表示される。`backend/app/services/zip_extractor.py` で `__MACOSX` ディレクトリ配下を画像一覧から除外。`backend/tests/test_jobs.py` に `test_upload_zip_excludes_macosx_resource_forks` を追加
+> > - 2026-09-15: UAT フィードバック対応：`frontend/src/components/progress/ProgressPanel.tsx` の進捗ステップラベルから「中」を削除（「ZIPアップロード中」→「ZIPアップロード」、「OCR処理中」→「OCR処理」、「PDF生成中」→「PDF生成」）。影響テスト `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を更新
+> > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 42/42 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
 >

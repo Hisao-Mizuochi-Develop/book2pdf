@@ -10,7 +10,8 @@ export interface ImageListProps {
 }
 
 /**
- * アップロードされた画像ファイル名をリスト表示します。
+ * アップロードされた画像ファイル名をグリッド表示します。
+ * 縦3行固定、横スクロールバーで表示します。
  * ファイルが空の場合は何も描画しません。
  */
 export function ImageList({ files }: ImageListProps) {
@@ -23,11 +24,15 @@ export function ImageList({ files }: ImageListProps) {
       <h3 className="text-sm font-medium text-card-foreground">
         アップロードされた画像
       </h3>
-      <ul className="mt-1 max-h-32 overflow-auto rounded-lg border border-border bg-background p-2 text-sm text-foreground">
-        {files.map((name) => (
-          <li key={name}>{name}</li>
-        ))}
-      </ul>
+      <div className="mt-1 overflow-x-auto rounded-lg border border-border bg-background p-2">
+        <div className="grid grid-flow-col grid-rows-3 gap-x-4 gap-y-1 min-w-max">
+          {files.map((name) => (
+            <span key={name} className="whitespace-nowrap text-sm text-foreground">
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

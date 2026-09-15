@@ -72,6 +72,24 @@ def is_image_file(path: Path) -> bool:
     return path.suffix.lower() in _IMAGE_EXTENSIONS
 
 
+def _is_macosx_resource_fork(relative_path: Path) -> bool:
+    """macOS のリソースフォークファイルかどうかを判定します。
+
+    macOS の Finder などで作成された ZIP には、メタデータを格納するための
+    `__MACOSX` ディレクトリと、リソースフォークファイル `._*` が含まれます。
+    これらは OCR 対象外とし、画像ファイル一覧から除外します。
+
+    Args:
+        relative_path: ZIP 展開先ルートからの相対パス
+
+    Returns:
+        macOS のリソースフォークに関連するパスの場合は True
+    """
+    parts = relative_path.parts
+    # ZIP ルート直下の __MACOSX ディレクトリ配下はすべて除外します
+    return bool(parts) and parts[0] == "__MACOSX"
+
+
 def extract_images_from_zip(
     zip_file: BinaryIO,
     job_id: str,
@@ -104,10 +122,12 @@ def extract_images_from_zip(
     # rglob("*") で extract_path 以下のすべてのファイルとディレクトリを取得します
     image_files = [
         # 相対パスを文字列に変換してリストに格納します
-        str(path.relative_to(extract_path))
+        str(relative_path)
         # 画像ファイルのみを対象とします
         for path in extract_path.rglob("*")
-        if is_image_file(path)
+        # macOS のリソースフォークは画像ファイル一覧から除外します
+        if not _is_macosx_resource_fork(relative_path := path.relative_to(extract_path))
+        and is_image_file(path)
     ]
 
     # ファイル名順にソートして安定した順序を保ちます

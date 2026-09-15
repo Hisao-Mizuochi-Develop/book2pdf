@@ -92,6 +92,40 @@ def test_upload_zip_success(client: TestClient) -> None:
     assert sorted(data["files"]) == ["page1.png", "page2.jpg"]
 
 
+def test_upload_zip_excludes_macosx_resource_forks(client: TestClient) -> None:
+    """macOS のリソースフォーク (__MACOSX/._*) が画像一覧から除外されることを確認します。"""
+    # まずジョブを作成します
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    job_id = response.json()["job_id"]
+
+    # 通常画像に加え、macOS のリソースフォークを含む ZIP を作成します
+    zip_buffer = create_zip_buffer(
+        [
+            "page1.png",
+            "page2.png",
+            "__MACOSX/._page1.png",
+            "__MACOSX/._page2.png",
+            "__MACOSX/.DS_Store",
+        ]
+    )
+
+    # ZIP をアップロードします
+    response = client.post(
+        f"/api/jobs/{job_id}/upload",
+        files={"file": ("macosx.zip", zip_buffer, "application/zip")},
+    )
+
+    # アップロードが成功していることを確認します
+    assert response.status_code == 200
+
+    # レスポンス本文を辞書として取得します
+    data = response.json()
+
+    # __MACOSX 配下のファイルが除外されていることを確認します
+    assert sorted(data["files"]) == ["page1.png", "page2.png"]
+
+
 def test_upload_zip_job_not_found(client: TestClient) -> None:
     """存在しないジョブ ID にアップロードした場合に 404 エラーが返ることを確認します。"""
     zip_buffer = create_zip_buffer(["page1.png"])
