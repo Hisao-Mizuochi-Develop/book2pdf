@@ -38,6 +38,7 @@ def write_progress(
         return
     progress = round(0.1 + 0.5 * (current_page / total_pages), 2) if total_pages > 0 else 0.0
     _progress_store[job_id] = {
+        "job_id": job_id,
         "status": "processing",
         "progress": progress,
         "current_page": current_page,

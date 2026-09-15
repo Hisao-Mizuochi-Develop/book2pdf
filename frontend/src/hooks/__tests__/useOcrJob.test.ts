@@ -79,7 +79,6 @@ describe("useOcrJob", () => {
     expect(result.current.files).toEqual([]);
     expect(result.current.latestProgress).toBeNull();
     expect(result.current.progressLog).toEqual([]);
-    expect(result.current.result).toBe("");
     expect(result.current.error).toBe("");
     expect(result.current.isLoading).toBe(false);
     expect(result.current.downloadableJobId).toBeNull();
@@ -96,6 +95,13 @@ describe("useOcrJob", () => {
 
     expect(result.current.jobId).toBe("job-123");
     expect(result.current.files).toEqual(["page_001.png"]);
+    expect(result.current.latestProgress).toEqual(
+      expect.objectContaining({
+        job_id: "job-123",
+        status: "processing",
+        progress: expect.any(Number),
+      }),
+    );
     expect(result.current.progressLog).toContain("画像を 1 枚検出しました");
     expect(subscribeJobProgress).toHaveBeenCalledWith(
       "job-123",
@@ -104,7 +110,7 @@ describe("useOcrJob", () => {
       expect.any(Function),
     );
     expect(runOcr).toHaveBeenCalledWith("job-123");
-    expect(result.current.result).toBe(JSON.stringify({ text: "ocr result" }, null, 2));
+    expect(result.current.error).toBe("");
     expect(result.current.downloadableJobId).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
@@ -159,7 +165,7 @@ describe("useOcrJob", () => {
           progress: 1.0,
           current_page: 2,
           total_pages: 2,
-          message: "PDF 生成が完了しました",
+          message: "PDFファイル生成が完了しました",
         }),
       );
       await handlePromise;
@@ -169,7 +175,7 @@ describe("useOcrJob", () => {
       expect(result.current.latestProgress?.status).toBe("completed");
     });
     expect(result.current.downloadableJobId).toBe("job-123");
-    expect(result.current.progressLog).toContain("PDF 生成が完了しました");
+    expect(result.current.progressLog).toContain("PDFファイル生成が完了しました");
   });
 
   it("SSE エラー時はログに追加し EventSource を閉じる", async () => {
@@ -219,7 +225,6 @@ describe("useOcrJob", () => {
     expect(result.current.jobId).toBeNull();
     expect(result.current.files).toEqual([]);
     expect(result.current.progressLog).toEqual([]);
-    expect(result.current.result).toBe("");
     expect(result.current.downloadableJobId).toBeNull();
   });
 
@@ -277,14 +282,16 @@ describe("useOcrJob", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.latestProgress).toEqual({
-        job_id: "job-123",
-        status: "processing",
-        progress: 1,
-        current_page: 3,
-        total_pages: 3,
-        message: "OCR 3/3",
-      });
+      expect(result.current.latestProgress).toEqual(
+        expect.objectContaining({
+          job_id: "job-123",
+          status: "processing",
+          progress: 1,
+          current_page: 3,
+          total_pages: 3,
+          message: "OCR 3/3",
+        }),
+      );
     });
 
     expect(result.current.progressLog).toEqual(

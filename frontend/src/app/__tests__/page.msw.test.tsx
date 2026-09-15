@@ -79,8 +79,7 @@ describe("Home page MSW integration", () => {
 
     await waitFor(() => {
       expect(screen.getByText("50%")).toBeInTheDocument();
-      expect(screen.getByText("状態: processing")).toBeInTheDocument();
-      expect(screen.getByText("1 / 1 ページ")).toBeInTheDocument();
+      expect(screen.getByTestId("progress-message-line")).toHaveTextContent("50% 完了");
     });
 
     // 4. SSE 経由で completed イベントを送信する
@@ -92,7 +91,7 @@ describe("Home page MSW integration", () => {
           progress: 1.0,
           current_page: 1,
           total_pages: 1,
-          message: "PDF 生成が完了しました",
+          message: "PDF ファイル生成が完了しました",
         })
       );
     });

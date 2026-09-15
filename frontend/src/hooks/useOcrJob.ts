@@ -18,8 +18,6 @@ export interface UseOcrJobResult {
   latestProgress: ProgressEvent | null;
   /** 時系列順の進捗メッセージログです。 */
   progressLog: string[];
-  /** OCR 結果の文字列表現です。 */
-  result: string;
   /** エラーメッセージです。 */
   error: string;
   /** 処理中フラグです。 */
@@ -40,7 +38,6 @@ export function useOcrJob(): UseOcrJobResult {
   const [files, setFiles] = useState<string[]>([]);
   const [latestProgress, setLatestProgress] = useState<ProgressEvent | null>(null);
   const [progressLog, setProgressLog] = useState<string[]>([]);
-  const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [downloadableJobId, setDownloadableJobId] = useState<string | null>(null);
@@ -64,7 +61,6 @@ export function useOcrJob(): UseOcrJobResult {
     setFiles([]);
     setLatestProgress(null);
     setProgressLog([]);
-    setResult("");
     setError("");
     setIsLoading(false);
     setDownloadableJobId(null);
@@ -92,6 +88,15 @@ export function useOcrJob(): UseOcrJobResult {
       reset();
       setJobId(newJobId);
       setFiles(uploadedFiles);
+      setLatestProgress({
+        job_id: newJobId,
+        status: "uploaded",
+        progress: 0,
+        current_page: 0,
+        total_pages: uploadedFiles.length,
+        message: "ZIP アップロードが完了しました",
+        timestamp: new Date().toISOString(),
+      });
       setProgressLog([`画像を ${uploadedFiles.length} 枚検出しました`]);
       setIsLoading(true);
 
@@ -147,8 +152,19 @@ export function useOcrJob(): UseOcrJobResult {
           },
         );
 
-        const ocrResult = await runOcr(newJobId);
-        setResult(JSON.stringify(ocrResult, null, 2));
+        // OCR 処理開始直前に仮の進捗をセットし、パネルが表示されたまま遷移します
+        setLatestProgress((prev) => ({
+          ...prev,
+          job_id: newJobId,
+          status: "processing",
+          progress: 0.1,
+          current_page: 0,
+          total_pages: uploadedFiles.length,
+          message: "OCR 処理を開始しました",
+          timestamp: new Date().toISOString(),
+        }));
+
+        await runOcr(newJobId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
         cleanupProgress();
@@ -170,7 +186,6 @@ export function useOcrJob(): UseOcrJobResult {
     files,
     latestProgress,
     progressLog,
-    result,
     error,
     isLoading,
     downloadableJobId,

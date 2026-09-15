@@ -12,7 +12,6 @@ import { downloadPdf } from "@/lib/api";
 export default function Home() {
   const {
     latestProgress,
-    result,
     error,
     downloadableJobId,
     handleUploaded,
@@ -35,22 +34,7 @@ export default function Home() {
           </div>
         </div>
 
-        {error && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <ProgressPanel latest={latestProgress} />
-
-        {result && (
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-card-foreground">OCR 結果</h2>
-            <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-border bg-background p-3 text-sm text-foreground">
-              {result}
-            </pre>
-          </div>
-        )}
+        <ProgressPanel latest={latestProgress} error={error} />
 
         {downloadableJobId && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
@@ -84,7 +68,6 @@ export default function Home() {
                   if (error instanceof DOMException && error.name === "AbortError") {
                     return;
                   }
-                  // eslint-disable-next-line no-console
                   console.error("PDF ダウンロードに失敗しました:", error);
                 }
               }}

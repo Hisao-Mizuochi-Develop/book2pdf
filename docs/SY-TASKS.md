@@ -1,9 +1,11 @@
 # System タスク管理表
 
+> 最終更新: 2026/09/15
+
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/15
 
 ---
 
@@ -73,6 +75,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 |---|---|---|---|
 | [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 | 2026-09-03 | 仕様 |
 | [SY002002](#sy002002) コンテナ間進捗通知のREST API連携方式実装 | 2026-09-12 |  | 横断実装 |
+| [SY002003](#sy002003) SY002002 UATバグ対応 | 2026-09-15 |  | 横断実装 |
 
 <a id="sy002001"></a>
 ### SY002001 進捗通知のポーリング方式全体仕様策定
@@ -121,6 +124,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > >   - `backend/tests/test_progress.py`: ocr-worker HTTP API 連携テスト
 > >   - `frontend/src/hooks/__tests__/useOcrJob.test.ts`: 統合テストの更新
 > >   - `docs/SY-PROGRESS-NOTIFICATION-SPEC.md`: 仕様文書の更新
+> >   - `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md`: コンテナ3層構造を Mermaid 図で文書化（新規作成）
+> >   - `docs/SY-STORAGE-MIGRATION-GUIDE.md`: 共有ファイルシステムの EFS/S3 移行方針を文書化（新規作成）
 > >
 > > 【実施結果】
 > > - 2026-09-12: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` を in-memory dict (`_progress_store`) 方式に変更し、ファイル書き込みを廃止
@@ -140,3 +145,77 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-13: `backend/tests/test_progress.py` の 7 テストを修正・追加し全件 PASS（8/8）、`backend/tests/test_ocr.py` を in-memory 検証に書き換え
 > > - 2026-09-13: backend 全テスト 39/39 PASS を確認
 > > - 2026-09-13: `docs/SY-CONTAINER-PROGRESS-API-DESIGN.md` / `docs/SY-PROGRESS-NOTIFICATION-SPEC.md` を更新し、ファイルベース進捗の廃止を反映
+> > - 2026-09-14: `backend/app/routers/jobs.py` から `_emit_page_progress` 関数本体を削除
+> > - 2026-09-14: `backend/app/routers/jobs.py` から `_run_ocr_and_generate_pdf` 内のコメントアウトされた疑似進捗呼び出し dead code を削除
+> > - 2026-09-14: `backend/app/routers/jobs.py` から OCR 完了後の疑似進捗更新（progress=0.7）と PDF 生成中の疑似進捗更新（progress=0.9）を削除
+> > - 2026-09-14: `backend/tests/test_ocr.py` から `_emit_page_progress` のテスト 2 件を削除
+> > - 2026-09-14: backend 全テスト 37/37 PASS を確認
+> > - 2026-09-14: frontend `ProgressPanel` を4領域構成にリデザイン（段階的ステップ表示、プログレスバー＋パーセンテージ、1行メッセージエリア、エラー表示エリア）
+> > - 2026-09-14: `ProgressPanel` を常時表示に変更し、`latest` が null の場合はステップ1「ZIPアップロード中」/0% で描画
+> > - 2026-09-14: `ProgressPanelProps` に `error?: string` を追加し、`page.tsx` からエラーを Props 経由で渡すように変更
+> > - 2026-09-14: `useOcrJob` の `handleUploaded` でアップロード完了時に `latestProgress` を初期化し、OCR 実行前に `processing`/`progress=0.1` の仮進捗を注入
+> > - 2026-09-14: 影響を受けるテスト（`ProgressPanel.test.tsx`、`useOcrJob.test.ts`、`page.test.tsx`、`page.msw.test.tsx`）を新しい挙動に合わせて更新
+> > - 2026-09-14: frontend 全テスト 61/61 PASS、`npm run build` 成功、`npx tsc --noEmit` 成功を確認
+> > - 2026-09-14: UAT（ユーザー検証テスト）を再実行。job_id=`b95649e2-152a-4755-9e71-26af1ee4c580` で 1 枚画像の ZIP アップロード → OCR 実行 → 完了までの一連フローを検証
+> > - 2026-09-14: backend `GET /api/jobs/{job_id}` と ocr-worker `GET /progress/{job_id}` の進捗値が一致し、`completed` 時に `progress=1.0 / current_page=1 / total_pages=1` となることを確認
+> > - 2026-09-15: frontend のポーリング間隔を `NEXT_PUBLIC_POLL_INTERVAL_MS` 環境変数から読み込むように変更（デフォルト 1000 ms）。`frontend/src/lib/api.ts` のハードコード 2000 ms を置換
+> > - 2026-09-15: `docker-compose.yml` に `NEXT_PUBLIC_POLL_INTERVAL_MS=1000`（frontend サービス）と `OCR_WORKER_POLL_INTERVAL=1.0`（backend サービス）を追加
+> > - 2026-09-15: frontend 単体テスト（`npm test -- --run`）、backend 単体テスト（`.venv/bin/pytest`）、frontend ビルド（`npm run build`）、frontend Docker リビルドを実施し、いずれも成功
+> > - 2026-09-15: 実行中の `frontend` / `backend` コンテナ内で、それぞれ `NEXT_PUBLIC_POLL_INTERVAL_MS=1000` / `OCR_WORKER_POLL_INTERVAL=1.0` が反映されていることを確認
+> > - 2026-09-15: 実際の OCR ジョブ（job_id=`91f5de94-7f37-4cd5-8f8e-b382ae283f67`）で backend → ocr-worker の進捗ポーリングが約 1 秒間隔で動作することを確認
+> > - 2026-09-15: `backend/tests/test_jobs.py` において `PDFファイル生成中です` メッセージが進捗マージロジックとして検証されていることを確認（実環境では PDF 生成が 1 秒未満で完了しポーリングで観測できなかったため、テストレベルで担保）
+> > - 2026-09-14: SSE (`GET /api/jobs/{job_id}/events`) から `processing` / `progress=0.1` / `completed` / `[DONE]` が順に配信されることを確認
+> > - 2026-09-14: PDF ダウンロード (`GET /api/jobs/{job_id}/pdf`) が `200 application/pdf` で 18 MB の有効な PDF を返すことを確認
+> > - 2026-09-14: backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS を UAT 直前に再確認
+>
+> <a id="sy002003"></a>
+> ### SY002003 SY002002 UATバグ対応
+>
+> <div align="right"><a href="#sy002">タスク一覧へ↩︎</a></div>
+>
+> > 【計画】
+> > #### バグ 1: 大容量ジョブでステップが「ZIPアップロード中」のまま
+> >   内容: `frontend/src/components/progress/ProgressPanel.tsx` が progress 値の閾値だけでステップを判定しているため、1〜999 枚のジョブで正しいステップ遷移にならない場合がある
+> >   対応方針: `status`（uploaded / processing / completed）と `progress` の両方を使ってアクティブステップを判定する
+> >
+> > #### バグ 2: OCR サブステップメッセージが「OCR処理を開始します」
+> >   内容: `ocr-worker/ndlocr_cli_patches/inference.py` line 285 のページ処理開始時メッセージが「OCR 処理を開始します」になっている
+> >   対応方針: メッセージを「OCR 処理中です（n/n）」に変更する
+> >
+> > #### バグ 3: PDF 生成中/完了メッセージが欠落
+> >   内容: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で PDF 生成中と完了の進捗更新がない
+> >   対応方針: PDF 生成開始時に `progress=0.75, message="PDF ファイル生成中です"` を発行し、完了時に `message="PDF ファイル生成が完了しました"` に変更する
+> >
+> > #### テスト更新方針
+> > - `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`: status ベースのステップ遷移テストを追加
+> > - `backend/tests/test_progress.py`: PDF 生成フェーズの進捗更新テストを追加
+> > - backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS、frontend build PASS を目指す
+> >
+> > 【実施結果】
+> > #### 追加対応: ポーリング間隔の設定外部化
+> > - Frontend→Backend の polling 間隔を `NEXT_PUBLIC_POLL_INTERVAL_MS` 環境変数で設定可能にし、デフォルトを 1000ms にする
+> > - Backend→ocr-worker の polling 間隔を `OCR_WORKER_POLL_INTERVAL` 環境変数で設定可能にし、デフォルトを 1.0 秒にする
+> > - `docker-compose.yml` に両方の環境変数を追加し、設定値の一元管理を行う
+> >
+> > #### 追加対応: 「OCR 結果」表示エリアの削除
+> > - ユーザー確認の結果、OCR 生テキストの表示は不要と判断
+> > - `frontend/src/app/page.tsx` の OCR 結果 `<pre>` 表示ブロックを削除
+> > - `frontend/src/hooks/useOcrJob.ts` の `result` 状態・`setResult` 呼び出し・戻り値からの `result` を削除
+> > - `frontend/src/types/index.ts` の未使用 `ResultPanelProps` 型を削除
+> > - 影響テスト（`frontend/src/app/__tests__/page.test.tsx`、`frontend/src/hooks/__tests__/useOcrJob.test.ts`）を更新
+> >
+
+> > - 2026-09-15: `frontend/src/components/progress/ProgressPanel.tsx` のステップ判定を `status`（uploaded / processing / completed）と `progress` の両方で行うように修正。`status=completed` 時は最終ステップを完了表示とし、`status=processing` 時は `progress >= 0.75` で PDF 生成中ステップをアクティブにする
+> > - 2026-09-15: `ocr-worker/ndlocr_cli_patches/inference.py` line 285 のページ処理開始時メッセージを「OCR 処理を開始します（n/n）」から「OCR 処理中です（n/n）」に変更
+> > - 2026-09-15: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で OCR 全ページ完了後に `progress=0.75, message="PDF ファイル生成中です"` の進捗更新を追加。PDF 生成完了時のメッセージを「PDF ファイル生成が完了しました」に統一
+> > - 2026-09-15: 影響を受けるテストを更新：`backend/tests/test_ocr.py` の完了メッセージアサーションを修正、`frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` に status ベースのステップ遷移テストを追加、`frontend/src/hooks/__tests__/useOcrJob.test.ts` / `frontend/src/app/__tests__/page.msw.test.tsx` の完了メッセージを修正
+> > - 2026-09-15: backend 全テスト 41/41 PASS、frontend 全テスト 62/62 PASS、`npm run build` PASS、`npx tsc --noEmit` PASS
+> > - 2026-09-15: UAT 不具合発見：プログレスバーが表示されない。原因は `frontend/src/app/globals.css` に `--primary` / `--muted` など shadcn/ui 標準 CSS 変数が未定義だったため。これらを追加しライト/ダーク両モードで定義。frontend build PASS、テスト 62/62 PASS を確認
+> > - 2026-09-15: `frontend/src/lib/api.ts` の `POLL_INTERVAL_MS` を環境変数 `NEXT_PUBLIC_POLL_INTERVAL_MS` から取得するように変更。無効値時のデフォルトを 1000ms に設定
+> > - 2026-09-15: `docker-compose.yml` に `OCR_WORKER_POLL_INTERVAL=1.0` と `NEXT_PUBLIC_POLL_INTERVAL_MS=1000` を追加し、コンテナ間ポーリング間隔を一元管理
+> > - 2026-09-15: `frontend/src/app/page.tsx` から「OCR 結果」表示エリアを削除。`useOcrJob` から `result` 状態を削除し、`frontend/src/types/index.ts` の未使用 `ResultPanelProps` 型も削除。影響テストを更新
+> > - 2026-09-15: `frontend/src/components/upload/ImageList.tsx` の「アップロードされた画像」ファイル名一覧を縦3行固定・横スクロールバーのグリッドレイアウトに変更。`frontend/src/components/upload/__tests__/ImageList.test.tsx` は既存アサートで維持
+> > - 2026-09-15: UAT 不具合発見：ZIP アップロード時に `__MACOSX/._*` などの macOS リソースフォークファイルが画像一覧に表示される。`backend/app/services/zip_extractor.py` で `__MACOSX` ディレクトリ配下を画像一覧から除外。`backend/tests/test_jobs.py` に `test_upload_zip_excludes_macosx_resource_forks` を追加
+> > - 2026-09-15: UAT フィードバック対応：`frontend/src/components/progress/ProgressPanel.tsx` の進捗ステップラベルから「中」を削除（「ZIPアップロード中」→「ZIPアップロード」、「OCR処理中」→「OCR処理」、「PDF生成中」→「PDF生成」）。影響テスト `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を更新
+> > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 42/42 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+>

@@ -80,14 +80,10 @@ export interface JobInfoPanelProps {
 
 /** ProgressPanel コンポーネントの props 型です。 */
 export interface ProgressPanelProps {
-  /** 最新の進捗イベントです。 */
+  /** 最新の進捗イベントです。未受信時は null です。 */
   latest: ProgressEvent | null;
-}
-
-/** ResultPanel コンポーネントの props 型です。 */
-export interface ResultPanelProps {
-  /** 表示する OCR 結果文字列。空文字列の場合は何も描画しません。 */
-  result: string;
+  /** 表示するエラーメッセージです。空文字列または undefined の場合は表示しません。 */
+  error?: string;
 }
 
 /** DownloadButton コンポーネントの props 型です。 */

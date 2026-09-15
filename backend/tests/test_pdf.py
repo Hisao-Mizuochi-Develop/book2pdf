@@ -16,6 +16,9 @@ import time
 # 一時ディレクトリを作成するための標準ライブラリです
 import tempfile
 
+# 文字列の Unicode 正規化を行うための標準ライブラリです
+import unicodedata
+
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
@@ -208,7 +211,10 @@ def test_generate_searchable_pdf() -> None:
             assert len(doc) == 1
             page = doc[0]
             extracted_text = page.get_text()
-            assert "検索可能PDF" in extracted_text
+            # PDF フォントの影響で互換文字が含まれる可能性があるため NFKC で正規化して比較します
+            assert unicodedata.normalize("NFKC", "検索可能PDF") in unicodedata.normalize(
+                "NFKC", extracted_text
+            )
         finally:
             doc.close()
 
