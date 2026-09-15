@@ -8,30 +8,38 @@ OCR ジョブに関する HTTP エンドポイントを実装します。
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# ZIP ファイルの検証で使う標準ライブラリです
-# 不正な ZIP ファイルを判定するために使用します
-import zipfile
-
 # 非同期処理でスリープするための標準ライブラリです
 # SSE 配信中の進捗ポーリング間隔で使用します
 import asyncio
-
-# 環境変数を読み込むための標準ライブラリです
-# ポーリング間隔をテスト時に変更するために使用します
-import os
-
-# ファイルパスをオブジェクトとして扱うための標準ライブラリです
-from pathlib import Path
 
 # ログ出力のための標準ライブラリです
 # 環境変数 LOG_LEVEL で出力レベルを切り替えます
 import logging
 
+# 環境変数を読み込むための標準ライブラリです
+# ポーリング間隔をテスト時に変更するために使用します
+import os
+
+# ディレクトリ削除に使用する標準ライブラリです
+# SY002002: ジョブキャンセル時のファイルクリーンアップに使用します
+import shutil
+
 # 処理時間を計測するための標準ライブラリです
 import time
 
+# ZIP ファイルの検証で使う標準ライブラリです
+# 不正な ZIP ファイルを判定するために使用します
+import zipfile
+
 # 日時付き PDF ファイル名を生成するための標準ライブラリです
 from datetime import datetime, timedelta, timezone
+
+# ファイルパスをオブジェクトとして扱うための標準ライブラリです
+from pathlib import Path
+
+# ocr-worker への HTTP ポーリング用非同期クライアントです
+# SY002002: per-page 進捗を ocr-worker の REST API から取得するために使用します
+import httpx
 
 # FastAPI の機能を読み込みます
 # APIRouter: エンドポイントをグループ化する
@@ -43,9 +51,8 @@ from fastapi import APIRouter, HTTPException, UploadFile
 # StreamingResponse: SSE 配信用レスポンス
 from fastapi.responses import FileResponse, StreamingResponse
 
-# ocr-worker への HTTP ポーリング用非同期クライアントです
-# SY002002: per-page 進捗を ocr-worker の REST API から取得するために使用します
-import httpx
+# アプリケーション設定を読み込みます
+from app.core.config import settings
 
 # ジョブ関連の Pydantic モデルを読み込みます
 # リクエスト・レスポンスの型とルールを定義しています
@@ -53,22 +60,17 @@ from app.models.job import (
     JobCreateResponse,
     JobOcrResponse,
     JobResponse,
-    JobUploadResponse,
     JobStatus,
+    JobUploadResponse,
     ProgressEvent,
 )
 
 # ジョブ状態管理サービスを読み込みます
-from app.services import job_manager
-
 # ZIP 展開・画像抽出サービスを読み込みます
-from app.services import zip_extractor
+from app.services import job_manager, zip_extractor
 
 # OCR エンジンを読み込みます
 from app.services.ocr_engine import create_ocr_engine
-
-# アプリケーション設定を読み込みます
-from app.core.config import settings
 
 # 検索可能 PDF 生成サービスを読み込みます
 from app.services.pdf_generator import generate_searchable_pdf
@@ -136,9 +138,9 @@ async def get_job(job_id: str) -> JobResponse:
             response = await client.get(f"{ocr_worker_url}/progress/{job_id}")
             if response.status_code == 200:
                 progress_data = response.json()
-    except Exception:
+    except (httpx.HTTPError, ValueError):
         # ocr-worker へのアクセスに失敗しても、backend のジョブ情報は返します
-        pass
+        logger.debug("ocr-worker からの進捗取得に失敗しました: job_id=%s", job_id)
 
     # backend のフェーズ進捗を取得します
     backend_progress = job_manager.get_progress(job_id) or {}
@@ -156,6 +158,116 @@ async def get_job(job_id: str) -> JobResponse:
         current_page=merged["current_page"],
         total_pages=merged["total_pages"],
     )
+
+
+@router.delete("/{job_id}")
+async def cancel_job(job_id: str) -> dict[str, str]:
+    """指定されたジョブをキャンセルし、関連リソースをクリーンアップします。
+
+    SY002002:
+    - backend の in-memory ジョブ状態を cancelled に更新します
+    - 実行中のバックグラウンドタスクにキャンセルを要求します
+    - ocr-worker に `POST /cancel/{job_id}` でキャンセルを伝播します
+    - ジョブに紐づくファイル（extract_dir / output_dir / pdf_path）を削除します
+    - 進捗情報を削除します
+
+    Args:
+        job_id: キャンセル対象のジョブ ID
+
+    Returns:
+        キャンセル結果メッセージ
+
+    Raises:
+        HTTPException: ジョブが存在しない場合に 404 エラーを返します
+    """
+    # ジョブが存在するか確認します
+    job = job_manager.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="指定されたジョブが見つかりません")
+
+    # 既に完了・失敗・キャンセル済みのジョブは再キャンセル不可とします
+    if job["status"] in (
+        JobStatus.COMPLETED.value,
+        JobStatus.FAILED.value,
+        JobStatus.CANCELLED.value,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=f"ジョブは {job['status']} 状態のためキャンセルできません",
+        )
+
+    # ジョブ状態を cancelled に更新します
+    job_manager.update_job_status(
+        job_id,
+        JobStatus.CANCELLED,
+        message="ジョブがキャンセルされました",
+    )
+    job_manager.update_progress(
+        job_id,
+        status="cancelled",
+        progress=0.0,
+        current_page=0,
+        total_pages=job.get("total_pages", 0),
+        message="ジョブがキャンセルされました",
+    )
+
+    # 実行中のバックグラウンドタスクにキャンセルを要求します
+    cancelled = job_manager.cancel_task(job_id)
+    if cancelled:
+        logger.info("バックグラウンドタスクのキャンセルを要求しました: job_id=%s", job_id)
+
+    # ocr-worker にキャンセルを伝播します
+    ocr_worker_url = (
+        settings.ocr_worker_url
+        if settings.ocr_worker_url
+        else "http://ocr-worker:8001"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
+            response = await client.post(f"{ocr_worker_url}/cancel/{job_id}")
+            if response.status_code != 200:
+                logger.warning(
+                    "ocr-worker へのキャンセル伝播が失敗しました: job_id=%s, status=%d",
+                    job_id,
+                    response.status_code,
+                )
+    except httpx.HTTPError as exc:
+        logger.warning(
+            "ocr-worker へのキャンセル伝播中にエラーが発生しました: job_id=%s, error=%s",
+            job_id,
+            exc,
+        )
+
+    # ジョブに紐づくファイルを削除します
+    # 削除に失敗しても API エラーにはせず、ログに記録します
+    for key in ("extract_dir", "output_dir", "pdf_path"):
+        path_str = job.get(key)
+        if not path_str:
+            continue
+        try:
+            path = Path(path_str)
+            if path.exists():
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+                logger.debug(
+                    "ジョブファイルを削除しました: job_id=%s, path=%s",
+                    job_id,
+                    path,
+                )
+        except (OSError, shutil.Error) as exc:
+            logger.warning(
+                "ジョブファイルの削除に失敗しました: job_id=%s, key=%s, error=%s",
+                job_id,
+                key,
+                exc,
+            )
+
+    # in-memory ストアからジョブと進捗を削除します
+    job_manager.delete_job(job_id)
+
+    return {"message": "ジョブをキャンセルしました", "job_id": job_id}
 
 
 @router.post("/{job_id}/upload", response_model=JobUploadResponse)
@@ -259,7 +371,8 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     # OCR 処理をバックグラウンドで非同期に開始します
     # HTTP 接続を長時間維持せず、即座にレスポンスを返すため、タイムアウトを回避できます
     logger.debug("OCR エンドポイント処理を開始します: job_id=%s", job_id)
-    asyncio.create_task(_run_ocr_and_generate_pdf(job_id, extract_dir, image_files))
+    task = asyncio.create_task(_run_ocr_and_generate_pdf(job_id, extract_dir, image_files))
+    job_manager.register_task(job_id, task)
 
     # レスポンスモデルに合わせて即座に返却します
     return JobOcrResponse(
@@ -280,14 +393,17 @@ async def _run_ocr_and_generate_pdf(
     OCR エンジンの `run()` と `generate_searchable_pdf()` は同期ブロッキング処理のため、
     `asyncio.to_thread` で別スレッドに委譲してイベントループをブロックしません。
     処理が完了したらジョブ状態を COMPLETED または FAILED に更新します。
+
+    SY002002: ジョブキャンセル時に協調的に停止します。タスク終了時に
+    `job_manager.delete_task` で追跡を解除します。
     """
     start_time = time.time()
 
-    # OCR エンジンを作成します
-    # ocr-worker が設定されていればリモート呼び出し、なければモックにフォールバックします
-    ocr_engine = create_ocr_engine(use_mock=False)
-
     try:
+        # OCR エンジンを作成します
+        # ocr-worker が設定されていればリモート呼び出し、なければモックにフォールバックします
+        ocr_engine = create_ocr_engine(use_mock=False)
+
         # 画像ファイルの相対パスを展開ディレクトリ内の絶対パスに変換します
         absolute_image_files = [
             str(Path(extract_dir) / image_file)
@@ -306,6 +422,9 @@ async def _run_ocr_and_generate_pdf(
             message="OCR処理を開始しました",
         )
 
+        # キャンセル済みでないかチェックします
+        await asyncio.sleep(0)
+
         # OCR 処理は同期ブロッキングなので別スレッドで実行します
         result = await asyncio.to_thread(
             ocr_engine.run,
@@ -313,6 +432,9 @@ async def _run_ocr_and_generate_pdf(
             work_dir=Path(extract_dir),
             job_id=job_id,
         )
+
+        # キャンセル済みでないかチェックします
+        await asyncio.sleep(0)
 
         # OCR 全ページ処理が完了したら PDF 生成フェーズに移行します
         job_manager.update_progress(
@@ -323,6 +445,24 @@ async def _run_ocr_and_generate_pdf(
             total_pages=total_pages,
             message="PDFファイル生成中です",
         )
+    except asyncio.CancelledError:
+        # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
+        logger.info("OCR タスクがキャンセルされました: job_id=%s", job_id)
+        job_manager.update_progress(
+            job_id,
+            status="cancelled",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="ジョブがキャンセルされました",
+        )
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.CANCELLED,
+            message="ジョブがキャンセルされました",
+        )
+        job_manager.delete_task(job_id)
+        return
     except Exception as exc:
         # OCR処理中にエラーが発生した場合は FAILED 状態に更新します
         logger.exception("OCR処理に失敗しました: job_id=%s", job_id)
@@ -343,6 +483,7 @@ async def _run_ocr_and_generate_pdf(
             JobStatus.FAILED,
             message=f"OCR処理に失敗しました: {exc}",
         )
+        job_manager.delete_task(job_id)
         return
 
     # OCR 結果をジョブ情報に保存します（ステータスは PROCESSING のまま）
@@ -351,6 +492,9 @@ async def _run_ocr_and_generate_pdf(
         text=result.text,
         output_dir=str(result.output_dir),
     )
+
+    # キャンセル済みでないかチェックします
+    await asyncio.sleep(0)
 
     # OCR 結果から検索可能 PDF を生成します
     try:
@@ -382,6 +526,24 @@ async def _run_ocr_and_generate_pdf(
             total_pages=total_pages,
             message="PDFファイル生成が完了しました",
         )
+    except asyncio.CancelledError:
+        # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
+        logger.info("PDF 生成タスクがキャンセルされました: job_id=%s", job_id)
+        job_manager.update_progress(
+            job_id,
+            status="cancelled",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="ジョブがキャンセルされました",
+        )
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.CANCELLED,
+            message="ジョブがキャンセルされました",
+        )
+        job_manager.delete_task(job_id)
+        return
     except Exception as pdf_exc:
         # PDF 生成に失敗した場合は FAILED に遷移します
         logger.exception("PDF 生成に失敗しました: job_id=%s", job_id)
@@ -403,6 +565,7 @@ async def _run_ocr_and_generate_pdf(
             JobStatus.FAILED,
             message=f"OCR は成功しましたが PDF 生成に失敗しました: {pdf_exc}",
         )
+        job_manager.delete_task(job_id)
         return
 
     # OCR エンドポイント全体の処理時間を計算します
@@ -412,6 +575,9 @@ async def _run_ocr_and_generate_pdf(
         job_id,
         elapsed,
     )
+
+    # タスクの追跡を解除します
+    job_manager.delete_task(job_id)
 
 
 # ocr-worker の per-page 進捗ポーリング間隔（秒）です。
@@ -620,7 +786,7 @@ async def _progress_event_generator(job_id: str):
                     "ocr-worker への接続に失敗しました: job_id=%s",
                     job_id,
                 )
-            except Exception as exc:
+            except ValueError as exc:
                 logger.error(
                     "ocr-worker へのポーリング中にエラー: job_id=%s, error=%s",
                     job_id,

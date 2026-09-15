@@ -17,12 +17,15 @@ import zipfile
 # テスト関数や fixture を書くためのライブラリです
 import pytest
 
+# テスト対象の FastAPI アプリケーションを読み込みます
+from app.main import app
+
+# ジョブ状態の列挙型を読み込みます
+from app.models.job import JobStatus
+
 # FastAPI のテスト用 HTTP クライアントです
 # サーバーを起動せずに API をテストできます
 from fastapi.testclient import TestClient
-
-# テスト対象の FastAPI アプリケーションを読み込みます
-from app.main import app
 
 
 # FastAPI のテストクライアントを作成します
@@ -231,11 +234,9 @@ def test_get_job_with_progress_fallback(client: TestClient, monkeypatch) -> None
     - get_job() は ocr-worker へ HTTP GET を行いますが、接続エラー時は
       progress=0.0 / current_page=0 / total_pages=0 でフォールバックします。
     """
-    import httpx
-    import importlib
-    from app.routers import jobs as jobs_router
 
-    job_id = "test-job-progress-fallback"
+    import httpx
+    from app.routers import jobs as jobs_router
 
     # ジョブを作成します
     response = client.post("/api/jobs/")
@@ -269,10 +270,7 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     - progress / current_page / total_pages / message は ocr-worker データを優先します
     - status は backend のフェーズ値を優先します
     """
-    import httpx
     from app.routers import jobs as jobs_router
-
-    job_id = "test-job-progress-merged"
 
     # ジョブを作成してアップロード状態にします
     response = client.post("/api/jobs/")
@@ -394,3 +392,136 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
     data = response.json()
     assert data["progress"] == pytest.approx(1.0, abs=0.01)
     assert data["message"] == "PDFファイル生成が完了しました"
+
+
+def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:
+    """進行中のジョブをキャンセルすると、関連リソースが削除されることを確認します。
+
+    SY002002:
+    - DELETE /api/jobs/{job_id} は 200 を返します
+    - ジョブ・進捗情報は in-memory ストアから削除されます
+    - extract_dir / output_dir / pdf_path に紐づくファイルが削除されます
+    - ocr-worker へ `POST /cancel/{job_id}` が送信されます
+    """
+    from app.routers import jobs as jobs_router
+    from app.services import job_manager
+
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    job_id = response.json()["job_id"]
+
+    zip_buffer = create_zip_buffer(["page1.png"])
+    client.post(
+        f"/api/jobs/{job_id}/upload",
+        files={"file": ("images.zip", zip_buffer, "application/zip")},
+    )
+
+    # ジョブに紐づくファイルを作成します
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    pdf_path = tmp_path / "result.pdf"
+    pdf_path.write_text("dummy pdf")
+
+    job_manager.update_job_status(
+        job_id, JobStatus.PROCESSING, extract_dir=extract_dir
+    )
+    job_manager.update_job_with_ocr_result(job_id, output_dir=str(output_dir))
+    job_manager.update_job_with_pdf_path(job_id, pdf_path=str(pdf_path))
+
+    # ocr-worker へのキャンセル伝播をモックします
+    captured_calls: list[str] = []
+
+    async def fake_post(self, url, **kwargs):
+        captured_calls.append(url)
+
+        class FakeResponse:
+            status_code = 200
+
+            def json(self):
+                return {"message": "ok", "job_id": job_id}
+
+        return FakeResponse()
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
+
+    response = client.delete(f"/api/jobs/{job_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["job_id"] == job_id
+    assert "キャンセル" in data["message"]
+
+    # ジョブが削除されていることを確認します
+    response = client.get(f"/api/jobs/{job_id}")
+    assert response.status_code == 404
+
+    # ファイルが削除されていることを確認します
+    assert not extract_dir.exists()
+    assert not output_dir.exists()
+    assert not pdf_path.exists()
+
+    # ocr-worker へキャンセルが伝播していることを確認します
+    assert any("/cancel/" in call for call in captured_calls)
+
+
+def test_cancel_job_not_found(client: TestClient, monkeypatch) -> None:
+    """存在しないジョブをキャンセルしようとすると 404 エラーが返ることを確認します。"""
+    from app.routers import jobs as jobs_router
+
+    async def fake_post(self, url, **kwargs):
+        class FakeResponse:
+            status_code = 200
+        return FakeResponse()
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
+
+    response = client.delete("/api/jobs/00000000-0000-0000-0000-000000000000")
+    assert response.status_code == 404
+    assert "見つかりません" in response.json()["detail"]
+
+
+def test_cancel_job_terminal_state(client: TestClient, monkeypatch) -> None:
+    """完了・失敗・キャンセル済みのジョブは再キャンセルできないことを確認します。"""
+    from app.routers import jobs as jobs_router
+    from app.services import job_manager
+
+    for status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED):
+        response = client.post("/api/jobs/")
+        assert response.status_code == 200
+        job_id = response.json()["job_id"]
+
+        job_manager.update_job_status(job_id, status)
+
+        async def fake_post(self, url, **kwargs):
+            class FakeResponse:
+                status_code = 200
+            return FakeResponse()
+
+        monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
+
+        response = client.delete(f"/api/jobs/{job_id}")
+        assert response.status_code == 400
+        assert "キャンセルできません" in response.json()["detail"]
+
+
+def test_cancel_job_pending(client: TestClient, monkeypatch) -> None:
+    """pending 状態のジョブもキャンセル可能であることを確認します。"""
+    from app.routers import jobs as jobs_router
+    from app.services import job_manager
+
+    response = client.post("/api/jobs/")
+    assert response.status_code == 200
+    job_id = response.json()["job_id"]
+
+    async def fake_post(self, url, **kwargs):
+        class FakeResponse:
+            status_code = 200
+        return FakeResponse()
+
+    monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
+
+    response = client.delete(f"/api/jobs/{job_id}")
+    assert response.status_code == 200
+    assert response.json()["job_id"] == job_id
+    assert job_manager.get_job(job_id) is None

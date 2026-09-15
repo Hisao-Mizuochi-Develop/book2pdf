@@ -8,31 +8,30 @@ OCR 結果（XML）と元のページ画像を組み合わせて、
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# 環境変数を読み込むための標準ライブラリです
-# PDF 出力先ディレクトリをテスト時に変更するために使用します
-import os
-
-# ファイルパスをオブジェクトとして扱うための標準ライブラリです
-from pathlib import Path
-
 # ログ出力のための標準ライブラリです
 # 環境変数 LOG_LEVEL で出力レベルを切り替えます
 import logging
 
+# 環境変数を読み込むための標準ライブラリです
+# PDF 出力先ディレクトリをテスト時に変更するために使用します
+import os
+
 # 処理時間を計測するための標準ライブラリです
 import time
-
-# PDF 生成ライブラリ（PyMuPDF）です
-import fitz
 
 # テキストの異体字を正規字体に統一するための標準ライブラリです
 # PDF テキスト抽出時に異体字が出ないよう、埋め込み前に正規化します
 import unicodedata
 
+# ファイルパスをオブジェクトとして扱うための標準ライブラリです
+from pathlib import Path
+
+# PDF 生成ライブラリ（PyMuPDF）です
+import fitz
+
 # OCR 結果の XML 解析サービスを読み込みます
 from app.services.xml_parser import (
     OcrLine,
-    OcrPage,
     find_sorted_xml,
     parse_sorted_xml,
 )
@@ -181,7 +180,7 @@ def _image_size(path: Path) -> tuple[int, int] | None:
             pix.height,
         )
         return pix.width, pix.height
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         # 画像の読み込みに失敗した場合は None を返します
         # 呼び出し元で XML のサイズ情報またはデフォルト値を使用します
         logger.debug(
@@ -291,7 +290,7 @@ def _insert_text_line(
     text_width = fitz.get_text_length(normalized_text, fontsize=font_size)
 
     # テキスト幅が行幅を超える場合はフォントサイズを縮小します
-    if text_width > line_width and line_width > 0:
+    if text_width > line_width > 0:
         # 縮小率を計算します（少し余裕を持たせるため 0.95 を掛けます）
         scale = (line_width / text_width) * 0.95
         font_size = max(font_size * scale, 1.0)

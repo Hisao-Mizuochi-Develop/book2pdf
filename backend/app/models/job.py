@@ -27,6 +27,7 @@ class JobStatus(str, Enum):
     PROCESSING = "processing"  # OCR 処理中の状態
     COMPLETED = "completed"  # 処理が正常に完了した状態
     FAILED = "failed"        # 処理中にエラーが発生した状態
+    CANCELLED = "cancelled"  # ユーザーまたはシステムによってキャンセルされた状態
 
 
 class JobCreateResponse(BaseModel):

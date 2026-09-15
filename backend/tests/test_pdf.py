@@ -10,11 +10,11 @@ from __future__ import annotations
 # メモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
-# ポーリング待機に使用する標準ライブラリです
-import time
-
 # 一時ディレクトリを作成するための標準ライブラリです
 import tempfile
+
+# ポーリング待機に使用する標準ライブラリです
+import time
 
 # 文字列の Unicode 正規化を行うための標準ライブラリです
 import unicodedata
@@ -25,33 +25,31 @@ import zipfile
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
-# pytest の fixture や型ヒント用です
-import pytest
-
-# FastAPI のテスト用 HTTP クライアントです
-from fastapi.testclient import TestClient
-
 # PyMuPDF: 生成された PDF を検証するために使用します
 import fitz
 
+# pytest の fixture や型ヒント用です
+import pytest
+
 # 異体字を正規字体に統一するための標準ライブラリです
 # PDF から抽出したテキストも正規化して比較します
-import unicodedata
-
 # テスト対象の FastAPI アプリケーションを読み込みます
 from app.main import app
 
 # モック OCR エンジンを読み込みます
 from app.services.ocr_engine import MockOcrEngine
 
-# OCR 結果の XML 解析サービスを読み込みます
-from app.services.xml_parser import find_sorted_xml, parse_sorted_xml
-
 # 検索可能 PDF 生成サービスを読み込みます
 from app.services.pdf_generator import (
     _xml_to_pdf_y,
     generate_searchable_pdf,
 )
+
+# OCR 結果の XML 解析サービスを読み込みます
+from app.services.xml_parser import find_sorted_xml, parse_sorted_xml
+
+# FastAPI のテスト用 HTTP クライアントです
+from fastapi.testclient import TestClient
 
 
 # FastAPI のテストクライアントを作成します

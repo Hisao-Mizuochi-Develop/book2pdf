@@ -303,4 +303,75 @@ describe("useOcrJob", () => {
       ]),
     );
   });
+
+  it("handleCancel は進行中のジョブをキャンセルし状態を更新する", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      await result.current.handleUploaded("job-123", ["page_001.png"]);
+    });
+
+    await act(async () => {
+      await result.current.handleCancel();
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "http://localhost:8000/api/jobs/job-123",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+    expect(result.current.latestProgress).toEqual(
+      expect.objectContaining({
+        job_id: "job-123",
+        status: "cancelled",
+        progress: 0,
+      }),
+    );
+    expect(result.current.progressLog).toContain("ジョブをキャンセルしました");
+    expect(result.current.downloadableJobId).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+
+    fetchSpy.mockRestore();
+  });
+
+  it("handleCancel は jobId がない場合に何もしない", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      await result.current.handleCancel();
+    });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it("handleCancel が失敗した場合は error にメッセージを設定する", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(new Error("cancel failed"));
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      await result.current.handleUploaded("job-123", ["page_001.png"]);
+    });
+
+    await act(async () => {
+      await result.current.handleCancel();
+    });
+
+    expect(result.current.error).toBe("cancel failed");
+    expect(result.current.progressLog).toContain("キャンセルに失敗しました: cancel failed");
+    expect(result.current.isLoading).toBe(false);
+
+    fetchSpy.mockRestore();
+  });
 });

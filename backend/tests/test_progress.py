@@ -20,12 +20,11 @@ import asyncio
 import json
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
-from app.services import job_manager
-from app.routers.jobs import _progress_event_generator
 from app.routers import jobs as jobs_router
+from app.routers.jobs import _progress_event_generator
+from app.services import job_manager
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

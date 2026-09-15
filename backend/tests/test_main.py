@@ -4,13 +4,12 @@
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
-# FastAPI のテスト用 HTTP クライアントです
-# サーバーを起動せずに API をテストできます
-from fastapi.testclient import TestClient
-
 # テスト対象の FastAPI アプリケーションを読み込みます
 from app.main import app
 
+# FastAPI のテスト用 HTTP クライアントです
+# サーバーを起動せずに API をテストできます
+from fastapi.testclient import TestClient
 
 # TestClient は FastAPI アプリケーションをテスト用にラップするクライアントです
 # 実際に HTTP サーバーを起動せずにエンドポイントを呼び出せます

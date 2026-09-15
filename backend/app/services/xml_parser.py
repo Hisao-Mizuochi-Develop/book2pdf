@@ -9,14 +9,14 @@ OCR 処理結果は XML 形式（.sorted.xml）で出力されます。
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
+# ログ出力のための標準ライブラリです
+import logging
+
 # XML を解析するための標準ライブラリです
 import xml.etree.ElementTree as ET
 
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
-
-# ログ出力のための標準ライブラリです
-import logging
 
 # 本モジュール用のロガーを取得します
 logger = logging.getLogger(__name__)

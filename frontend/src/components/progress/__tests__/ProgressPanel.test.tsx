@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ProgressPanel } from "../ProgressPanel";
 import type { ProgressEvent } from "@/types";
 
@@ -172,5 +172,55 @@ describe("ProgressPanel", () => {
     );
 
     expect(screen.queryByTestId("progress-error-line")).not.toBeInTheDocument();
+  });
+
+  it("showCancel=true かつ onCancel ありの場合にキャンセルボタンを表示する", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} showCancel onCancel={vi.fn()} />);
+
+    expect(screen.getByTestId("cancel-button")).toBeInTheDocument();
+  });
+
+  it("キャンセルボタンをクリックすると onCancel が呼ばれる", () => {
+    const onCancel = vi.fn();
+    render(<ProgressPanel latest={makeProgressEvent()} showCancel onCancel={onCancel} />);
+
+    fireEvent.click(screen.getByTestId("cancel-button"));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("showCancel=false ではキャンセルボタンを表示しない", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} onCancel={vi.fn()} />);
+
+    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
+  });
+
+  it("onCancel が未指定ではキャンセルボタンを表示しない", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} showCancel />);
+
+    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
+  });
+
+  it("status=completed ではキャンセルボタンを表示しない", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "completed", progress: 1.0 })}
+        showCancel
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
+  });
+
+  it("status=cancelled ではキャンセルボタンを表示しない", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "cancelled", progress: 0 })}
+        showCancel
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
   });
 });

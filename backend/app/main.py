@@ -8,6 +8,11 @@
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
+# ログ出力のための標準ライブラリです
+# アプリケーション全体のログレベルを環境変数 LOG_LEVEL から設定します
+import logging
+import os
+
 # FastAPI のメインクラスを読み込みます
 # Web アプリケーションの本体（エンドポイント登録・リクエスト処理など）を提供します
 from fastapi import FastAPI
@@ -19,11 +24,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # routers パッケージから API ルーターをインポートします
 # APIRouter を使うことで、エンドポイントを機能ごとに分割できます
 from app.routers import jobs
-
-# ログ出力のための標準ライブラリです
-# アプリケーション全体のログレベルを環境変数 LOG_LEVEL から設定します
-import logging
-import os
 
 # アプリケーション全体のログレベルを設定します
 # uvicorn 起動前に設定することで、各モジュールの DEBUG ログも出力されます

@@ -5,7 +5,7 @@
 // 管理を一括して行います。
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { runOcr, subscribeJobProgress, pollJobProgress } from "@/lib/api";
+import { cancelJob, runOcr, subscribeJobProgress, pollJobProgress } from "@/lib/api";
 import type { ProgressEvent } from "@/types";
 
 /** useOcrJob の戻り値型です。 */
@@ -26,6 +26,8 @@ export interface UseOcrJobResult {
   downloadableJobId: string | null;
   /** ZIP アップロード完了後に OCR 処理を開始します。 */
   handleUploaded: (jobId: string, files: string[]) => Promise<void>;
+  /** 進行中のジョブをキャンセルします。 */
+  handleCancel: () => Promise<void>;
   /** 状態を初期化します。 */
   reset: () => void;
 }
@@ -175,6 +177,35 @@ export function useOcrJob(): UseOcrJobResult {
     [reset, parseProgressEvent, cleanupProgress],
   );
 
+  const handleCancel = useCallback(async () => {
+    if (!jobId) {
+      return;
+    }
+
+    cleanupProgress();
+
+    try {
+      await cancelJob(jobId);
+      setLatestProgress({
+        job_id: jobId,
+        status: "cancelled",
+        progress: 0,
+        current_page: 0,
+        total_pages: files.length,
+        message: "ジョブをキャンセルしました",
+        timestamp: new Date().toISOString(),
+      });
+      setProgressLog((prev) => [...prev, "ジョブをキャンセルしました"]);
+      setDownloadableJobId(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "不明なエラーが発生しました";
+      setError(message);
+      setProgressLog((prev) => [...prev, `キャンセルに失敗しました: ${message}`]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [jobId, files.length, cleanupProgress]);
+
   useEffect(() => {
     return () => {
       cleanupProgress();
@@ -190,6 +221,7 @@ export function useOcrJob(): UseOcrJobResult {
     isLoading,
     downloadableJobId,
     handleUploaded,
+    handleCancel,
     reset,
   };
 }

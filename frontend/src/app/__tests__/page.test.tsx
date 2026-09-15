@@ -22,6 +22,7 @@ describe("Home page", () => {
       isLoading: false,
       downloadableJobId: null,
       handleUploaded: mockHandleUploaded,
+      handleCancel: vi.fn(),
       reset: vi.fn(),
     });
   });
@@ -50,6 +51,7 @@ describe("Home page", () => {
       isLoading: false,
       downloadableJobId: "job-123",
       handleUploaded: mockHandleUploaded,
+      handleCancel: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -69,6 +71,7 @@ describe("Home page", () => {
       isLoading: false,
       downloadableJobId: null,
       handleUploaded: mockHandleUploaded,
+      handleCancel: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -93,6 +96,7 @@ describe("Home page", () => {
       isLoading: false,
       downloadableJobId: "job-123",
       handleUploaded: mockHandleUploaded,
+      handleCancel: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -111,5 +115,37 @@ describe("Home page", () => {
       ],
     });
     expect(downloadPdf).toHaveBeenCalledWith("job-123", undefined, handle);
+  });
+
+  it("処理中に進捗パネルにキャンセルボタンが表示され、クリックすると handleCancel が呼ばれる", async () => {
+    const mockHandleCancel = vi.fn();
+    vi.mocked(useOcrJob).mockReturnValue({
+      jobId: "job-123",
+      files: ["page_001.png"],
+      latestProgress: {
+        job_id: "job-123",
+        status: "processing",
+        progress: 0.5,
+        current_page: 1,
+        total_pages: 2,
+        message: "OCR 処理中",
+      },
+      progressLog: [],
+      error: "",
+      isLoading: true,
+      downloadableJobId: null,
+      handleUploaded: mockHandleUploaded,
+      handleCancel: mockHandleCancel,
+      reset: vi.fn(),
+    });
+
+    render(<Home />);
+
+    const cancelButton = screen.getByTestId("cancel-button");
+    expect(cancelButton).toBeInTheDocument();
+    expect(cancelButton).toHaveTextContent("キャンセル");
+
+    await userEvent.click(cancelButton);
+    expect(mockHandleCancel).toHaveBeenCalledTimes(1);
   });
 });

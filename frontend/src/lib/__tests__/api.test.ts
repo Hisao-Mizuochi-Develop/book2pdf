@@ -7,6 +7,7 @@ import {
   pollJobProgress,
   getPdfDownloadUrl,
   downloadPdf,
+  cancelJob,
   type FileSystemFileHandle,
 } from "../api";
 
@@ -575,6 +576,31 @@ describe("api client", () => {
       await flushPromises();
       expect(fetch).not.toHaveBeenCalled();
       expect(onComplete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("cancelJob", () => {
+    it("DELETE リクエストを送信して成功する", async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(null, { status: 204 })
+      );
+
+      await cancelJob("job-123");
+
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123`, {
+        method: "DELETE",
+        signal: expect.any(AbortSignal),
+      });
+    });
+
+    it("HTTP エラー時に例外を投げる", async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response("error", { status: 500, statusText: "Internal Server Error" })
+      );
+
+      await expect(cancelJob("job-123")).rejects.toThrow(
+        "ジョブのキャンセルに失敗しました: 500 Internal Server Error"
+      );
     });
   });
 });

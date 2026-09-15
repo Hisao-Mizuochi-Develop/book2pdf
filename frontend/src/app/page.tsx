@@ -14,7 +14,10 @@ export default function Home() {
     latestProgress,
     error,
     downloadableJobId,
+    isLoading,
+    jobId,
     handleUploaded,
+    handleCancel,
   } = useOcrJob();
 
   return (
@@ -34,7 +37,12 @@ export default function Home() {
           </div>
         </div>
 
-        <ProgressPanel latest={latestProgress} error={error} />
+        <ProgressPanel
+          latest={latestProgress}
+          error={error}
+          showCancel={isLoading && Boolean(jobId)}
+          onCancel={handleCancel}
+        />
 
         {downloadableJobId && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">

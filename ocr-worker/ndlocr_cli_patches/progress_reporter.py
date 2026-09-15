@@ -14,6 +14,10 @@ from datetime import datetime, timezone
 # 複数スレッドからアクセスされる可能性があるため、将来的に threading.Lock の導入を検討
 _progress_store: dict[str, dict] = {}
 
+# SY002002: キャンセル要求されたジョブ ID を保持するセットです。
+# backend から `POST /cancel/{job_id}` を受信した際に追加されます。
+_cancelled_jobs: set[str] = set()
+
 
 def write_progress(
     job_id: str | None,
@@ -62,3 +66,58 @@ def get_progress(job_id: str) -> dict | None:
         進捗データ。存在しない場合は None。
     """
     return _progress_store.get(job_id)
+
+
+def mark_cancelled(job_id: str) -> None:
+    """指定したジョブ ID をキャンセル済みとしてマークします。
+
+    SY002002: backend からのキャンセル要求を受け取り、OCR 処理完了後に
+    結果を破棄するために使用します。
+
+    Parameters
+    ----------
+    job_id : str
+        キャンセル対象のジョブ ID。
+    """
+    _cancelled_jobs.add(job_id)
+
+
+def is_cancelled(job_id: str | None) -> bool:
+    """指定したジョブ ID がキャンセル済みかどうかを判定します。
+
+    Parameters
+    ----------
+    job_id : str | None
+        判定対象のジョブ ID。
+
+    Returns
+    -------
+    bool
+        キャンセル済みの場合は True、それ以外は False。
+    """
+    if not job_id:
+        return False
+    return job_id in _cancelled_jobs
+
+
+def clear_cancelled(job_id: str) -> None:
+    """指定したジョブ ID のキャンセルマークを解除します。
+
+    Parameters
+    ----------
+    job_id : str
+        キャンセルマークを解除するジョブ ID。
+    """
+    _cancelled_jobs.discard(job_id)
+
+
+def delete_progress(job_id: str) -> None:
+    """指定したジョブ ID の進捗データを削除します。
+
+    Parameters
+    ----------
+    job_id : str
+        削除対象のジョブ ID。
+    """
+    _progress_store.pop(job_id, None)
+    _cancelled_jobs.discard(job_id)
