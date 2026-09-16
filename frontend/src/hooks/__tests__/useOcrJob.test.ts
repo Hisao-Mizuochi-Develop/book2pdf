@@ -374,4 +374,237 @@ describe("useOcrJob", () => {
 
     fetchSpy.mockRestore();
   });
+
+  it("handleUploaded でアップロードタイミングを受け取ると zipUpload と overall が記録される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    const uploadTiming = {
+      uploadStart: "2026-09-15T10:00:00.000Z",
+      uploadEnd: "2026-09-15T10:00:01.500Z",
+      elapsedMs: 1500,
+    };
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      await result.current.handleUploaded("job-123", ["page_001.png"], uploadTiming);
+    });
+
+    expect(result.current.timingDebug.zipUpload).toEqual({
+      start: uploadTiming.uploadStart,
+      end: uploadTiming.uploadEnd,
+      elapsedMs: uploadTiming.elapsedMs,
+    });
+    expect(result.current.timingDebug.overall.start).toBe(uploadTiming.uploadStart);
+    expect(result.current.timingDebug.overall.end).toBeNull();
+    expect(result.current.timingDebug.ocrPages).toHaveLength(1);
+    expect(result.current.timingDebug.ocrPages[0]).toMatchObject({
+      pageIndex: 0,
+      fileName: "page_001.png",
+      start: null,
+      end: null,
+      elapsedMs: null,
+    });
+  });
+
+  it("OCR 進捗イベントでページ単位のタイミングが追跡される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    const uploadTiming = {
+      uploadStart: "2026-09-15T10:00:00.000Z",
+      uploadEnd: "2026-09-15T10:00:01.000Z",
+      elapsedMs: 1000,
+    };
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded(
+        "job-123",
+        ["page_001.png", "page_002.png", "page_003.png"],
+        uploadTiming,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.33,
+          current_page: 1,
+          total_pages: 3,
+          message: "OCR処理中です（1/3）",
+        }),
+      );
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.66,
+          current_page: 2,
+          total_pages: 3,
+          message: "OCR処理中です（2/3）",
+        }),
+      );
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.timingDebug.ocrPages).toHaveLength(3);
+    });
+
+    const firstPage = result.current.timingDebug.ocrPages[0];
+    expect(firstPage.start).not.toBeNull();
+    expect(firstPage.end).not.toBeNull();
+    expect(firstPage.elapsedMs).toBeGreaterThanOrEqual(0);
+
+    const secondPage = result.current.timingDebug.ocrPages[1];
+    expect(secondPage.start).not.toBeNull();
+    expect(secondPage.end).toBeNull();
+  });
+
+  it("PDF 生成開始と完了が検出される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.8,
+          current_page: 1,
+          total_pages: 1,
+          message: "PDF生成中です",
+        }),
+      );
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "completed",
+          progress: 1,
+          current_page: 1,
+          total_pages: 1,
+          message: "OCR 処理が完了しました",
+        }),
+      );
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.timingDebug.pdfGeneration.start).not.toBeNull();
+    });
+
+    expect(result.current.timingDebug.pdfGeneration.end).not.toBeNull();
+    expect(result.current.timingDebug.pdfGeneration.elapsedMs).toBeGreaterThanOrEqual(0);
+    expect(result.current.timingDebug.overall.end).not.toBeNull();
+    expect(result.current.timingDebug.overall.elapsedMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("reset でタイミング情報が初期化される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    const uploadTiming = {
+      uploadStart: "2026-09-15T10:00:00.000Z",
+      uploadEnd: "2026-09-15T10:00:01.000Z",
+      elapsedMs: 1000,
+    };
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      await result.current.handleUploaded("job-123", ["page_001.png"], uploadTiming);
+    });
+
+    expect(result.current.timingDebug.zipUpload.start).not.toBeNull();
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.timingDebug.zipUpload).toEqual({
+      start: null,
+      end: null,
+      elapsedMs: null,
+    });
+    expect(result.current.timingDebug.ocrTotal).toEqual({
+      start: null,
+      end: null,
+      elapsedMs: null,
+    });
+    expect(result.current.timingDebug.ocrPages).toEqual([]);
+    expect(result.current.timingDebug.overall).toEqual({
+      start: null,
+      end: null,
+      elapsedMs: null,
+    });
+  });
+
+  it("completed 後に processing イベントが来ると overall.end がクリアされる（FE002003 回帰修正）", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // 完了イベントを送信します
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "completed",
+          progress: 1,
+          current_page: 1,
+          total_pages: 1,
+          message: "OCR 処理が完了しました",
+        }),
+      );
+      // ポーリング遅延などで後続の processing イベントが届くケースをシミュレートします
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.5,
+          current_page: 0,
+          total_pages: 1,
+          message: "OCR処理中です（1/1）",
+        }),
+      );
+      await handlePromise;
+    });
+
+    // processing イベントを受信したため、overall.end はクリアされています。
+    expect(result.current.timingDebug.overall.end).toBeNull();
+    expect(result.current.timingDebug.overall.elapsedMs).toBeNull();
+  });
+
+  it("初回 processing イベントで ocrTotal.start と ocrPages[0].start が message から抽出される actualPage で設定される（FE002003 UAT バグ回帰修正）", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // ocr-worker はページ処理開始前に current_page = page_idx - 1 を送信する
+      // current_page=0 でも message の（1/1）から actualPage=1 を抽出してページ開始を検出する
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.1,
+          current_page: 0,
+          total_pages: 1,
+          message: "OCR処理中です（1/1）",
+          timestamp: "2026-09-16T12:00:00.000Z",
+        }),
+      );
+      await handlePromise;
+    });
+
+    // ocrTotal.start が timestamp から設定されること
+    expect(result.current.timingDebug.ocrTotal.start).toBe("2026-09-16T12:00:00.000Z");
+    // current_page=0 でも message の（1/1）から actualPage=1 を抽出し、0-based index 0 のページが開始されること
+    expect(result.current.timingDebug.ocrPages[0].start).not.toBeNull();
+    expect(result.current.timingDebug.ocrPages[0].elapsedMs).toBeNull();
+  });
 });
