@@ -179,7 +179,7 @@ export function useOcrJob(): UseOcrJobResult {
           if (event.status === "processing" && event.progress < 0.75) {
             // ocr-worker は開始前に current_page = page_idx - 1 を送信するため、
             // message から実際のページ番号を抽出してページ遷移を判定します。
-            const actualPage = extractActualPage(event.message) ?? event.current_page;
+            const actualPage = extractActualPage(event.message) ?? (event.current_page === 0 ? 1 : event.current_page);
             const lastPage = timingTrackerRef.current.lastCurrentPage;
 
             if (next.ocrPages.length === 0 && event.total_pages > 0) {
@@ -288,6 +288,11 @@ export function useOcrJob(): UseOcrJobResult {
           // SSE と polling の重複イベントを区別するため、ページ番号の変化を基準にします。
           updateTimingDebug(event);
 
+          // 終了状態になったらローディングを解除します
+          if (event.status === "completed" || event.status === "failed" || event.status === "cancelled") {
+            setIsLoading(false);
+          }
+
           // PDF ダウンロードは OCR/PDF 生成が完了してから有効にします
           if (event.status === "completed") {
             setDownloadableJobId(newJobId);
@@ -346,7 +351,6 @@ export function useOcrJob(): UseOcrJobResult {
       } catch (err) {
         setError(err instanceof Error ? err.message : "不明なエラーが発生しました");
         cleanupProgress();
-      } finally {
         setIsLoading(false);
       }
     },
