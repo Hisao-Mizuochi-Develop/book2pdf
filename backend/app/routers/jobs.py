@@ -425,9 +425,8 @@ async def _run_ocr_and_generate_pdf(
         # キャンセル済みでないかチェックします
         await asyncio.sleep(0)
 
-        # OCR 処理は同期ブロッキングなので別スレッドで実行します
-        result = await asyncio.to_thread(
-            ocr_engine.run,
+        # BE009001: OCR 処理は ocr-worker への非同期 HTTP 呼び出しで実行します
+        result = await ocr_engine.run_async(
             image_files=absolute_image_files,
             work_dir=Path(extract_dir),
             job_id=job_id,
@@ -492,6 +491,25 @@ async def _run_ocr_and_generate_pdf(
         text=result.text,
         output_dir=str(result.output_dir),
     )
+
+    # BE009001: ocr-worker 側で処理失敗が検出された場合は FAILED に遷移します
+    if not result.success:
+        logger.error("OCR 処理が失敗しました: job_id=%s", job_id)
+        job_manager.update_progress(
+            job_id,
+            status="failed",
+            progress=0.0,
+            current_page=0,
+            total_pages=total_pages,
+            message="OCR 処理に失敗しました",
+        )
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.FAILED,
+            message="OCR 処理に失敗しました",
+        )
+        job_manager.delete_task(job_id)
+        return
 
     # キャンセル済みでないかチェックします
     await asyncio.sleep(0)

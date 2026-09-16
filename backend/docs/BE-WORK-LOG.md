@@ -2,7 +2,7 @@
 
 本ドキュメントは、book2pdf プロジェクトのバックエンドタスク実施にあたり実行したコマンドとその結果を記録したものです。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/16
 
 ---
 
@@ -1381,4 +1381,63 @@ cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
 
 - `backend/tests/test_pdf.py`
 - `backend/docs/BE-TASKS.md`
+
+## 2026-09-16 タスク BE009002：大容量ドキュメントの OCR タイムアウト・ポーリング延長
+
+### 目的
+
+92 ページ規模の大容量ドキュメント（処理時間 1.5〜2.5 時間）に対して、backend → ocr-worker の OCR リクエスト・結果ポーリングが途中でタイムアウトしないようにする。
+
+### 前提
+
+- FE002003 UAT 実施中に、大容量ジョブで backend 側の OCR ポーリングが 30 分で打ち切られる事象が発生
+- 原因:
+  - `POST /ocr` 個別リクエストタイムアウトが 10 秒（`OCR_WORKER_POST_TIMEOUT` デフォルト）
+  - 結果取得ポーリングの最大試行回数が 1800 回 × 1 秒間隔 = 30 分（`OCR_WORKER_MAX_RESULT_RETRIES` デフォルト）
+- BE009001（非同期エンドポイント化）は未マージのため、最小構成の同期パッチを先に適用する方針とした
+
+### 実施内容
+
+1. `backend/app/services/ocr_engine.py` の `RemoteNdloCrOcrEngine.run_async` を修正
+   - `OCR_WORKER_POST_TIMEOUT` デフォルトを `10.0` 秒 → `60.0` 秒に変更
+   - `OCR_WORKER_MAX_RESULT_RETRIES` デフォルトを `1800` 回 → `10800` 回に変更
+   - 1 秒間隔の場合、最大ポーリング継続時間は約 3 時間となる
+2. `docker-compose.yml` の backend サービス環境変数に以下を追加
+   - `OCR_WORKER_POST_TIMEOUT=60.0`
+   - `OCR_WORKER_MAX_RESULT_RETRIES=10800`
+3. `backend/tests/test_ocr.py` にテストを追加
+   - デフォルト値が 60.0 秒 / 10800 回に反映されることを検証
+   - 環境変数による上書きが正しく機能することを検証
+4. backend 単体テストを全件実行
+
+### 実施コマンド
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/backend
+.venv/bin/pytest tests/test_ocr.py -v
+.venv/bin/pytest -v
+```
+
+### 結果
+
+- `tests/test_ocr.py`: 11 件 PASS（新規 2 件を含む）
+- backend 全テスト: 50 件 PASS、0 件失敗、0 件スキップ
+- 警告は依存ライブラリ由来の既存のものであり、許容範囲内
+
+### 変更ファイル
+
+- `backend/app/services/ocr_engine.py`
+- `backend/tests/test_ocr.py`
+- `docker-compose.yml`
+- `backend/docs/BE-TASKS.md`
+- `backend/docs/BE-WORK-LOG.md`
+
+### 注意事項
+
+- 本修正は BE009001（非同期エンドポイント化）の代替ではなく、FE002003 UAT を迅速に unblock するための暫定対応である
+- 3 時間を超える処理が必要な場合は、別途 `OCR_WORKER_MAX_RESULT_RETRIES` 環境変数で調整するか、BE009001 のマージを検討すること
+- backend コンテナ再起動時に `docker-compose.yml` の新しい環境変数が反映されることを確認すること
+
+---
+
 

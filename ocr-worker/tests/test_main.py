@@ -6,9 +6,23 @@ SY002002: ジョブのキャンセル、進捗データの削除、キャンセ�
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from fastapi.testclient import TestClient
+
+
+def _poll_result(client: TestClient, job_id: str, expected_status: int, timeout: float = 5.0) -> Any:
+    """バックグラウンド OCR タスクが完了するまで GET /result をポーリングします。"""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        response = client.get(f"/result/{job_id}")
+        if response.status_code == expected_status:
+            return response
+        if response.status_code not in (202,):
+            return response
+        time.sleep(0.05)
+    return client.get(f"/result/{job_id}")
 
 
 def test_health_check(client: TestClient) -> None:
@@ -82,15 +96,15 @@ def test_get_progress_returns_stored_data(
     assert "1/2 完了" in data["message"]
 
 
-def test_run_ocr_discards_result_when_cancelled(
+def test_run_ocr_returns_accepted_and_result_when_cancelled(
     client: TestClient,
     progress_reporter: Any,
     tmp_path: Any,
 ) -> None:
-    """キャンセル済みのジョブは /ocr 完了後に結果を破棄することを確認します。
+    """BE009001: キャンセル済みジョブは /ocr 受理後、結果取得で失敗応答を返します。
 
-    SY002002: 協調的キャンセルにより、OCR 処理完了後に cancelled レスポンスを
-    返し、進捗ストアも cancelled 状態で更新されます。
+    SY002002: 協調的キャンセルにより、OCR 処理完了後に結果ストアは failed 状態、
+    進捗ストアは cancelled 状態で更新されます。
     """
     job_id = "job-ocr-cancel"
     progress_reporter.mark_cancelled(job_id)
@@ -113,12 +127,16 @@ def test_run_ocr_discards_result_when_cancelled(
             "enable_progress": True,
         },
     )
-    assert response.status_code == 200
+    # BE009001: /ocr は即座に 202 Accepted を返します
+    assert response.status_code == 202
     data = response.json()
-    assert data["success"] is False
-    assert "キャンセル" in data["message"]
-    assert data["text"] == ""
-    assert data["output_dir"] == ""
+    assert data["job_id"] == job_id
+    assert "開始" in data["message"]
+
+    # バックグラウンドタスク完了後、GET /result は failed 状態を返します
+    result_response = _poll_result(client, job_id, expected_status=500)
+    assert result_response.status_code == 500
+    assert "キャンセル" in result_response.json()["detail"]
 
     # 進捗が cancelled 状態で記録されていることを確認します
     progress_response = client.get(f"/progress/{job_id}")
@@ -126,12 +144,12 @@ def test_run_ocr_discards_result_when_cancelled(
     assert progress_response.json()["status"] == "cancelled"
 
 
-def test_run_ocr_completes_when_not_cancelled(
+def test_run_ocr_returns_accepted_and_result_when_not_cancelled(
     client: TestClient,
     progress_reporter: Any,
     tmp_path: Any,
 ) -> None:
-    """キャンセルされていないジョブは /ocr が正常完了することを確認します。"""
+    """BE009001: キャンセルされていないジョブは /ocr 受理後、結果取得で正常応答を返します。"""
     job_id = "job-ocr-complete"
 
     input_root = tmp_path / "input"
@@ -155,13 +173,41 @@ def test_run_ocr_completes_when_not_cancelled(
             "enable_progress": True,
         },
     )
-    assert response.status_code == 200
+    # BE009001: /ocr は即座に 202 Accepted を返します
+    assert response.status_code == 202
     data = response.json()
-    assert data["success"] is True
-    assert "テスト認識結果" in data["text"]
-    assert data["output_dir"] == str(output_root)
+    assert data["job_id"] == job_id
+    assert "開始" in data["message"]
+
+    # バックグラウンドタスク完了後、GET /result は結果を返します
+    result_response = _poll_result(client, job_id, expected_status=200)
+    assert result_response.status_code == 200
+    result_data = result_response.json()
+    assert "テスト認識結果" in result_data["text"]
+    assert result_data["output_dir"] == str(output_root)
 
     progress_response = client.get(f"/progress/{job_id}")
     assert progress_response.status_code == 200
     assert progress_response.json()["status"] == "completed"
     assert progress_response.json()["progress"] == 1.0
+
+
+def test_get_result_returns_processing(
+    client: TestClient,
+) -> None:
+    """BE009001: 処理中のジョブに対して GET /result/{job_id} は 202 を返します。"""
+    import app.result_store as result_store
+
+    job_id = "job-result-processing"
+    result_store.init_result(job_id)
+
+    response = client.get(f"/result/{job_id}")
+    assert response.status_code == 202
+    assert "処理中" in response.json()["detail"]
+
+
+def test_get_result_returns_404_when_missing(client: TestClient) -> None:
+    """BE009001: 存在しないジョブに対して GET /result/{job_id} は 404 を返します。"""
+    response = client.get("/result/non-existent-job")
+    assert response.status_code == 404
+    assert "見つかりません" in response.json()["detail"]

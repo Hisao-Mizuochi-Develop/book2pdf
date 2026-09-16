@@ -24,6 +24,10 @@ import tempfile
 # OCR 実行開始・終了時刻の差分を計測してログに出力する
 import time
 
+# 標準ライブラリ — job_id が未指定の場合に一意な ID を発行します
+# BE009001: リクエスト側が job_id を省略した場合に使用します
+import uuid
+
 # 現在日時を取得するための標準ライブラリです
 # 進捗ファイルに更新時刻を記録するために使用します
 from datetime import datetime, timezone
@@ -50,9 +54,13 @@ from cli.core.progress_reporter import (
     get_progress as get_progress_from_store,
 )
 
+# BE009001: OCR 結果の非同期一時保存用インメモリストアです
+import app.result_store as result_store
+
 # 外部ライブラリ — FastAPI Web フレームワーク
 # FastAPI: アプリケーション本体を構築, HTTPException: HTTP エラーレスポンスを返す
-from fastapi import FastAPI, HTTPException
+# BackgroundTasks: レスポンス後に非同期タスクを実行するための依存関係です
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 # 外部ライブラリ — FastAPI の非同期処理補助機能
 # run_in_threadpool: 同期処理（OCR 等の重い処理）をスレッドプールで実行し、イベントループをブロックしないようにする
@@ -158,6 +166,26 @@ class OcrResponse(BaseModel):
 
     # 補足メッセージ（エラー時など）です
     message: str = Field(default="", description="補足メッセージ")
+
+
+class OcrAcceptedResponse(BaseModel):
+    """BE009001: POST /ocr の即時受理レスポンスモデルです。"""
+
+    # 受付メッセージです
+    message: str = Field(..., description="受付メッセージ")
+
+    # バックグラウンド OCR タスクを識別するジョブ ID です
+    job_id: str = Field(..., description="ジョブ ID")
+
+
+class OcrResultResponse(BaseModel):
+    """BE009001: GET /result/{job_id} の成功レスポンスモデルです。"""
+
+    # 認識されたテキスト全文です
+    text: str = Field(..., description="認識テキスト")
+
+    # OCR 結果が出力されたディレクトリのパスです
+    output_dir: str = Field(..., description="OCR 結果の出力ディレクトリパス")
 
 
 def _collect_text(output_root: Path) -> str:
@@ -422,21 +450,15 @@ async def get_progress(job_id: str) -> OcrProgressResponse:
     )
 
 
-@app.post("/ocr", response_model=OcrResponse)
-async def run_ocr(request: OcrRequest) -> OcrResponse:
-    """OCR 処理を実行するエンドポイントです。
+async def _run_ocr_background(request: OcrRequest, job_id: str) -> None:
+    """BE009001: OCR 処理をバックグラウンドで実行し、結果ストアに保存します。
 
     Args:
         request: OCR 実行リクエスト
-
-    Returns:
-        OCR 実行結果
-
-    Raises:
-        HTTPException: OCR 処理に失敗した場合
+        job_id: 進捗通知・結果取得用のジョブ ID
     """
-    # 進捗通知に使用するジョブ ID を取得します
-    job_id = request.job_id
+    # 進捗通知に使用するジョブ ID です（引数で確定済み）
+    job_id_for_progress = job_id
 
     # 前処理済み一時ディレクトリ（前処理 ON の場合に設定）
     preprocess_tmp_dir: Path | None = None
@@ -476,7 +498,7 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         # backend から呼び出される場合は enable_progress=False で抑制されます
         if request.enable_progress:
             _write_progress(
-                job_id,
+                job_id_for_progress,
                 status="processing",
                 progress=0.0,
                 current_page=0,
@@ -504,11 +526,15 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         # OCR 推論インスタンスを作成します
         inferrer = await run_in_threadpool(OcrInferrer, infer_cfg)
         # FIX(OW004001): backend の SSE 連携のため job_id を設定します
-        if job_id:
-            inferrer.job_id = job_id
+        if job_id_for_progress:
+            inferrer.job_id = job_id_for_progress
 
         # OCR 処理の実行時間を計測します
-        logger.debug("OCR 処理を開始します: job_id=%s, total_pages=%d", job_id, total_pages)
+        logger.debug(
+            "OCR 処理を開始します: job_id=%s, total_pages=%d",
+            job_id_for_progress,
+            total_pages,
+        )
         ocr_start_time = time.time()
 
         # OCR 処理を実行します
@@ -519,7 +545,7 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         ocr_avg = ocr_elapsed / total_pages if total_pages > 0 else 0.0
         logger.debug(
             "OCR 処理が完了しました: job_id=%s, elapsed=%.3fs, avg_per_page=%.3fs",
-            job_id,
+            job_id_for_progress,
             ocr_elapsed,
             ocr_avg,
         )
@@ -530,30 +556,30 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
             Path(infer_cfg["output_root"]),
         )
 
-        # キャンセル済みの場合は結果を破棄し cancelled 状態を返します
+        # キャンセル済みの場合は結果を破棄し failed 状態を保存します
         # OCR 処理中のスレッドを強制終了できないため、完了後に協調的に破棄します
-        if is_cancelled(job_id):
-            logger.info("キャンセル済みジョブの結果を破棄します: job_id=%s", job_id)
+        if is_cancelled(job_id_for_progress):
+            logger.info(
+                "キャンセル済みジョブの結果を破棄します: job_id=%s",
+                job_id_for_progress,
+            )
+            cancel_message = "ジョブがキャンセルされました"
             if request.enable_progress:
                 _write_progress(
-                    job_id,
+                    job_id_for_progress,
                     status="cancelled",
                     progress=0.0,
                     current_page=0,
                     total_pages=total_pages,
-                    message="ジョブがキャンセルされました",
+                    message=cancel_message,
                 )
-            return OcrResponse(
-                success=False,
-                text="",
-                output_dir="",
-                message="ジョブがキャンセルされました",
-            )
+            result_store.save_error(job_id, cancel_message)
+            return
 
         # OCR 処理完了を進捗ファイルに記録します
         if request.enable_progress:
             _write_progress(
-                job_id,
+                job_id_for_progress,
                 status="completed",
                 progress=1.0,
                 current_page=total_pages,
@@ -561,16 +587,12 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
                 message="OCR 処理が完了しました",
             )
 
-        # OCR 結果を返します
-        return OcrResponse(
-            success=True,
-            text=result_text,
-            output_dir=infer_cfg["output_root"],
-            message="",
-        )
+        # OCR 結果をストアに保存します
+        result_store.save_result(job_id, result_text, infer_cfg["output_root"])
+        return
     except Exception as exc:
         # エラーのトレースバックを文字列に変換します
-        # ログと HTTP レスポンスの両方に含めて、原因調査を容易にします
+        # ログと結果ストアの両方に含めて、backend 側で原因を確認できるようにします
         import traceback
 
         tb_str = traceback.format_exc()
@@ -582,7 +604,7 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
         # エラー発生を進捗ファイルに記録します
         if request.enable_progress:
             _write_progress(
-                job_id,
+                job_id_for_progress,
                 status="failed",
                 progress=0.0,
                 current_page=0,
@@ -590,12 +612,9 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
                 message=error_message,
             )
 
-        # エラーが発生した場合は HTTP 500 エラーを返します
-        # detail にはトレースバックも含めて、backend 側で原因を確認できるようにします
-        raise HTTPException(
-            status_code=500,
-            detail=error_message,
-        ) from exc
+        # エラー発生を結果ストアに記録します
+        result_store.save_error(job_id, error_message)
+        return
     finally:
         # 前処理済み一時ディレクトリの cleanup を実施します
         if preprocess_tmp_dir is not None and preprocess_tmp_dir.exists():
@@ -606,3 +625,73 @@ async def run_ocr(request: OcrRequest) -> OcrResponse:
                 preprocess_tmp_dir,
             )
             shutil.rmtree(preprocess_tmp_dir)
+
+
+@app.post("/ocr", response_model=OcrAcceptedResponse, status_code=202)
+async def run_ocr(
+    request: OcrRequest,
+    background_tasks: BackgroundTasks,
+) -> OcrAcceptedResponse:
+    """BE009001: OCR 処理をバックグラウンドで開始します。
+
+    Args:
+        request: OCR 実行リクエスト
+        background_tasks: レスポンス後に OCR 処理を実行するための FastAPI タスク
+
+    Returns:
+        202 Accepted とジョブ ID
+    """
+    # 進捗通知・結果取得に使用するジョブ ID を確定します
+    # リクエスト側が指定しなければサーバー側で一意に発行します
+    job_id = request.job_id or str(uuid.uuid4())
+
+    # 結果ストアを processing 状態で初期化します
+    # これにより、backend が即座に GET /result/{job_id} で問い合わせても
+    # 404 ではなく 202 を返せます
+    result_store.init_result(job_id)
+
+    # バックグラウンドで OCR 処理を開始します
+    # レスポンス送信後に非同期的に実行され、イベントループをブロックしません
+    background_tasks.add_task(_run_ocr_background, request, job_id)
+
+    logger.info("OCR 処理を受け付けました: job_id=%s", job_id)
+    return OcrAcceptedResponse(
+        message="OCR 処理を開始しました",
+        job_id=job_id,
+    )
+
+
+@app.get("/result/{job_id}")
+async def get_result(job_id: str) -> OcrResultResponse:
+    """BE009001: OCR 処理結果を取得します。
+
+    Args:
+        job_id: 対象のジョブ ID
+
+    Returns:
+        完了時はテキストと出力ディレクトリ
+
+    Raises:
+        HTTPException: 処理中（202）、失敗（500）、または存在しない場合（404）
+    """
+    result = result_store.get_result(job_id)
+    if result is None:
+        logger.debug("指定されたジョブの結果が見つかりません: job_id=%s", job_id)
+        raise HTTPException(
+            status_code=404,
+            detail="指定されたジョブが見つかりません",
+        )
+
+    status = result.get("status")
+    if status == "processing":
+        raise HTTPException(status_code=202, detail="OCR 処理中です")
+    if status == "failed":
+        message = result.get("message") or "OCR 処理に失敗しました"
+        logger.debug("OCR 失敗結果を返します: job_id=%s", job_id)
+        raise HTTPException(status_code=500, detail=message)
+
+    return OcrResultResponse(
+        text=result.get("text", ""),
+        output_dir=result.get("output_dir", ""),
+    )
+

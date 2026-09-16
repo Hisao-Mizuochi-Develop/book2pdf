@@ -124,6 +124,9 @@ _progress_reporter = _install_cli_mock()
 # app.main の import 時にモックが適用された状態にするため、ここで import します
 from app.main import app
 
+# BE009001: OCR 結果ストアへのアクセス用です
+import app.result_store as _result_store
+
 
 @pytest.fixture
 def client() -> TestClient:
@@ -142,6 +145,8 @@ def _reset_progress_store() -> None:
     """各テスト実行前に in-memory ストアをクリアします。"""
     _progress_reporter._progress_store.clear()
     _progress_reporter._cancelled_jobs.clear()
+    _result_store._results.clear()
     yield
     _progress_reporter._progress_store.clear()
     _progress_reporter._cancelled_jobs.clear()
+    _result_store._results.clear()
