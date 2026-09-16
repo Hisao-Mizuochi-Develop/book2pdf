@@ -446,3 +446,133 @@ async def test_ocr_engine_run_async_returns_failure_on_worker_error(
 
 
 
+@pytest.mark.anyio
+async def test_ocr_engine_run_async_uses_extended_timeout_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """BE009002: 大容量ドキュメント対応のため、デフォルトの POST タイムアウトとポーリング継続時間が延長されていることを確認します。"""
+    import httpx
+
+    from app.services.ocr_engine import OcrResult, RemoteNdloCrOcrEngine
+
+    captured_timeouts: list[float] = []
+
+    class FakeAsyncClient:
+        """httpx.AsyncClient の非同期呼び出しを模倣します。"""
+
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args, **kwargs) -> None:
+            pass
+
+        async def post(self, url: str, **kwargs) -> httpx.Response:
+            captured_timeouts.append(kwargs.get("timeout", 0.0))
+            return httpx.Response(
+                status_code=202,
+                json={"job_id": "async-job-3", "message": "started"},
+                request=httpx.Request("POST", url),
+            )
+
+        async def get(self, url: str, **kwargs) -> httpx.Response:
+            captured_timeouts.append(kwargs.get("timeout", 0.0))
+            return httpx.Response(
+                status_code=200,
+                json={"text": "async result", "output_dir": str(tmp_path)},
+                request=httpx.Request("GET", url),
+            )
+
+    # 環境変数をクリアしてデフォルト値を検証します
+    monkeypatch.delenv("OCR_WORKER_POST_TIMEOUT", raising=False)
+    monkeypatch.delenv("OCR_WORKER_MAX_RESULT_RETRIES", raising=False)
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setenv("OCR_WORKER_POLL_INTERVAL", "0.0")
+
+    engine = RemoteNdloCrOcrEngine(worker_url="http://dummy:8001")
+    dummy_image = tmp_path / "test.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    result: OcrResult = await engine.run_async(
+        image_files=[str(dummy_image)],
+        work_dir=tmp_path,
+        job_id="backend-job-3",
+    )
+
+    assert result.success is True
+    assert all(t == 60.0 for t in captured_timeouts), (
+        f"POST/GET タイムアウトが 60.0 秒ではありません: {captured_timeouts}"
+    )
+
+
+@pytest.mark.anyio
+async def test_ocr_engine_run_async_allows_timeout_override(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """BE009002: 環境変数で OCR_WORKER_POST_TIMEOUT と OCR_WORKER_MAX_RESULT_RETRIES を上書きできることを確認します。"""
+    import httpx
+
+    from app.services.ocr_engine import RemoteNdloCrOcrEngine
+
+    captured_timeouts: list[float] = []
+    get_call_count = 0
+
+    class FakeAsyncClient:
+        """httpx.AsyncClient の非同期呼び出しを模倣します。"""
+
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args, **kwargs) -> None:
+            pass
+
+        async def post(self, url: str, **kwargs) -> httpx.Response:
+            captured_timeouts.append(kwargs.get("timeout", 0.0))
+            return httpx.Response(
+                status_code=202,
+                json={"job_id": "async-job-4", "message": "started"},
+                request=httpx.Request("POST", url),
+            )
+
+        async def get(self, url: str, **kwargs) -> httpx.Response:
+            nonlocal get_call_count
+            get_call_count += 1
+            captured_timeouts.append(kwargs.get("timeout", 0.0))
+            if get_call_count < 3:
+                return httpx.Response(
+                    status_code=202,
+                    json={"detail": "OCR 処理中です"},
+                    request=httpx.Request("GET", url),
+                )
+            return httpx.Response(
+                status_code=200,
+                json={"text": "async result", "output_dir": str(tmp_path)},
+                request=httpx.Request("GET", url),
+            )
+
+    monkeypatch.setenv("OCR_WORKER_POST_TIMEOUT", "120.0")
+    monkeypatch.setenv("OCR_WORKER_MAX_RESULT_RETRIES", "5")
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setenv("OCR_WORKER_POLL_INTERVAL", "0.0")
+
+    engine = RemoteNdloCrOcrEngine(worker_url="http://dummy:8001")
+    dummy_image = tmp_path / "test.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    await engine.run_async(
+        image_files=[str(dummy_image)],
+        work_dir=tmp_path,
+        job_id="backend-job-4",
+    )
+
+    assert all(t == 120.0 for t in captured_timeouts), (
+        f"POST/GET タイムアウトが 120.0 秒ではありません: {captured_timeouts}"
+    )
+    assert get_call_count == 3, f"最大試行回数の上書きが反映されていません: {get_call_count}"

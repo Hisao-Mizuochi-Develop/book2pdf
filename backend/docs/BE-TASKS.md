@@ -645,6 +645,7 @@ backend→ocr-worker 通信の非同期化と結果取得
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [BE009001](#be009001) backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する | 2026-09-16 | | 機能実装 |
+| [BE009002](#be009002) OCR 非同期ポーリングのタイムアウト・継続時間を長時間ジョブに対応させる | 2026-09-16 | 2026-09-16 | 不具合対応 |
 
 <a id="be009001"></a>
 ### BE009001 backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する
@@ -663,4 +664,24 @@ backend→ocr-worker 通信の非同期化と結果取得
 >
 > 【実施結果】
 >
+<a id="be009002"></a>
+### BE009002 OCR 非同期ポーリングのタイムアウト・継続時間を長時間ジョブに対応させる
+
+<div align="right"><a href="#be009">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `backend/app/services/ocr_engine.py` の `RemoteNdloCrOcrEngine.run_async` で、ocr-worker への `POST /ocr` タイムアウトを 10 秒 → 60 秒に延長する
+> - 結果取得ポーリングの最大試行回数を 1800 回（30 分） → 10800 回（3 時間）に延長する
+> - `docker-compose.yml` に `OCR_WORKER_POST_TIMEOUT` と `OCR_WORKER_MAX_RESULT_RETRIES` を明示的に設定する
+> - 既存の `backend/tests/test_ocr.py` にタイムアウト・ポーリング設定のテストを追加・更新する
+> - backend / ocr-worker のビルドテスト・単体テストを実行し、全件 PASS を確認する
+>
+> 【実施結果】
+> - 2026-09-16: `backend/app/services/ocr_engine.py` の `RemoteNdloCrOcrEngine.run_async` で `OCR_WORKER_POST_TIMEOUT` デフォルトを `10.0` 秒 → `60.0` 秒に変更した
+> - 2026-09-16: 同 `run_async` で `OCR_WORKER_MAX_RESULT_RETRIES` デフォルトを `1800` 回（30 分） → `10800` 回（3 時間）に変更した
+> - 2026-09-16: `docker-compose.yml` の backend サービス環境変数に `OCR_WORKER_POST_TIMEOUT=60.0` と `OCR_WORKER_MAX_RESULT_RETRIES=10800` を追加した
+> - 2026-09-16: `backend/tests/test_ocr.py` にデフォルト値検証テストと環境変数上書きテストを追加した
+> - 2026-09-16: backend 単体テスト 50 件すべて PASS（うち `tests/test_ocr.py` 11 件 PASS）を確認した
+>
+
 

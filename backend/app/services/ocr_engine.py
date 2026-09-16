@@ -264,9 +264,11 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
 
         # BE009001: POST /ocr は 202 Accepted を即時返します
         # 結果は GET /result/{job_id} でポーリングします
+        # BE009002: 大容量ドキュメント（92 ページなど 1.5〜2.5 時間）に対応するため、
+        # ポーリング継続時間を 3 時間、OCR 開始リクエストのタイムアウトを 60 秒に延長します
         poll_interval = float(os.environ.get("OCR_WORKER_POLL_INTERVAL", "1.0"))
-        max_retries = int(os.environ.get("OCR_WORKER_MAX_RESULT_RETRIES", "1800"))
-        post_timeout = float(os.environ.get("OCR_WORKER_POST_TIMEOUT", "10.0"))
+        max_retries = int(os.environ.get("OCR_WORKER_MAX_RESULT_RETRIES", "10800"))
+        post_timeout = float(os.environ.get("OCR_WORKER_POST_TIMEOUT", "60.0"))
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

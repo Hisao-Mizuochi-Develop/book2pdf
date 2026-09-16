@@ -37,6 +37,12 @@ services:
       # backend から ocr-worker の per-page 進捗をポーリングする間隔（秒）です
       - OCR_WORKER_POLL_INTERVAL=1.0
       # BE009001: 非同期 fire-and-forget フローに移行したため、長時間同期リクエストタイムアウトは不要です
+      # BE009002: OCR 開始リクエストのタイムアウト（秒）です
+      # 大容量ドキュメントで worker がビジー状態になりやすいため、60 秒に設定します
+      - OCR_WORKER_POST_TIMEOUT=60.0
+      # BE009002: GET /result/{job_id} の最大ポーリング試行回数です
+      # 1 秒間隔で 10800 回 = 最大 3 時間、92 ページ程度の大容量ドキュメントに対応します
+      - OCR_WORKER_MAX_RESULT_RETRIES=10800
       # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
       - LOG_LEVEL=DEBUG
       # ocr-worker の progress_reporter をテストでインポートできるように PYTHONPATH を設定します
