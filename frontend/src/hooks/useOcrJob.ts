@@ -119,15 +119,6 @@ export function useOcrJob(): UseOcrJobResult {
       setJobId(newJobId);
       setFiles(uploadedFiles);
       const overallStart = uploadTiming?.uploadStart ?? new Date().toISOString();
-      setLatestProgress({
-        job_id: newJobId,
-        status: "uploaded",
-        progress: 0,
-        current_page: 0,
-        total_pages: uploadedFiles.length,
-        message: "ZIP アップロードが完了しました",
-        timestamp: new Date().toISOString(),
-      });
       setProgressLog([`画像を ${uploadedFiles.length} 枚検出しました`]);
       setIsLoading(true);
       setTimingDebug({
@@ -258,6 +249,26 @@ export function useOcrJob(): UseOcrJobResult {
             event.status === "failed" ||
             event.status === "cancelled"
           ) {
+            // バックエンドが PDF 生成イベント（progress >= 0.75）を送信せずに
+            // 完了した場合、最終ページの end が未設定のままになることがあるため補完します。
+            if (next.ocrPages.length > 0) {
+              const lastIdx = next.ocrPages.length - 1;
+              if (next.ocrPages[lastIdx] && !next.ocrPages[lastIdx].end) {
+                next.ocrPages[lastIdx].end = nowIso;
+                const startTime = next.ocrPages[lastIdx].start ?? next.ocrTotal.start;
+                if (startTime) {
+                  next.ocrPages[lastIdx].elapsedMs =
+                    now.getTime() - new Date(startTime).getTime();
+                }
+              }
+            }
+            // 同様に、OCR 総時間の end も未設定であれば補完します。
+            if (next.ocrTotal.start && !next.ocrTotal.end) {
+              next.ocrTotal.end = nowIso;
+              next.ocrTotal.elapsedMs =
+                now.getTime() - new Date(next.ocrTotal.start).getTime();
+            }
+
             next.overall.end = nowIso;
             if (next.overall.start) {
               next.overall.elapsedMs =
@@ -333,18 +344,6 @@ export function useOcrJob(): UseOcrJobResult {
             cleanupProgress();
           },
         );
-
-        // OCR 処理開始直前に仮の進捗をセットし、パネルが表示されたまま遷移します
-        setLatestProgress((prev) => ({
-          ...prev,
-          job_id: newJobId,
-          status: "processing",
-          progress: 0.1,
-          current_page: 0,
-          total_pages: uploadedFiles.length,
-          message: "OCR 処理を開始しました",
-          timestamp: new Date().toISOString(),
-        }));
 
         await runOcr(newJobId);
       } catch (err) {
