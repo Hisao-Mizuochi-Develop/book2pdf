@@ -3,7 +3,7 @@
 本ファイルは、backend のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/16
 
 ---
 
@@ -31,6 +31,7 @@
 | [BE006](#be006) | プロキシ環境でも進捗通知を受け取る |
 | [BE007](#be007) | ブラウザからのクロスオリジン API アクセスを許可する |
 | [BE008](#be008) | PDF 生成時に異体字を正規字体に正規化する |
+| [BE009](#be009) | backend→ocr-worker 通信の非同期化と結果取得 |
 
 ---
 
@@ -633,3 +634,33 @@ PDF 生成時に異体字を正規字体に正規化する
 > - 2026-09-08: テストの異体字を `漢`(U+FA47) に変更。U+FA47 は NFKC で正しく「漢」(U+6F22) に正規化される（Python 標準ライブラリ動作を確認済み）
 > - 2026-09-08: `backend/tests/test_pdf.py` のコメント、variant_text、アサーション期待値を修正。backend 全体テスト 30/30 PASS
 >
+<a id="be009"></a>
+## ユースケースNo | 009
+
+ユースケース
+backend→ocr-worker 通信の非同期化と結果取得
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [BE009001](#be009001) backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する | 2026-09-16 | | 機能実装 |
+
+<a id="be009001"></a>
+### BE009001 backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する
+
+<div align="right"><a href="#be009">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `backend/docs/BE-ASYNC-OCR-DESIGN.md` を新規作成し、非同期化設計を Mermaid 図（sequenceDiagram, flowchart）付きで記載する
+> - `ocr-worker/app/main.py` に `GET /result/{job_id}` エンドポイントを追加し、OCR 完了後の `{text, output_dir}` を一時保持・返却する
+> - `ocr-worker/app/main.py` の `POST /ocr` を非同期（fire-and-forget）に変更し、即座に HTTP 202 Accepted を返す
+> - `backend/app/services/ocr_engine.py` を非同期呼び出し用に変更し、`POST /ocr` 呼び出し後に `GET /result/{job_id}` で結果を取得する
+> - `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` を非同期ポーリング＋結果取得方式に変更する
+> - `docker-compose.yml` から `OCR_WORKER_REQUEST_TIMEOUT` を削除する
+> - `backend/tests/` および `ocr-worker/tests/` に非同期化・結果取得に関するテストを追加する
+> - backend / ocr-worker のビルドテスト・単体テスト・動作確認を実施する
+>
+> 【実施結果】
+>
+

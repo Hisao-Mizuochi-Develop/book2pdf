@@ -13,6 +13,10 @@
 # Python 3.9 でも Python 3.10+ の型注釈記法を使えるようになります
 from __future__ import annotations
 
+# 非同期処理でスレッドプールを使うための標準ライブラリです
+# BE009001: 同期 OCR エンジンの run() を非同期ラッパーで呼び出すために使用します
+import asyncio
+
 # 環境変数を読み込むための標準ライブラリです
 # ocr-worker の URL を取得するために使用します
 import os
@@ -91,6 +95,27 @@ class BaseOcrEngine(ABC):
             OCR 処理結果
         """
         ...
+
+    async def run_async(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
+        """画像ファイルに対して非同期 OCR 処理を実行します。
+
+        BE009001: backend 側のバックグラウンドタスクから呼び出されます。
+        デフォルト実装では同期 run() をスレッドプールで実行します。
+
+        Args:
+            image_files: OCR 対象の画像ファイルパスのリスト
+            work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知に使用するジョブ ID（省略可）
+
+        Returns:
+            OCR 処理結果
+        """
+        return await asyncio.to_thread(self.run, image_files, work_dir, job_id)
 
 
 class RemoteNdloCrOcrEngine(BaseOcrEngine):
@@ -184,6 +209,103 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
             text=data.get("text", ""),
             output_dir=Path(data.get("output_dir", str(output_root))),
         )
+
+    async def run_async(
+        self,
+        image_files: list[str],
+        work_dir: Path,
+        job_id: str | None = None,
+    ) -> OcrResult:
+        """画像ファイルに対して非同期 OCR 処理を実行します。
+
+        BE009001: ocr-worker の POST /ocr を fire-and-forget で呼び出し、
+        GET /result/{job_id} をポーリングして結果を取得します。
+
+        Args:
+            image_files: OCR 対象の画像ファイルパスのリスト
+            work_dir: OCR 処理に使用する作業ディレクトリ
+            job_id: 進捗通知・結果取得に使用するジョブ ID
+
+        Returns:
+            OCR 処理結果
+
+        Raises:
+            TimeoutError: 規定回数のポーリングで結果が得られなかった場合
+        """
+        # ndlocr_cli の single 形式の入力ディレクトリを作成します
+        input_root = work_dir / "input"
+        img_dir = input_root / "img"
+        img_dir.mkdir(parents=True, exist_ok=True)
+
+        # すべての画像ファイルを入力ディレクトリにコピーします
+        for src_path in image_files:
+            src = Path(src_path)
+            dst = img_dir / src.name
+            copy2(src, dst)
+
+        # OCR の出力先ディレクトリを作成します
+        output_root = work_dir / "output"
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        # ocr-worker の /ocr エンドポイントに送信するリクエストボディです
+        request_body = {
+            "input_root": str(input_root),
+            "output_root": str(output_root),
+            "config_file": self.config_file,
+            "proc_range": "0..3",
+            "save_image": False,
+            "save_xml": True,
+            "dump": False,
+            "input_structure": "s",
+            "ruby_only": False,
+            # ocr-worker 側で進捗ファイルを更新するために job_id を渡します
+            "job_id": job_id,
+        }
+
+        # BE009001: POST /ocr は 202 Accepted を即時返します
+        # 結果は GET /result/{job_id} でポーリングします
+        poll_interval = float(os.environ.get("OCR_WORKER_POLL_INTERVAL", "1.0"))
+        max_retries = int(os.environ.get("OCR_WORKER_MAX_RESULT_RETRIES", "1800"))
+        post_timeout = float(os.environ.get("OCR_WORKER_POST_TIMEOUT", "10.0"))
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.worker_url}/ocr",
+                json=request_body,
+                timeout=post_timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            worker_job_id = data.get("job_id", job_id)
+
+            for attempt in range(max_retries):
+                await asyncio.sleep(poll_interval)
+                result_response = await client.get(
+                    f"{self.worker_url}/result/{worker_job_id}",
+                    timeout=post_timeout,
+                )
+
+                if result_response.status_code == 200:
+                    result_data = result_response.json()
+                    return OcrResult(
+                        text=result_data.get("text", ""),
+                        output_dir=Path(
+                            result_data.get("output_dir", str(output_root))
+                        ),
+                    )
+
+                if result_response.status_code == 500:
+                    return OcrResult(
+                        text="",
+                        output_dir=output_root,
+                        success=False,
+                    )
+
+                # 202 Accepted: まだ処理中
+                # 404 Not Found: 結果ストアの初期化前に問い合わせた可能性があるため
+                # ポーリングを継続します
+
+        raise TimeoutError("OCR 処理がタイムアウトしました")
 
 
 class NdloCrOcrEngine(BaseOcrEngine):

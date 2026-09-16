@@ -27,8 +27,15 @@ import zipfile
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
+# 型ヒントで自己型を参照するためのクラスです
+from typing import Self
+
 # テスト関数や fixture を書くためのライブラリです
 import pytest
+
+# FastAPI のテスト用 HTTP クライアントです
+# サーバーを起動せずに API をテストできます
+from fastapi.testclient import TestClient
 
 # テスト対象の FastAPI アプリケーションを読み込みます
 from app.main import app
@@ -38,10 +45,6 @@ from app.services import job_manager
 
 # モック OCR エンジンを読み込みます
 from app.services.ocr_engine import MockOcrEngine
-
-# FastAPI のテスト用 HTTP クライアントです
-# サーバーを起動せずに API をテストできます
-from fastapi.testclient import TestClient
 
 
 # FastAPI のテストクライアントを作成します
@@ -289,6 +292,7 @@ def test_run_ocr_writes_staged_progress(
 def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """RemoteNdloCrOcrEngine が ocr-worker に job_id を送信することを確認します。"""
     import httpx
+
     from app.services.ocr_engine import RemoteNdloCrOcrEngine
 
     captured_payload: dict | None = None
@@ -318,6 +322,127 @@ def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     assert captured_payload.get("job_id") == "test-job-id"
     # OW004001: enable_progress は ocr-worker 側のファイル書き込み制御に使われていたが、
     # inference.py 内で直接書き込むようになったため、リクエストボディからは削除された
+
+
+@pytest.mark.anyio
+async def test_ocr_engine_run_async_polls_result(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """BE009001: RemoteNdloCrOcrEngine.run_async が /ocr 後に /result をポーリングすることを確認します。"""
+    import httpx
+
+    from app.services.ocr_engine import OcrResult, RemoteNdloCrOcrEngine
+
+    call_log: list[tuple[str, str]] = []
+
+    class FakeAsyncClient:
+        """httpx.AsyncClient の非同期呼び出しを模倣します。"""
+
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args, **kwargs) -> None:
+            pass
+
+        async def post(self, url: str, **kwargs) -> httpx.Response:
+            call_log.append(("post", url))
+            return httpx.Response(
+                status_code=202,
+                json={"job_id": "async-job-1", "message": "started"},
+                request=httpx.Request("POST", url),
+            )
+
+        async def get(self, url: str, **kwargs) -> httpx.Response:
+            call_log.append(("get", url))
+            # 1 回目は processing、2 回目以降は completed を返します
+            if call_log.count(("get", url)) == 1:
+                return httpx.Response(
+                    status_code=202,
+                    json={"detail": "OCR 処理中です"},
+                    request=httpx.Request("GET", url),
+                )
+            return httpx.Response(
+                status_code=200,
+                json={"text": "async result", "output_dir": str(tmp_path)},
+                request=httpx.Request("GET", url),
+            )
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setenv("OCR_WORKER_POLL_INTERVAL", "0.0")
+
+    engine = RemoteNdloCrOcrEngine(worker_url="http://dummy:8001")
+    dummy_image = tmp_path / "test.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    result: OcrResult = await engine.run_async(
+        image_files=[str(dummy_image)],
+        work_dir=tmp_path,
+        job_id="backend-job-1",
+    )
+
+    # POST /ocr が 1 回、GET /result が複数回呼ばれます
+    assert ("post", "http://dummy:8001/ocr") in call_log
+    assert ("get", "http://dummy:8001/result/async-job-1") in call_log
+    assert result.success is True
+    assert result.text == "async result"
+    assert result.output_dir == tmp_path
+
+
+@pytest.mark.anyio
+async def test_ocr_engine_run_async_returns_failure_on_worker_error(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """BE009001: ocr-worker が 500 を返した場合、run_async は success=False を返します。"""
+    import httpx
+
+    from app.services.ocr_engine import OcrResult, RemoteNdloCrOcrEngine
+
+    class FakeAsyncClient:
+        """httpx.AsyncClient の非同期呼び出しを模倣します。"""
+
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args, **kwargs) -> None:
+            pass
+
+        async def post(self, url: str, **kwargs) -> httpx.Response:
+            return httpx.Response(
+                status_code=202,
+                json={"job_id": "async-job-2", "message": "started"},
+                request=httpx.Request("POST", url),
+            )
+
+        async def get(self, url: str, **kwargs) -> httpx.Response:
+            return httpx.Response(
+                status_code=500,
+                json={"detail": "OCR 処理に失敗しました"},
+                request=httpx.Request("GET", url),
+            )
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setenv("OCR_WORKER_POLL_INTERVAL", "0.0")
+
+    engine = RemoteNdloCrOcrEngine(worker_url="http://dummy:8001")
+    dummy_image = tmp_path / "test.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    result: OcrResult = await engine.run_async(
+        image_files=[str(dummy_image)],
+        work_dir=tmp_path,
+        job_id="backend-job-2",
+    )
+
+    assert result.success is False
+    assert result.text == ""
 
 
 

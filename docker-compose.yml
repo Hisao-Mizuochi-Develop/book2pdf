@@ -36,8 +36,7 @@ services:
       - OCR_WORKER_URL=http://ocr-worker:8001
       # backend から ocr-worker の per-page 進捗をポーリングする間隔（秒）です
       - OCR_WORKER_POLL_INTERVAL=1.0
-      # OCR 処理は数分〜数十分かかるため、backend から ocr-worker へのリクエストタイムアウトを長めに設定します
-      - OCR_WORKER_REQUEST_TIMEOUT=3600
+      # BE009001: 非同期 fire-and-forget フローに移行したため、長時間同期リクエストタイムアウトは不要です
       # 性能測定時に DEBUG ログを出力できるようにログレベルを設定します
       - LOG_LEVEL=DEBUG
       # ocr-worker の progress_reporter をテストでインポートできるように PYTHONPATH を設定します
