@@ -503,7 +503,7 @@ async def _run_ocr_background(request: OcrRequest, job_id: str) -> None:
                 progress=0.0,
                 current_page=0,
                 total_pages=total_pages,
-                message="OCR 処理を開始しました",
+                message=f"OCR 処理を開始しました（1/{total_pages}）",
             )
 
         # Hydra のグローバルインスタンスをクリアします
