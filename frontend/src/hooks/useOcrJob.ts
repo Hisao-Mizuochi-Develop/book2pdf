@@ -149,7 +149,7 @@ export function useOcrJob(): UseOcrJobResult {
         pdfGeneration: { start: null, end: null, elapsedMs: null },
         overall: { start: overallStart, end: null, elapsedMs: null },
       });
-      timingTrackerRef.current = { lastCurrentPage: -1 };
+      timingTrackerRef.current = { lastCurrentPage: 0 };
 
       // event.message から「処理中のページ番号（1-based）」を抽出します。
       // ocr-worker はページ処理開始前に current_page = page_idx - 1 を送信するため、
