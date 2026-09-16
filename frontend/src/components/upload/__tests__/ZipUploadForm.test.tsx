@@ -95,7 +95,15 @@ describe("ZipUploadForm", () => {
     await userEvent.click(screen.getByTestId("upload-button"));
 
     await waitFor(() => {
-      expect(onUploaded).toHaveBeenCalledWith("job-123", ["page_001.png", "page_002.png"]);
+      expect(onUploaded).toHaveBeenCalledWith(
+        "job-123",
+        ["page_001.png", "page_002.png"],
+        expect.objectContaining({
+          uploadStart: expect.any(String),
+          uploadEnd: expect.any(String),
+          elapsedMs: expect.any(Number),
+        }),
+      );
     });
     expect(screen.getByText("page_001.png")).toBeInTheDocument();
     expect(screen.getByText("page_002.png")).toBeInTheDocument();

@@ -4,8 +4,10 @@
 // ZIP アップロードから OCR 実行、PDF ダウンロードまでをブラウザ上で操作できます
 // 各機能は独立したコンポーネントに委譲し、本ファイルは統合のみを担当します
 
+import { DebugTimingPanel } from "@/components/debug/DebugTimingPanel";
 import { ProgressPanel } from "@/components/progress";
 import { ZipUploadForm } from "@/components/upload/ZipUploadForm";
+import { useDebugConfig } from "@/hooks/useDebugConfig";
 import { useOcrJob } from "@/hooks/useOcrJob";
 import { downloadPdf } from "@/lib/api";
 
@@ -14,11 +16,13 @@ export default function Home() {
     latestProgress,
     error,
     downloadableJobId,
-    isLoading,
     jobId,
+    timingDebug,
     handleUploaded,
     handleCancel,
+    reset,
   } = useOcrJob();
+  const { showDebugTimingPanel } = useDebugConfig();
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
@@ -40,9 +44,11 @@ export default function Home() {
         <ProgressPanel
           latest={latestProgress}
           error={error}
-          showCancel={isLoading && Boolean(jobId)}
+          showCancel={Boolean(jobId) && latestProgress?.status !== "completed" && latestProgress?.status !== "cancelled" && latestProgress?.status !== "failed"}
           onCancel={handleCancel}
         />
+
+        {showDebugTimingPanel && <DebugTimingPanel timing={timingDebug} />}
 
         {downloadableJobId && (
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
@@ -71,6 +77,9 @@ export default function Home() {
                     // File System Access API 非対応ブラウザでは従来のダウンロード方式にフォールバックします
                     await downloadPdf(downloadableJobId);
                   }
+
+                  // ダウンロード成功後は初期画面に戻します
+                  reset();
                 } catch (error) {
                   // ユーザーが保存ダイアログをキャンセルした場合は無視します
                   if (error instanceof DOMException && error.name === "AbortError") {

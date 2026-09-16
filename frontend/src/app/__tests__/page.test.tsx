@@ -8,6 +8,14 @@ import { downloadPdf } from "@/lib/api";
 vi.mock("@/hooks/useOcrJob");
 vi.mock("@/lib/api");
 
+const defaultTimingDebug = {
+  zipUpload: { start: null, end: null, elapsedMs: null },
+  ocrTotal: { start: null, end: null, elapsedMs: null },
+  ocrPages: [] as { pageIndex: number; fileName: string; start: string | null; end: string | null; elapsedMs: number | null }[],
+  pdfGeneration: { start: null, end: null, elapsedMs: null },
+  overall: { start: null, end: null, elapsedMs: null },
+};
+
 describe("Home page", () => {
   const mockHandleUploaded = vi.fn();
 
@@ -21,6 +29,7 @@ describe("Home page", () => {
       error: "",
       isLoading: false,
       downloadableJobId: null,
+      timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: vi.fn(),
       reset: vi.fn(),
@@ -29,7 +38,6 @@ describe("Home page", () => {
 
   it("ZIP アップロードフォームが表示される", () => {
     render(<Home />);
-
     expect(screen.getByText("book2pdf")).toBeInTheDocument();
     expect(screen.getByText("ZIP アップロード")).toBeInTheDocument();
     expect(screen.getByTestId("zip-file-input")).toBeInTheDocument();
@@ -50,13 +58,12 @@ describe("Home page", () => {
       error: "",
       isLoading: false,
       downloadableJobId: "job-123",
+      timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: vi.fn(),
       reset: vi.fn(),
     });
-
     render(<Home />);
-
     expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();
   });
@@ -70,13 +77,12 @@ describe("Home page", () => {
       error: "OCR 処理に失敗しました",
       isLoading: false,
       downloadableJobId: null,
+      timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: vi.fn(),
       reset: vi.fn(),
     });
-
     render(<Home />);
-
     const errorLine = screen.getByTestId("progress-error-line");
     expect(errorLine).toHaveTextContent("OCR 処理に失敗しました");
   });
@@ -86,7 +92,6 @@ describe("Home page", () => {
     const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
     vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
     vi.mocked(downloadPdf).mockResolvedValue(undefined);
-
     vi.mocked(useOcrJob).mockReturnValue({
       jobId: "job-123",
       files: [],
@@ -95,24 +100,17 @@ describe("Home page", () => {
       error: "",
       isLoading: false,
       downloadableJobId: "job-123",
+      timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: vi.fn(),
       reset: vi.fn(),
     });
-
     render(<Home />);
-
     await userEvent.click(screen.getByText("PDF をダウンロード"));
-
     expect(showSaveFilePickerMock).toHaveBeenCalledTimes(1);
     expect(showSaveFilePickerMock).toHaveBeenCalledWith({
       suggestedName: "job-123.pdf",
-      types: [
-        {
-          description: "PDF ファイル",
-          accept: { "application/pdf": [".pdf"] },
-        },
-      ],
+      types: [{ description: "PDF ファイル", accept: { "application/pdf": [".pdf"] } }],
     });
     expect(downloadPdf).toHaveBeenCalledWith("job-123", undefined, handle);
   });
@@ -134,17 +132,15 @@ describe("Home page", () => {
       error: "",
       isLoading: true,
       downloadableJobId: null,
+      timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: mockHandleCancel,
       reset: vi.fn(),
     });
-
     render(<Home />);
-
     const cancelButton = screen.getByTestId("cancel-button");
     expect(cancelButton).toBeInTheDocument();
     expect(cancelButton).toHaveTextContent("キャンセル");
-
     await userEvent.click(cancelButton);
     expect(mockHandleCancel).toHaveBeenCalledTimes(1);
   });

@@ -47,6 +47,10 @@ export function ZipUploadForm({ onUploaded }: ZipUploadFormProps) {
       setError(null);
       setStatus("creating");
 
+      // ZIP アップロードの計測開始時刻を記録します。
+      // ジョブ作成もアップロード処理の一部として計測します。
+      const uploadStart = new Date().toISOString();
+
       let jobId: string;
       try {
         jobId = await createJob();
@@ -73,9 +77,16 @@ export function ZipUploadForm({ onUploaded }: ZipUploadFormProps) {
         return;
       }
 
+      // アップロード（画像展開含む）が完了した時刻を記録します。
+      const uploadEnd = new Date().toISOString();
+
       setUploadedFiles(files);
       setStatus("uploaded");
-      onUploaded(jobId, files);
+      onUploaded(jobId, files, {
+        uploadStart,
+        uploadEnd,
+        elapsedMs: new Date(uploadEnd).getTime() - new Date(uploadStart).getTime(),
+      });
     },
     [file, onUploaded],
   );
