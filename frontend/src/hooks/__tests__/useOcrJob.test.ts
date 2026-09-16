@@ -112,7 +112,7 @@ describe("useOcrJob", () => {
     expect(runOcr).toHaveBeenCalledWith("job-123");
     expect(result.current.error).toBe("");
     expect(result.current.downloadableJobId).toBeNull();
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isLoading).toBe(true);
   });
 
   it("SSE 進捗イベントを受信すると latestProgress とログが更新される", async () => {

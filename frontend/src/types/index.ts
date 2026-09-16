@@ -107,8 +107,62 @@ export type ZipUploadStatus =
   | "uploaded"
   | "error";
 
+/** デバッグ表示エリアで使用する ZIP アップロード時間情報です。 */
+export interface UploadTimingInfo {
+  /** アップロード開始時刻（ISO 8601）です。 */
+  uploadStart: string;
+  /** アップロード完了時刻（ISO 8601）です。 */
+  uploadEnd: string;
+  /** 経過時間（ミリ秒）です。 */
+  elapsedMs: number;
+}
+
+/** デバッグ表示エリアで使用する位相タイミング情報です。 */
+export interface PhaseTiming {
+  /** 開始時刻（ISO 8601）。未開始時は null です。 */
+  start: string | null;
+  /** 完了時刻（ISO 8601）。未完了時は null です。 */
+  end: string | null;
+  /** 経過時間（ミリ秒）。未確定時は null です。 */
+  elapsedMs: number | null;
+}
+
+/** デバッグ表示エリアで使用する OCR ページ毎のタイミング情報です。 */
+export interface PageOcrTiming {
+  /** ページの 0-based インデックスです。 */
+  pageIndex: number;
+  /** 画像ファイル名です。 */
+  fileName: string;
+  /** OCR 開始時刻（ISO 8601）です。 */
+  start: string | null;
+  /** OCR 完了時刻（ISO 8601）です。 */
+  end: string | null;
+  /** OCR 処理にかかった時間（ミリ秒）です。 */
+  elapsedMs: number | null;
+}
+
+/** デバッグ表示エリアで表示するタイミング情報の集約型です。 */
+export interface TimingDebugInfo {
+  /** ZIP アップロード（画像展開含む）のタイミングです。 */
+  zipUpload: PhaseTiming;
+  /** 1 枚目画像 OCR 開始から最終画像 OCR 処理完了までの OCR 処理総時間です。 */
+  ocrTotal: PhaseTiming;
+  /** 各ページの OCR 処理タイミングです。 */
+  ocrPages: PageOcrTiming[];
+  /** PDF 生成のタイミングです。 */
+  pdfGeneration: PhaseTiming;
+  /** アップロード開始から PDF 生成完了までの全体タイミングです。 */
+  overall: PhaseTiming;
+}
+
+/** ランタイム設定ファイルの構造です。 */
+export interface DebugConfig {
+  /** デバッグ表示エリアを表示するかどうかです。 */
+  showDebugTimingPanel: boolean;
+}
+
 /** ZipUploadForm コンポーネントの props 型です。 */
 export interface ZipUploadFormProps {
   /** アップロード完了時に呼び出されるコールバックです。 */
-  onUploaded: (jobId: string, files: string[]) => void;
+  onUploaded: (jobId: string, files: string[], timing?: UploadTimingInfo) => void;
 }
