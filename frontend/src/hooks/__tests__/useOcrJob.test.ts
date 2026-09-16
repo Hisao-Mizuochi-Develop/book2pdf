@@ -85,7 +85,7 @@ describe("useOcrJob", () => {
   });
 
   it("handleUploaded がジョブ情報を設定し OCR を実行する", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "ocr result" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -110,7 +110,7 @@ describe("useOcrJob", () => {
   });
 
   it("SSE 進捗イベントを受信すると latestProgress とログが更新される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -145,7 +145,7 @@ describe("useOcrJob", () => {
   });
 
   it("completed SSE イベント受信後に downloadableJobId が設定される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -204,7 +204,7 @@ describe("useOcrJob", () => {
   });
 
   it("reset で状態が初期化される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -241,7 +241,7 @@ describe("useOcrJob", () => {
   });
 
   it("段階的な進捗イベント（0/3 → 1/3 → 2/3 → 3/3）がログに反映される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -299,7 +299,7 @@ describe("useOcrJob", () => {
   });
 
   it("handleCancel は進行中のジョブをキャンセルし状態を更新する", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
@@ -347,7 +347,7 @@ describe("useOcrJob", () => {
   });
 
   it("handleCancel が失敗した場合は error にメッセージを設定する", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockRejectedValueOnce(new Error("cancel failed"));
@@ -370,7 +370,7 @@ describe("useOcrJob", () => {
   });
 
   it("handleUploaded でアップロードタイミングを受け取ると zipUpload と overall が記録される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const uploadTiming = {
       uploadStart: "2026-09-15T10:00:00.000Z",
       uploadEnd: "2026-09-15T10:00:01.500Z",
@@ -401,7 +401,7 @@ describe("useOcrJob", () => {
   });
 
   it("OCR 進捗イベントでページ単位のタイミングが追跡される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const uploadTiming = {
       uploadStart: "2026-09-15T10:00:00.000Z",
       uploadEnd: "2026-09-15T10:00:01.000Z",
@@ -455,7 +455,7 @@ describe("useOcrJob", () => {
   });
 
   it("PDF 生成開始と完了が検出される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -496,7 +496,7 @@ describe("useOcrJob", () => {
   });
 
   it("reset でタイミング情報が初期化される", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const uploadTiming = {
       uploadStart: "2026-09-15T10:00:00.000Z",
       uploadEnd: "2026-09-15T10:00:01.000Z",
@@ -534,7 +534,7 @@ describe("useOcrJob", () => {
   });
 
   it("completed 後に processing イベントが来ると overall.end がクリアされる（FE002003 回帰修正）", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 
@@ -572,7 +572,7 @@ describe("useOcrJob", () => {
   });
 
   it("初回 processing イベントで ocrTotal.start と ocrPages[0].start が message から抽出される actualPage で設定される（FE002003 UAT バグ回帰修正）", async () => {
-    vi.mocked(runOcr).mockResolvedValueOnce({ text: "done" });
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
 

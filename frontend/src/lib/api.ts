@@ -76,18 +76,17 @@ export async function uploadZip(jobId: string, file: File): Promise<string[]> {
 }
 
 /**
- * 指定したジョブの OCR 処理を開始します
+ * 指定したジョブの OCR 処理を非同期で開始します。
+ * バックエンドは 202 Accepted を返し、OCR はバックグラウンドで実行されます。
  * @param jobId ジョブ ID
- * @returns OCR 結果
  */
-export async function runOcr(jobId: string): Promise<unknown> {
+export async function runOcr(jobId: string): Promise<void> {
   const response = await fetchWithTimeout(`${API_BASE_URL}/api/jobs/${jobId}/ocr`, {
     method: "POST",
   });
   if (!response.ok) {
     throw new Error(`OCR 実行に失敗しました: ${response.status} ${response.statusText}`);
   }
-  return response.json();
 }
 
 /**
