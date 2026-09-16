@@ -86,15 +86,12 @@ describe("api client", () => {
   });
 
   describe("runOcr", () => {
-    it("OCR 結果を返す", async () => {
-      const result = { pages: [{ text: "hello" }] };
+    it("202 Accepted で正常に解決する", async () => {
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        new Response(JSON.stringify(result), { status: 200 })
+        new Response(null, { status: 202 })
       );
 
-      const actual = await runOcr("job-123");
-
-      expect(actual).toEqual(result);
+      await expect(runOcr("job-123")).resolves.toBeUndefined();
       expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/job-123/ocr`, {
         method: "POST",
         signal: expect.any(AbortSignal),

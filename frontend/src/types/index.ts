@@ -42,7 +42,6 @@ export interface JobUploadResponse {
 export interface JobOcrResponse {
   job_id: string;
   status: JobStatus;
-  text?: string;
   message?: string;
 }
 
