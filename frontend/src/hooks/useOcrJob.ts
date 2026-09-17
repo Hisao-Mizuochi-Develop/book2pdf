@@ -145,9 +145,11 @@ export function useOcrJob(): UseOcrJobResult {
       // event.message から「処理中のページ番号（1-based）」を抽出します。
       // ocr-worker はページ処理開始前に current_page = page_idx - 1 を送信するため、
       // message から実際のページ番号を抽出して判定します。
+      // プロキシ/中継層やブラウザ表示で半角括弧に正規化される場合があるため、
+      // 全角括弧（）と半角括弧()の両方に対応します。
       const extractActualPage = (message?: string): number | null => {
         if (!message) return null;
-        const match = message.match(/（\s*(\d+)\s*\/\s*\d+\s*）/);
+        const match = message.match(/[（(]\s*(\d+)\s*\/\s*\d+\s*[）)]/);
         return match ? parseInt(match[1], 10) : null;
       };
 

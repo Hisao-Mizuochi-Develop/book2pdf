@@ -209,8 +209,9 @@ class OcrInferrer:
             self.total_time_statistics.append(elapsed_page)
             # DEBUG ログ: ルビ推定モードの 1 ページ処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了 (ruby_only): page={page_idx + 1}, elapsed={elapsed_page:.3f}s')
-            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します
-            self._update_progress(page_idx, total_pages, f'OCR処理中です（{page_idx + 1}/{total_pages}）')
+            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します。
+            # current_page は 1-based で統一し、frontend のフォールバックと整合します。
+            self._update_progress(page_idx + 1, total_pages, f'OCR処理中です（{page_idx + 1}/{total_pages}）')
 
             # save inferenced result text for this page
             sum_main_txt = ''
@@ -286,8 +287,9 @@ class OcrInferrer:
             print('######## START PAGE INFERENCE PROCESS ########')
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')
-            # FIX(OW004001): 各ページ処理開始時に進捗を通知します
-            self._update_progress(page_idx - 1, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
+            # FIX(OW004001): 各ページ処理開始時に進捗を通知します。
+            # current_page は 1-based で統一し、frontend のフォールバックと整合します。
+            self._update_progress(page_idx, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
 
 
             for proc in self.proc_list:

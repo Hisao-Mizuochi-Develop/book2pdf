@@ -454,6 +454,61 @@ describe("useOcrJob", () => {
     expect(secondPage.end).toBeNull();
   });
 
+  it("半角括弧を含む message からも actualPage を抽出してページ単位のタイミングが追跡される", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
+    const uploadTiming = {
+      uploadStart: "2026-09-15T10:00:00.000Z",
+      uploadEnd: "2026-09-15T10:00:01.000Z",
+      elapsedMs: 1000,
+    };
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded(
+        "job-123",
+        ["page_001.png", "page_002.png", "page_003.png"],
+        uploadTiming,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // プロキシ/中継層で半角括弧に正規化されるケースをシミュレートします
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.33,
+          current_page: 0,
+          total_pages: 3,
+          message: "OCR処理中です(1/3)",
+        }),
+      );
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.66,
+          current_page: 1,
+          total_pages: 3,
+          message: "OCR処理中です(2/3)",
+        }),
+      );
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.timingDebug.ocrPages).toHaveLength(3);
+    });
+
+    const firstPage = result.current.timingDebug.ocrPages[0];
+    expect(firstPage.start).not.toBeNull();
+    expect(firstPage.end).not.toBeNull();
+    expect(firstPage.elapsedMs).toBeGreaterThanOrEqual(0);
+
+    const secondPage = result.current.timingDebug.ocrPages[1];
+    expect(secondPage.start).not.toBeNull();
+    expect(secondPage.end).toBeNull();
+  });
+
   it("PDF 生成開始と完了が検出される", async () => {
     vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
