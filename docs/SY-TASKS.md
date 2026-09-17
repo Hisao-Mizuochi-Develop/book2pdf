@@ -1,6 +1,6 @@
 # System タスク管理表
 
-> 最終更新: 2026/09/15
+> 最終更新: 2026/09/17
 
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
@@ -218,6 +218,13 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-15: UAT 不具合発見：ZIP アップロード時に `__MACOSX/._*` などの macOS リソースフォークファイルが画像一覧に表示される。`backend/app/services/zip_extractor.py` で `__MACOSX` ディレクトリ配下を画像一覧から除外。`backend/tests/test_jobs.py` に `test_upload_zip_excludes_macosx_resource_forks` を追加
 > > - 2026-09-15: UAT フィードバック対応：`frontend/src/components/progress/ProgressPanel.tsx` の進捗ステップラベルから「中」を削除（「ZIPアップロード中」→「ZIPアップロード」、「OCR処理中」→「OCR処理」、「PDF生成中」→「PDF生成」）。影響テスト `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を更新
 > > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 42/42 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+> - 2026-09-17: UAT 不具合発見（debug タイミング表示）: `frontend/src/hooks/useOcrJob.ts` の `extractActualPage` が全角括弧 `（）` のみを解析していたため、プロキシ/ブラウザ正規化による半角括弧 `()` メッセージから actualPage を抽出できず、ページ単位タイミングが記録されなかった
+> - 2026-09-17: `extractActualPage` の正規表現を全角・半角括弧両方に対応させ、半角括弧ケースの単体テストを `frontend/src/hooks/__tests__/useOcrJob.test.ts` に追加
+> - 2026-09-17: UAT 不具合発見（current_page オフバイワン）: `ocr-worker/ndlocr_cli_patches/inference.py` の ruby_only パスが 0-based `current_page` を報告しており、frontend のフォールバックと整合しない
+> - 2026-09-17: `ocr-worker/ndlocr_cli_patches/inference.py` の通常パス・ルビ推定パス両方で `current_page` を 1-based (`page_idx + 1`) に統一
+> - 2026-09-17: UAT 不具合発見（進捗メッセージ消失）: `backend/app/routers/jobs.py` の `_merge_progress_data` が進捗値の大きい側の message を常に採用するため、backend が空メッセージで更新すると ocr-worker の per-page メッセージが上書きされ、タイミング抽出に必要なページ情報が失われる
+> - 2026-09-17: `_merge_progress_data` を修正し、進捗値が大きい側の message が空の場合はもう一方の非空メッセージにフォールバック。`backend/tests/test_progress.py` にマージロジックの単体テストを追加
+> - 2026-09-17: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
 > > - 2026-09-17: UAT 不具合発見：`ruby_only=True`（ルビ推定モード）時に per-page 進捗が通知されない。`ocr-worker/ndlocr_cli_patches/inference.py` の `_infer_ruby_only` に `_update_progress` 呼び出しを追加し、通常モード `_infer` と同じ進捗セマンティクスで通知するように修正
 > > - 2026-09-17: `ocr-worker/tests/test_main.py` に `test_run_ocr_with_ruby_only_returns_accepted_and_result` を追加し、`ruby_only=True` 時の進捗 completed 状態を検証
 > > - 2026-09-17: ocr-worker 全テスト 10/10 PASS
