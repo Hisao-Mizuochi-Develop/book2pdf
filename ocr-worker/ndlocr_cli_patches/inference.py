@@ -180,6 +180,7 @@ class OcrInferrer:
         # [key, value]: ['img', None], ['xml', xml_tree]
         pred_list = []
         pred_xml_dict_for_dump = {}
+        total_pages = len(single_outputdir_data['xml'].findall('PAGE'))
 
         for page_idx, page_xml in enumerate(single_outputdir_data['xml'].findall('PAGE')):
             single_image_file_data = self._get_single_image_file_data(page_idx, single_outputdir_data)
@@ -190,6 +191,8 @@ class OcrInferrer:
             print('######## START PAGE INFERENCE PROCESS ########')
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始 (ruby_only): page={page_idx + 1}')
+            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します
+            self._update_progress(page_idx + 1, total_pages, f'OCR処理中です（{page_idx + 1}/{total_pages}）')
 
             for proc in self.proc_list:
                 start_proc = time.time()
@@ -206,6 +209,8 @@ class OcrInferrer:
             self.total_time_statistics.append(elapsed_page)
             # DEBUG ログ: ルビ推定モードの 1 ページ処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了 (ruby_only): page={page_idx + 1}, elapsed={elapsed_page:.3f}s')
+            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します
+            self._update_progress(page_idx, total_pages, f'OCR処理中です（{page_idx + 1}/{total_pages}）')
 
             # save inferenced result text for this page
             sum_main_txt = ''

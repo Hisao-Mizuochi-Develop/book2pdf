@@ -218,4 +218,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-15: UAT 不具合発見：ZIP アップロード時に `__MACOSX/._*` などの macOS リソースフォークファイルが画像一覧に表示される。`backend/app/services/zip_extractor.py` で `__MACOSX` ディレクトリ配下を画像一覧から除外。`backend/tests/test_jobs.py` に `test_upload_zip_excludes_macosx_resource_forks` を追加
 > > - 2026-09-15: UAT フィードバック対応：`frontend/src/components/progress/ProgressPanel.tsx` の進捗ステップラベルから「中」を削除（「ZIPアップロード中」→「ZIPアップロード」、「OCR処理中」→「OCR処理」、「PDF生成中」→「PDF生成」）。影響テスト `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を更新
 > > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 42/42 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+> > - 2026-09-17: UAT 不具合発見：`ruby_only=True`（ルビ推定モード）時に per-page 進捗が通知されない。`ocr-worker/ndlocr_cli_patches/inference.py` の `_infer_ruby_only` に `_update_progress` 呼び出しを追加し、通常モード `_infer` と同じ進捗セマンティクスで通知するように修正
+> > - 2026-09-17: `ocr-worker/tests/test_main.py` に `test_run_ocr_with_ruby_only_returns_accepted_and_result` を追加し、`ruby_only=True` 時の進捗 completed 状態を検証
+> > - 2026-09-17: ocr-worker 全テスト 10/10 PASS
 >

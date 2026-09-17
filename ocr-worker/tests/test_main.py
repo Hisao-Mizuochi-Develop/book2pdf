@@ -206,6 +206,53 @@ def test_get_result_returns_processing(
     assert "処理中" in response.json()["detail"]
 
 
+def test_run_ocr_with_ruby_only_returns_accepted_and_result(
+    client: TestClient,
+    tmp_path: Any,
+) -> None:
+    """SY002003: ruby_only=True のジョブでも per-page 進捗が completed 状態で更新されることを確認します。"""
+    job_id = "job-ocr-ruby-only"
+
+    input_root = tmp_path / "input"
+    img_dir = input_root / "img"
+    img_dir.mkdir(parents=True)
+    (img_dir / "page.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    txt_dir = output_root / "txt"
+    txt_dir.mkdir()
+    (txt_dir / "page.txt").write_text("テスト認識結果", encoding="utf-8")
+
+    response = client.post(
+        "/ocr",
+        json={
+            "input_root": str(input_root),
+            "output_root": str(output_root),
+            "job_id": job_id,
+            "enable_progress": True,
+            "ruby_only": True,
+        },
+    )
+    assert response.status_code == 202
+    data = response.json()
+    assert data["job_id"] == job_id
+    assert "開始" in data["message"]
+
+    # バックグラウンドタスク完了後、GET /result は結果を返します
+    result_response = _poll_result(client, job_id, expected_status=200)
+    assert result_response.status_code == 200
+    result_data = result_response.json()
+    assert "テスト認識結果" in result_data["text"]
+    assert result_data["output_dir"] == str(output_root)
+
+    # 進捗が completed 状態で記録されていることを確認します
+    progress_response = client.get(f"/progress/{job_id}")
+    assert progress_response.status_code == 200
+    assert progress_response.json()["status"] == "completed"
+    assert progress_response.json()["progress"] == 1.0
+
+
 def test_get_result_returns_404_when_missing(client: TestClient) -> None:
     """BE009001: 存在しないジョブに対して GET /result/{job_id} は 404 を返します。"""
     response = client.get("/result/non-existent-job")
