@@ -838,6 +838,16 @@ async def _progress_event_generator(job_id: str):
                 )
 
                 # SSE 形式でイベントを yield します
+                # DEBUG(SY002003): frontend に送出する直前のマージ済みイベント内容をログに記録します
+                logger.info(
+                    "[SSE-EVENT] job_id=%s status=%s progress=%.2f current_page=%d total_pages=%d message=%r",
+                    job_id,
+                    data["status"],
+                    data.get("progress", 0.0),
+                    data.get("current_page", 0),
+                    data.get("total_pages", 0),
+                    data.get("message", ""),
+                )
                 event_text = f"data: {event.model_dump_json()}\n\n"
                 yield event_text
 

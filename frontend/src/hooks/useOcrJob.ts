@@ -174,6 +174,14 @@ export function useOcrJob(): UseOcrJobResult {
             // message から実際のページ番号を抽出してページ遷移を判定します。
             const actualPage = extractActualPage(event.message) ?? (event.current_page === 0 ? 1 : event.current_page);
             const lastPage = timingTrackerRef.current.lastCurrentPage;
+            // DEBUG(SY002003): ページ単位タイミング判定に使用する値をトレースします
+            console.log("[TIMING-DEBUG]", {
+              actualPage,
+              lastPage,
+              message: event.message,
+              currentPage: event.current_page,
+              progress: event.progress,
+            });
 
             if (next.ocrPages.length === 0 && event.total_pages > 0) {
               next.ocrPages = Array.from({ length: event.total_pages }, (_, i) => ({
@@ -289,6 +297,8 @@ export function useOcrJob(): UseOcrJobResult {
 
       // 進捗イベントの共通ハンドラです。SSE と polling の両方で使用します。
       const handleProgressMessage = (message: string) => {
+        // DEBUG(SY002003): backend から受信した生の進捗イベントをコンソールに出力します
+        console.log("[RAW-EVENT]", message);
         const event = parseProgressEvent(message);
         if (event) {
           setLatestProgress(event);
