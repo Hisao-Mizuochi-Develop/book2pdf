@@ -22,7 +22,7 @@ import json
 import pytest
 from app.main import app
 from app.routers import jobs as jobs_router
-from app.routers.jobs import _progress_event_generator
+from app.routers.jobs import _merge_progress_data, _progress_event_generator
 from app.services import job_manager
 from fastapi.testclient import TestClient
 
@@ -370,3 +370,36 @@ async def test_stream_job_events_heartbeat(monkeypatch) -> None:
         assert any(": keepalive" in e for e in events)
     finally:
         job_manager.delete_progress(job_id)
+
+
+def test_merge_progress_data_prefers_nonempty_message_when_higher_progress_is_empty() -> None:
+    """SY002003: 進捗値が大きい側の message が空文字でも、もう一方の非空メッセージを保持します。"""
+    backend = {"progress": 0.9, "message": ""}
+    worker = {"progress": 0.3, "message": "OCR処理中です（2/3）"}
+
+    merged = _merge_progress_data(backend, worker)
+
+    assert merged["progress"] == 0.9
+    assert merged["message"] == "OCR処理中です（2/3）"
+
+
+def test_merge_progress_data_prefers_higher_progress_message_when_nonempty() -> None:
+    """進捗値が大きい側の message が非空の場合はそちらを優先します。"""
+    backend = {"progress": 0.9, "message": "PDFファイル生成中です"}
+    worker = {"progress": 0.3, "message": "OCR処理中です（2/3）"}
+
+    merged = _merge_progress_data(backend, worker)
+
+    assert merged["progress"] == 0.9
+    assert merged["message"] == "PDFファイル生成中です"
+
+
+def test_merge_progress_data_worker_higher_progress_empty_message_fallback() -> None:
+    """ocr-worker の進捗が大きいが message が空の場合、backend の非空メッセージにフォールバックします。"""
+    backend = {"progress": 0.3, "message": "OCR処理を開始しました"}
+    worker = {"progress": 0.6, "message": ""}
+
+    merged = _merge_progress_data(backend, worker)
+
+    assert merged["progress"] == 0.6
+    assert merged["message"] == "OCR処理を開始しました"
