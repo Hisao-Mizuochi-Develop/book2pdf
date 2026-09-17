@@ -39,7 +39,8 @@ services:
       # BE009001: 非同期 fire-and-forget フローに移行したため、長時間同期リクエストタイムアウトは不要です
       # BE009002: OCR 開始リクエストのタイムアウト（秒）です
       # 大容量ドキュメントで worker がビジー状態になりやすいため、60 秒に設定します
-      - OCR_WORKER_POST_TIMEOUT=60.0
+      # UAT 検証時: x86_64 エミュレーション上での初回モデル読み込みに時間を要するため一時的に 300 秒に引き上げ
+      - OCR_WORKER_POST_TIMEOUT=300.0
       # BE009002: GET /result/{job_id} の最大ポーリング試行回数です
       # 1 秒間隔で 10800 回 = 最大 3 時間、92 ページ程度の大容量ドキュメントに対応します
       - OCR_WORKER_MAX_RESULT_RETRIES=10800

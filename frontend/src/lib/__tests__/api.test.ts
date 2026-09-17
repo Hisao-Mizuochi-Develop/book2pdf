@@ -266,8 +266,14 @@ describe("api client", () => {
       const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
       vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
 
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけをテストコンテキストの Blob に差し替えます。
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      const response = new Response(blob, { status: 200 });
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      (response as any).blob = vi.fn().mockResolvedValue(blob);
       // jsdom 以外の環境では response.body が存在するため、Blob 書き込みパスを検証するために null にします
       Object.defineProperty(response, "body", { value: null });
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
@@ -309,8 +315,14 @@ describe("api client", () => {
       );
       vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
 
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけをテストコンテキストの Blob に差し替えます。
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      const response = new Response(blob, { status: 200 });
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      (response as any).blob = vi.fn().mockResolvedValue(blob);
       // pipeTo は実際の WritableStream を要求するため、body を null にして
       // writable.write フォールバックパスを検証します。
       Object.defineProperty(response, "body", { value: null });
@@ -347,9 +359,14 @@ describe("api client", () => {
       const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        new Response(blob, { status: 200 })
-      );
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけを元の Blob に差し替えます。
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      (response as any).blob = vi.fn().mockResolvedValue(blob);
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
 
       await downloadPdf("job-123", "result.pdf");
 
