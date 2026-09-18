@@ -106,6 +106,8 @@ services:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
       # フロントエンドから backend へ進捗をポーリングする間隔（ミリ秒）です
       - NEXT_PUBLIC_POLL_INTERVAL_MS=1000
+      # SY002003: frontend-backend 通信内容のコンソールデバッグ出力を有効にします
+      - NEXT_PUBLIC_DEBUG_API=true
     depends_on:
       # backend コンテナの起動を待ちます
       - backend

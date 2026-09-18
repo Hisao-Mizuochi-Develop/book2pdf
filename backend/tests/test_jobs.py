@@ -11,6 +11,9 @@ from __future__ import annotations
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
+# JSON のシリアライズに使用します
+import json
+
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
@@ -297,6 +300,7 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     async def fake_get(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = json.dumps(fake_progress)
             def json(self):
                 return fake_progress
         return FakeResponse()
@@ -351,6 +355,7 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
     async def fake_get(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = json.dumps(fake_progress)
             def json(self):
                 return fake_progress
         return FakeResponse()
@@ -436,11 +441,14 @@ def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:
     async def fake_post(self, url, **kwargs):
         captured_calls.append(url)
 
+        cancel_response = {"message": "ok", "job_id": job_id}
+
         class FakeResponse:
             status_code = 200
+            text = json.dumps(cancel_response)
 
             def json(self):
-                return {"message": "ok", "job_id": job_id}
+                return cancel_response
 
         return FakeResponse()
 
@@ -472,6 +480,7 @@ def test_cancel_job_not_found(client: TestClient, monkeypatch) -> None:
     async def fake_post(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = "{}"
         return FakeResponse()
 
     monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
@@ -496,6 +505,7 @@ def test_cancel_job_terminal_state(client: TestClient, monkeypatch) -> None:
         async def fake_post(self, url, **kwargs):
             class FakeResponse:
                 status_code = 200
+                text = "{}"
             return FakeResponse()
 
         monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
@@ -517,6 +527,7 @@ def test_cancel_job_pending(client: TestClient, monkeypatch) -> None:
     async def fake_post(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = "{}"
         return FakeResponse()
 
     monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)

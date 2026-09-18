@@ -91,9 +91,11 @@ def create_job() -> JobCreateResponse:
     このエンドポイントは ZIP アップロードの前に呼ばれる想定です。
     ジョブ ID を発行し、メモリ内で初期状態（pending）を保持します。
     """
+    logger.info("[API-IN] POST /api/jobs/")
     # 新しいジョブを作成してその ID を取得します
     job_id = job_manager.create_job()
 
+    logger.info("[API-OUT] POST /api/jobs/ job_id=%s status=%s", job_id, JobStatus.PENDING.value)
     # レスポンスモデルに合わせて返却します
     # 初期状態は PENDING（処理待ち）です
     return JobCreateResponse(job_id=job_id, status=JobStatus.PENDING)
@@ -117,6 +119,7 @@ async def get_job(job_id: str) -> JobResponse:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] GET /api/jobs/%s", job_id)
     # ジョブ管理サービスからジョブ情報を取得します
     job = job_manager.get_job(job_id)
 
@@ -133,9 +136,17 @@ async def get_job(job_id: str) -> JobResponse:
 
     # ocr-worker から per-page 進捗を取得してマージします
     progress_data: dict = {}
+    progress_url = f"{ocr_worker_url}/progress/{job_id}"
     try:
         async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
-            response = await client.get(f"{ocr_worker_url}/progress/{job_id}")
+            logger.info("[OCR-WORKER-REQ] GET %s", progress_url)
+            response = await client.get(progress_url)
+            logger.info(
+                "[OCR-WORKER-RES] GET %s status=%d body=%r",
+                progress_url,
+                response.status_code,
+                response.text[:500],
+            )
             if response.status_code == 200:
                 progress_data = response.json()
     except (httpx.HTTPError, ValueError):
@@ -180,6 +191,7 @@ async def cancel_job(job_id: str) -> dict[str, str]:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] DELETE /api/jobs/%s", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -222,9 +234,17 @@ async def cancel_job(job_id: str) -> dict[str, str]:
         if settings.ocr_worker_url
         else "http://ocr-worker:8001"
     )
+    cancel_url = f"{ocr_worker_url}/cancel/{job_id}"
     try:
         async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
-            response = await client.post(f"{ocr_worker_url}/cancel/{job_id}")
+            logger.info("[OCR-WORKER-REQ] POST %s", cancel_url)
+            response = await client.post(cancel_url)
+            logger.info(
+                "[OCR-WORKER-RES] POST %s status=%d body=%r",
+                cancel_url,
+                response.status_code,
+                response.text[:200],
+            )
             if response.status_code != 200:
                 logger.warning(
                     "ocr-worker へのキャンセル伝播が失敗しました: job_id=%s, status=%d",
@@ -284,6 +304,7 @@ async def upload_zip(job_id: str, file: UploadFile) -> JobUploadResponse:
     Raises:
         HTTPException: ジョブが存在しない場合や ZIP 展開に失敗した場合
     """
+    logger.info("[API-IN] POST /api/jobs/%s/upload filename=%s size=%s", job_id, file.filename, file.size)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -337,6 +358,7 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     Raises:
         HTTPException: ジョブが存在しない場合や画像が未アップロードの場合
     """
+    logger.info("[API-IN] POST /api/jobs/%s/ocr", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -681,6 +703,7 @@ async def download_pdf(job_id: str) -> FileResponse:
     Raises:
         HTTPException: ジョブが存在しない、未完了、または PDF が未生成の場合
     """
+    logger.info("[API-IN] GET /api/jobs/%s/pdf", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -781,13 +804,14 @@ async def _progress_event_generator(job_id: str):
             # 2. ocr-worker の per-page 進捗を HTTP GET でポーリングします
             worker_data: dict | None = None
             try:
+                poll_url = f"{ocr_worker_url}/progress/{job_id}"
+                logger.info("[OCR-WORKER-REQ] GET %s", poll_url)
+                response = await client.get(poll_url)
                 logger.info(
-                    "[WORKER-POLL] GET %s/progress/%s",
-                    ocr_worker_url,
-                    job_id,
-                )
-                response = await client.get(
-                    f"{ocr_worker_url}/progress/{job_id}"
+                    "[OCR-WORKER-RES] GET %s status=%d body=%r",
+                    poll_url,
+                    response.status_code,
+                    response.text[:500],
                 )
                 if response.status_code == 200:
                     worker_data = response.json()
@@ -913,6 +937,7 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] GET /api/jobs/%s/events (SSE)", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:

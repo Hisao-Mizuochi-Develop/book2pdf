@@ -236,4 +236,6 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-18: `backend/app/routers/jobs.py` の ocr-worker 進捗ポーリングに `[WORKER-POLL]` / `[WORKER-RESPONSE]` 通信ログを追加
 > > - 2026-09-18: frontend の一時デバッグログ（`[RAW-EVENT]` / `[PARSED-EVENT]` / `[TIMING-BEFORE]` / `[TIMING-AFTER]` / `[TIMING-STATE]` / `[TIMING-DEBUG]`）を削除
 > > - 2026-09-18: **Phase 3 検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。UAT 実施およびタスク完了承認を待つ
+> > - 2026-09-18: コンソールへの通信内容デバッグ出力を実装。`frontend/src/lib/api.ts` の HTTP/SSE 通信に `[API-DEBUG]` / `[SSE-DEBUG]` ログを追加（`NEXT_PUBLIC_DEBUG_API` 環境変数で HTTP 詳細ログを制御、SSE イベントは常時出力）。`backend/app/routers/jobs.py` の frontend 受信エンドポイントに `[API-IN]` / `[API-OUT]` ログを追加。`backend/app/services/ocr_engine.py` / `backend/app/routers/jobs.py` の ocr-worker 通信に `[OCR-WORKER-REQ]` / `[OCR-WORKER-RES]` ログを追加
+> > - 2026-09-18: テスト用 `FakeResponse` に `text` 属性を追加し、backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS を維持
 >

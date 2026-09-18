@@ -123,6 +123,7 @@ async def test_stream_job_events_merged(monkeypatch) -> None:
         def __init__(self, status_code, json_data):
             self.status_code = status_code
             self._json = json_data
+            self.text = json.dumps(json_data) if json_data is not None else ""
 
         def json(self):
             return self._json
@@ -184,6 +185,7 @@ async def test_stream_job_events_worker_404(monkeypatch) -> None:
         def __init__(self, status_code, json_data=None):
             self.status_code = status_code
             self._json = json_data
+            self.text = json.dumps(json_data) if json_data is not None else ""
 
         def json(self):
             return self._json
@@ -353,6 +355,7 @@ async def test_stream_job_events_heartbeat(monkeypatch) -> None:
     async def fake_404(self, url, **kwargs):
         class FakeResponse:
             status_code = 404
+            text = ""
         return FakeResponse()
 
     monkeypatch.setattr(jobs_router.httpx.AsyncClient, "get", fake_404)
