@@ -322,11 +322,12 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     assert data["message"] == "OCR処理中です（2/2）"
 
 
-def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkeypatch) -> None:
-    """backend のフェーズ進捗が ocr-worker より進んでいる場合は backend を優先します。
+def test_get_job_prefers_backend_progress_and_preserves_worker_per_page_message(client: TestClient, monkeypatch) -> None:
+    """backend のフェーズ進捗が ocr-worker より進んでも per-page メッセージは保持します。
 
-    SY002003: PDF 生成中/完了時は backend が管理する progress/message を表示するため、
-    ocr-worker の per-page 進捗（0.6 など）より backend の値（0.75 / 1.0）を優先します。
+    SY002003: PDF 生成中/完了時は backend の progress を優先しますが、
+    ocr-worker の per-page メッセージ（ページ番号を含む (N/M) 形式）は
+    frontend のページタイミング計測のために保持します。
     """
     from app.routers import jobs as jobs_router
     from app.services import job_manager
@@ -375,9 +376,10 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
     response = client.get(f"/api/jobs/{job_id}")
     assert response.status_code == 200
     data = response.json()
-    # backend の進捗の方が大きいので backend の message を優先
+    # backend の進捗の方が大きいので progress は backend を優先
     assert data["progress"] == pytest.approx(0.75, abs=0.01)
-    assert data["message"] == "PDFファイル生成中です"
+    # SY002003: ocr-worker の per-page メッセージは backend の進捗より優先して保持
+    assert data["message"] == "OCR処理中です（2/2）"
     # current_page / total_pages は ocr-worker 優先
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
@@ -396,7 +398,8 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
     assert response.status_code == 200
     data = response.json()
     assert data["progress"] == pytest.approx(1.0, abs=0.01)
-    assert data["message"] == "PDFファイル生成が完了しました"
+    # SY002003: 完了時も ocr-worker の per-page メッセージを保持
+    assert data["message"] == "OCR処理中です（2/2）"
 
 
 def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:

@@ -48,7 +48,7 @@ def write_progress(
         "current_page": current_page,
         "total_pages": total_pages,
         "message": message,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     }
 
 

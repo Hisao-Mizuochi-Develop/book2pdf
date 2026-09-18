@@ -238,4 +238,11 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-18: **Phase 3 検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。UAT 実施およびタスク完了承認を待つ
 > > - 2026-09-18: コンソールへの通信内容デバッグ出力を実装。`frontend/src/lib/api.ts` の HTTP/SSE 通信に `[API-DEBUG]` / `[SSE-DEBUG]` ログを追加（`NEXT_PUBLIC_DEBUG_API` 環境変数で HTTP 詳細ログを制御、SSE イベントは常時出力）。`backend/app/routers/jobs.py` の frontend 受信エンドポイントに `[API-IN]` / `[API-OUT]` ログを追加。`backend/app/services/ocr_engine.py` / `backend/app/routers/jobs.py` の ocr-worker 通信に `[OCR-WORKER-REQ]` / `[OCR-WORKER-RES]` ログを追加
 > > - 2026-09-18: テスト用 `FakeResponse` に `text` 属性を追加し、backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS を維持
+> > - 2026-09-18: UAT 不具合発見（OCR 処理時間（ページ毎）の開始・経過が空欄）: `backend/app/routers/jobs.py` の `_merge_progress_data` が progress の大きい backend のメッセージを常に採用するため、ocr-worker の per-page メッセージ `(N/M)` が上書きされ、frontend でのページ遷移検出に必要な情報が失われていた
+> > - 2026-09-18: `_merge_progress_data` の message 選択を `_select_merged_message()` に分離。ocr-worker の per-page メッセージ `(N/M)` / `（N/M）` は常に優先し、それ以外は progress の大きい側の message を採用するように変更
+> > - 2026-09-18: `frontend/src/hooks/useOcrJob.ts` の `updateTimingDebug` に一時的な `[TIMING-DEBUG]` ログを追加し、entry / page check / page transition / PDF generation detected / terminal state の遷移をブラウザコンソールで確認できるようにする
+> > - 2026-09-18: `backend/app/services/job_manager.py` の `_now_iso()` を秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一し、ocr-worker/frontend と同じ形式にする
+> > - 2026-09-18: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` と `ocr-worker/app/main.py` のタイムスタンプ生成を秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一
+> > - 2026-09-18: backend テスト `test_get_job_prefers_backend_progress_when_larger` / `test_merge_progress_data_prefers_higher_progress_message_when_nonempty` を新しい message マージルールに合わせて更新
+> > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。Docker コンテナリビルド・UAT 実施を待つ
 >

@@ -22,8 +22,12 @@ from datetime import datetime, timezone
 
 
 def _now_iso() -> str:
-    """frontend と一致する ISO 8601 UTC タイムスタンプを返します。"""
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    """frontend/ocr-worker と一致する ISO 8601 UTC タイムスタンプを返します。
+
+    SY002003: 秒までの統一フォーマットとし、ミリ秒・タイムゾーン表記の混在を防ぎます。
+    例: 2026-09-18T12:34:56Z
+    """
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです

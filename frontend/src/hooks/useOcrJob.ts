@@ -161,6 +161,18 @@ export function useOcrJob(): UseOcrJobResult {
         setTimingDebug((prev) => {
           const next: TimingDebugInfo = JSON.parse(JSON.stringify(prev));
 
+          // SY002003 UAT バグ対応: タイミング追跡の内部状態をデバッグ出力します
+          // eslint-disable-next-line no-console
+          console.log("[TIMING-DEBUG] entry", {
+            status: event.status,
+            progress: event.progress,
+            current_page: event.current_page,
+            total_pages: event.total_pages,
+            message: event.message,
+            timestamp: event.timestamp,
+            ocrPagesLength: next.ocrPages.length,
+          });
+
           // processing イベントのたびに overall の終了時刻をリセットします。
           // これにより、重複イベントやポーリング遅延による stale な overall.end を防ぎます。
           if (event.status === "processing") {
@@ -193,6 +205,8 @@ export function useOcrJob(): UseOcrJobResult {
             // actualPage >= 1 の場合：actualPage は message から抽出した「現在処理中のページ番号（1-based）」
             // message にページ番号が含まれない場合は current_page をフォールバックとして使用します。
             // 例：actualPage=1 → 1ページ目処理中 → 0-based index 0 が開始
+            // eslint-disable-next-line no-console
+            console.log("[TIMING-DEBUG] page check", { actualPage, lastPage, shouldTransition: actualPage >= 1 && actualPage > lastPage });
             if (actualPage >= 1 && actualPage > lastPage) {
               const newPageIdx = actualPage - 1; // 0-based
               const completedIdx = actualPage - 2; // 前ページの 0-based index
@@ -216,6 +230,20 @@ export function useOcrJob(): UseOcrJobResult {
                 next.ocrPages[newPageIdx].start = event.timestamp || nowIso;
               }
 
+              // SY002003 UAT バグ対応: ページ遷移後の ocrPages 状態をデバッグ出力します
+              // eslint-disable-next-line no-console
+              console.log("[TIMING-DEBUG] page transition", {
+                actualPage,
+                newPageIdx,
+                completedIdx,
+                lastCurrentPageAfter: actualPage,
+                ocrPages: next.ocrPages.map((p) => ({
+                  pageIndex: p.pageIndex,
+                  start: p.start,
+                  end: p.end,
+                })),
+              });
+
               timingTrackerRef.current.lastCurrentPage = actualPage;
             }
           }
@@ -226,6 +254,15 @@ export function useOcrJob(): UseOcrJobResult {
             event.status === "processing" &&
             !next.pdfGeneration.start
           ) {
+            // eslint-disable-next-line no-console
+            console.log("[TIMING-DEBUG] PDF generation detected", {
+              progress: event.progress,
+              ocrPages: next.ocrPages.map((p) => ({
+                pageIndex: p.pageIndex,
+                start: p.start,
+                end: p.end,
+              })),
+            });
             next.pdfGeneration.start = nowIso;
             // 最終ページの OCR 完了が未確定の場合は、ここで確定します。
             const lastIdx = next.ocrPages.length - 1;
@@ -251,6 +288,15 @@ export function useOcrJob(): UseOcrJobResult {
             event.status === "failed" ||
             event.status === "cancelled"
           ) {
+            // eslint-disable-next-line no-console
+            console.log("[TIMING-DEBUG] terminal state", {
+              status: event.status,
+              ocrPages: next.ocrPages.map((p) => ({
+                pageIndex: p.pageIndex,
+                start: p.start,
+                end: p.end,
+              })),
+            });
             // バックエンドが PDF 生成イベント（progress >= 0.75）を送信せずに
             // 完了した場合、最終ページの end が未設定のままになることがあるため補完します。
             if (next.ocrPages.length > 0) {

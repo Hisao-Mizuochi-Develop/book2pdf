@@ -16,6 +16,10 @@ import asyncio
 # 環境変数 LOG_LEVEL で出力レベルを切り替えます
 import logging
 
+# ocr-worker の per-page メッセージを検出するための正規表現です
+# SY002003: backend の progress が大きい場合でも per-page メッセージを保持するために使用します
+import re
+
 # 環境変数を読み込むための標準ライブラリです
 # ポーリング間隔をテスト時に変更するために使用します
 import os
@@ -82,6 +86,30 @@ router = APIRouter(tags=["jobs"])
 # 本モジュール用のロガーを取得します
 # ログレベルは app.main で一括設定されます
 logger = logging.getLogger(__name__)
+
+# ocr-worker の per-page 進捗メッセージを検出する正規表現です。
+# 全角括弧（）と半角括弧()の両方に対応します。
+_PER_PAGE_MESSAGE_PATTERN = re.compile(r"[（(]\s*\d+\s*\/\s*\d+\s*[）)]")
+
+
+def _select_merged_message(
+    backend_message: str,
+    worker_message: str,
+    backend_progress: float,
+    worker_progress: float,
+) -> str:
+    """backend と ocr-worker の message をマージします。
+
+    SY002003:
+    - ocr-worker の per-page メッセージ（ページ番号を含む (N/M) 形式）は常に優先します。
+      これにより backend の progress が大きくなっても、frontend でページ遷移を検出できます。
+    - per-page メッセージでない場合は従来どおり、進捗値が大きい側の message を優先します。
+    """
+    if worker_message and _PER_PAGE_MESSAGE_PATTERN.search(worker_message):
+        return worker_message
+    if backend_progress >= worker_progress:
+        return backend_message or worker_message or ""
+    return worker_message or backend_message or ""
 
 
 @router.post("/", response_model=JobCreateResponse)
@@ -671,12 +699,19 @@ def _merge_progress_data(
     backend_progress = backend_data.get("progress", 0.0)
     if backend_progress >= worker_progress:
         progress = backend_progress
-        # 進捗値が大きい側の message を優先しますが、空文字の場合は
-        # もう一方の意味のあるメッセージを保持します (FE002003/SY002003 UAT バグ対応)。
-        message = backend_data.get("message", "") or worker_data.get("message", "")
     else:
         progress = worker_progress
-        message = worker_data.get("message", "") or backend_data.get("message", "")
+
+    # SY002003: backend の progress が大きくなっても、ocr-worker の per-page
+    # メッセージ（ページ番号を含む (N/M) 形式）を優先して保持します。
+    # backend は PDF 生成関連のメッセージのみを生成するため、
+    # per-page メッセージがない場合は backend のメッセージにフォールバックします。
+    message = _select_merged_message(
+        backend_data.get("message", ""),
+        worker_data.get("message", ""),
+        backend_progress,
+        worker_progress,
+    )
     current_page = worker_data.get("current_page", backend_data.get("current_page", 0))
     total_pages = worker_data.get("total_pages", backend_data.get("total_pages", 0))
 

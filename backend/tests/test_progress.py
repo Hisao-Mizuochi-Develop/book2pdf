@@ -386,15 +386,15 @@ def test_merge_progress_data_prefers_nonempty_message_when_higher_progress_is_em
     assert merged["message"] == "OCR処理中です（2/3）"
 
 
-def test_merge_progress_data_prefers_higher_progress_message_when_nonempty() -> None:
-    """進捗値が大きい側の message が非空の場合はそちらを優先します。"""
+def test_merge_progress_data_prefers_worker_per_page_message_over_backend() -> None:
+    """SY002003: backend の進捗が大きくても ocr-worker の per-page メッセージを優先します。"""
     backend = {"progress": 0.9, "message": "PDFファイル生成中です"}
     worker = {"progress": 0.3, "message": "OCR処理中です（2/3）"}
 
     merged = _merge_progress_data(backend, worker)
 
     assert merged["progress"] == 0.9
-    assert merged["message"] == "PDFファイル生成中です"
+    assert merged["message"] == "OCR処理中です（2/3）"
 
 
 def test_merge_progress_data_worker_higher_progress_empty_message_fallback() -> None:
