@@ -231,4 +231,9 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-18: `ruby_only=True` UAT 実施（job_id `ruby-uat-003`）。backend は現在 `ruby_only=False` をハードコードしているため、ocr-worker `/ocr` エンドポイントに直接 `ruby_only=True`、`input_structure='s'`、`enable_progress=True` を指定してリクエスト。per-page 進捗（`current_page=1`、`total_pages=1`、`status=completed`）およびページ処理時間の DEBUG ログ出力を確認
 > > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS（`NODE_ENV=production`）。タスク完了承認を待つ
 > > - 2026-09-18: UAT 不具合発見：`OCR 処理時間（ページ毎）` でページ 1, 2 の開始・完了時刻が記録されず、ページ 3 のみ完了時刻が記録される。Docker Desktop から全コンテナを削除・リビルドし、Safari のキャッシュをクリアしても再現するため、frontend/backend のイベントフローをトレースする一時的なデバッグログを追加
+> > - 2026-09-18: `frontend/src/hooks/useOcrJob.ts` の `reset()` / `handleUploaded()` 内の `setTimingDebug` をアップデータ関数形式 `(() => ({...}))` に統一し、React 18 Automatic Batching による state 上書きを防止
+> > - 2026-09-18: `backend/app/services/job_manager.py` に `_now_iso()` を導入し、backend の UTC タイムスタンプを frontend/ocr-worker と同じミリ秒 `Z` 形式に正規化
+> > - 2026-09-18: `backend/app/routers/jobs.py` の ocr-worker 進捗ポーリングに `[WORKER-POLL]` / `[WORKER-RESPONSE]` 通信ログを追加
+> > - 2026-09-18: frontend の一時デバッグログ（`[RAW-EVENT]` / `[PARSED-EVENT]` / `[TIMING-BEFORE]` / `[TIMING-AFTER]` / `[TIMING-STATE]` / `[TIMING-DEBUG]`）を削除
+> > - 2026-09-18: **Phase 3 検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。UAT 実施およびタスク完了承認を待つ
 >

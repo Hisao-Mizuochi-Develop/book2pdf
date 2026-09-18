@@ -781,11 +781,24 @@ async def _progress_event_generator(job_id: str):
             # 2. ocr-worker の per-page 進捗を HTTP GET でポーリングします
             worker_data: dict | None = None
             try:
+                logger.info(
+                    "[WORKER-POLL] GET %s/progress/%s",
+                    ocr_worker_url,
+                    job_id,
+                )
                 response = await client.get(
                     f"{ocr_worker_url}/progress/{job_id}"
                 )
                 if response.status_code == 200:
                     worker_data = response.json()
+                    logger.info(
+                        "[WORKER-RESPONSE] job_id=%s progress=%.2f current_page=%d total_pages=%d message=%r",
+                        job_id,
+                        worker_data.get("progress", 0.0),
+                        worker_data.get("current_page", 0),
+                        worker_data.get("total_pages", 0),
+                        worker_data.get("message", ""),
+                    )
                 elif response.status_code == 404:
                     # ocr-worker にまだデータがない（処理開始前など）は正常系です
                     logger.info(

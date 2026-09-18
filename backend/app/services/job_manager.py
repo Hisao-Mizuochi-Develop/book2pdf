@@ -20,6 +20,12 @@ import uuid
 # ジョブの作成時刻と更新時刻を UTC で記録するために使用します
 from datetime import datetime, timezone
 
+
+def _now_iso() -> str:
+    """frontend と一致する ISO 8601 UTC タイムスタンプを返します。"""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 # ZIP 展開先のパスを保持するために使用します
 from pathlib import Path
@@ -64,7 +70,7 @@ def update_progress(
         total_pages: 総ページ数（フェーズ総数として使用）
         message: 進捗メッセージ
     """
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_iso()
     _progress_data[job_id] = {
         "status": status,
         "progress": progress,
@@ -107,7 +113,7 @@ def create_job() -> str:
 
     # 現在時刻を UTC で取得します
     # ISO 8601 形式の文字列として保存することで、後から読みやすくなります
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_iso()
 
     # ジョブの初期状態を辞書に保存します
     _jobs[job_id] = {
@@ -171,7 +177,7 @@ def update_job_status(
 
     # 状態と更新時刻、メッセージを更新します
     _jobs[job_id]["status"] = status.value
-    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _jobs[job_id]["updated_at"] = _now_iso()
     _jobs[job_id]["message"] = message
 
     # files が指定された場合のみ更新します
@@ -210,7 +216,7 @@ def update_job_with_ocr_result(
         return False
 
     # 更新時刻を現在時刻に設定します
-    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _jobs[job_id]["updated_at"] = _now_iso()
 
     # OCR 結果のテキストを保存します
     _jobs[job_id]["text"] = text
@@ -247,7 +253,7 @@ def update_job_with_pdf_path(
     _jobs[job_id]["pdf_path"] = pdf_path
 
     # 更新時刻を現在時刻に設定します
-    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _jobs[job_id]["updated_at"] = _now_iso()
 
     # メッセージが指定されている場合は追記します
     if message:
@@ -290,7 +296,7 @@ def update_job_progress(
     _jobs[job_id]["total_pages"] = total_pages
 
     # 更新時刻を現在時刻に設定します
-    _jobs[job_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _jobs[job_id]["updated_at"] = _now_iso()
 
     # 補足メッセージを保存します
     if message:
