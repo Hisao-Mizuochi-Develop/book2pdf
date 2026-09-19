@@ -557,14 +557,6 @@ async def _run_ocr_and_generate_pdf(
             pdf_path=str(pdf_path),
             message="PDFファイル生成が完了しました",
         )
-        # PDF 生成が完了してから COMPLETED に遷移します
-        # これにより、フロントエンドが completed を検出した時点では
-        # PDF が必ず生成済みであることが保証されます
-        job_manager.update_job_status(
-            job_id,
-            JobStatus.COMPLETED,
-            message="PDFファイル生成が完了しました",
-        )
         # PDF生成完了を記録します
         # SY002003: backend が PDF 生成の完了時刻を記録し、開始時刻は既存の進捗から引き継ぎます
         pdf_completed_at = _now_iso()
@@ -582,6 +574,17 @@ async def _run_ocr_and_generate_pdf(
             total_pages=total_pages,
             message="PDFファイル生成が完了しました",
             extra={"pdfStartedAt": pdf_started_at, "pdfCompletedAt": pdf_completed_at},
+        )
+        # PDF 生成が完了してから COMPLETED に遷移します
+        # これにより、フロントエンドが completed を検出した時点では
+        # PDF が必ず生成済みであることが保証されます
+        # なお、_progress_data に完了状態とタイムスタンプを先に書き込んでから
+        # _jobs["status"] を更新することで、get_job で completed を返す時点では
+        # pdfStartedAt/pdfCompletedAt が揃っていることを保証します。
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.COMPLETED,
+            message="PDFファイル生成が完了しました",
         )
     except asyncio.CancelledError:
         # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
@@ -677,8 +680,12 @@ def _merge_progress_data(
     backend_data = backend_data or {}
     worker_data = worker_data or {}
 
-    # status は backend が権威（フェーズ遷移）
-    status = backend_data.get("status", worker_data.get("status", "processing"))
+    # status は backend が権威（フェーズ遷移）です。
+    # ocr-worker が OCR 完了として "completed" を書き込んでも、
+    # バックエンドがまだ PDF 生成など後続処理を実行していれば全体ジョブは
+    # 未完了です。backend_data が空の場合は "processing" をデフォルトとし、
+    # 完了はバックエンドが明示的に設定した時のみにします。
+    status = backend_data.get("status", "processing")
 
     # backend で生成された PDF/エラー/キャンセル進捗かどうかを判定します。
     # OCR 開始時のメッセージは backend から生成しないため、

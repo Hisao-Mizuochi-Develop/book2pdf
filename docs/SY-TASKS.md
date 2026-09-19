@@ -266,4 +266,10 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-19: `frontend/src/lib/__tests__/api.test.ts` に polling event への PDF タイミング伝播テストを追加
 > > - 2026-09-19: `backend/tests/test_jobs.py` / `backend/tests/test_progress.py` / `frontend/src/hooks/__tests__/useOcrJob.test.ts` を更新
 > > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 55/55 PASS、frontend 全テスト 90/90 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
+> > - 2026-09-19: UAT 不具合発見：`pdfStartedAt` / `pdfCompletedAt` が frontend に正しく届かず、`JobResponse` では値が空、SSE ストリームが PDF フェーズ前に閉じている。根本原因は `_merge_progress_data` が backend_data 空の際に worker_data["status"]（completed）にフォールバックすることと、`_run_ocr_and_generate_pdf` が `update_progress(pdfStartedAt/pdfCompletedAt)` より先に `update_job_status(COMPLETED)` を呼び出していること
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_merge_progress_data` で backend_data が空の場合の status フォールバックを `"processing"` に変更。これにより ocr-worker の per-page completed があっても SSE ストリームは継続し、PDF 生成フェーズイベントが frontend に到達する
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で、最終 `update_progress(pdfStartedAt/pdfCompletedAt)` を `update_job_status(JobStatus.COMPLETED)` より前に実行するよう順序を変更。これにより frontend が completed を検出した時点では両タイムスタンプが保存済みであることを保証する
+> > - 2026-09-19: `backend/tests/test_progress.py` に `test_merge_progress_data_defaults_to_processing_when_backend_empty` を追加
+> > - 2026-09-19: `backend/tests/test_ocr.py` の `test_run_ocr_writes_staged_progress` で `pdfStartedAt` / `pdfCompletedAt` の存在・UTC 秒精度・大小関係を検証するよう拡張
+> > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 56/56 PASS、frontend 全テスト 90/90 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
 >

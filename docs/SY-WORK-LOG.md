@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-09-19 SY002003 `pdfStartedAt` / `pdfCompletedAt` のマージ・伝達バグ修正
+
+### 目的
+
+- UAT で発覚した `pdfStartedAt` / `pdfCompletedAt` が frontend に正しく届かない不具合を修正する
+- backend の `_merge_progress_data` と `_run_ocr_and_generate_pdf` の 2 箇所の原因を取り除く
+- 修正に伴う回帰を防ぐため、backend 単体テストを追加・拡張する
+
+### 実施内容
+
+- 根本原因を調査し、以下 2 点を特定した
+  1. `_merge_progress_data` が `backend_data` が空の場合に `worker_data["status"]`（`completed`）にフォールバックし、PDF 生成フェーズ前に SSE ストリームが閉じていた
+  2. `_run_ocr_and_generate_pdf` が `update_progress(pdfStartedAt/pdfCompletedAt)` より先に `update_job_status(JobStatus.COMPLETED)` を呼び出し、frontend ポーリングがタイムスタンプ保存前に停止していた
+- `backend/app/routers/jobs.py` の `_merge_progress_data` で、空の `backend_data` に対する status フォールバックを `"processing"` に変更
+- `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で、最終 `update_progress`（`pdfStartedAt` / `pdfCompletedAt` 付き）を `update_job_status(JobStatus.COMPLETED)` より前に実行するよう順序を変更
+- `backend/tests/test_progress.py` に `test_merge_progress_data_defaults_to_processing_when_backend_empty` を追加
+- `backend/tests/test_ocr.py` の `test_run_ocr_writes_staged_progress` を拡張し、`pdfStartedAt` / `pdfCompletedAt` の存在・UTC 秒精度・大小関係を検証
+- `docs/SY-TASKS.md` の `SY002003` 【実施結果】に本対応を追記
+
+### 結果
+
+- backend 全テスト 56/56 PASS
+- frontend 全テスト 90/90 PASS
+- frontend build PASS
+- frontend lint PASS
+- ocr-worker 全テストは今回の修正対象外のため、前回の 10/10 PASS を維持
+- ユーザー UAT 合格待ち（タスク完了日付は未記入）
+
+### 変更ファイル
+
+- `backend/app/routers/jobs.py`
+- `backend/tests/test_progress.py`
+- `backend/tests/test_ocr.py`
+- `docs/SY-TASKS.md`
+- `docs/SY-WORK-LOG.md`
+
+### 関連タスク
+
+- `SY002003` `SY002002` UATバグ対応（UAT 合格待ち）
+
+---
+
 ## 2026-09-07 SY007006 テスト関連ワークフローと検証合格基準のAgentSkills改善
 
 ### 目的

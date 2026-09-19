@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timezone
 
 import pytest
 from app.main import app
@@ -423,6 +424,35 @@ def test_merge_progress_data_uses_backend_values_during_pdf_phase() -> None:
     assert merged["timestamp"] == "2026-09-18T12:00:09Z"
     assert merged["pdfStartedAt"] == "2026-09-18T12:00:08Z"
     assert merged["pdfCompletedAt"] == ""
+
+
+def test_merge_progress_data_defaults_to_processing_when_backend_empty() -> None:
+    """SY002003: backend_data が空の場合、worker の completed でも processing とします。
+
+    ocr-worker は OCR 完了時に status=completed を書き込みますが、その時点では
+    バックエンドはまだ PDF 生成など後続処理を実行しているため、全体ジョブは
+    未完了です。空の backend_data に対しては processing をデフォルトとし、
+    SSE 接続が誤って閉じるのを防ぎます。
+    """
+    backend = {}
+    worker = {
+        "status": "completed",
+        "progress": 1.0,
+        "current_page": 3,
+        "total_pages": 3,
+        "message": "OCR 処理が完了しました",
+        "timestamp": "2026-09-18T12:00:00Z",
+    }
+
+    merged = _merge_progress_data(backend, worker)
+
+    assert merged["status"] == "processing"
+    # その他のフィールドは worker の値を引き継ぐ
+    assert merged["progress"] == 1.0
+    assert merged["current_page"] == 3
+    assert merged["total_pages"] == 3
+    assert merged["message"] == "OCR 処理が完了しました"
+    assert merged["timestamp"] == "2026-09-18T12:00:00Z"
 
 
 def test_merge_progress_data_uses_backend_values_on_error() -> None:
