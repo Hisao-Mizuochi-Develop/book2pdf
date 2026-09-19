@@ -100,8 +100,10 @@ export interface ProgressPanelProps {
   latest: ProgressEvent | null;
   /** 表示するエラーメッセージです。空文字列または undefined の場合は表示しません。 */
   error?: string;
-  /** キャンセルボタンを表示するかどうかです。 */
-  showCancel?: boolean;
+  /** 現在のジョブ ID です。ボタン表示制御に使用します。 */
+  jobId?: string | null;
+  /** PDF ダウンロードボタン押下時のコールバックです。 */
+  onDownload?: () => void;
   /** キャンセルボタン押下時のコールバックです。 */
   onCancel?: () => void;
 }

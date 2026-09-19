@@ -174,53 +174,109 @@ describe("ProgressPanel", () => {
     expect(screen.queryByTestId("progress-error-line")).not.toBeInTheDocument();
   });
 
-  it("showCancel=true かつ onCancel ありの場合にキャンセルボタンを表示する", () => {
-    render(<ProgressPanel latest={makeProgressEvent()} showCancel onCancel={vi.fn()} />);
+  it("jobId ありの場合、PDFダウンロードボタンと処理をキャンセルボタンを左から右に表示する", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} jobId="job-123" />);
 
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]).toHaveTextContent("PDFをダウンロード");
+    expect(buttons[1]).toHaveTextContent("処理をキャンセル");
+  });
+
+  it("jobId が未指定の場合も両ボタンを表示するが、両方 disabled である", () => {
+    render(<ProgressPanel latest={makeProgressEvent()} />);
+
+    expect(screen.getByTestId("download-button")).toBeInTheDocument();
     expect(screen.getByTestId("cancel-button")).toBeInTheDocument();
+    expect(screen.getByTestId("download-button")).toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).toBeDisabled();
   });
 
-  it("キャンセルボタンをクリックすると onCancel が呼ばれる", () => {
-    const onCancel = vi.fn();
-    render(<ProgressPanel latest={makeProgressEvent()} showCancel onCancel={onCancel} />);
-
-    fireEvent.click(screen.getByTestId("cancel-button"));
-    expect(onCancel).toHaveBeenCalledTimes(1);
-  });
-
-  it("showCancel=false ではキャンセルボタンを表示しない", () => {
-    render(<ProgressPanel latest={makeProgressEvent()} onCancel={vi.fn()} />);
-
-    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
-  });
-
-  it("onCancel が未指定ではキャンセルボタンを表示しない", () => {
-    render(<ProgressPanel latest={makeProgressEvent()} showCancel />);
-
-    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
-  });
-
-  it("status=completed ではキャンセルボタンを表示しない", () => {
+  it("status=completed の場合、PDFダウンロード enabled / 処理をキャンセル disabled", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({ status: "completed", progress: 1.0 })}
-        showCancel
-        onCancel={vi.fn()}
+        jobId="job-123"
       />,
     );
 
-    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("download-button")).not.toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).toBeDisabled();
   });
 
-  it("status=cancelled ではキャンセルボタンを表示しない", () => {
+  it("status=processing の場合、PDFダウンロード disabled / 処理をキャンセル enabled", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "processing", progress: 0.5 })}
+        jobId="job-123"
+      />,
+    );
+
+    expect(screen.getByTestId("download-button")).toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).not.toBeDisabled();
+  });
+
+  it("status=uploaded の場合、PDFダウンロード disabled / 処理をキャンセル enabled", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "uploaded", progress: 0 })}
+        jobId="job-123"
+      />,
+    );
+
+    expect(screen.getByTestId("download-button")).toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).not.toBeDisabled();
+  });
+
+  it("status=cancelled の場合、両方のボタンが disabled", () => {
     render(
       <ProgressPanel
         latest={makeProgressEvent({ status: "cancelled", progress: 0 })}
-        showCancel
-        onCancel={vi.fn()}
+        jobId="job-123"
       />,
     );
 
-    expect(screen.queryByTestId("cancel-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("download-button")).toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).toBeDisabled();
+  });
+
+  it("status=failed の場合、両方のボタンが disabled", () => {
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "failed", progress: 0 })}
+        jobId="job-123"
+      />,
+    );
+
+    expect(screen.getByTestId("download-button")).toBeDisabled();
+    expect(screen.getByTestId("cancel-button")).toBeDisabled();
+  });
+
+  it("PDFダウンロードボタンをクリックすると onDownload が呼ばれる", () => {
+    const onDownload = vi.fn();
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "completed", progress: 1.0 })}
+        jobId="job-123"
+        onDownload={onDownload}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("download-button"));
+    expect(onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it("処理をキャンセルボタンをクリックすると onCancel が呼ばれる", () => {
+    const onCancel = vi.fn();
+    render(
+      <ProgressPanel
+        latest={makeProgressEvent({ status: "processing", progress: 0.5 })}
+        jobId="job-123"
+        onCancel={onCancel}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("cancel-button"));
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

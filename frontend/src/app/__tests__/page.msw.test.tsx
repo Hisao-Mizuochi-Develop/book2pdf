@@ -98,7 +98,8 @@ describe("Home page MSW integration", () => {
 
     // 5. PDF ダウンロードボタンが表示される
     await waitFor(() => {
-      expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();
+      expect(screen.getByText("PDFをダウンロード")).toBeInTheDocument();
+      expect(screen.getByTestId("download-button")).not.toBeDisabled();
     });
   });
 });
