@@ -12,13 +12,13 @@ from __future__ import annotations
 # SSE 配信中の進捗ポーリング間隔で使用します
 import asyncio
 
+# 辞書の深いコピーを作成するための標準ライブラリです
+# SY002003: ocrPages 配列の変更を正しく検出するために使用します
+import copy
+
 # ログ出力のための標準ライブラリです
 # 環境変数 LOG_LEVEL で出力レベルを切り替えます
 import logging
-
-# ocr-worker の per-page メッセージを検出するための正規表現です
-# SY002003: backend の progress が大きい場合でも per-page メッセージを保持するために使用します
-import re
 
 # 環境変数を読み込むための標準ライブラリです
 # ポーリング間隔をテスト時に変更するために使用します
@@ -86,31 +86,6 @@ router = APIRouter(tags=["jobs"])
 # 本モジュール用のロガーを取得します
 # ログレベルは app.main で一括設定されます
 logger = logging.getLogger(__name__)
-
-# ocr-worker の per-page 進捗メッセージを検出する正規表現です。
-# 全角括弧（）と半角括弧()の両方に対応します。
-_PER_PAGE_MESSAGE_PATTERN = re.compile(r"[（(]\s*\d+\s*\/\s*\d+\s*[）)]")
-
-
-def _select_merged_message(
-    backend_message: str,
-    worker_message: str,
-    backend_progress: float,
-    worker_progress: float,
-) -> str:
-    """backend と ocr-worker の message をマージします。
-
-    SY002003:
-    - ocr-worker の per-page メッセージ（ページ番号を含む (N/M) 形式）は常に優先します。
-      これにより backend の progress が大きくなっても、frontend でページ遷移を検出できます。
-    - per-page メッセージでない場合は従来どおり、進捗値が大きい側の message を優先します。
-    """
-    if worker_message and _PER_PAGE_MESSAGE_PATTERN.search(worker_message):
-        return worker_message
-    if backend_progress >= worker_progress:
-        return backend_message or worker_message or ""
-    return worker_message or backend_message or ""
-
 
 @router.post("/", response_model=JobCreateResponse)
 def create_job() -> JobCreateResponse:
@@ -196,6 +171,10 @@ async def get_job(job_id: str) -> JobResponse:
         progress=merged["progress"],
         current_page=merged["current_page"],
         total_pages=merged["total_pages"],
+        # SY002003: backend/frontend/ocr-worker 間で秒精度 UTC ISO 8601 を統一します
+        timestamp=merged.get("timestamp", ""),
+        # SY002003: ocr-worker から取得した per-page タイミングを frontend に転送します
+        ocrPages=merged.get("ocrPages", []),
     )
 
 
@@ -462,16 +441,6 @@ async def _run_ocr_and_generate_pdf(
 
         total_pages = len(image_files)
 
-        # OCR 処理開始を記録します
-        job_manager.update_progress(
-            job_id,
-            status="processing",
-            progress=0.0,
-            current_page=0,
-            total_pages=total_pages,
-            message="OCR処理を開始しました",
-        )
-
         # キャンセル済みでないかチェックします
         await asyncio.sleep(0)
 
@@ -669,13 +638,14 @@ def _merge_progress_data(
 ) -> dict:
     """backend のフェーズ進捗と ocr-worker の per-page 進捗をマージします。
 
-    SY002002 §5.4 のマージルールに従います:
-    - status / timestamp → backend (フェーズ進捗) 優先
-    - progress → 値の大きい方を優先
-      (OCR 中は ocr-worker の per-page 進捗を、PDF 生成中は backend のフェーズ進捗を優先)
-    - message → 進捗値が大きい側のメッセージを優先しますが、空文字の場合は
-      もう一方の非空メッセージにフォールバックします
-    - current_page / total_pages → ocr-worker (per-page 進捗) 優先
+    SY002003:
+    - OCR 処理中は ocr-worker の per-page 進捗をそのまま採用します。
+      backend は OCR 処理中に自前の timestamp / message / progress を
+      生成せず、ocr-worker の値を信頼します。
+    - PDF 生成中・エラー時・キャンセル時は backend のフェーズ進捗を採用します。
+      これらは backend 自身が実行・検知する処理であるため、backend が
+      生成した timestamp / message / progress を権威とします。
+    - status は常に backend のフェーズ値を権威とします。
 
     Args:
         backend_data: backend の in-memory フェーズ進捗。None の場合は worker のみ。
@@ -687,41 +657,43 @@ def _merge_progress_data(
     backend_data = backend_data or {}
     worker_data = worker_data or {}
 
-    # backend 優先フィールド（status / timestamp）
-    # ocr-worker の status はページ単位処理中固定の可能性があるため
+    # status は backend が権威（フェーズ遷移）
     status = backend_data.get("status", worker_data.get("status", "processing"))
-    timestamp = backend_data.get("timestamp", worker_data.get("timestamp", ""))
 
-    # ocr-worker 優先フィールド（per-page 進捗）
-    # ただし、backend のフェーズ進捗（PDF 生成など）が ocr-worker の進捗より
-    # 進んでいる場合は backend の値を優先して、正しいメッセージを表示します。
-    worker_progress = worker_data.get("progress", 0.0)
-    backend_progress = backend_data.get("progress", 0.0)
-    if backend_progress >= worker_progress:
-        progress = backend_progress
-    else:
-        progress = worker_progress
-
-    # SY002003: backend の progress が大きくなっても、ocr-worker の per-page
-    # メッセージ（ページ番号を含む (N/M) 形式）を優先して保持します。
-    # backend は PDF 生成関連のメッセージのみを生成するため、
-    # per-page メッセージがない場合は backend のメッセージにフォールバックします。
-    message = _select_merged_message(
-        backend_data.get("message", ""),
-        worker_data.get("message", ""),
-        backend_progress,
-        worker_progress,
+    # backend で生成された PDF/エラー/キャンセル進捗かどうかを判定します。
+    # OCR 開始時のメッセージは backend から生成しないため、
+    # ここに該当するのは PDF 生成・完了・失敗・キャンセルのみです。
+    backend_message = backend_data.get("message", "")
+    is_backend_phase = (
+        "PDF" in backend_message
+        or "失敗" in backend_message
+        or "エラー" in backend_message
+        or "キャンセル" in backend_message
     )
-    current_page = worker_data.get("current_page", backend_data.get("current_page", 0))
-    total_pages = worker_data.get("total_pages", backend_data.get("total_pages", 0))
+
+    # OCR 中は ocr-worker の per-page 進捗を信頼し、
+    # PDF 生成中・エラー時・キャンセル時は backend の値を使います。
+    if is_backend_phase:
+        source = backend_data
+    else:
+        source = worker_data if worker_data else backend_data
+
+    # ocrPages は常に最新の worker データを優先して転送します。
+    # PDF 生成中など backend が権威となるフェーズでは、backend の値があれば採用します。
+    ocr_pages = worker_data.get("ocrPages") if worker_data else None
+    if not ocr_pages and backend_data:
+        ocr_pages = backend_data.get("ocrPages")
+    if ocr_pages is None:
+        ocr_pages = []
 
     return {
         "status": status,
-        "progress": progress,
-        "current_page": current_page,
-        "total_pages": total_pages,
-        "message": message,
-        "timestamp": timestamp,
+        "progress": source.get("progress", 0.0),
+        "current_page": source.get("current_page", 0),
+        "total_pages": source.get("total_pages", 0),
+        "message": source.get("message", ""),
+        "timestamp": source.get("timestamp", ""),
+        "ocrPages": ocr_pages,
     }
 
 
@@ -894,7 +866,8 @@ async def _progress_event_generator(job_id: str):
 
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
-                last_data = data.copy()
+                # SY002003: ocrPages 配列が含まれるため、深いコピーで比較します
+                last_data = copy.deepcopy(data)
                 last_send_time = asyncio.get_event_loop().time()
                 event_sent = True
 
@@ -907,6 +880,7 @@ async def _progress_event_generator(job_id: str):
                     total_pages=data.get("total_pages", 0),
                     message=data.get("message", ""),
                     timestamp=data.get("timestamp", ""),
+                    ocrPages=data.get("ocrPages", []),
                 )
 
                 # SSE 形式でイベントを yield します

@@ -3,6 +3,7 @@
 import type {
   JobCreateResponse,
   JobUploadResponse,
+  JobResponse,
 } from "@/types";
 
 // ブラウザからアクセスする backend API のベース URL です
@@ -25,7 +26,6 @@ const _DEBUG_API = Boolean(process.env.NEXT_PUBLIC_DEBUG_API);
  * @param detail ログ内容
  */
 function _logApi(label: string, detail: unknown): void {
-  // eslint-disable-next-line no-console
   console.log(`[API-DEBUG] ${label}`, detail);
 }
 
@@ -146,13 +146,11 @@ export function subscribeJobProgress(
   let doneReceived = false;
 
   eventSource.onopen = () => {
-    // eslint-disable-next-line no-console
     console.log(`[SSE-DEBUG] OPEN job_id=${jobId}`);
   };
 
   eventSource.onmessage = (event) => {
     const data = event.data;
-    // eslint-disable-next-line no-console
     console.log(`[SSE-DEBUG] MSG job_id=${jobId} data=`, data);
     if (data === "[DONE]") {
       doneReceived = true;
@@ -164,7 +162,6 @@ export function subscribeJobProgress(
   };
 
   eventSource.onerror = (error) => {
-    // eslint-disable-next-line no-console
     console.log(`[SSE-DEBUG] ERROR job_id=${jobId}`, error);
     // [DONE] 受信後の切断は正常終了として扱います
     if (!doneReceived) {
@@ -223,7 +220,10 @@ export function pollJobProgress(
         throw new Error(`進捗の取得に失敗しました: ${response.status} ${response.statusText}`);
       }
 
-      const data = (await response.json()) as { status: string; message?: string; progress?: number; current_page?: number; total_pages?: number; timestamp?: string };
+      const data = (await response.json()) as JobResponse;
+
+      // backend/frontend/ocr-worker 間で UTC の秒精度 ISO 8601 を統一します (SY002003)
+      const fallbackTimestamp = new Date().toISOString().split(".")[0] + "Z";
 
       // 進捗情報を SSE と同じ形式（JSON）に変換してコールバックに渡します
       const progressEvent = {
@@ -233,7 +233,8 @@ export function pollJobProgress(
         current_page: data.current_page ?? 0,
         total_pages: data.total_pages ?? 0,
         message: data.message ?? "",
-        timestamp: data.timestamp ?? new Date().toISOString(),
+        timestamp: data.timestamp ?? fallbackTimestamp,
+        ocrPages: data.ocrPages ?? [],
       };
       onMessage(JSON.stringify(progressEvent));
 

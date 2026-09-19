@@ -8,12 +8,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cancelJob, runOcr, subscribeJobProgress, pollJobProgress } from "@/lib/api";
 import type { ProgressEvent, TimingDebugInfo, UploadTimingInfo } from "@/types";
 
-/** タイミング追跡用の内部状態です。 */
-interface TimingTrackerState {
-  /** 最後に確認した current_page 値です。 */
-  lastCurrentPage: number;
-}
-
 /** useOcrJob の戻り値型です。 */
 export interface UseOcrJobResult {
   /** 現在のジョブ ID です。 */
@@ -60,11 +54,6 @@ export function useOcrJob(): UseOcrJobResult {
   });
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollStopRef = useRef<(() => void) | null>(null);
-  // 進捗イベントの重複受信を防ぎつつ、ページ遷移を検出するための参照です。
-  // lastCurrentPage は message から抽出した actualPage（1-based）の最後の値を保持します。
-  const timingTrackerRef = useRef<TimingTrackerState>({
-    lastCurrentPage: 0,
-  });
 
   const cleanupProgress = useCallback(() => {
     if (eventSourceRef.current) {
@@ -93,7 +82,6 @@ export function useOcrJob(): UseOcrJobResult {
       pdfGeneration: { start: null, end: null, elapsedMs: null },
       overall: { start: null, end: null, elapsedMs: null },
     }));
-    timingTrackerRef.current = { lastCurrentPage: 0 };
   }, [cleanupProgress]);
 
   const parseProgressEvent = useCallback((message: string): ProgressEvent | null => {
@@ -140,38 +128,15 @@ export function useOcrJob(): UseOcrJobResult {
         pdfGeneration: { start: null, end: null, elapsedMs: null },
         overall: { start: overallStart, end: null, elapsedMs: null },
       }));
-      timingTrackerRef.current = { lastCurrentPage: 0 };
-
-      // event.message から「処理中のページ番号（1-based）」を抽出します。
-      // ocr-worker はページ処理開始前に current_page = page_idx - 1 を送信するため、
-      // message から実際のページ番号を抽出して判定します。
-      // プロキシ/中継層やブラウザ表示で半角括弧に正規化される場合があるため、
-      // 全角括弧（）と半角括弧()の両方に対応します。
-      const extractActualPage = (message?: string): number | null => {
-        if (!message) return null;
-        const match = message.match(/[（(]\s*(\d+)\s*\/\s*\d+\s*[）)]/);
-        return match ? parseInt(match[1], 10) : null;
-      };
 
       // 進捗イベントからタイミング情報を更新する補助関数です。
       const updateTimingDebug = (event: ProgressEvent) => {
         const now = new Date();
-        const nowIso = now.toISOString();
+        // SY002003: backend/frontend/ocr-worker 間で UTC の秒精度 ISO 8601 を統一します
+        const nowIso = now.toISOString().split(".")[0] + "Z";
 
         setTimingDebug((prev) => {
           const next: TimingDebugInfo = JSON.parse(JSON.stringify(prev));
-
-          // SY002003 UAT バグ対応: タイミング追跡の内部状態をデバッグ出力します
-          // eslint-disable-next-line no-console
-          console.log("[TIMING-DEBUG] entry", {
-            status: event.status,
-            progress: event.progress,
-            current_page: event.current_page,
-            total_pages: event.total_pages,
-            message: event.message,
-            timestamp: event.timestamp,
-            ocrPagesLength: next.ocrPages.length,
-          });
 
           // processing イベントのたびに overall の終了時刻をリセットします。
           // これにより、重複イベントやポーリング遅延による stale な overall.end を防ぎます。
@@ -180,72 +145,21 @@ export function useOcrJob(): UseOcrJobResult {
             next.overall.elapsedMs = null;
           }
 
-          // OCR 各ページのタイミング追跡（progress 75% 未満の processing 段階）
-          if (event.status === "processing" && event.progress < 0.75) {
-            // ocr-worker は開始前に current_page = page_idx - 1 を送信するため、
-            // message から実際のページ番号を抽出してページ遷移を判定します。
-            const actualPage = extractActualPage(event.message) ?? (event.current_page === 0 ? 1 : event.current_page);
-            const lastPage = timingTrackerRef.current.lastCurrentPage;
+          // SY002003: ocr-worker から送信された per-page タイミングをそのまま使用します。
+          // frontend 側の推定やフォールバックは行いません。
+          if (event.ocrPages && event.ocrPages.length > 0) {
+            next.ocrPages = event.ocrPages.map((page) => ({
+              pageIndex: page.pageIndex,
+              fileName: page.fileName,
+              start: page.start ?? null,
+              end: page.end ?? null,
+              elapsedMs: page.elapsedMs ?? null,
+            }));
+          }
 
-            if (next.ocrPages.length === 0 && event.total_pages > 0) {
-              next.ocrPages = Array.from({ length: event.total_pages }, (_, i) => ({
-                pageIndex: i,
-                fileName: `page_${String(i + 1).padStart(3, "0")}`,
-                start: null,
-                end: null,
-                elapsedMs: null,
-              }));
-            }
-
-            // 初回 processing イベント受信時に OCR 総時間の開始を無条件で記録します。
-            if (!next.ocrTotal.start) {
-              next.ocrTotal.start = event.timestamp || nowIso;
-            }
-
-            // actualPage >= 1 の場合：actualPage は message から抽出した「現在処理中のページ番号（1-based）」
-            // message にページ番号が含まれない場合は current_page をフォールバックとして使用します。
-            // 例：actualPage=1 → 1ページ目処理中 → 0-based index 0 が開始
-            // eslint-disable-next-line no-console
-            console.log("[TIMING-DEBUG] page check", { actualPage, lastPage, shouldTransition: actualPage >= 1 && actualPage > lastPage });
-            if (actualPage >= 1 && actualPage > lastPage) {
-              const newPageIdx = actualPage - 1; // 0-based
-              const completedIdx = actualPage - 2; // 前ページの 0-based index
-
-              // 前ページが完了した
-              if (
-                completedIdx >= 0 &&
-                next.ocrPages[completedIdx] &&
-                !next.ocrPages[completedIdx].end
-              ) {
-                next.ocrPages[completedIdx].end = nowIso;
-                const startTime = next.ocrPages[completedIdx].start ?? next.ocrTotal.start;
-                if (startTime) {
-                  next.ocrPages[completedIdx].elapsedMs =
-                    now.getTime() - new Date(startTime).getTime();
-                }
-              }
-
-              // 新しいページの開始（未設定の場合のみ）
-              if (next.ocrPages[newPageIdx] && !next.ocrPages[newPageIdx].start) {
-                next.ocrPages[newPageIdx].start = event.timestamp || nowIso;
-              }
-
-              // SY002003 UAT バグ対応: ページ遷移後の ocrPages 状態をデバッグ出力します
-              // eslint-disable-next-line no-console
-              console.log("[TIMING-DEBUG] page transition", {
-                actualPage,
-                newPageIdx,
-                completedIdx,
-                lastCurrentPageAfter: actualPage,
-                ocrPages: next.ocrPages.map((p) => ({
-                  pageIndex: p.pageIndex,
-                  start: p.start,
-                  end: p.end,
-                })),
-              });
-
-              timingTrackerRef.current.lastCurrentPage = actualPage;
-            }
+          // 初回 processing イベント受信時に OCR 総時間の開始を無条件で記録します。
+          if (!next.ocrTotal.start) {
+            next.ocrTotal.start = event.timestamp || nowIso;
           }
 
           // PDF 生成開始を検出します（progress 75% 以上）。
@@ -254,26 +168,7 @@ export function useOcrJob(): UseOcrJobResult {
             event.status === "processing" &&
             !next.pdfGeneration.start
           ) {
-            // eslint-disable-next-line no-console
-            console.log("[TIMING-DEBUG] PDF generation detected", {
-              progress: event.progress,
-              ocrPages: next.ocrPages.map((p) => ({
-                pageIndex: p.pageIndex,
-                start: p.start,
-                end: p.end,
-              })),
-            });
             next.pdfGeneration.start = nowIso;
-            // 最終ページの OCR 完了が未確定の場合は、ここで確定します。
-            const lastIdx = next.ocrPages.length - 1;
-            if (lastIdx >= 0 && next.ocrPages[lastIdx] && !next.ocrPages[lastIdx].end) {
-              next.ocrPages[lastIdx].end = nowIso;
-              const startTime = next.ocrPages[lastIdx].start ?? next.ocrTotal.start;
-              if (startTime) {
-                next.ocrPages[lastIdx].elapsedMs =
-                  now.getTime() - new Date(startTime).getTime();
-              }
-            }
             // 1 枚目画像 OCR 開始から最終画像 OCR 完了までの総時間を確定します。
             if (next.ocrTotal.start && !next.ocrTotal.end) {
               next.ocrTotal.end = nowIso;
@@ -288,29 +183,7 @@ export function useOcrJob(): UseOcrJobResult {
             event.status === "failed" ||
             event.status === "cancelled"
           ) {
-            // eslint-disable-next-line no-console
-            console.log("[TIMING-DEBUG] terminal state", {
-              status: event.status,
-              ocrPages: next.ocrPages.map((p) => ({
-                pageIndex: p.pageIndex,
-                start: p.start,
-                end: p.end,
-              })),
-            });
-            // バックエンドが PDF 生成イベント（progress >= 0.75）を送信せずに
-            // 完了した場合、最終ページの end が未設定のままになることがあるため補完します。
-            if (next.ocrPages.length > 0) {
-              const lastIdx = next.ocrPages.length - 1;
-              if (next.ocrPages[lastIdx] && !next.ocrPages[lastIdx].end) {
-                next.ocrPages[lastIdx].end = nowIso;
-                const startTime = next.ocrPages[lastIdx].start ?? next.ocrTotal.start;
-                if (startTime) {
-                  next.ocrPages[lastIdx].elapsedMs =
-                    now.getTime() - new Date(startTime).getTime();
-                }
-              }
-            }
-            // 同様に、OCR 総時間の end も未設定であれば補完します。
+            // OCR 総時間の end が未設定であれば補完します。
             if (next.ocrTotal.start && !next.ocrTotal.end) {
               next.ocrTotal.end = nowIso;
               next.ocrTotal.elapsedMs =

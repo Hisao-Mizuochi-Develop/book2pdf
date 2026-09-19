@@ -273,7 +273,7 @@ describe("api client", () => {
         status: 200,
         headers: { "Content-Type": "application/pdf" },
       });
-      (response as any).blob = vi.fn().mockResolvedValue(blob);
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
       // jsdom 以外の環境では response.body が存在するため、Blob 書き込みパスを検証するために null にします
       Object.defineProperty(response, "body", { value: null });
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
@@ -322,7 +322,7 @@ describe("api client", () => {
         status: 200,
         headers: { "Content-Type": "application/pdf" },
       });
-      (response as any).blob = vi.fn().mockResolvedValue(blob);
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
       // pipeTo は実際の WritableStream を要求するため、body を null にして
       // writable.write フォールバックパスを検証します。
       Object.defineProperty(response, "body", { value: null });
@@ -365,7 +365,7 @@ describe("api client", () => {
         status: 200,
         headers: { "Content-Type": "application/pdf" },
       });
-      (response as any).blob = vi.fn().mockResolvedValue(blob);
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
 
       await downloadPdf("job-123", "result.pdf");

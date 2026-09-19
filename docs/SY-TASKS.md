@@ -1,11 +1,11 @@
 # System タスク管理表
 
-> 最終更新: 2026/09/18
+> 最終更新: 2026/09/19
 
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/15
+> 最終更新: 2026/09/19
 
 ---
 
@@ -245,4 +245,20 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-18: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` と `ocr-worker/app/main.py` のタイムスタンプ生成を秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一
 > > - 2026-09-18: backend テスト `test_get_job_prefers_backend_progress_when_larger` / `test_merge_progress_data_prefers_higher_progress_message_when_nonempty` を新しい message マージルールに合わせて更新
 > > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。Docker コンテナリビルド・UAT 実施を待つ
+> > - 2026-09-18: `JobResponse` に `timestamp` フィールドを追加し、`GET /api/jobs/{job_id}` でマージ済み進捗の `timestamp` を返すように変更
+> > - 2026-09-18: `backend/app/services/job_manager.py` の `get_job_progress()` 戻り値キーを `updated_at` から `timestamp` に統一し、`_merge_progress_data` の backend 優先 `timestamp` マージが機能するように修正
+> > - 2026-09-18: `frontend/src/lib/api.ts` のポーリング fallback timestamp と `frontend/src/hooks/useOcrJob.ts` のローカル生成 timestamp を UTC 秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一
+> > - 2026-09-18: backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS を確認。frontend build は Next.js 16.3.4 + React 19 の組み合わせで `_global-error` / `/` ページの prerender 時に `TypeError: Cannot read properties of null (reading 'useContext')` が発生し失敗。本不具合は今回の修正前のコミット `3e001abc` でも再現
+> > - 2026-09-18: `_merge_progress_data` をシンプル化。OCR 中は ocr-worker の per-page 進捗をそのまま採用し、PDF 生成中・エラー時・キャンセル時のみ backend のフェーズ進捗を採用するように変更
+> > - 2026-09-18: `_run_ocr_and_generate_pdf` 内の OCR 開始時 `update_progress`（message="OCR処理を開始しました"）を削除。OCR 中の進捗は ocr-worker のみが生成するようにする
+> > - 2026-09-18: 不要になった `_select_merged_message()` 関数と `_PER_PAGE_MESSAGE_PATTERN` 正規表現を削除
+> > - 2026-09-18: `backend/tests/test_progress.py` / `backend/tests/test_jobs.py` のマージロジックテストを新しい worker 優先・backend フェーズ例外ルールに合わせて更新
+> > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 55/55 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS
+> > - 2026-09-19: Docker 環境の健全性を確認。backend/frontend/ocr-worker すべて Up/healthy、`/health` が `{"status":"ok"}` を返すことを確認
+> > - 2026-09-19: UAT 用に 1 ページ画像 ZIP を作成し、ジョブ作成 → ZIP アップロード → OCR 実行 → completed までの一連フローを API 経由で検証
+> > - 2026-09-19: `GET /api/jobs/{job_id}` と SSE `/api/jobs/{job_id}/events` の両方で、ocr-worker からの per-page メッセージ `OCR処理中です（1/1）` と秒精度 UTC ISO 8601 timestamp（例: `2026-09-19T00:53:54Z`）が返されることを確認
+> > - 2026-09-19: ジョブ完了時に `status=completed`、`progress=1.0`、`message=PDFファイル生成が完了しました` となることを確認
+> > - 2026-09-19: ブラウザでの per-page timing テーブルの視覚的 UAT はユーザーに委ねる（`[TIMING-DEBUG]` ログで確認可能）
+> > - 2026-09-19: UAT 追加調整: `frontend/src/components/debug/DebugTimingPanel.tsx` の `formatTime` から `fractionalSecondDigits: 3` を削除し、タイミングパネルの時刻表記を秒までに変更（小数点以下は切り捨て表示）
+> > - 2026-09-19: **Phase 3 再検証完了**：frontend 全テスト 89/89 PASS、frontend build PASS
 >

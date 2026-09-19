@@ -425,6 +425,11 @@ describe("useOcrJob", () => {
           current_page: 1,
           total_pages: 3,
           message: "OCR処理中です（1/3）",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: "2026-09-16T12:00:01Z", elapsedMs: 1000 },
+            { pageIndex: 1, fileName: "page_002.png", start: "2026-09-16T12:00:01Z", end: null, elapsedMs: null },
+            { pageIndex: 2, fileName: "page_003.png", start: null, end: null, elapsedMs: null },
+          ],
         }),
       );
       mockInstances[0].simulateMessage(
@@ -435,6 +440,11 @@ describe("useOcrJob", () => {
           current_page: 2,
           total_pages: 3,
           message: "OCR処理中です（2/3）",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: "2026-09-16T12:00:01Z", elapsedMs: 1000 },
+            { pageIndex: 1, fileName: "page_002.png", start: "2026-09-16T12:00:01Z", end: null, elapsedMs: null },
+            { pageIndex: 2, fileName: "page_003.png", start: null, end: null, elapsedMs: null },
+          ],
         }),
       );
       await handlePromise;
@@ -445,16 +455,16 @@ describe("useOcrJob", () => {
     });
 
     const firstPage = result.current.timingDebug.ocrPages[0];
-    expect(firstPage.start).not.toBeNull();
-    expect(firstPage.end).not.toBeNull();
-    expect(firstPage.elapsedMs).toBeGreaterThanOrEqual(0);
+    expect(firstPage.start).toBe("2026-09-16T12:00:00Z");
+    expect(firstPage.end).toBe("2026-09-16T12:00:01Z");
+    expect(firstPage.elapsedMs).toBe(1000);
 
     const secondPage = result.current.timingDebug.ocrPages[1];
-    expect(secondPage.start).not.toBeNull();
+    expect(secondPage.start).toBe("2026-09-16T12:00:01Z");
     expect(secondPage.end).toBeNull();
   });
 
-  it("半角括弧を含む message からも actualPage を抽出してページ単位のタイミングが追跡される", async () => {
+  it("ocrPages ペイロードからページ単位のタイミングがそのまま追跡される", async () => {
     vi.mocked(runOcr).mockResolvedValueOnce(undefined);
     const uploadTiming = {
       uploadStart: "2026-09-15T10:00:00.000Z",
@@ -480,6 +490,11 @@ describe("useOcrJob", () => {
           current_page: 0,
           total_pages: 3,
           message: "OCR処理中です(1/3)",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: "2026-09-16T12:00:01Z", elapsedMs: 1000 },
+            { pageIndex: 1, fileName: "page_002.png", start: "2026-09-16T12:00:01Z", end: null, elapsedMs: null },
+            { pageIndex: 2, fileName: "page_003.png", start: null, end: null, elapsedMs: null },
+          ],
         }),
       );
       mockInstances[0].simulateMessage(
@@ -490,6 +505,11 @@ describe("useOcrJob", () => {
           current_page: 1,
           total_pages: 3,
           message: "OCR処理中です(2/3)",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: "2026-09-16T12:00:01Z", elapsedMs: 1000 },
+            { pageIndex: 1, fileName: "page_002.png", start: "2026-09-16T12:00:01Z", end: null, elapsedMs: null },
+            { pageIndex: 2, fileName: "page_003.png", start: null, end: null, elapsedMs: null },
+          ],
         }),
       );
       await handlePromise;
@@ -500,12 +520,12 @@ describe("useOcrJob", () => {
     });
 
     const firstPage = result.current.timingDebug.ocrPages[0];
-    expect(firstPage.start).not.toBeNull();
-    expect(firstPage.end).not.toBeNull();
-    expect(firstPage.elapsedMs).toBeGreaterThanOrEqual(0);
+    expect(firstPage.start).toBe("2026-09-16T12:00:00Z");
+    expect(firstPage.end).toBe("2026-09-16T12:00:01Z");
+    expect(firstPage.elapsedMs).toBe(1000);
 
     const secondPage = result.current.timingDebug.ocrPages[1];
-    expect(secondPage.start).not.toBeNull();
+    expect(secondPage.start).toBe("2026-09-16T12:00:01Z");
     expect(secondPage.end).toBeNull();
   });
 
@@ -626,7 +646,7 @@ describe("useOcrJob", () => {
     expect(result.current.timingDebug.overall.elapsedMs).toBeNull();
   });
 
-  it("初回 processing イベントで ocrTotal.start と ocrPages[0].start が message から抽出される actualPage で設定される（FE002003 UAT バグ回帰修正）", async () => {
+  it("初回 processing イベントで ocrTotal.start と ocrPages[0].start が ocrPages ペイロードから設定される（SY002003 UAT バグ回帰修正）", async () => {
     vi.mocked(runOcr).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useOcrJob());
@@ -635,7 +655,7 @@ describe("useOcrJob", () => {
       const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
       await new Promise((resolve) => setTimeout(resolve, 0));
       // ocr-worker はページ処理開始前に current_page = page_idx - 1 を送信する
-      // current_page=0 でも message の（1/1）から actualPage=1 を抽出してページ開始を検出する
+      // backend 経由で ocrPages も一緒に送信される
       mockInstances[0].simulateMessage(
         JSON.stringify({
           job_id: "job-123",
@@ -645,6 +665,9 @@ describe("useOcrJob", () => {
           total_pages: 1,
           message: "OCR処理中です（1/1）",
           timestamp: "2026-09-16T12:00:00.000Z",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: null, elapsedMs: null },
+          ],
         }),
       );
       await handlePromise;
@@ -652,8 +675,8 @@ describe("useOcrJob", () => {
 
     // ocrTotal.start が timestamp から設定されること
     expect(result.current.timingDebug.ocrTotal.start).toBe("2026-09-16T12:00:00.000Z");
-    // current_page=0 でも message の（1/1）から actualPage=1 を抽出し、0-based index 0 のページが開始されること
-    expect(result.current.timingDebug.ocrPages[0].start).not.toBeNull();
+    // backend から送られた ocrPages の start がそのまま反映されること
+    expect(result.current.timingDebug.ocrPages[0].start).toBe("2026-09-16T12:00:00Z");
     expect(result.current.timingDebug.ocrPages[0].elapsedMs).toBeNull();
   });
 });

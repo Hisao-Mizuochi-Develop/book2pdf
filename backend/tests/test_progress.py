@@ -375,34 +375,106 @@ async def test_stream_job_events_heartbeat(monkeypatch) -> None:
         job_manager.delete_progress(job_id)
 
 
-def test_merge_progress_data_prefers_nonempty_message_when_higher_progress_is_empty() -> None:
-    """SY002003: 進捗値が大きい側の message が空文字でも、もう一方の非空メッセージを保持します。"""
-    backend = {"progress": 0.9, "message": ""}
-    worker = {"progress": 0.3, "message": "OCR処理中です（2/3）"}
+def test_merge_progress_data_uses_worker_values_during_ocr() -> None:
+    """SY002003: OCR 中は ocr-worker の per-page 進捗をそのまま採用します。"""
+    backend = {"progress": 0.9, "message": "backend が何か生成したメッセージ"}
+    worker = {
+        "progress": 0.3,
+        "current_page": 2,
+        "total_pages": 3,
+        "message": "OCR処理中です（2/3）",
+        "timestamp": "2026-09-18T12:00:02Z",
+    }
+
+    merged = _merge_progress_data(backend, worker)
+
+    assert merged["progress"] == 0.3
+    assert merged["current_page"] == 2
+    assert merged["total_pages"] == 3
+    assert merged["message"] == "OCR処理中です（2/3）"
+    assert merged["timestamp"] == "2026-09-18T12:00:02Z"
+
+
+def test_merge_progress_data_uses_backend_values_during_pdf_phase() -> None:
+    """SY002003: PDF 生成中は backend のフェーズ進捗を採用します。"""
+    backend = {
+        "progress": 0.9,
+        "current_page": 3,
+        "total_pages": 3,
+        "message": "PDFファイル生成中です",
+        "timestamp": "2026-09-18T12:00:09Z",
+    }
+    worker = {
+        "progress": 0.6,
+        "current_page": 2,
+        "total_pages": 3,
+        "message": "OCR処理中です（2/3）",
+        "timestamp": "2026-09-18T12:00:06Z",
+    }
 
     merged = _merge_progress_data(backend, worker)
 
     assert merged["progress"] == 0.9
-    assert merged["message"] == "OCR処理中です（2/3）"
+    assert merged["current_page"] == 3
+    assert merged["total_pages"] == 3
+    assert merged["message"] == "PDFファイル生成中です"
+    assert merged["timestamp"] == "2026-09-18T12:00:09Z"
 
 
-def test_merge_progress_data_prefers_worker_per_page_message_over_backend() -> None:
-    """SY002003: backend の進捗が大きくても ocr-worker の per-page メッセージを優先します。"""
-    backend = {"progress": 0.9, "message": "PDFファイル生成中です"}
-    worker = {"progress": 0.3, "message": "OCR処理中です（2/3）"}
+def test_merge_progress_data_uses_backend_values_on_error() -> None:
+    """SY002003: エラー時は backend のフェーズ進捗を採用します。"""
+    backend = {
+        "progress": 1.0,
+        "message": "OCR処理に失敗しました: something wrong",
+        "timestamp": "2026-09-18T12:00:10Z",
+    }
+    worker = {
+        "progress": 0.6,
+        "message": "OCR処理中です（2/3）",
+        "timestamp": "2026-09-18T12:00:06Z",
+    }
 
     merged = _merge_progress_data(backend, worker)
 
-    assert merged["progress"] == 0.9
-    assert merged["message"] == "OCR処理中です（2/3）"
+    assert merged["progress"] == 1.0
+    assert merged["message"] == "OCR処理に失敗しました: something wrong"
+    assert merged["timestamp"] == "2026-09-18T12:00:10Z"
 
 
-def test_merge_progress_data_worker_higher_progress_empty_message_fallback() -> None:
-    """ocr-worker の進捗が大きいが message が空の場合、backend の非空メッセージにフォールバックします。"""
-    backend = {"progress": 0.3, "message": "OCR処理を開始しました"}
-    worker = {"progress": 0.6, "message": ""}
+def test_merge_progress_data_uses_backend_values_on_cancel() -> None:
+    """SY002003: キャンセル時は backend のフェーズ進捗を採用します。"""
+    backend = {
+        "progress": 0.5,
+        "message": "ジョブがキャンセルされました",
+        "timestamp": "2026-09-18T12:00:10Z",
+    }
+    worker = {
+        "progress": 0.6,
+        "message": "OCR処理中です（2/3）",
+        "timestamp": "2026-09-18T12:00:06Z",
+    }
 
     merged = _merge_progress_data(backend, worker)
 
-    assert merged["progress"] == 0.6
-    assert merged["message"] == "OCR処理を開始しました"
+    assert merged["progress"] == 0.5
+    assert merged["message"] == "ジョブがキャンセルされました"
+    assert merged["timestamp"] == "2026-09-18T12:00:10Z"
+
+
+def test_merge_progress_data_falls_back_to_backend_when_worker_missing() -> None:
+    """ocr-worker から進捗が取得できない場合、backend の値を使います。"""
+    backend = {
+        "progress": 0.3,
+        "current_page": 1,
+        "total_pages": 3,
+        "message": "OCR処理中です（1/3）",
+        "timestamp": "2026-09-18T12:00:03Z",
+    }
+
+    merged = _merge_progress_data(backend, None)
+
+    assert merged["progress"] == 0.3
+    assert merged["current_page"] == 1
+    assert merged["total_pages"] == 3
+    assert merged["message"] == "OCR処理中です（1/3）"
+    assert merged["timestamp"] == "2026-09-18T12:00:03Z"

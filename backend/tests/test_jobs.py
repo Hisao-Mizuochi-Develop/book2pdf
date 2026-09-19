@@ -295,6 +295,10 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
         "status": "processing",
         "message": "OCR処理中です（2/2）",
         "timestamp": "2026-09-13T12:00:00+00:00",
+        "ocrPages": [
+            {"pageIndex": 0, "fileName": "page1.png", "start": "2026-09-13T11:59:50Z", "end": "2026-09-13T11:59:55Z", "elapsedMs": 5000},
+            {"pageIndex": 1, "fileName": "page2.png", "start": "2026-09-13T11:59:55Z", "end": None, "elapsedMs": None},
+        ],
     }
 
     async def fake_get(self, url, **kwargs):
@@ -320,14 +324,19 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
     assert data["message"] == "OCR処理中です（2/2）"
+    # SY002003: per-page OCR タイミングが GET /api/jobs レスポンスに含まれることを確認します
+    assert "ocrPages" in data
+    assert len(data["ocrPages"]) == 2
+    assert data["ocrPages"][0]["pageIndex"] == 0
+    assert data["ocrPages"][1]["fileName"] == "page2.png"
 
 
-def test_get_job_prefers_backend_progress_and_preserves_worker_per_page_message(client: TestClient, monkeypatch) -> None:
-    """backend のフェーズ進捗が ocr-worker より進んでも per-page メッセージは保持します。
+def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: TestClient, monkeypatch) -> None:
+    """PDF 生成中/完了時は backend のフェーズ進捗をそのまま採用します。
 
-    SY002003: PDF 生成中/完了時は backend の progress を優先しますが、
-    ocr-worker の per-page メッセージ（ページ番号を含む (N/M) 形式）は
-    frontend のページタイミング計測のために保持します。
+    SY002003: OCR 中は ocr-worker の per-page 進捗を信頼しますが、
+    PDF 生成中/完了/失敗/キャンセルなど backend が実行・検知するフェーズでは
+    backend の progress / message / timestamp を権威とします。
     """
     from app.routers import jobs as jobs_router
     from app.services import job_manager
@@ -351,6 +360,10 @@ def test_get_job_prefers_backend_progress_and_preserves_worker_per_page_message(
         "status": "processing",
         "message": "OCR処理中です（2/2）",
         "timestamp": "2026-09-13T12:00:00+00:00",
+        "ocrPages": [
+            {"pageIndex": 0, "fileName": "page1.png", "start": "2026-09-13T11:59:50Z", "end": "2026-09-13T11:59:55Z", "elapsedMs": 5000},
+            {"pageIndex": 1, "fileName": "page2.png", "start": "2026-09-13T11:59:55Z", "end": "2026-09-13T12:00:00Z", "elapsedMs": 5000},
+        ],
     }
 
     async def fake_get(self, url, **kwargs):
@@ -376,13 +389,13 @@ def test_get_job_prefers_backend_progress_and_preserves_worker_per_page_message(
     response = client.get(f"/api/jobs/{job_id}")
     assert response.status_code == 200
     data = response.json()
-    # backend の進捗の方が大きいので progress は backend を優先
+    # PDF 生成フェーズでは backend の値を採用
     assert data["progress"] == pytest.approx(0.75, abs=0.01)
-    # SY002003: ocr-worker の per-page メッセージは backend の進捗より優先して保持
-    assert data["message"] == "OCR処理中です（2/2）"
-    # current_page / total_pages は ocr-worker 優先
+    assert data["message"] == "PDFファイル生成中です"
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
+    # SY002003: PDF 生成フェーズでも ocr-worker の per-page タイミングは保持されます
+    assert data["ocrPages"][1]["fileName"] == "page2.png"
 
     # backend が完了進捗を書き込んだ場合も backend を優先
     job_manager.update_progress(
@@ -398,8 +411,8 @@ def test_get_job_prefers_backend_progress_and_preserves_worker_per_page_message(
     assert response.status_code == 200
     data = response.json()
     assert data["progress"] == pytest.approx(1.0, abs=0.01)
-    # SY002003: 完了時も ocr-worker の per-page メッセージを保持
-    assert data["message"] == "OCR処理中です（2/2）"
+    # 完了フェーズでも backend の message を採用
+    assert data["message"] == "PDFファイル生成が完了しました"
 
 
 def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:

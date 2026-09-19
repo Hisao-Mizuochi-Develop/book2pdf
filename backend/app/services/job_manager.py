@@ -336,7 +336,8 @@ def get_job_progress(job_id: str) -> dict | None:
         # 補足メッセージです
         "message": job.get("message", ""),
         # 最終更新時刻です
-        "updated_at": job.get("updated_at", ""),
+        # SY002003: frontend/ocr-worker と同じ "timestamp" キーで統一します
+        "timestamp": job.get("updated_at", ""),
     }
 
 

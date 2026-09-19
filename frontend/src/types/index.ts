@@ -29,6 +29,12 @@ export interface JobResponse {
   message?: string;
   files?: string[];
   text?: string;
+  progress?: number;
+  current_page?: number;
+  total_pages?: number;
+  timestamp?: string;
+  /** 各ページの OCR タイミング情報（SY002003）です。 */
+  ocrPages?: PageOcrTiming[];
 }
 
 /** `POST /api/jobs/{job_id}/upload/` のレスポンス型です。 */
@@ -54,6 +60,8 @@ export interface ProgressEvent {
   total_pages: number;
   message?: string;
   timestamp?: string;
+  /** 各ページの OCR タイミング情報（SY002003）です。 */
+  ocrPages?: PageOcrTiming[];
 }
 
 /** UploadForm コンポーネントの props 型です。 */
