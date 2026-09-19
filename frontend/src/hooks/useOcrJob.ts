@@ -162,18 +162,24 @@ export function useOcrJob(): UseOcrJobResult {
             next.ocrTotal.start = event.timestamp || nowIso;
           }
 
-          // PDF 生成開始を検出します（progress 75% 以上）。
-          if (
-            event.progress >= 0.75 &&
-            event.status === "processing" &&
-            !next.pdfGeneration.start
-          ) {
-            next.pdfGeneration.start = nowIso;
-            // 1 枚目画像 OCR 開始から最終画像 OCR 完了までの総時間を確定します。
+          // SY002003: backend から送信された PDF 生成時刻をそのまま使用します。
+          // frontend 側の progress 閾値推定は行いません。
+          if (event.pdfStartedAt && !next.pdfGeneration.start) {
+            next.pdfGeneration.start = event.pdfStartedAt;
+            // 1 枚目画像 OCR 開始から PDF 生成開始までを OCR 総時間とします。
             if (next.ocrTotal.start && !next.ocrTotal.end) {
-              next.ocrTotal.end = nowIso;
+              next.ocrTotal.end = event.pdfStartedAt;
               next.ocrTotal.elapsedMs =
-                now.getTime() - new Date(next.ocrTotal.start).getTime();
+                new Date(event.pdfStartedAt).getTime() -
+                new Date(next.ocrTotal.start).getTime();
+            }
+          }
+          if (event.pdfCompletedAt) {
+            next.pdfGeneration.end = event.pdfCompletedAt;
+            if (next.pdfGeneration.start) {
+              next.pdfGeneration.elapsedMs =
+                new Date(event.pdfCompletedAt).getTime() -
+                new Date(next.pdfGeneration.start).getTime();
             }
           }
 
@@ -195,6 +201,7 @@ export function useOcrJob(): UseOcrJobResult {
               next.overall.elapsedMs =
                 now.getTime() - new Date(next.overall.start).getTime();
             }
+            // backend から pdfCompletedAt が送信されなかった場合のフォールバックです。
             if (next.pdfGeneration.start && !next.pdfGeneration.end) {
               next.pdfGeneration.end = nowIso;
               next.pdfGeneration.elapsedMs =

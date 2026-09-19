@@ -384,6 +384,7 @@ def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: Te
         current_page=2,
         total_pages=2,
         message="PDFファイル生成中です",
+        extra={"pdfStartedAt": "2026-09-13T12:00:05Z"},
     )
 
     response = client.get(f"/api/jobs/{job_id}")
@@ -396,6 +397,9 @@ def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: Te
     assert data["total_pages"] == 2
     # SY002003: PDF 生成フェーズでも ocr-worker の per-page タイミングは保持されます
     assert data["ocrPages"][1]["fileName"] == "page2.png"
+    # SY002003: backend が記録した PDF 生成開始時刻が転送されます
+    assert data["pdfStartedAt"] == "2026-09-13T12:00:05Z"
+    assert data["pdfCompletedAt"] == ""
 
     # backend が完了進捗を書き込んだ場合も backend を優先
     job_manager.update_progress(
@@ -405,6 +409,10 @@ def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: Te
         current_page=2,
         total_pages=2,
         message="PDFファイル生成が完了しました",
+        extra={
+            "pdfStartedAt": "2026-09-13T12:00:05Z",
+            "pdfCompletedAt": "2026-09-13T12:00:06Z",
+        },
     )
 
     response = client.get(f"/api/jobs/{job_id}")
@@ -413,6 +421,9 @@ def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: Te
     assert data["progress"] == pytest.approx(1.0, abs=0.01)
     # 完了フェーズでも backend の message を採用
     assert data["message"] == "PDFファイル生成が完了しました"
+    # SY002003: backend が記録した PDF 生成完了時刻も転送されます
+    assert data["pdfStartedAt"] == "2026-09-13T12:00:05Z"
+    assert data["pdfCompletedAt"] == "2026-09-13T12:00:06Z"
 
 
 def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:

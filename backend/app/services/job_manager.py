@@ -63,6 +63,7 @@ def update_progress(
     current_page: int,
     total_pages: int,
     message: str,
+    extra: dict | None = None,
 ) -> None:
     """指定されたジョブのフェーズ進捗を in-memory ストアに書き込みます。
 
@@ -73,9 +74,10 @@ def update_progress(
         current_page: 現在のページ（フェーズ番号として使用）
         total_pages: 総ページ数（フェーズ総数として使用）
         message: 進捗メッセージ
+        extra: 追加の進捗フィールド（オプション）
     """
     now = _now_iso()
-    _progress_data[job_id] = {
+    data: dict = {
         "status": status,
         "progress": progress,
         "current_page": current_page,
@@ -83,6 +85,9 @@ def update_progress(
         "message": message,
         "timestamp": now,
     }
+    if extra:
+        data.update(extra)
+    _progress_data[job_id] = data
 
 
 def get_progress(job_id: str) -> dict | None:

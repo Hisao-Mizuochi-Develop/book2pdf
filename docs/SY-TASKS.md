@@ -5,8 +5,6 @@
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/19
-
 ---
 
 ## タスク粒度の方針
@@ -261,4 +259,11 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-19: ブラウザでの per-page timing テーブルの視覚的 UAT はユーザーに委ねる（`[TIMING-DEBUG]` ログで確認可能）
 > > - 2026-09-19: UAT 追加調整: `frontend/src/components/debug/DebugTimingPanel.tsx` の `formatTime` から `fractionalSecondDigits: 3` を削除し、タイミングパネルの時刻表記を秒までに変更（小数点以下は切り捨て表示）
 > > - 2026-09-19: **Phase 3 再検証完了**：frontend 全テスト 89/89 PASS、frontend build PASS
+> > - 2026-09-19: `backend/app/services/job_manager.py` の `update_progress()` を拡張し、`extra` 引数で `pdfStartedAt` / `pdfCompletedAt` を Redis job データにオプションで保存できるように変更
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で、OCR 全ページ完了後・PDF 生成開始直前に `pdfStartedAt` を記録し、PDF 生成完了後に `pdfCompletedAt` を記録
+> > - 2026-09-19: `frontend/src/hooks/useOcrJob.ts` で backend から送信された `pdfStartedAt` / `pdfCompletedAt` を `pdfGeneration` タイミングに優先反映するよう修正
+> > - 2026-09-19: `frontend/src/lib/api.ts` の `pollJobProgress` で `pdfStartedAt` / `pdfCompletedAt` を progress event に含めるよう修正
+> > - 2026-09-19: `frontend/src/lib/__tests__/api.test.ts` に polling event への PDF タイミング伝播テストを追加
+> > - 2026-09-19: `backend/tests/test_jobs.py` / `backend/tests/test_progress.py` / `frontend/src/hooks/__tests__/useOcrJob.test.ts` を更新
+> > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 55/55 PASS、frontend 全テスト 90/90 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
 >

@@ -503,6 +503,37 @@ describe("api client", () => {
       expect(fetch).not.toHaveBeenCalled();
     });
 
+    it("completed 進捗に pdfStartedAt / pdfCompletedAt を含めて通知する", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: "completed",
+            progress: 1.0,
+            current_page: 2,
+            total_pages: 2,
+            pdfStartedAt: "2026-09-16T12:00:02Z",
+            pdfCompletedAt: "2026-09-16T12:00:03Z",
+          }),
+          { status: 200 }
+        )
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      const event = JSON.parse(onMessage.mock.calls[0][0] as string);
+      expect(event.pdfStartedAt).toBe("2026-09-16T12:00:02Z");
+      expect(event.pdfCompletedAt).toBe("2026-09-16T12:00:03Z");
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
     it("failed ステータスでも onComplete を呼び出す", async () => {
       const onMessage = vi.fn();
       const onError = vi.fn();

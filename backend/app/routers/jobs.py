@@ -87,6 +87,11 @@ router = APIRouter(tags=["jobs"])
 # ログレベルは app.main で一括設定されます
 logger = logging.getLogger(__name__)
 
+
+def _now_iso() -> str:
+    """UTC の秒精度 ISO 8601 タイムスタンプを返します。"""
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
 @router.post("/", response_model=JobCreateResponse)
 def create_job() -> JobCreateResponse:
     """新しい OCR ジョブを作成します。
@@ -175,6 +180,9 @@ async def get_job(job_id: str) -> JobResponse:
         timestamp=merged.get("timestamp", ""),
         # SY002003: ocr-worker から取得した per-page タイミングを frontend に転送します
         ocrPages=merged.get("ocrPages", []),
+        # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+        pdfStartedAt=merged.get("pdfStartedAt", ""),
+        pdfCompletedAt=merged.get("pdfCompletedAt", ""),
     )
 
 
@@ -455,6 +463,8 @@ async def _run_ocr_and_generate_pdf(
         await asyncio.sleep(0)
 
         # OCR 全ページ処理が完了したら PDF 生成フェーズに移行します
+        # SY002003: backend が PDF 生成の開始時刻を記録します
+        pdf_started_at = _now_iso()
         job_manager.update_progress(
             job_id,
             status="processing",
@@ -462,6 +472,7 @@ async def _run_ocr_and_generate_pdf(
             current_page=total_pages,
             total_pages=total_pages,
             message="PDFファイル生成中です",
+            extra={"pdfStartedAt": pdf_started_at},
         )
     except asyncio.CancelledError:
         # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
@@ -555,6 +566,14 @@ async def _run_ocr_and_generate_pdf(
             message="PDFファイル生成が完了しました",
         )
         # PDF生成完了を記録します
+        # SY002003: backend が PDF 生成の完了時刻を記録し、開始時刻は既存の進捗から引き継ぎます
+        pdf_completed_at = _now_iso()
+        pdf_started_at = ""
+        current_progress = job_manager.get_progress(job_id)
+        if current_progress:
+            pdf_started_at = current_progress.get("pdfStartedAt", "")
+        if not pdf_started_at:
+            pdf_started_at = pdf_completed_at
         job_manager.update_progress(
             job_id,
             status="completed",
@@ -562,6 +581,7 @@ async def _run_ocr_and_generate_pdf(
             current_page=total_pages,
             total_pages=total_pages,
             message="PDFファイル生成が完了しました",
+            extra={"pdfStartedAt": pdf_started_at, "pdfCompletedAt": pdf_completed_at},
         )
     except asyncio.CancelledError:
         # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
@@ -694,6 +714,9 @@ def _merge_progress_data(
         "message": source.get("message", ""),
         "timestamp": source.get("timestamp", ""),
         "ocrPages": ocr_pages,
+        # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+        "pdfStartedAt": source.get("pdfStartedAt", ""),
+        "pdfCompletedAt": source.get("pdfCompletedAt", ""),
     }
 
 
@@ -881,6 +904,9 @@ async def _progress_event_generator(job_id: str):
                     message=data.get("message", ""),
                     timestamp=data.get("timestamp", ""),
                     ocrPages=data.get("ocrPages", []),
+                    # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+                    pdfStartedAt=data.get("pdfStartedAt", ""),
+                    pdfCompletedAt=data.get("pdfCompletedAt", ""),
                 )
 
                 # SSE 形式でイベントを yield します

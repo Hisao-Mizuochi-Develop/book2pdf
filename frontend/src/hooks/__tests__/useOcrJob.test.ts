@@ -537,14 +537,16 @@ describe("useOcrJob", () => {
     await act(async () => {
       const handlePromise = result.current.handleUploaded("job-123", ["page_001.png"]);
       await new Promise((resolve) => setTimeout(resolve, 0));
+      // SY002003: backend から pdfStartedAt / pdfCompletedAt が送信される
       mockInstances[0].simulateMessage(
         JSON.stringify({
           job_id: "job-123",
           status: "processing",
-          progress: 0.8,
+          progress: 0.75,
           current_page: 1,
           total_pages: 1,
-          message: "PDF生成中です",
+          message: "PDFファイル生成中です",
+          pdfStartedAt: "2026-09-16T12:00:02Z",
         }),
       );
       mockInstances[0].simulateMessage(
@@ -554,18 +556,20 @@ describe("useOcrJob", () => {
           progress: 1,
           current_page: 1,
           total_pages: 1,
-          message: "OCR 処理が完了しました",
+          message: "PDFファイル生成が完了しました",
+          pdfStartedAt: "2026-09-16T12:00:02Z",
+          pdfCompletedAt: "2026-09-16T12:00:03Z",
         }),
       );
       await handlePromise;
     });
 
     await waitFor(() => {
-      expect(result.current.timingDebug.pdfGeneration.start).not.toBeNull();
+      expect(result.current.timingDebug.pdfGeneration.start).toBe("2026-09-16T12:00:02Z");
     });
 
-    expect(result.current.timingDebug.pdfGeneration.end).not.toBeNull();
-    expect(result.current.timingDebug.pdfGeneration.elapsedMs).toBeGreaterThanOrEqual(0);
+    expect(result.current.timingDebug.pdfGeneration.end).toBe("2026-09-16T12:00:03Z");
+    expect(result.current.timingDebug.pdfGeneration.elapsedMs).toBe(1000);
     expect(result.current.timingDebug.overall.end).not.toBeNull();
     expect(result.current.timingDebug.overall.elapsedMs).toBeGreaterThanOrEqual(0);
   });

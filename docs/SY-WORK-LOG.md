@@ -2,7 +2,7 @@
 
 本ドキュメントは、book2pdf プロジェクトのシステム全体（SY）に関する作業ログです。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/19
 
 ---
 
@@ -393,3 +393,48 @@
 ### 関連タスク
 
 - `SY007012` UAT クロスモジュール不具合のタスク起票手順と優先順位ルールの明文化
+---
+
+## 2026-09-19 SY002003 PDF 生成タイミング（pdfStartedAt/pdfCompletedAt）の backend→frontend 伝播
+
+### 目的
+
+- UAT で発覚した PDF 生成の開始・完了時刻が frontend に正しく表示されない不具合を修正する
+- backend が PDF 生成の実測時刻を記録し、SSE / HTTP ポーリングの両方で frontend に届ける
+- frontend は backend 値を優先して `pdfGeneration` タイミングとして表示する
+
+### 実施内容
+
+- `backend/app/services/job_manager.py`
+  - `update_progress()` を拡張し、`extra` 引数で `pdfStartedAt` / `pdfCompletedAt` を受け取れるようにした
+  - 既存の `_progress_data` にこれらのフィールドを含めて保存する
+- `backend/app/routers/jobs.py`
+  - `_run_ocr_and_generate_pdf` で PDF 生成開始直前に `pdfStartedAt` を記録
+  - PDF 生成完了後に `pdfCompletedAt` を記録
+  - `_merge_progress_data` から既存の `pdfStartedAt` / `pdfCompletedAt` をマージ済み進捗に含める
+- `frontend/src/hooks/useOcrJob.ts`
+  - backend から受信した `pdfStartedAt` / `pdfCompletedAt` を `pdfGeneration` 状態に優先反映
+  - 値がない場合のみローカル計測したタイミングを使用
+- `frontend/src/lib/api.ts`
+  - `pollJobProgress` / `getJobProgress` のレスポンスから `pdfStartedAt` / `pdfCompletedAt` を `ProgressEvent` に含める
+- テスト更新
+  - `frontend/src/lib/__tests__/api.test.ts`: polling event への PDF タイミング伝播テストを追加
+  - `backend/tests/test_progress.py`: `_merge_progress_data` の PDF タイミングマージテストを更新
+  - `frontend/src/hooks/__tests__/useOcrJob.test.ts`: PDF タイミング検出テストを更新
+
+### 結果
+
+- backend 全テスト 55/55 PASS
+- frontend 全テスト 90/90 PASS
+- ocr-worker 全テスト 10/10 PASS
+- frontend build PASS
+- frontend lint PASS
+- ユーザー UAT 合格待ち
+
+### コミット
+
+`fix(SY002003): propagate pdfStartedAt/pdfCompletedAt from backend to frontend`
+
+### 関連タスク
+
+- `SY002003` SY002002 UATバグ対応

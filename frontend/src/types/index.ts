@@ -35,6 +35,10 @@ export interface JobResponse {
   timestamp?: string;
   /** 各ページの OCR タイミング情報（SY002003）です。 */
   ocrPages?: PageOcrTiming[];
+  /** PDF 生成開始時刻（SY002003）です。 */
+  pdfStartedAt?: string;
+  /** PDF 生成完了時刻（SY002003）です。 */
+  pdfCompletedAt?: string;
 }
 
 /** `POST /api/jobs/{job_id}/upload/` のレスポンス型です。 */
@@ -62,6 +66,10 @@ export interface ProgressEvent {
   timestamp?: string;
   /** 各ページの OCR タイミング情報（SY002003）です。 */
   ocrPages?: PageOcrTiming[];
+  /** PDF 生成開始時刻（SY002003）です。 */
+  pdfStartedAt?: string;
+  /** PDF 生成完了時刻（SY002003）です。 */
+  pdfCompletedAt?: string;
 }
 
 /** UploadForm コンポーネントの props 型です。 */

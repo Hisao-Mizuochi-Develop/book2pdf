@@ -96,6 +96,17 @@ class JobResponse(BaseModel):
         description="各ページの OCR タイミング情報",
     )
 
+    # PDF 生成の開始・完了時刻です
+    # SY002003: backend が PDF 生成の実測時刻を frontend に伝達します
+    pdfStartedAt: str = Field(
+        default="",
+        description="PDF 生成開始時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+    pdfCompletedAt: str = Field(
+        default="",
+        description="PDF 生成完了時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+
 
 class JobUploadResponse(BaseModel):
     """ZIP アップロード API のレスポンスモデルです。"""
@@ -172,4 +183,15 @@ class ProgressEvent(BaseModel):
     ocrPages: list[dict] = Field(
         default_factory=list,
         description="各ページの OCR タイミング情報",
+    )
+
+    # PDF 生成の開始・完了時刻です
+    # SY002003: backend が PDF 生成の実測時刻を frontend に伝達します
+    pdfStartedAt: str = Field(
+        default="",
+        description="PDF 生成開始時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+    pdfCompletedAt: str = Field(
+        default="",
+        description="PDF 生成完了時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
     )

@@ -235,6 +235,8 @@ export function pollJobProgress(
         message: data.message ?? "",
         timestamp: data.timestamp ?? fallbackTimestamp,
         ocrPages: data.ocrPages ?? [],
+        pdfStartedAt: data.pdfStartedAt ?? "",
+        pdfCompletedAt: data.pdfCompletedAt ?? "",
       };
       onMessage(JSON.stringify(progressEvent));
 

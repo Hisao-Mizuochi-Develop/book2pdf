@@ -403,6 +403,8 @@ def test_merge_progress_data_uses_backend_values_during_pdf_phase() -> None:
         "total_pages": 3,
         "message": "PDFファイル生成中です",
         "timestamp": "2026-09-18T12:00:09Z",
+        "pdfStartedAt": "2026-09-18T12:00:08Z",
+        "pdfCompletedAt": "",
     }
     worker = {
         "progress": 0.6,
@@ -419,6 +421,8 @@ def test_merge_progress_data_uses_backend_values_during_pdf_phase() -> None:
     assert merged["total_pages"] == 3
     assert merged["message"] == "PDFファイル生成中です"
     assert merged["timestamp"] == "2026-09-18T12:00:09Z"
+    assert merged["pdfStartedAt"] == "2026-09-18T12:00:08Z"
+    assert merged["pdfCompletedAt"] == ""
 
 
 def test_merge_progress_data_uses_backend_values_on_error() -> None:
