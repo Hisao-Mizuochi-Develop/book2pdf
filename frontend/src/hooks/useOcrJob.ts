@@ -164,6 +164,7 @@ export function useOcrJob(): UseOcrJobResult {
 
           // SY002003: backend から送信された PDF 生成時刻をそのまま使用します。
           // frontend 側の progress 閾値推定は行いません。
+          console.log("[TIMING-DEBUG] pdfStartedAt received:", event.pdfStartedAt);
           if (event.pdfStartedAt && !next.pdfGeneration.start) {
             next.pdfGeneration.start = event.pdfStartedAt;
             // 1 枚目画像 OCR 開始から PDF 生成開始までを OCR 総時間とします。
@@ -174,6 +175,7 @@ export function useOcrJob(): UseOcrJobResult {
                 new Date(next.ocrTotal.start).getTime();
             }
           }
+          console.log("[TIMING-DEBUG] pdfCompletedAt received:", event.pdfCompletedAt);
           if (event.pdfCompletedAt) {
             next.pdfGeneration.end = event.pdfCompletedAt;
             if (next.pdfGeneration.start) {

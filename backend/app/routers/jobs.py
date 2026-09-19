@@ -474,6 +474,12 @@ async def _run_ocr_and_generate_pdf(
             message="PDFファイル生成中です",
             extra={"pdfStartedAt": pdf_started_at},
         )
+        logger.info(
+            "[PDF-START] job_id=%s pdfStartedAt=%s progress_data=%s",
+            job_id,
+            pdf_started_at,
+            job_manager.get_progress(job_id),
+        )
     except asyncio.CancelledError:
         # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
         logger.info("OCR タスクがキャンセルされました: job_id=%s", job_id)
@@ -574,6 +580,13 @@ async def _run_ocr_and_generate_pdf(
             total_pages=total_pages,
             message="PDFファイル生成が完了しました",
             extra={"pdfStartedAt": pdf_started_at, "pdfCompletedAt": pdf_completed_at},
+        )
+        logger.info(
+            "[PDF-COMPLETE] job_id=%s pdfStartedAt=%s pdfCompletedAt=%s progress_data=%s",
+            job_id,
+            pdf_started_at,
+            pdf_completed_at,
+            job_manager.get_progress(job_id),
         )
         # PDF 生成が完了してから COMPLETED に遷移します
         # これにより、フロントエンドが completed を検出した時点では
@@ -893,6 +906,7 @@ async def _progress_event_generator(job_id: str):
             # backend はステータス（フェーズ遷移）の権威、
             # ocr-worker は per-page 進捗の権威です
             data = _merge_progress_data(backend_data, worker_data)
+            logger.info("[MERGED-DATA] job_id=%s data=%s", job_id, data)
 
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
@@ -919,13 +933,15 @@ async def _progress_event_generator(job_id: str):
                 # SSE 形式でイベントを yield します
                 # DEBUG(SY002003): frontend に送出する直前のマージ済みイベント内容をログに記録します
                 logger.info(
-                    "[SSE-EVENT] job_id=%s status=%s progress=%.2f current_page=%d total_pages=%d message=%r",
+                    "[SSE-EVENT] job_id=%s status=%s progress=%.2f current_page=%d total_pages=%d message=%r pdfStartedAt=%s pdfCompletedAt=%s",
                     job_id,
                     data["status"],
                     data.get("progress", 0.0),
                     data.get("current_page", 0),
                     data.get("total_pages", 0),
                     data.get("message", ""),
+                    data.get("pdfStartedAt", ""),
+                    data.get("pdfCompletedAt", ""),
                 )
                 event_text = f"data: {event.model_dump_json()}\n\n"
                 yield event_text
