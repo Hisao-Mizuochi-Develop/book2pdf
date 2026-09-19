@@ -82,6 +82,31 @@ class JobResponse(BaseModel):
     # ZIP 展開後に確定します
     total_pages: int = Field(default=0, ge=0, description="処理対象の総ページ数")
 
+    # 進捗の最終更新時刻です
+    # backend/frontend/ocr-worker を通じて UTC の秒精度 ISO 8601 で統一します
+    timestamp: str = Field(
+        default="",
+        description="進捗の最終更新時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+
+    # 各ページの OCR タイミング情報です
+    # SY002003: ocr-worker から取得した per-page 進捗情報をそのまま転送します
+    ocrPages: list[dict] = Field(
+        default_factory=list,
+        description="各ページの OCR タイミング情報",
+    )
+
+    # PDF 生成の開始・完了時刻です
+    # SY002003: backend が PDF 生成の実測時刻を frontend に伝達します
+    pdfStartedAt: str = Field(
+        default="",
+        description="PDF 生成開始時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+    pdfCompletedAt: str = Field(
+        default="",
+        description="PDF 生成完了時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+
 
 class JobUploadResponse(BaseModel):
     """ZIP アップロード API のレスポンスモデルです。"""
@@ -152,3 +177,21 @@ class ProgressEvent(BaseModel):
     # イベントが発生した時刻です
     # ISO 8601 形式の UTC 時刻文字列として保存されます
     timestamp: str = Field(default="", description="イベント発生時刻（ISO 8601 UTC）")
+
+    # 各ページの OCR タイミング情報です
+    # SY002003: ocr-worker から取得した per-page 進捗情報をそのまま転送します
+    ocrPages: list[dict] = Field(
+        default_factory=list,
+        description="各ページの OCR タイミング情報",
+    )
+
+    # PDF 生成の開始・完了時刻です
+    # SY002003: backend が PDF 生成の実測時刻を frontend に伝達します
+    pdfStartedAt: str = Field(
+        default="",
+        description="PDF 生成開始時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )
+    pdfCompletedAt: str = Field(
+        default="",
+        description="PDF 生成完了時刻（YYYY-MM-DDTHH:MM:SSZ 形式の UTC）",
+    )

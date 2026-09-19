@@ -19,6 +19,7 @@ import asyncio
 
 # 環境変数を読み込むための標準ライブラリです
 # ocr-worker の URL を取得するために使用します
+import logging
 import os
 
 # 抽象基底クラスを定義するための import です
@@ -47,6 +48,9 @@ try:
 except ImportError:  # pragma: no cover
     # ndlocr_cli がインストールされていないか、依存 submodule が不足しています
     _NDLOCR_AVAILABLE = False
+
+# 本モジュール用のロガーを取得します
+logger = logging.getLogger(__name__)
 
 
 class OcrResult:
@@ -192,10 +196,25 @@ class RemoteNdloCrOcrEngine(BaseOcrEngine):
         # OCR は数分〜数十分かかることがあるため、タイムアウトを長めに設定します
         # 環境変数 OCR_WORKER_REQUEST_TIMEOUT（秒）で上書き可能です
         timeout_seconds = float(os.environ.get("OCR_WORKER_REQUEST_TIMEOUT", "1800.0"))
+        ocr_url = f"{self.worker_url}/ocr"
+        logger.info(
+            "[OCR-WORKER-REQ] POST %s job_id=%s image_count=%d timeout=%.1fs",
+            ocr_url,
+            job_id,
+            len(image_files),
+            timeout_seconds,
+        )
         response = httpx.post(
-            f"{self.worker_url}/ocr",
+            ocr_url,
             json=request_body,
             timeout=timeout_seconds,
+        )
+        logger.info(
+            "[OCR-WORKER-RES] POST %s job_id=%s status=%d text_preview=%r",
+            ocr_url,
+            job_id,
+            response.status_code,
+            response.text[:200],
         )
 
         # HTTP エラーがあれば例外を発生させます

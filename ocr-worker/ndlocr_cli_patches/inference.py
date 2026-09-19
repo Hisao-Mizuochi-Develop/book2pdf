@@ -180,6 +180,7 @@ class OcrInferrer:
         # [key, value]: ['img', None], ['xml', xml_tree]
         pred_list = []
         pred_xml_dict_for_dump = {}
+        total_pages = len(single_outputdir_data['xml'].findall('PAGE'))
 
         for page_idx, page_xml in enumerate(single_outputdir_data['xml'].findall('PAGE')):
             single_image_file_data = self._get_single_image_file_data(page_idx, single_outputdir_data)
@@ -189,7 +190,17 @@ class OcrInferrer:
 
             print('######## START PAGE INFERENCE PROCESS ########')
             start_page = time.time()
+            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します。
+            # 開始時刻とファイル名を記録します。
+            page_file_name = single_image_file_data[0].get('img_file_name') if single_image_file_data else None
             logger.debug(f'[ndlocr_cli] ページ処理開始 (ruby_only): page={page_idx + 1}')
+            self._update_progress(
+                page_idx + 1,
+                total_pages,
+                f'OCR処理中です（{page_idx + 1}/{total_pages}）',
+                phase="start",
+                file_name=page_file_name,
+            )
 
             for proc in self.proc_list:
                 start_proc = time.time()
@@ -206,6 +217,16 @@ class OcrInferrer:
             self.total_time_statistics.append(elapsed_page)
             # DEBUG ログ: ルビ推定モードの 1 ページ処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了 (ruby_only): page={page_idx + 1}, elapsed={elapsed_page:.3f}s')
+            # FIX(SY002003): ルビ推定モードでも per-page 進捗を通知します。
+            # 完了時刻と経過時間を記録します。current_page は 1-based で統一します。
+            self._update_progress(
+                page_idx + 1,
+                total_pages,
+                f'OCR処理中です（{page_idx + 1}/{total_pages}）',
+                phase="end",
+                elapsed_seconds=elapsed_page,
+                file_name=page_file_name,
+            )
 
             # save inferenced result text for this page
             sum_main_txt = ''
@@ -281,8 +302,15 @@ class OcrInferrer:
             print('######## START PAGE INFERENCE PROCESS ########')
             start_page = time.time()
             logger.debug(f'[ndlocr_cli] ページ処理開始: page={page_idx}, img_path={img_path}')
-            # FIX(OW004001): 各ページ処理開始時に進捗を通知します
-            self._update_progress(page_idx - 1, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
+            # FIX(OW004001): 各ページ処理開始時に進捗を通知します。
+            # SY002003: 開始時刻とファイル名を記録します。current_page は 1-based で統一します。
+            self._update_progress(
+                page_idx,
+                total_pages,
+                f'OCR処理中です（{page_idx}/{total_pages}）',
+                phase="start",
+                file_name=img_path,
+            )
 
 
             for proc in self.proc_list:
@@ -304,7 +332,15 @@ class OcrInferrer:
             # DEBUG ログ: 1 ページあたりの OCR 処理時間を出力
             logger.debug(f'[ndlocr_cli] ページ処理完了: page={page_idx}, img_path={img_path}, elapsed={elapsed_page:.3f}s')
             # FIX(OW004001): 各ページ処理完了後に進捗を通知します
-            self._update_progress(page_idx, total_pages, f'OCR処理中です（{page_idx}/{total_pages}）')
+            # SY002003: 完了時刻と経過時間を記録します。
+            self._update_progress(
+                page_idx,
+                total_pages,
+                f'OCR処理中です（{page_idx}/{total_pages}）',
+                phase="end",
+                elapsed_seconds=elapsed_page,
+                file_name=img_path,
+            )
 
             if self.cfg['save_image'] or self.cfg['partial_infer']:
                 # save inferenced result drawn image in pred_img directory
@@ -357,10 +393,26 @@ class OcrInferrer:
 
         return pred_list
 
-    def _update_progress(self, current_page: int, total_pages: int, message: str) -> None:
-        """OCR ページ処理の進捗をファイルに書き込みます。"""
+    def _update_progress(
+        self,
+        current_page: int,
+        total_pages: int,
+        message: str,
+        phase: str | None = None,
+        elapsed_seconds: float | None = None,
+        file_name: str | None = None,
+    ) -> None:
+        """OCR ページ処理の進捗を in-memory ストアに書き込みます。"""
         from .progress_reporter import write_progress
-        write_progress(self.job_id, current_page, total_pages, message)
+        write_progress(
+            self.job_id,
+            current_page,
+            total_pages,
+            message,
+            phase=phase,
+            elapsed_seconds=elapsed_seconds,
+            file_name=file_name,
+        )
 
     def _get_single_dir_data(self, input_dir):
         """

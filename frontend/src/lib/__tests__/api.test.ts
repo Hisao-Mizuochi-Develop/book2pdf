@@ -266,8 +266,14 @@ describe("api client", () => {
       const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
       vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
 
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけをテストコンテキストの Blob に差し替えます。
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      const response = new Response(blob, { status: 200 });
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
       // jsdom 以外の環境では response.body が存在するため、Blob 書き込みパスを検証するために null にします
       Object.defineProperty(response, "body", { value: null });
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
@@ -309,8 +315,14 @@ describe("api client", () => {
       );
       vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
 
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけをテストコンテキストの Blob に差し替えます。
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      const response = new Response(blob, { status: 200 });
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
       // pipeTo は実際の WritableStream を要求するため、body を null にして
       // writable.write フォールバックパスを検証します。
       Object.defineProperty(response, "body", { value: null });
@@ -347,9 +359,14 @@ describe("api client", () => {
       const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
       const blob = new Blob(["pdf"], { type: "application/pdf" });
-      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        new Response(blob, { status: 200 })
-      );
+      // MSW/Node 22 環境で new Response(Blob) が内部エラーになるため、テキストボディで構築し
+      // response.blob() の結果だけを元の Blob に差し替えます。
+      const response = new Response("pdf", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      vi.spyOn(response, "blob").mockResolvedValue(blob);
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response);
 
       await downloadPdf("job-123", "result.pdf");
 
@@ -484,6 +501,37 @@ describe("api client", () => {
       await vi.advanceTimersByTimeAsync(2000);
       await flushPromises();
       expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("completed 進捗に pdfStartedAt / pdfCompletedAt を含めて通知する", async () => {
+      const onMessage = vi.fn();
+      const onError = vi.fn();
+      const onComplete = vi.fn();
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: "completed",
+            progress: 1.0,
+            current_page: 2,
+            total_pages: 2,
+            pdfStartedAt: "2026-09-16T12:00:02Z",
+            pdfCompletedAt: "2026-09-16T12:00:03Z",
+          }),
+          { status: 200 }
+        )
+      );
+
+      pollJobProgress("job-123", onMessage, onError, onComplete);
+      await vi.advanceTimersByTimeAsync(0);
+      await flushPromises();
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      const event = JSON.parse(onMessage.mock.calls[0][0] as string);
+      expect(event.pdfStartedAt).toBe("2026-09-16T12:00:02Z");
+      expect(event.pdfCompletedAt).toBe("2026-09-16T12:00:03Z");
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
     });
 
     it("failed ステータスでも onComplete を呼び出す", async () => {

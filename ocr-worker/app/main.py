@@ -347,6 +347,10 @@ def _write_progress(
     SY002002: ocr-worker コンテナ内の in-memory ストアに保存します。
     backend コンテナから HTTP (GET /progress/{job_id}) で参照されます。
 
+    SY002003: 既存の per-page タイミング情報（ocrPages）は上書きせず保持します。
+    inference.py がページ処理中に書き込んだ ocrPages を、完了・失敗・キャンセル
+    などのフェーズ進捗で失わないようにするためです。
+
     Args:
         job_id: 進捗通知対象のジョブ ID（未設定時は何もしません）
         status: ジョブの状態文字列
@@ -360,6 +364,9 @@ def _write_progress(
 
     from cli.core.progress_reporter import _progress_store
 
+    timestamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    existing = _progress_store.get(job_id, {})
+
     _progress_store[job_id] = {
         "job_id": job_id,
         "status": status,
@@ -367,7 +374,9 @@ def _write_progress(
         "current_page": current_page,
         "total_pages": total_pages,
         "message": message,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": timestamp,
+        # SY002003: per-page タイミング情報があれば保持します
+        "ocrPages": existing.get("ocrPages", []),
     }
 
 
@@ -418,6 +427,11 @@ class OcrProgressResponse(BaseModel):
     status: str = Field(..., description="処理状態")
     message: str = Field(..., description="進捗メッセージ")
     timestamp: str = Field(..., description="更新時刻（ISO 8601）")
+    # SY002003: 各ページの OCR タイミング情報を backend へ転送します
+    ocrPages: list[dict] = Field(
+        default_factory=list,
+        description="各ページの OCR タイミング情報",
+    )
 
 
 @app.get("/progress/{job_id}")
@@ -447,6 +461,7 @@ async def get_progress(job_id: str) -> OcrProgressResponse:
         status=data["status"],
         message=data["message"],
         timestamp=data["timestamp"],
+        ocrPages=data.get("ocrPages", []),
     )
 
 

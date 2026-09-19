@@ -12,6 +12,10 @@ from __future__ import annotations
 # SSE 配信中の進捗ポーリング間隔で使用します
 import asyncio
 
+# 辞書の深いコピーを作成するための標準ライブラリです
+# SY002003: ocrPages 配列の変更を正しく検出するために使用します
+import copy
+
 # ログ出力のための標準ライブラリです
 # 環境変数 LOG_LEVEL で出力レベルを切り替えます
 import logging
@@ -84,6 +88,10 @@ router = APIRouter(tags=["jobs"])
 logger = logging.getLogger(__name__)
 
 
+def _now_iso() -> str:
+    """UTC の秒精度 ISO 8601 タイムスタンプを返します。"""
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
 @router.post("/", response_model=JobCreateResponse)
 def create_job() -> JobCreateResponse:
     """新しい OCR ジョブを作成します。
@@ -91,9 +99,11 @@ def create_job() -> JobCreateResponse:
     このエンドポイントは ZIP アップロードの前に呼ばれる想定です。
     ジョブ ID を発行し、メモリ内で初期状態（pending）を保持します。
     """
+    logger.info("[API-IN] POST /api/jobs/")
     # 新しいジョブを作成してその ID を取得します
     job_id = job_manager.create_job()
 
+    logger.info("[API-OUT] POST /api/jobs/ job_id=%s status=%s", job_id, JobStatus.PENDING.value)
     # レスポンスモデルに合わせて返却します
     # 初期状態は PENDING（処理待ち）です
     return JobCreateResponse(job_id=job_id, status=JobStatus.PENDING)
@@ -117,6 +127,7 @@ async def get_job(job_id: str) -> JobResponse:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] GET /api/jobs/%s", job_id)
     # ジョブ管理サービスからジョブ情報を取得します
     job = job_manager.get_job(job_id)
 
@@ -133,9 +144,17 @@ async def get_job(job_id: str) -> JobResponse:
 
     # ocr-worker から per-page 進捗を取得してマージします
     progress_data: dict = {}
+    progress_url = f"{ocr_worker_url}/progress/{job_id}"
     try:
         async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
-            response = await client.get(f"{ocr_worker_url}/progress/{job_id}")
+            logger.info("[OCR-WORKER-REQ] GET %s", progress_url)
+            response = await client.get(progress_url)
+            logger.info(
+                "[OCR-WORKER-RES] GET %s status=%d body=%r",
+                progress_url,
+                response.status_code,
+                response.text[:500],
+            )
             if response.status_code == 200:
                 progress_data = response.json()
     except (httpx.HTTPError, ValueError):
@@ -157,6 +176,13 @@ async def get_job(job_id: str) -> JobResponse:
         progress=merged["progress"],
         current_page=merged["current_page"],
         total_pages=merged["total_pages"],
+        # SY002003: backend/frontend/ocr-worker 間で秒精度 UTC ISO 8601 を統一します
+        timestamp=merged.get("timestamp", ""),
+        # SY002003: ocr-worker から取得した per-page タイミングを frontend に転送します
+        ocrPages=merged.get("ocrPages", []),
+        # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+        pdfStartedAt=merged.get("pdfStartedAt", ""),
+        pdfCompletedAt=merged.get("pdfCompletedAt", ""),
     )
 
 
@@ -180,6 +206,7 @@ async def cancel_job(job_id: str) -> dict[str, str]:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] DELETE /api/jobs/%s", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -222,9 +249,17 @@ async def cancel_job(job_id: str) -> dict[str, str]:
         if settings.ocr_worker_url
         else "http://ocr-worker:8001"
     )
+    cancel_url = f"{ocr_worker_url}/cancel/{job_id}"
     try:
         async with httpx.AsyncClient(timeout=_OCR_WORKER_TIMEOUT) as client:
-            response = await client.post(f"{ocr_worker_url}/cancel/{job_id}")
+            logger.info("[OCR-WORKER-REQ] POST %s", cancel_url)
+            response = await client.post(cancel_url)
+            logger.info(
+                "[OCR-WORKER-RES] POST %s status=%d body=%r",
+                cancel_url,
+                response.status_code,
+                response.text[:200],
+            )
             if response.status_code != 200:
                 logger.warning(
                     "ocr-worker へのキャンセル伝播が失敗しました: job_id=%s, status=%d",
@@ -284,6 +319,7 @@ async def upload_zip(job_id: str, file: UploadFile) -> JobUploadResponse:
     Raises:
         HTTPException: ジョブが存在しない場合や ZIP 展開に失敗した場合
     """
+    logger.info("[API-IN] POST /api/jobs/%s/upload filename=%s size=%s", job_id, file.filename, file.size)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -337,6 +373,7 @@ async def run_ocr(job_id: str) -> JobOcrResponse:
     Raises:
         HTTPException: ジョブが存在しない場合や画像が未アップロードの場合
     """
+    logger.info("[API-IN] POST /api/jobs/%s/ocr", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -412,16 +449,6 @@ async def _run_ocr_and_generate_pdf(
 
         total_pages = len(image_files)
 
-        # OCR 処理開始を記録します
-        job_manager.update_progress(
-            job_id,
-            status="processing",
-            progress=0.0,
-            current_page=0,
-            total_pages=total_pages,
-            message="OCR処理を開始しました",
-        )
-
         # キャンセル済みでないかチェックします
         await asyncio.sleep(0)
 
@@ -436,6 +463,8 @@ async def _run_ocr_and_generate_pdf(
         await asyncio.sleep(0)
 
         # OCR 全ページ処理が完了したら PDF 生成フェーズに移行します
+        # SY002003: backend が PDF 生成の開始時刻を記録します
+        pdf_started_at = _now_iso()
         job_manager.update_progress(
             job_id,
             status="processing",
@@ -443,6 +472,13 @@ async def _run_ocr_and_generate_pdf(
             current_page=total_pages,
             total_pages=total_pages,
             message="PDFファイル生成中です",
+            extra={"pdfStartedAt": pdf_started_at},
+        )
+        logger.info(
+            "[PDF-START] job_id=%s pdfStartedAt=%s progress_data=%s",
+            job_id,
+            pdf_started_at,
+            job_manager.get_progress(job_id),
         )
     except asyncio.CancelledError:
         # ユーザーによるキャンセルまたはシャットダウン時のクリーンアップです
@@ -527,21 +563,40 @@ async def _run_ocr_and_generate_pdf(
             pdf_path=str(pdf_path),
             message="PDFファイル生成が完了しました",
         )
-        # PDF 生成が完了してから COMPLETED に遷移します
-        # これにより、フロントエンドが completed を検出した時点では
-        # PDF が必ず生成済みであることが保証されます
-        job_manager.update_job_status(
-            job_id,
-            JobStatus.COMPLETED,
-            message="PDFファイル生成が完了しました",
-        )
         # PDF生成完了を記録します
+        # SY002003: backend が PDF 生成の完了時刻を記録し、開始時刻は既存の進捗から引き継ぎます
+        pdf_completed_at = _now_iso()
+        pdf_started_at = ""
+        current_progress = job_manager.get_progress(job_id)
+        if current_progress:
+            pdf_started_at = current_progress.get("pdfStartedAt", "")
+        if not pdf_started_at:
+            pdf_started_at = pdf_completed_at
         job_manager.update_progress(
             job_id,
             status="completed",
             progress=1.0,
             current_page=total_pages,
             total_pages=total_pages,
+            message="PDFファイル生成が完了しました",
+            extra={"pdfStartedAt": pdf_started_at, "pdfCompletedAt": pdf_completed_at},
+        )
+        logger.info(
+            "[PDF-COMPLETE] job_id=%s pdfStartedAt=%s pdfCompletedAt=%s progress_data=%s",
+            job_id,
+            pdf_started_at,
+            pdf_completed_at,
+            job_manager.get_progress(job_id),
+        )
+        # PDF 生成が完了してから COMPLETED に遷移します
+        # これにより、フロントエンドが completed を検出した時点では
+        # PDF が必ず生成済みであることが保証されます
+        # なお、_progress_data に完了状態とタイムスタンプを先に書き込んでから
+        # _jobs["status"] を更新することで、get_job で completed を返す時点では
+        # pdfStartedAt/pdfCompletedAt が揃っていることを保証します。
+        job_manager.update_job_status(
+            job_id,
+            JobStatus.COMPLETED,
             message="PDFファイル生成が完了しました",
         )
     except asyncio.CancelledError:
@@ -619,11 +674,14 @@ def _merge_progress_data(
 ) -> dict:
     """backend のフェーズ進捗と ocr-worker の per-page 進捗をマージします。
 
-    SY002002 §5.4 のマージルールに従います:
-    - status / timestamp → backend (フェーズ進捗) 優先
-    - progress / message → 値の大きい方を優先
-      (OCR 中は ocr-worker の per-page 進捗を、PDF 生成中は backend のフェーズ進捗を優先)
-    - current_page / total_pages → ocr-worker (per-page 進捗) 優先
+    SY002003:
+    - OCR 処理中は ocr-worker の per-page 進捗をそのまま採用します。
+      backend は OCR 処理中に自前の timestamp / message / progress を
+      生成せず、ocr-worker の値を信頼します。
+    - PDF 生成中・エラー時・キャンセル時は backend のフェーズ進捗を採用します。
+      これらは backend 自身が実行・検知する処理であるため、backend が
+      生成した timestamp / message / progress を権威とします。
+    - status は常に backend のフェーズ値を権威とします。
 
     Args:
         backend_data: backend の in-memory フェーズ進捗。None の場合は worker のみ。
@@ -635,32 +693,50 @@ def _merge_progress_data(
     backend_data = backend_data or {}
     worker_data = worker_data or {}
 
-    # backend 優先フィールド（status / timestamp）
-    # ocr-worker の status はページ単位処理中固定の可能性があるため
-    status = backend_data.get("status", worker_data.get("status", "processing"))
-    timestamp = backend_data.get("timestamp", worker_data.get("timestamp", ""))
+    # status は backend が権威（フェーズ遷移）です。
+    # ocr-worker が OCR 完了として "completed" を書き込んでも、
+    # バックエンドがまだ PDF 生成など後続処理を実行していれば全体ジョブは
+    # 未完了です。backend_data が空の場合は "processing" をデフォルトとし、
+    # 完了はバックエンドが明示的に設定した時のみにします。
+    status = backend_data.get("status", "processing")
 
-    # ocr-worker 優先フィールド（per-page 進捗）
-    # ただし、backend のフェーズ進捗（PDF 生成など）が ocr-worker の進捗より
-    # 進んでいる場合は backend の値を優先して、正しいメッセージを表示します。
-    worker_progress = worker_data.get("progress", 0.0)
-    backend_progress = backend_data.get("progress", 0.0)
-    if backend_progress >= worker_progress:
-        progress = backend_progress
-        message = backend_data.get("message", worker_data.get("message", ""))
+    # backend で生成された PDF/エラー/キャンセル進捗かどうかを判定します。
+    # OCR 開始時のメッセージは backend から生成しないため、
+    # ここに該当するのは PDF 生成・完了・失敗・キャンセルのみです。
+    backend_message = backend_data.get("message", "")
+    is_backend_phase = (
+        "PDF" in backend_message
+        or "失敗" in backend_message
+        or "エラー" in backend_message
+        or "キャンセル" in backend_message
+    )
+
+    # OCR 中は ocr-worker の per-page 進捗を信頼し、
+    # PDF 生成中・エラー時・キャンセル時は backend の値を使います。
+    if is_backend_phase:
+        source = backend_data
     else:
-        progress = worker_progress
-        message = worker_data.get("message", backend_data.get("message", ""))
-    current_page = worker_data.get("current_page", backend_data.get("current_page", 0))
-    total_pages = worker_data.get("total_pages", backend_data.get("total_pages", 0))
+        source = worker_data if worker_data else backend_data
+
+    # ocrPages は常に最新の worker データを優先して転送します。
+    # PDF 生成中など backend が権威となるフェーズでは、backend の値があれば採用します。
+    ocr_pages = worker_data.get("ocrPages") if worker_data else None
+    if not ocr_pages and backend_data:
+        ocr_pages = backend_data.get("ocrPages")
+    if ocr_pages is None:
+        ocr_pages = []
 
     return {
         "status": status,
-        "progress": progress,
-        "current_page": current_page,
-        "total_pages": total_pages,
-        "message": message,
-        "timestamp": timestamp,
+        "progress": source.get("progress", 0.0),
+        "current_page": source.get("current_page", 0),
+        "total_pages": source.get("total_pages", 0),
+        "message": source.get("message", ""),
+        "timestamp": source.get("timestamp", ""),
+        "ocrPages": ocr_pages,
+        # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+        "pdfStartedAt": source.get("pdfStartedAt", ""),
+        "pdfCompletedAt": source.get("pdfCompletedAt", ""),
     }
 
 
@@ -677,6 +753,7 @@ async def download_pdf(job_id: str) -> FileResponse:
     Raises:
         HTTPException: ジョブが存在しない、未完了、または PDF が未生成の場合
     """
+    logger.info("[API-IN] GET /api/jobs/%s/pdf", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:
@@ -777,11 +854,25 @@ async def _progress_event_generator(job_id: str):
             # 2. ocr-worker の per-page 進捗を HTTP GET でポーリングします
             worker_data: dict | None = None
             try:
-                response = await client.get(
-                    f"{ocr_worker_url}/progress/{job_id}"
+                poll_url = f"{ocr_worker_url}/progress/{job_id}"
+                logger.info("[OCR-WORKER-REQ] GET %s", poll_url)
+                response = await client.get(poll_url)
+                logger.info(
+                    "[OCR-WORKER-RES] GET %s status=%d body=%r",
+                    poll_url,
+                    response.status_code,
+                    response.text[:500],
                 )
                 if response.status_code == 200:
                     worker_data = response.json()
+                    logger.info(
+                        "[WORKER-RESPONSE] job_id=%s progress=%.2f current_page=%d total_pages=%d message=%r",
+                        job_id,
+                        worker_data.get("progress", 0.0),
+                        worker_data.get("current_page", 0),
+                        worker_data.get("total_pages", 0),
+                        worker_data.get("message", ""),
+                    )
                 elif response.status_code == 404:
                     # ocr-worker にまだデータがない（処理開始前など）は正常系です
                     logger.info(
@@ -815,10 +906,12 @@ async def _progress_event_generator(job_id: str):
             # backend はステータス（フェーズ遷移）の権威、
             # ocr-worker は per-page 進捗の権威です
             data = _merge_progress_data(backend_data, worker_data)
+            logger.info("[MERGED-DATA] job_id=%s data=%s", job_id, data)
 
             # 前回と内容が異なる場合のみイベントを送信します
             if data != last_data:
-                last_data = data.copy()
+                # SY002003: ocrPages 配列が含まれるため、深いコピーで比較します
+                last_data = copy.deepcopy(data)
                 last_send_time = asyncio.get_event_loop().time()
                 event_sent = True
 
@@ -831,9 +924,25 @@ async def _progress_event_generator(job_id: str):
                     total_pages=data.get("total_pages", 0),
                     message=data.get("message", ""),
                     timestamp=data.get("timestamp", ""),
+                    ocrPages=data.get("ocrPages", []),
+                    # SY002003: backend が記録した PDF 生成時刻を frontend に転送します
+                    pdfStartedAt=data.get("pdfStartedAt", ""),
+                    pdfCompletedAt=data.get("pdfCompletedAt", ""),
                 )
 
                 # SSE 形式でイベントを yield します
+                # DEBUG(SY002003): frontend に送出する直前のマージ済みイベント内容をログに記録します
+                logger.info(
+                    "[SSE-EVENT] job_id=%s status=%s progress=%.2f current_page=%d total_pages=%d message=%r pdfStartedAt=%s pdfCompletedAt=%s",
+                    job_id,
+                    data["status"],
+                    data.get("progress", 0.0),
+                    data.get("current_page", 0),
+                    data.get("total_pages", 0),
+                    data.get("message", ""),
+                    data.get("pdfStartedAt", ""),
+                    data.get("pdfCompletedAt", ""),
+                )
                 event_text = f"data: {event.model_dump_json()}\n\n"
                 yield event_text
 
@@ -886,6 +995,7 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     Raises:
         HTTPException: ジョブが存在しない場合に 404 エラーを返します
     """
+    logger.info("[API-IN] GET /api/jobs/%s/events (SSE)", job_id)
     # ジョブが存在するか確認します
     job = job_manager.get_job(job_id)
     if job is None:

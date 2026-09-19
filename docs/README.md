@@ -3,7 +3,7 @@
 本リポジトリの各種ドキュメントへの入口です。
 システム全体の設計書、運用手順、各モジュールの仕様・タスク・作業ログを下記から参照してください。
 
-> 最終更新: 2026/09/14
+> 最終更新: 2026/09/19
 
 ---
 
@@ -70,6 +70,7 @@
 | ドキュメント | 内容 |
 |---|---|
 | [`backend/docs/BE-BACKEND-SYSTEM-SPEC.md`](../backend/docs/BE-BACKEND-SYSTEM-SPEC.md) | バックエンド仕様書（FastAPI + ndlocr_cli） |
+| [`backend/docs/BE-UNIT-TEST-GUIDE.md`](../backend/docs/BE-UNIT-TEST-GUIDE.md) | backend 単体テスト実行手順・環境構築ガイド |
 | [`backend/docs/BE007001-report.md`](../backend/docs/BE007001-report.md) | BE007001 最終報告書 |
 
 ## frontend ドキュメント

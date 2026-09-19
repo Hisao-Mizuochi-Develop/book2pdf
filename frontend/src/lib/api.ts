@@ -3,6 +3,7 @@
 import type {
   JobCreateResponse,
   JobUploadResponse,
+  JobResponse,
 } from "@/types";
 
 // ブラウザからアクセスする backend API のベース URL です
@@ -11,6 +12,22 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 
 // API 呼び出しのデフォルトタイムアウト（ミリ秒）です
 const DEFAULT_TIMEOUT_MS = 30_000;
+
+/**
+ * 通信デバッグログを有効にするかどうかです。
+ * 本番ビルドでは不要なログを抑制するため、NEXT_PUBLIC_DEBUG_API が truthy な場合のみ詳細ログを出力します。
+ * ただし SSE のエラーや接続状態は常に出力し、トラブルシューティングを支援します。
+ */
+const _DEBUG_API = Boolean(process.env.NEXT_PUBLIC_DEBUG_API);
+
+/**
+ * リクエスト/レスポンスのデバッグログを出力します
+ * @param label ログラベル
+ * @param detail ログ内容
+ */
+function _logApi(label: string, detail: unknown): void {
+  console.log(`[API-DEBUG] ${label}`, detail);
+}
 
 /**
  * fetch にタイムアウトを付与して実行します
@@ -24,6 +41,16 @@ async function fetchWithTimeout(
   init?: RequestInit,
   timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<Response> {
+  const url = typeof input === "string" ? input : input.toString();
+  if (_DEBUG_API) {
+    _logApi("REQ", {
+      url,
+      method: init?.method ?? "GET",
+      // FormData などは直接ログに出さず、型のみ表示します
+      bodyType: init?.body ? (init.body instanceof FormData ? "FormData" : typeof init.body) : undefined,
+    });
+  }
+
   const controller = new AbortController();
   const timeoutId =
     timeoutMs > 0
@@ -31,6 +58,14 @@ async function fetchWithTimeout(
       : undefined;
   try {
     const response = await fetch(input, { ...init, signal: controller.signal });
+    if (_DEBUG_API) {
+      _logApi("RES", {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get("content-type"),
+      });
+    }
     return response;
   } finally {
     if (timeoutId !== undefined) {
@@ -110,8 +145,13 @@ export function subscribeJobProgress(
   // 既に [DONE] を受信済みの場合はエラーとして扱いません。
   let doneReceived = false;
 
+  eventSource.onopen = () => {
+    console.log(`[SSE-DEBUG] OPEN job_id=${jobId}`);
+  };
+
   eventSource.onmessage = (event) => {
     const data = event.data;
+    console.log(`[SSE-DEBUG] MSG job_id=${jobId} data=`, data);
     if (data === "[DONE]") {
       doneReceived = true;
       onComplete();
@@ -122,6 +162,7 @@ export function subscribeJobProgress(
   };
 
   eventSource.onerror = (error) => {
+    console.log(`[SSE-DEBUG] ERROR job_id=${jobId}`, error);
     // [DONE] 受信後の切断は正常終了として扱います
     if (!doneReceived) {
       onError(error);
@@ -179,7 +220,10 @@ export function pollJobProgress(
         throw new Error(`進捗の取得に失敗しました: ${response.status} ${response.statusText}`);
       }
 
-      const data = (await response.json()) as { status: string; message?: string; progress?: number; current_page?: number; total_pages?: number; timestamp?: string };
+      const data = (await response.json()) as JobResponse;
+
+      // backend/frontend/ocr-worker 間で UTC の秒精度 ISO 8601 を統一します (SY002003)
+      const fallbackTimestamp = new Date().toISOString().split(".")[0] + "Z";
 
       // 進捗情報を SSE と同じ形式（JSON）に変換してコールバックに渡します
       const progressEvent = {
@@ -189,7 +233,10 @@ export function pollJobProgress(
         current_page: data.current_page ?? 0,
         total_pages: data.total_pages ?? 0,
         message: data.message ?? "",
-        timestamp: data.timestamp ?? new Date().toISOString(),
+        timestamp: data.timestamp ?? fallbackTimestamp,
+        ocrPages: data.ocrPages ?? [],
+        pdfStartedAt: data.pdfStartedAt ?? "",
+        pdfCompletedAt: data.pdfCompletedAt ?? "",
       };
       onMessage(JSON.stringify(progressEvent));
 

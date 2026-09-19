@@ -24,6 +24,9 @@ import time
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
+# ISO 8601 タイムスタンプをパースするための標準ライブラリです
+from datetime import datetime, timezone
+
 # ファイルパスをオブジェクトとして扱うための標準ライブラリです
 from pathlib import Path
 
@@ -287,6 +290,16 @@ def test_run_ocr_writes_staged_progress(
     assert progress_data["current_page"] == 1
     assert progress_data["total_pages"] == 1
     assert progress_data["message"] == "PDFファイル生成が完了しました"
+    # SY002003: PDF 生成の開始・完了時刻が両方記録されていること
+    assert "pdfStartedAt" in progress_data, "pdfStartedAt が記録されていません"
+    assert "pdfCompletedAt" in progress_data, "pdfCompletedAt が記録されていません"
+    assert progress_data["pdfStartedAt"] != "", "pdfStartedAt が空です"
+    assert progress_data["pdfCompletedAt"] != "", "pdfCompletedAt が空です"
+    started = datetime.fromisoformat(progress_data["pdfStartedAt"].replace("Z", "+00:00"))
+    completed = datetime.fromisoformat(progress_data["pdfCompletedAt"].replace("Z", "+00:00"))
+    assert started.tzinfo == timezone.utc
+    assert completed.tzinfo == timezone.utc
+    assert completed >= started, "pdfCompletedAt が pdfStartedAt より前になっています"
 
 
 def test_ocr_engine_sends_job_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

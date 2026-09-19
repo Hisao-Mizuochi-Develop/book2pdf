@@ -11,6 +11,9 @@ from __future__ import annotations
 # テスト用にメモリ上のバイナリストリームを扱うための標準ライブラリです
 import io
 
+# JSON のシリアライズに使用します
+import json
+
 # ZIP ファイルを作成するための標準ライブラリです
 import zipfile
 
@@ -292,11 +295,16 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
         "status": "processing",
         "message": "OCR処理中です（2/2）",
         "timestamp": "2026-09-13T12:00:00+00:00",
+        "ocrPages": [
+            {"pageIndex": 0, "fileName": "page1.png", "start": "2026-09-13T11:59:50Z", "end": "2026-09-13T11:59:55Z", "elapsedMs": 5000},
+            {"pageIndex": 1, "fileName": "page2.png", "start": "2026-09-13T11:59:55Z", "end": None, "elapsedMs": None},
+        ],
     }
 
     async def fake_get(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = json.dumps(fake_progress)
             def json(self):
                 return fake_progress
         return FakeResponse()
@@ -316,13 +324,19 @@ def test_get_job_with_progress_merged(client: TestClient, monkeypatch) -> None:
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
     assert data["message"] == "OCR処理中です（2/2）"
+    # SY002003: per-page OCR タイミングが GET /api/jobs レスポンスに含まれることを確認します
+    assert "ocrPages" in data
+    assert len(data["ocrPages"]) == 2
+    assert data["ocrPages"][0]["pageIndex"] == 0
+    assert data["ocrPages"][1]["fileName"] == "page2.png"
 
 
-def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkeypatch) -> None:
-    """backend のフェーズ進捗が ocr-worker より進んでいる場合は backend を優先します。
+def test_get_job_prefers_backend_progress_and_values_during_pdf_phase(client: TestClient, monkeypatch) -> None:
+    """PDF 生成中/完了時は backend のフェーズ進捗をそのまま採用します。
 
-    SY002003: PDF 生成中/完了時は backend が管理する progress/message を表示するため、
-    ocr-worker の per-page 進捗（0.6 など）より backend の値（0.75 / 1.0）を優先します。
+    SY002003: OCR 中は ocr-worker の per-page 進捗を信頼しますが、
+    PDF 生成中/完了/失敗/キャンセルなど backend が実行・検知するフェーズでは
+    backend の progress / message / timestamp を権威とします。
     """
     from app.routers import jobs as jobs_router
     from app.services import job_manager
@@ -346,11 +360,16 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
         "status": "processing",
         "message": "OCR処理中です（2/2）",
         "timestamp": "2026-09-13T12:00:00+00:00",
+        "ocrPages": [
+            {"pageIndex": 0, "fileName": "page1.png", "start": "2026-09-13T11:59:50Z", "end": "2026-09-13T11:59:55Z", "elapsedMs": 5000},
+            {"pageIndex": 1, "fileName": "page2.png", "start": "2026-09-13T11:59:55Z", "end": "2026-09-13T12:00:00Z", "elapsedMs": 5000},
+        ],
     }
 
     async def fake_get(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = json.dumps(fake_progress)
             def json(self):
                 return fake_progress
         return FakeResponse()
@@ -365,17 +384,22 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
         current_page=2,
         total_pages=2,
         message="PDFファイル生成中です",
+        extra={"pdfStartedAt": "2026-09-13T12:00:05Z"},
     )
 
     response = client.get(f"/api/jobs/{job_id}")
     assert response.status_code == 200
     data = response.json()
-    # backend の進捗の方が大きいので backend の message を優先
+    # PDF 生成フェーズでは backend の値を採用
     assert data["progress"] == pytest.approx(0.75, abs=0.01)
     assert data["message"] == "PDFファイル生成中です"
-    # current_page / total_pages は ocr-worker 優先
     assert data["current_page"] == 2
     assert data["total_pages"] == 2
+    # SY002003: PDF 生成フェーズでも ocr-worker の per-page タイミングは保持されます
+    assert data["ocrPages"][1]["fileName"] == "page2.png"
+    # SY002003: backend が記録した PDF 生成開始時刻が転送されます
+    assert data["pdfStartedAt"] == "2026-09-13T12:00:05Z"
+    assert data["pdfCompletedAt"] == ""
 
     # backend が完了進捗を書き込んだ場合も backend を優先
     job_manager.update_progress(
@@ -385,13 +409,21 @@ def test_get_job_prefers_backend_progress_when_larger(client: TestClient, monkey
         current_page=2,
         total_pages=2,
         message="PDFファイル生成が完了しました",
+        extra={
+            "pdfStartedAt": "2026-09-13T12:00:05Z",
+            "pdfCompletedAt": "2026-09-13T12:00:06Z",
+        },
     )
 
     response = client.get(f"/api/jobs/{job_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["progress"] == pytest.approx(1.0, abs=0.01)
+    # 完了フェーズでも backend の message を採用
     assert data["message"] == "PDFファイル生成が完了しました"
+    # SY002003: backend が記録した PDF 生成完了時刻も転送されます
+    assert data["pdfStartedAt"] == "2026-09-13T12:00:05Z"
+    assert data["pdfCompletedAt"] == "2026-09-13T12:00:06Z"
 
 
 def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:
@@ -436,11 +468,14 @@ def test_cancel_job_success(client: TestClient, monkeypatch, tmp_path) -> None:
     async def fake_post(self, url, **kwargs):
         captured_calls.append(url)
 
+        cancel_response = {"message": "ok", "job_id": job_id}
+
         class FakeResponse:
             status_code = 200
+            text = json.dumps(cancel_response)
 
             def json(self):
-                return {"message": "ok", "job_id": job_id}
+                return cancel_response
 
         return FakeResponse()
 
@@ -472,6 +507,7 @@ def test_cancel_job_not_found(client: TestClient, monkeypatch) -> None:
     async def fake_post(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = "{}"
         return FakeResponse()
 
     monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
@@ -496,6 +532,7 @@ def test_cancel_job_terminal_state(client: TestClient, monkeypatch) -> None:
         async def fake_post(self, url, **kwargs):
             class FakeResponse:
                 status_code = 200
+                text = "{}"
             return FakeResponse()
 
         monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)
@@ -517,6 +554,7 @@ def test_cancel_job_pending(client: TestClient, monkeypatch) -> None:
     async def fake_post(self, url, **kwargs):
         class FakeResponse:
             status_code = 200
+            text = "{}"
         return FakeResponse()
 
     monkeypatch.setattr(jobs_router.httpx.AsyncClient, "post", fake_post)

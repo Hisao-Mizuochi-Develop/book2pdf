@@ -1,11 +1,9 @@
 # System タスク管理表
 
-> 最終更新: 2026/09/15
+> 最終更新: 2026/09/19
 
 本ファイルは、System のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
-
-> 最終更新: 2026/09/15
 
 ---
 
@@ -218,4 +216,60 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-15: UAT 不具合発見：ZIP アップロード時に `__MACOSX/._*` などの macOS リソースフォークファイルが画像一覧に表示される。`backend/app/services/zip_extractor.py` で `__MACOSX` ディレクトリ配下を画像一覧から除外。`backend/tests/test_jobs.py` に `test_upload_zip_excludes_macosx_resource_forks` を追加
 > > - 2026-09-15: UAT フィードバック対応：`frontend/src/components/progress/ProgressPanel.tsx` の進捗ステップラベルから「中」を削除（「ZIPアップロード中」→「ZIPアップロード」、「OCR処理中」→「OCR処理」、「PDF生成中」→「PDF生成」）。影響テスト `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx` を更新
 > > - 2026-09-15: **Phase 3 検証完了**：backend 全テスト 42/42 PASS、frontend 全テスト 62/62 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+> - 2026-09-17: UAT 不具合発見（debug タイミング表示）: `frontend/src/hooks/useOcrJob.ts` の `extractActualPage` が全角括弧 `（）` のみを解析していたため、プロキシ/ブラウザ正規化による半角括弧 `()` メッセージから actualPage を抽出できず、ページ単位タイミングが記録されなかった
+> - 2026-09-17: `extractActualPage` の正規表現を全角・半角括弧両方に対応させ、半角括弧ケースの単体テストを `frontend/src/hooks/__tests__/useOcrJob.test.ts` に追加
+> - 2026-09-17: UAT 不具合発見（current_page オフバイワン）: `ocr-worker/ndlocr_cli_patches/inference.py` の ruby_only パスが 0-based `current_page` を報告しており、frontend のフォールバックと整合しない
+> - 2026-09-17: `ocr-worker/ndlocr_cli_patches/inference.py` の通常パス・ルビ推定パス両方で `current_page` を 1-based (`page_idx + 1`) に統一
+> - 2026-09-17: UAT 不具合発見（進捗メッセージ消失）: `backend/app/routers/jobs.py` の `_merge_progress_data` が進捗値の大きい側の message を常に採用するため、backend が空メッセージで更新すると ocr-worker の per-page メッセージが上書きされ、タイミング抽出に必要なページ情報が失われる
+> - 2026-09-17: `_merge_progress_data` を修正し、進捗値が大きい側の message が空の場合はもう一方の非空メッセージにフォールバック。`backend/tests/test_progress.py` にマージロジックの単体テストを追加
+> - 2026-09-17: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS。タスク完了承認および UAT 実施を待つ
+> > - 2026-09-17: UAT 不具合発見：`ruby_only=True`（ルビ推定モード）時に per-page 進捗が通知されない。`ocr-worker/ndlocr_cli_patches/inference.py` の `_infer_ruby_only` に `_update_progress` 呼び出しを追加し、通常モード `_infer` と同じ進捗セマンティクスで通知するように修正
+> > - 2026-09-17: `ocr-worker/tests/test_main.py` に `test_run_ocr_with_ruby_only_returns_accepted_and_result` を追加し、`ruby_only=True` 時の進捗 completed 状態を検証
+> > - 2026-09-17: ocr-worker 全テスト 10/10 PASS
+> > - 2026-09-18: `ruby_only=True` UAT 実施（job_id `ruby-uat-003`）。backend は現在 `ruby_only=False` をハードコードしているため、ocr-worker `/ocr` エンドポイントに直接 `ruby_only=True`、`input_structure='s'`、`enable_progress=True` を指定してリクエスト。per-page 進捗（`current_page=1`、`total_pages=1`、`status=completed`）およびページ処理時間の DEBUG ログ出力を確認
+> > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS（`NODE_ENV=production`）。タスク完了承認を待つ
+> > - 2026-09-18: UAT 不具合発見：`OCR 処理時間（ページ毎）` でページ 1, 2 の開始・完了時刻が記録されず、ページ 3 のみ完了時刻が記録される。Docker Desktop から全コンテナを削除・リビルドし、Safari のキャッシュをクリアしても再現するため、frontend/backend のイベントフローをトレースする一時的なデバッグログを追加
+> > - 2026-09-18: `frontend/src/hooks/useOcrJob.ts` の `reset()` / `handleUploaded()` 内の `setTimingDebug` をアップデータ関数形式 `(() => ({...}))` に統一し、React 18 Automatic Batching による state 上書きを防止
+> > - 2026-09-18: `backend/app/services/job_manager.py` に `_now_iso()` を導入し、backend の UTC タイムスタンプを frontend/ocr-worker と同じミリ秒 `Z` 形式に正規化
+> > - 2026-09-18: `backend/app/routers/jobs.py` の ocr-worker 進捗ポーリングに `[WORKER-POLL]` / `[WORKER-RESPONSE]` 通信ログを追加
+> > - 2026-09-18: frontend の一時デバッグログ（`[RAW-EVENT]` / `[PARSED-EVENT]` / `[TIMING-BEFORE]` / `[TIMING-AFTER]` / `[TIMING-STATE]` / `[TIMING-DEBUG]`）を削除
+> > - 2026-09-18: **Phase 3 検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。UAT 実施およびタスク完了承認を待つ
+> > - 2026-09-18: コンソールへの通信内容デバッグ出力を実装。`frontend/src/lib/api.ts` の HTTP/SSE 通信に `[API-DEBUG]` / `[SSE-DEBUG]` ログを追加（`NEXT_PUBLIC_DEBUG_API` 環境変数で HTTP 詳細ログを制御、SSE イベントは常時出力）。`backend/app/routers/jobs.py` の frontend 受信エンドポイントに `[API-IN]` / `[API-OUT]` ログを追加。`backend/app/services/ocr_engine.py` / `backend/app/routers/jobs.py` の ocr-worker 通信に `[OCR-WORKER-REQ]` / `[OCR-WORKER-RES]` ログを追加
+> > - 2026-09-18: テスト用 `FakeResponse` に `text` 属性を追加し、backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS を維持
+> > - 2026-09-18: UAT 不具合発見（OCR 処理時間（ページ毎）の開始・経過が空欄）: `backend/app/routers/jobs.py` の `_merge_progress_data` が progress の大きい backend のメッセージを常に採用するため、ocr-worker の per-page メッセージ `(N/M)` が上書きされ、frontend でのページ遷移検出に必要な情報が失われていた
+> > - 2026-09-18: `_merge_progress_data` の message 選択を `_select_merged_message()` に分離。ocr-worker の per-page メッセージ `(N/M)` / `（N/M）` は常に優先し、それ以外は progress の大きい側の message を採用するように変更
+> > - 2026-09-18: `frontend/src/hooks/useOcrJob.ts` の `updateTimingDebug` に一時的な `[TIMING-DEBUG]` ログを追加し、entry / page check / page transition / PDF generation detected / terminal state の遷移をブラウザコンソールで確認できるようにする
+> > - 2026-09-18: `backend/app/services/job_manager.py` の `_now_iso()` を秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一し、ocr-worker/frontend と同じ形式にする
+> > - 2026-09-18: `ocr-worker/ndlocr_cli_patches/progress_reporter.py` と `ocr-worker/app/main.py` のタイムスタンプ生成を秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一
+> > - 2026-09-18: backend テスト `test_get_job_prefers_backend_progress_when_larger` / `test_merge_progress_data_prefers_higher_progress_message_when_nonempty` を新しい message マージルールに合わせて更新
+> > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS、frontend build PASS。Docker コンテナリビルド・UAT 実施を待つ
+> > - 2026-09-18: `JobResponse` に `timestamp` フィールドを追加し、`GET /api/jobs/{job_id}` でマージ済み進捗の `timestamp` を返すように変更
+> > - 2026-09-18: `backend/app/services/job_manager.py` の `get_job_progress()` 戻り値キーを `updated_at` から `timestamp` に統一し、`_merge_progress_data` の backend 優先 `timestamp` マージが機能するように修正
+> > - 2026-09-18: `frontend/src/lib/api.ts` のポーリング fallback timestamp と `frontend/src/hooks/useOcrJob.ts` のローカル生成 timestamp を UTC 秒精度 `YYYY-MM-DDTHH:MM:SSZ` に統一
+> > - 2026-09-18: backend 全テスト 53/53 PASS、frontend 全テスト 89/89 PASS を確認。frontend build は Next.js 16.3.4 + React 19 の組み合わせで `_global-error` / `/` ページの prerender 時に `TypeError: Cannot read properties of null (reading 'useContext')` が発生し失敗。本不具合は今回の修正前のコミット `3e001abc` でも再現
+> > - 2026-09-18: `_merge_progress_data` をシンプル化。OCR 中は ocr-worker の per-page 進捗をそのまま採用し、PDF 生成中・エラー時・キャンセル時のみ backend のフェーズ進捗を採用するように変更
+> > - 2026-09-18: `_run_ocr_and_generate_pdf` 内の OCR 開始時 `update_progress`（message="OCR処理を開始しました"）を削除。OCR 中の進捗は ocr-worker のみが生成するようにする
+> > - 2026-09-18: 不要になった `_select_merged_message()` 関数と `_PER_PAGE_MESSAGE_PATTERN` 正規表現を削除
+> > - 2026-09-18: `backend/tests/test_progress.py` / `backend/tests/test_jobs.py` のマージロジックテストを新しい worker 優先・backend フェーズ例外ルールに合わせて更新
+> > - 2026-09-18: **Phase 3 再検証完了**：backend 全テスト 55/55 PASS、frontend 全テスト 89/89 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS
+> > - 2026-09-19: Docker 環境の健全性を確認。backend/frontend/ocr-worker すべて Up/healthy、`/health` が `{"status":"ok"}` を返すことを確認
+> > - 2026-09-19: UAT 用に 1 ページ画像 ZIP を作成し、ジョブ作成 → ZIP アップロード → OCR 実行 → completed までの一連フローを API 経由で検証
+> > - 2026-09-19: `GET /api/jobs/{job_id}` と SSE `/api/jobs/{job_id}/events` の両方で、ocr-worker からの per-page メッセージ `OCR処理中です（1/1）` と秒精度 UTC ISO 8601 timestamp（例: `2026-09-19T00:53:54Z`）が返されることを確認
+> > - 2026-09-19: ジョブ完了時に `status=completed`、`progress=1.0`、`message=PDFファイル生成が完了しました` となることを確認
+> > - 2026-09-19: ブラウザでの per-page timing テーブルの視覚的 UAT はユーザーに委ねる（`[TIMING-DEBUG]` ログで確認可能）
+> > - 2026-09-19: UAT 追加調整: `frontend/src/components/debug/DebugTimingPanel.tsx` の `formatTime` から `fractionalSecondDigits: 3` を削除し、タイミングパネルの時刻表記を秒までに変更（小数点以下は切り捨て表示）
+> > - 2026-09-19: **Phase 3 再検証完了**：frontend 全テスト 89/89 PASS、frontend build PASS
+> > - 2026-09-19: `backend/app/services/job_manager.py` の `update_progress()` を拡張し、`extra` 引数で `pdfStartedAt` / `pdfCompletedAt` を Redis job データにオプションで保存できるように変更
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で、OCR 全ページ完了後・PDF 生成開始直前に `pdfStartedAt` を記録し、PDF 生成完了後に `pdfCompletedAt` を記録
+> > - 2026-09-19: `frontend/src/hooks/useOcrJob.ts` で backend から送信された `pdfStartedAt` / `pdfCompletedAt` を `pdfGeneration` タイミングに優先反映するよう修正
+> > - 2026-09-19: `frontend/src/lib/api.ts` の `pollJobProgress` で `pdfStartedAt` / `pdfCompletedAt` を progress event に含めるよう修正
+> > - 2026-09-19: `frontend/src/lib/__tests__/api.test.ts` に polling event への PDF タイミング伝播テストを追加
+> > - 2026-09-19: `backend/tests/test_jobs.py` / `backend/tests/test_progress.py` / `frontend/src/hooks/__tests__/useOcrJob.test.ts` を更新
+> > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 55/55 PASS、frontend 全テスト 90/90 PASS、ocr-worker 全テスト 10/10 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
+> > - 2026-09-19: UAT 不具合発見：`pdfStartedAt` / `pdfCompletedAt` が frontend に正しく届かず、`JobResponse` では値が空、SSE ストリームが PDF フェーズ前に閉じている。根本原因は `_merge_progress_data` が backend_data 空の際に worker_data["status"]（completed）にフォールバックすることと、`_run_ocr_and_generate_pdf` が `update_progress(pdfStartedAt/pdfCompletedAt)` より先に `update_job_status(COMPLETED)` を呼び出していること
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_merge_progress_data` で backend_data が空の場合の status フォールバックを `"processing"` に変更。これにより ocr-worker の per-page completed があっても SSE ストリームは継続し、PDF 生成フェーズイベントが frontend に到達する
+> > - 2026-09-19: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` で、最終 `update_progress(pdfStartedAt/pdfCompletedAt)` を `update_job_status(JobStatus.COMPLETED)` より前に実行するよう順序を変更。これにより frontend が completed を検出した時点では両タイムスタンプが保存済みであることを保証する
+> > - 2026-09-19: `backend/tests/test_progress.py` に `test_merge_progress_data_defaults_to_processing_when_backend_empty` を追加
+> > - 2026-09-19: `backend/tests/test_ocr.py` の `test_run_ocr_writes_staged_progress` で `pdfStartedAt` / `pdfCompletedAt` の存在・UTC 秒精度・大小関係を検証するよう拡張
+> > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 56/56 PASS、frontend 全テスト 90/90 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
 >
