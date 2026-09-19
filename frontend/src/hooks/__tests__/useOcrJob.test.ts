@@ -683,4 +683,80 @@ describe("useOcrJob", () => {
     expect(result.current.timingDebug.ocrPages[0].start).toBe("2026-09-16T12:00:00Z");
     expect(result.current.timingDebug.ocrPages[0].elapsedMs).toBeNull();
   });
+
+  it("部分的な ocrPages イベントを受信しても全ページ行が維持され、該当ページのみ更新される（SY002003 UAT バグ回帰修正）", async () => {
+    vi.mocked(runOcr).mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useOcrJob());
+
+    await act(async () => {
+      const handlePromise = result.current.handleUploaded("job-123", [
+        "page_001.png",
+        "page_002.png",
+        "page_003.png",
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // 1回目: pageIndex 0 のみ完了
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.33,
+          current_page: 1,
+          total_pages: 3,
+          message: "OCR処理中です（1/3）",
+          ocrPages: [
+            { pageIndex: 0, fileName: "page_001.png", start: "2026-09-16T12:00:00Z", end: "2026-09-16T12:00:01Z", elapsedMs: 1000 },
+          ],
+        }),
+      );
+      // 2回目: pageIndex 1 のみ処理中
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.66,
+          current_page: 2,
+          total_pages: 3,
+          message: "OCR処理中です（2/3）",
+          ocrPages: [
+            { pageIndex: 1, fileName: "page_002.png", start: "2026-09-16T12:00:01Z", end: null, elapsedMs: null },
+          ],
+        }),
+      );
+      // 3回目: pageIndex 2 のみ処理中
+      mockInstances[0].simulateMessage(
+        JSON.stringify({
+          job_id: "job-123",
+          status: "processing",
+          progress: 0.9,
+          current_page: 3,
+          total_pages: 3,
+          message: "OCR処理中です（3/3）",
+          ocrPages: [
+            { pageIndex: 2, fileName: "page_003.png", start: "2026-09-16T12:00:02Z", end: null, elapsedMs: null },
+          ],
+        }),
+      );
+      await handlePromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.timingDebug.ocrPages).toHaveLength(3);
+    });
+
+    const [page0, page1, page2] = result.current.timingDebug.ocrPages;
+    expect(page0.pageIndex).toBe(0);
+    expect(page0.start).toBe("2026-09-16T12:00:00Z");
+    expect(page0.end).toBe("2026-09-16T12:00:01Z");
+    expect(page0.elapsedMs).toBe(1000);
+
+    expect(page1.pageIndex).toBe(1);
+    expect(page1.start).toBe("2026-09-16T12:00:01Z");
+    expect(page1.end).toBeNull();
+
+    expect(page2.pageIndex).toBe(2);
+    expect(page2.start).toBe("2026-09-16T12:00:02Z");
+    expect(page2.end).toBeNull();
+  });
 });

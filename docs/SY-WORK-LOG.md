@@ -480,3 +480,48 @@
 ### 関連タスク
 
 - `SY002003` SY002002 UATバグ対応
+
+## 2026-09-20 SY002003 追加統合：FE002003 ProgressPanel 統合と OCR 処理時間ページ毎行消失バグ修正
+
+### 目的
+
+- FE002003 の作業を SY002003 に統合し、main ブランチへの追加変更を 1 つのタスクに集約する
+- UAT で発覚した「OCR 処理時間（ページ毎）」テーブルで未処理ページの行が消失する不具合を修正する
+
+### 実施内容
+
+- `frontend/src/components/progress/ProgressPanel.tsx`
+  - PDF ダウンロード／処理キャンセルボタンを `ProgressPanel` 内に統合
+  - ボタンの有効／無効状態を `jobId` と `status` に応じて制御
+- `frontend/src/app/page.tsx`
+  - `ProgressPanel` 外部の PDF ダウンロードカードを削除
+  - ダウンロード処理を `ProgressPanel` の `onDownload` コールバックに移譲
+- `frontend/src/types/index.ts`
+  - `ProgressPanelProps` から `showCancel` を削除し、`jobId` / `onDownload` を追加
+- 関連テストを更新
+  - `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`
+  - `frontend/src/app/__tests__/page.test.tsx`
+  - `frontend/src/app/__tests__/page.msw.test.tsx`
+- `frontend/src/hooks/useOcrJob.ts`
+  - `updateTimingDebug` で `event.ocrPages` を既存 `timingDebug.ocrPages` と pageIndex 単位でマージ
+  - 未処理ページの行を保持し、該当ページのみ非 null フィールドを更新
+- `frontend/src/hooks/__tests__/useOcrJob.test.ts`
+  - 部分的な `ocrPages` イベントを受信しても全ページ行が維持され、該当ページのみ更新される回帰テストを追加
+- タスク管理表を整理
+  - `frontend/docs/FE-TASKS.md` から FE002003 の行と詳細セクションを削除
+  - `docs/SY-TASKS.md` の SY002003 タイトルと【実施結果】を更新
+  - `frontend/docs/FE-WORK-LOG.md` に統合先を追記
+
+### 結果
+
+- frontend `npm run build` PASS
+- `npx vitest run` で 9 files / 94 tests 全件 PASS
+- ユーザー UAT 合格待ち
+
+### コミット
+
+`[SY002003] fix: merge FE002003 ProgressPanel and preserve all per-page timing rows`
+
+### 関連タスク
+
+- `SY002003` SY002002 UATバグ対応（FE002003統合・OCR処理時間ページ毎行消失バグ修正含む）

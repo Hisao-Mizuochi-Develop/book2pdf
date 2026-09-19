@@ -803,3 +803,7 @@ npx vitest run  # 9 files / 93 tests passed
 
 - ビルド・単体テスト全件 PASS。frontend コンテナを再起動して UAT 再実施待ち。
 
+### 統合先
+
+- 2026-09-20: 本タスクの実装内容は SY002003（SY002002 UATバグ対応）に統合された。`frontend/docs/FE-TASKS.md` からは削除し、`docs/SY-TASKS.md` の SY002003 に記録する。
+

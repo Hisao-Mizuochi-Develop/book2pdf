@@ -73,7 +73,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 |---|---|---|---|
 | [SY002001](#sy002001) 進捗通知のポーリング方式全体仕様策定 | 2026-09-03 | 2026-09-03 | 仕様 |
 | [SY002002](#sy002002) コンテナ間進捗通知のREST API連携方式実装 | 2026-09-12 |  | 横断実装 |
-| [SY002003](#sy002003) SY002002 UATバグ対応 | 2026-09-15 |  | 横断実装 |
+| [SY002003](#sy002003) SY002002 UATバグ対応（FE002003統合・OCR処理時間ページ毎行消失バグ修正含む） | 2026-09-15 |  | 横断実装 |
 
 <a id="sy002001"></a>
 ### SY002001 進捗通知のポーリング方式全体仕様策定
@@ -167,7 +167,7 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-14: backend 全テスト 40/40 PASS、frontend 全テスト 61/61 PASS を UAT 直前に再確認
 >
 > <a id="sy002003"></a>
-> ### SY002003 SY002002 UATバグ対応
+> ### SY002003 SY002002 UATバグ対応（FE002003統合・OCR処理時間ページ毎行消失バグ修正含む）
 >
 > <div align="right"><a href="#sy002">タスク一覧へ↩︎</a></div>
 >
@@ -272,4 +272,8 @@ OCR 処理などの長時間処理に対する進捗通知方式の全体仕様�
 > > - 2026-09-19: `backend/tests/test_progress.py` に `test_merge_progress_data_defaults_to_processing_when_backend_empty` を追加
 > > - 2026-09-19: `backend/tests/test_ocr.py` の `test_run_ocr_writes_staged_progress` で `pdfStartedAt` / `pdfCompletedAt` の存在・UTC 秒精度・大小関係を検証するよう拡張
 > > - 2026-09-19: **Phase 3 再検証完了**：backend 全テスト 56/56 PASS、frontend 全テスト 90/90 PASS、frontend build PASS、frontend lint PASS。ユーザー UAT 合格待ち
+> > - 2026-09-20: FE002003 の作業を SY002003 に統合。`frontend/src/components/progress/ProgressPanel.tsx` への PDF ダウンロード／キャンセルボタン統合、`frontend/src/app/page.tsx` からのダウンロードカード削除、関連テスト更新を SY002003 ブランチに集約
+> > - 2026-09-20: `frontend/src/hooks/useOcrJob.ts` の `updateTimingDebug` で `event.ocrPages` を既存 `timingDebug.ocrPages` と pageIndex 単位でマージするよう修正。未処理ページの行が保持され、該当ページのみ更新されるようにする
+> > - 2026-09-20: `frontend/src/hooks/__tests__/useOcrJob.test.ts` に「部分的な ocrPages イベントを受信しても全ページ行が維持され、該当ページのみ更新される」回帰テストを追加
+> > - 2026-09-20: frontend `npm run build` PASS、`npx vitest run` で 9 files / 94 tests 全件 PASS
 >

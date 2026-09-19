@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cancelJob, runOcr, subscribeJobProgress, pollJobProgress } from "@/lib/api";
-import type { ProgressEvent, TimingDebugInfo, UploadTimingInfo } from "@/types";
+import type { PageOcrTiming, ProgressEvent, TimingDebugInfo, UploadTimingInfo } from "@/types";
 
 /** useOcrJob の戻り値型です。 */
 export interface UseOcrJobResult {
@@ -145,16 +145,33 @@ export function useOcrJob(): UseOcrJobResult {
             next.overall.elapsedMs = null;
           }
 
-          // SY002003: ocr-worker から送信された per-page タイミングをそのまま使用します。
-          // frontend 側の推定やフォールバックは行いません。
+          // SY002003: ocr-worker から送信された per-page タイミングを既存配列とマージします。
+          // 未処理ページの行は保持し、イベント側の非 null フィールドのみを上書きすることで、
+          // ページ毎の処理状況を初めから全ページ分行表示できるようにします。
           if (event.ocrPages && event.ocrPages.length > 0) {
-            next.ocrPages = event.ocrPages.map((page) => ({
-              pageIndex: page.pageIndex,
-              fileName: page.fileName,
-              start: page.start ?? null,
-              end: page.end ?? null,
-              elapsedMs: page.elapsedMs ?? null,
-            }));
+            const existingByIndex = new Map<number, PageOcrTiming>(
+              next.ocrPages.map((page) => [page.pageIndex, page]),
+            );
+            for (const page of event.ocrPages) {
+              const existing = existingByIndex.get(page.pageIndex);
+              if (existing) {
+                existing.fileName = page.fileName ?? existing.fileName;
+                existing.start = page.start ?? existing.start;
+                existing.end = page.end ?? existing.end;
+                existing.elapsedMs = page.elapsedMs ?? existing.elapsedMs;
+              } else {
+                existingByIndex.set(page.pageIndex, {
+                  pageIndex: page.pageIndex,
+                  fileName: page.fileName,
+                  start: page.start ?? null,
+                  end: page.end ?? null,
+                  elapsedMs: page.elapsedMs ?? null,
+                });
+              }
+            }
+            next.ocrPages = Array.from(existingByIndex.values()).sort(
+              (a, b) => a.pageIndex - b.pageIndex,
+            );
           }
 
           // 初回 processing イベント受信時に OCR 総時間の開始を無条件で記録します。
