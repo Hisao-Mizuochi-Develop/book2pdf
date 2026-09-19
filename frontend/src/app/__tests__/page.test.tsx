@@ -65,7 +65,8 @@ describe("Home page", () => {
     });
     render(<Home />);
     expect(screen.getByText("50%")).toBeInTheDocument();
-    expect(screen.getByText("PDF をダウンロード")).toBeInTheDocument();
+    expect(screen.getByText("PDFをダウンロード")).toBeInTheDocument();
+    expect(screen.getByTestId("download-button")).toBeDisabled();
   });
 
   it("OCR エラー時に進捗パネル内のエラー表示エリアにメッセージが表示される", () => {
@@ -92,10 +93,17 @@ describe("Home page", () => {
     const showSaveFilePickerMock = vi.fn().mockResolvedValue(handle);
     vi.stubGlobal("showSaveFilePicker", showSaveFilePickerMock);
     vi.mocked(downloadPdf).mockResolvedValue(undefined);
+    const mockReset = vi.fn();
     vi.mocked(useOcrJob).mockReturnValue({
       jobId: "job-123",
       files: [],
-      latestProgress: null,
+      latestProgress: {
+        job_id: "job-123",
+        status: "completed",
+        progress: 1.0,
+        current_page: 1,
+        total_pages: 1,
+      },
       progressLog: [],
       error: "",
       isLoading: false,
@@ -103,16 +111,17 @@ describe("Home page", () => {
       timingDebug: defaultTimingDebug,
       handleUploaded: mockHandleUploaded,
       handleCancel: vi.fn(),
-      reset: vi.fn(),
+      reset: mockReset,
     });
     render(<Home />);
-    await userEvent.click(screen.getByText("PDF をダウンロード"));
+    await userEvent.click(screen.getByText("PDFをダウンロード"));
     expect(showSaveFilePickerMock).toHaveBeenCalledTimes(1);
     expect(showSaveFilePickerMock).toHaveBeenCalledWith({
       suggestedName: "job-123.pdf",
       types: [{ description: "PDF ファイル", accept: { "application/pdf": [".pdf"] } }],
     });
     expect(downloadPdf).toHaveBeenCalledWith("job-123", undefined, handle);
+    expect(mockReset).toHaveBeenCalledTimes(1);
   });
 
   it("処理中に進捗パネルにキャンセルボタンが表示され、クリックすると handleCancel が呼ばれる", async () => {
@@ -140,7 +149,7 @@ describe("Home page", () => {
     render(<Home />);
     const cancelButton = screen.getByTestId("cancel-button");
     expect(cancelButton).toBeInTheDocument();
-    expect(cancelButton).toHaveTextContent("キャンセル");
+    expect(cancelButton).toHaveTextContent("処理をキャンセル");
     await userEvent.click(cancelButton);
     expect(mockHandleCancel).toHaveBeenCalledTimes(1);
   });

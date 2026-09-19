@@ -66,7 +66,8 @@ function hasErrorState(message: string | undefined, status: string): boolean {
 export function ProgressPanel({
   latest,
   error = "",
-  showCancel = false,
+  jobId,
+  onDownload,
   onCancel,
 }: ProgressPanelProps) {
   const progress = latest?.progress ?? 0;
@@ -175,19 +176,27 @@ export function ProgressPanel({
         </div>
       )}
 
-      {/* 5. キャンセルボタン */}
-      {showCancel && onCancel && status !== "cancelled" && status !== "completed" && (
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            data-testid="cancel-button"
-            className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20"
-          >
-            キャンセル
-          </button>
-        </div>
-      )}
+      {/* 5. アクションボタンエリア */}
+      <div className="mt-4 flex flex-row items-center justify-start gap-3">
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={!jobId || status !== "completed"}
+          data-testid="download-button"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          PDFをダウンロード
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={!jobId || status === "completed" || status === "cancelled" || status === "failed"}
+          data-testid="cancel-button"
+          className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          処理をキャンセル
+        </button>
+      </div>
     </div>
   );
 }

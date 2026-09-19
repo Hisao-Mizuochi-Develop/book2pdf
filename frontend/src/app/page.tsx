@@ -44,56 +44,46 @@ export default function Home() {
         <ProgressPanel
           latest={latestProgress}
           error={error}
-          showCancel={Boolean(jobId) && latestProgress?.status !== "completed" && latestProgress?.status !== "cancelled" && latestProgress?.status !== "failed"}
+          jobId={jobId}
+          onDownload={async () => {
+            if (!downloadableJobId) return;
+
+            try {
+              // ユーザージェスチャ（クリック）の文脈内でピッカーを呼び出します。
+              // showSaveFilePicker は同期イベントハンドラから直接呼ぶ必要があり、
+              // ここで await してもブラウザはクリックに起因する最初の await まで
+              // ジェスチャ文脈を維持するため、ダイアログが抑制されません。
+              if (typeof window.showSaveFilePicker === "function") {
+                const handle = await window.showSaveFilePicker({
+                  suggestedName: `${downloadableJobId}.pdf`,
+                  types: [
+                    {
+                      description: "PDF ファイル",
+                      accept: { "application/pdf": [".pdf"] },
+                    },
+                  ],
+                });
+
+                await downloadPdf(downloadableJobId, undefined, handle);
+              } else {
+                // File System Access API 非対応ブラウザでは従来のダウンロード方式にフォールバックします
+                await downloadPdf(downloadableJobId);
+              }
+
+              // ダウンロード成功後は初期画面に戻します
+              reset();
+            } catch (error) {
+              // ユーザーが保存ダイアログをキャンセルした場合は無視します
+              if (error instanceof DOMException && error.name === "AbortError") {
+                return;
+              }
+              console.error("PDF ダウンロードに失敗しました:", error);
+            }
+          }}
           onCancel={handleCancel}
         />
 
         {showDebugTimingPanel && <DebugTimingPanel timing={timingDebug} />}
-
-        {downloadableJobId && (
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
-            <button
-              onClick={async () => {
-                if (!downloadableJobId) return;
-
-                try {
-                  // ユーザージェスチャ（クリック）の文脈内でピッカーを呼び出します。
-                  // showSaveFilePicker は同期イベントハンドラから直接呼ぶ必要があり、
-                  // ここで await してもブラウザはクリックに起因する最初の await まで
-                  // ジェスチャ文脈を維持するため、ダイアログが抑制されません。
-                  if (typeof window.showSaveFilePicker === "function") {
-                    const handle = await window.showSaveFilePicker({
-                      suggestedName: `${downloadableJobId}.pdf`,
-                      types: [
-                        {
-                          description: "PDF ファイル",
-                          accept: { "application/pdf": [".pdf"] },
-                        },
-                      ],
-                    });
-
-                    await downloadPdf(downloadableJobId, undefined, handle);
-                  } else {
-                    // File System Access API 非対応ブラウザでは従来のダウンロード方式にフォールバックします
-                    await downloadPdf(downloadableJobId);
-                  }
-
-                  // ダウンロード成功後は初期画面に戻します
-                  reset();
-                } catch (error) {
-                  // ユーザーが保存ダイアログをキャンセルした場合は無視します
-                  if (error instanceof DOMException && error.name === "AbortError") {
-                    return;
-                  }
-                  console.error("PDF ダウンロードに失敗しました:", error);
-                }
-              }}
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              PDF をダウンロード
-            </button>
-          </div>
-        )}
       </div>
     </main>
   );

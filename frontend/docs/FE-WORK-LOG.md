@@ -2,7 +2,7 @@
 
 本ドキュメントは、book2pdf プロジェクトのフロントエンドタスク実施にあたり実行したコマンドとその結果を記録したものです。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/20
 
 ---
 
@@ -716,4 +716,90 @@ python -m pytest tests/ -v   # 37 passed
 ### 状態
 
 - backend 単体テスト全件 PASS。UAT 待ち（ユーザーにブラウザでの動作確認を依頼中）
+
+---
+
+## 2026-09-20 FE002003 ProgressPanel 内に PDFダウンロード／キャンセルボタンを統合する
+
+### 目的
+
+`ProgressPanel` 内に PDF ダウンロードボタンと処理キャンセルボタンを統合し、ジョブ ID がある間は常に表示されるようにする。ボタンの有効／無効状態は進捗ステータスに応じて変化させる。
+
+### 実施内容
+
+1. `src/types/index.ts`
+   - `ProgressPanelProps` から `showCancel` を削除
+   - `jobId?: string | null`、`onDownload?: () => void` を追加
+2. `src/components/progress/ProgressPanel.tsx`
+   - `jobId` がある場合、左から `[PDFをダウンロード]` `[処理をキャンセル]` のボタンを常時表示
+   - `status === "completed"` の場合：ダウンロード enabled / キャンセル disabled
+   - それ以外の有効なステータス：ダウンロード disabled / キャンセル enabled
+   - `cancelled` / `failed` の場合：両方 disabled
+3. `src/app/page.tsx`
+   - `ProgressPanel` 外部の PDF ダウンロードカードを削除
+   - ダウンロード処理を `ProgressPanel` の `onDownload` コールバックに移譲
+4. `src/components/progress/__tests__/ProgressPanel.test.tsx`
+   - ボタン表示／非表示、順序、ラベル、enabled/disabled 状態のテストを追加
+5. `src/app/__tests__/page.test.tsx`
+   - 新しい `ProgressPanel` props に追従
+   - ダウンロード完了時の `reset` 呼び出し検証を追加
+6. `src/app/__tests__/page.msw.test.tsx`
+   - 新しいボタンラベルと enabled 状態を検証
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build   # success
+npx vitest run  # 9 files / 93 tests passed
+```
+
+### 変更ファイル
+
+- `frontend/src/types/index.ts`
+- `frontend/src/components/progress/ProgressPanel.tsx`
+- `frontend/src/components/progress/__tests__/ProgressPanel.test.tsx`
+- `frontend/src/app/page.tsx`
+- `frontend/src/app/__tests__/page.test.tsx`
+- `frontend/src/app/__tests__/page.msw.test.tsx`
+- `frontend/docs/FE-TASKS.md`
+
+### UAT 準備（2026-09-20）
+
+1. コンテナ環境の整備
+   - 既存の `docker compose` プロジェクトを確認し、frontend コンテナを再起動して最新ソースを反映
+   - `docker compose ps` で backend / frontend / ocr-worker がすべて起動していることを確認
+   - ヘルスチェックで `http://localhost:8000/health`、`http://localhost:8001/health` が `{"status":"ok"}` を返すことを確認
+   - `http://localhost:3000` が HTTP 200 で応答することを確認
+2. テストデータの作成
+   - `test_cases/testdata/FE/FE002003/sample/` を作成
+   - `test_cases/AI ・LLMの実務でつかえるRAG精度改善/` から `001.png`、`002.png` をコピー
+   - `sample.zip` を作成（2 ページ分）
+3. UAT 検証レポートの作成
+   - `frontend/test-results/FE002003-ProgressPanel-download-cancel-unification/README.md` を新規作成
+   - テスト環境、テストデータ、テストケース、判定欄を記載
+
+### UAT フィードバック対応（2026-09-20）
+
+- ユーザーから「初期画面から `[PDFをダウンロード]` `[処理をキャンセル]` が常時表示されるようにしてほしい」という指摘を受けて修正
+- `src/components/progress/ProgressPanel.tsx`
+  - `{jobId && (...)}` によるボタン表示の条件ガードを削除し、常時描画に変更
+  - `PDFをダウンロード` ボタンの disabled 条件を `!jobId || status !== "completed"` に変更
+  - `処理をキャンセル` ボタンの disabled 条件を `!jobId || status === "completed" || status === "cancelled" || status === "failed"` に変更
+- `src/components/progress/__tests__/ProgressPanel.test.tsx`
+  - 「jobId 未指定時はボタンを表示しない」テストを「jobId 未指定でも表示されるが両方 disabled」に変更
+- `frontend/test-results/FE002003-ProgressPanel-download-cancel-unification/README.md`
+  - テストケース1 の期待結果を「初期画面から両ボタンが常時表示されること」に更新
+
+### 検証結果
+
+```bash
+cd /Users/hisao/Documents/work4/sakura/book2pdf/frontend
+npm run build   # success
+npx vitest run  # 9 files / 93 tests passed
+```
+
+### 状態
+
+- ビルド・単体テスト全件 PASS。frontend コンテナを再起動して UAT 再実施待ち。
 

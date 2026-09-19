@@ -3,7 +3,7 @@
 本ファイルは、`frontend` のタスクを追記型で管理するものです。
 将来の課題も含め、すべて必ず実装することを前提としています。
 
-> 最終更新: 2026/09/13
+> 最終更新: 2026/09/20
 
 ---
 
@@ -151,6 +151,7 @@ OCR 処理の進捗をリアルタイムで確認する
 |---|---|---|---|
 | [FE002001](#fe002001) 進捗表示 UI の実装 | 2026-08-11 | 2026-09-12 | 機能実装 |
 | [FE002002](#fe002002) FE002001 UATバグ対応 | 2026-09-08 | 2026-09-12 | UATバグ対応 |
+| [FE002003](#fe002003) ProgressPanel 内に PDFダウンロード／キャンセルボタンを統合する | 2026-09-20 |  | 機能実装 |
 
 <a id="fe002001"></a>
 ### FE002001 進捗表示 UI の実装
@@ -253,6 +254,31 @@ OCR 処理の進捗をリアルタイムで確認する
 > - 2026-09-12: `backend/tests/test_progress.py` に `test_worker_update_progress_writes_per_page_progress` を追加。`progress_reporter.write_progress` の動作を検証
 > - 2026-09-12: `backend/tests/conftest.py` に `ocr-worker` への `sys.path` を追加し、`progress_reporter` のインポートを可能にした
 > - 2026-09-12: 検証: backend pytest 37 passed（全テスト PASS）
+>
+
+<a id="fe002003"></a>
+### FE002003 ProgressPanel 内に PDFダウンロード／キャンセルボタンを統合する
+
+<div align="right"><a href="#fe002">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `ProgressPanelProps` から `showCancel` を削除し、`jobId` / `onDownload` を追加する
+> - `ProgressPanel` 内に PDFダウンロードボタン（左）と処理をキャンセルボタン（右）を常時表示する
+> - `status === "completed"` の場合は PDFダウンロード enabled / 処理をキャンセル disabled
+> - `status !== "completed"` かつ `jobId` ありの場合は PDFダウンロード disabled / 処理をキャンセル enabled
+> - `page.tsx` から `ProgressPanel` 外の PDFダウンロードカードを削除し、ダウンロード処理を `ProgressPanel` 経由に移譲する
+> - `ProgressPanel.test.tsx` / `page.test.tsx` / `page.msw.test.tsx` を新仕様に追従させる
+> - ビルド・単体テスト・動作確認を実施する
+>
+> 【実施結果】
+> - 2026-09-20: `ProgressPanelProps` から `showCancel` を削除し、`jobId` / `onDownload` を追加
+> - 2026-09-20: `ProgressPanel` 内に PDFダウンロード／処理キャンセルボタンを統合し、左から右に配置
+> - 2026-09-20: `page.tsx` から `ProgressPanel` 外部の PDF ダウンロードカードを削除
+> - 2026-09-20: `ProgressPanel.test.tsx` / `page.test.tsx` / `page.msw.test.tsx` を新仕様に更新
+> - 2026-09-20: `npm run build` 成功、`npx vitest run` で 9 files / 93 tests 全件 PASS
+> - 2026-09-20 (UATフィードバック対応): `ProgressPanel` のボタンエリアを `{jobId && (...)}` から常時描画に変更し、jobId なし時は両ボタン disabled とする
+> - 2026-09-20 (UATフィードバック対応): `ProgressPanel.test.tsx` の表示テストを「jobId 未指定でも両ボタン表示かつ disabled」に更新
+> - 2026-09-20 (UATフィードバック対応): UAT レポートのテストケース1 期待結果を「初期画面から両ボタンが常時表示されること」に更新
 >
 
 ---
