@@ -500,14 +500,14 @@ PDF 白紙問題とフォント fallback 問題を修正した後、以下の問
 - OCR 認識ミス（`RAG` → `RAC`、`Improving` → `mproving`、`GPT-4` → `〓PT-4` など）は OCR エンジン側の問題であり、backend 側の修正では解消できない
 - 認識精度改善は `ocr-worker` 側のモデル・前処理・推論パラメータ調整が必要
 
-## 14. OCR 性能計測に関する注意事項（BE004003）
+## 14. OCR 性能計測に関する注意事項（BE004002）
 
 - `scripts/benchmark_ocr.sh` の `SAMPLE_DIR` は `PROJECT_ROOT` と結合して使用されるため、絶対パスを指定するとパスが二重になる
 - 2026-09-01 に `BENCHMARK_SAMPLE_DIR` 環境変数で上書き可能にしたが、相対パス（`sample-png/...`）を指定することを推奨する
 - 3 ページの OCR 処理でも約 6 分半（396 秒）かかるため、テスト時の HTTP タイムアウト設定に注意する
 - 性能計測スクリプトは実行完了後に `/data/extracted/{job_id}` と `/data/ocr_output/{job_id}` を削除するが、`/data/pdfs/{job_id}.pdf` は削除しない
-- 詳細は `backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md` を参照
-- 注：本タスク BE004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです
+- 詳細は `backend/test-results/BE004002/performance-test-report-BE004002.md` を参照
+- 注：本タスク BE004002 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです
 
 ---
 

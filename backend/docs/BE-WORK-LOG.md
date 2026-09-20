@@ -1173,7 +1173,7 @@ python -m pytest tests/ -q
 
 ### 目的
 
-backend BE004003「OCR 処理性能計測の実施」のうち、ユーザー指示により以下の 2 項目を実施する。
+backend BE004002「OCR 処理性能計測の実施」のうち、ユーザー指示により以下の 2 項目を実施する。
 
 1. `ocr-worker/ndlocr_cli_patches/inference.py` に 1 ページごとの OCR 処理時間 DEBUG ログを追加する
 2. `scripts/benchmark_ocr.sh` を ZIP 内の画像ファイル数に依存した汎用ページ数対応に改修する
@@ -1206,7 +1206,7 @@ bash -n scripts/benchmark_ocr.sh
   - `seq 1 92` のハードコードを廃止し、サンプル画像ディレクトリ内の画像ファイルを `find` で自動収集
   - ZIP 内の画像ファイル数を `unzip -Z1 | wc -l` で自動検出し、0 ページの場合はエラー終了
   - ocr-worker ログ抽出の正規表現を `page=N` 付きの新しい DEBUG ログ形式に合わせて更新
-- `backend/docs/BE-TASKS.md` の BE004003 タスク詳細に実施結果を追記した
+- `backend/docs/BE-TASKS.md` の BE004002 タスク詳細に実施結果を追記した
 - `backend/docs/BE-WORK-LOG.md` に本エントリを追記した
 
 ### 注意事項
@@ -1239,14 +1239,14 @@ bash -n scripts/benchmark_ocr.sh
 ### 【実施実績】
 
 - 2026-09-01: `feature/BE005002-pdf-e2e-test` ブランチの未コミット変更を `git stash` で一時退避
-- 2026-09-01: `main` ブランチを最新化し、`feature/BE004003-ocr-performance-test` ブランチを作成
+- 2026-09-01: `main` ブランチを最新化し、`feature/BE004002-ocr-performance-test` ブランチを作成
 - 2026-09-01: `docker compose up -d --build backend ocr-worker` を実行（ビルド約 58 秒）
 - 2026-09-01: backend（`http://localhost:8000/health`）および ocr-worker（`http://localhost:8001/health`）が正常応答することを確認
 - 2026-09-01: `scripts/benchmark_ocr.sh` を改修し、`BENCHMARK_SAMPLE_DIR` 環境変数でサンプルディレクトリを指定可能にした
-- 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-BE004003/` にコピー
-- 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-BE004003 ./scripts/benchmark_ocr.sh` を実行
+- 2026-09-01: テスト用 3 ページ画像を `sample-png/benchmark-BE004002/` にコピー
+- 2026-09-01: `BENCHMARK_SAMPLE_DIR=sample-png/benchmark-BE004002 ./scripts/benchmark_ocr.sh` を実行
 - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
-- 2026-09-01: 検証結果レポート `backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md` を作成
+- 2026-09-01: 検証結果レポート `backend/test-results/BE004002/performance-test-report-BE004002.md` を作成
 - 2026-09-01: `backend/docs/BE-TASKS.md` に実施結果とレポートリンクを追記
 
 ---

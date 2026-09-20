@@ -460,8 +460,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
 | [BE004001](#be004001) backend DEBUG ログ・計測処理の追加 | 2026-08-12 | 2026-08-12 | 機能実装 |
-| [BE004002](#be004002) アップロード済みファイルのユーザー明示的破棄機能の追加 | 2026-08-12 |  | 機能実装 |
-| [BE004003](#be004003) OCR 処理性能計測の実施 | 2026-08-12 | 2026-09-01 | 性能評価 |
+| [BE004002](#be004002) OCR 処理性能計測の実施 | 2026-08-12 | 2026-09-01 | 性能評価 |
 
 <a id="be004001"></a>
 ### BE004001 backend DEBUG ログ・計測処理の追加
@@ -484,22 +483,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 >
 
 <a id="be004002"></a>
-### BE004002 アップロード済みファイルのユーザー明示的破棄機能の追加
-
-<div align="right"><a href="#be004">タスク一覧へ↩︎</a></div>
-
-> 【計画】
-> - ユーザーが明示的に破棄を指示するまで、ZIP・展開画像・OCR 結果・PDF・進捗ファイルは保持する
-> - ユーザーが破棄を指示できる API（例：`DELETE /api/jobs/{job_id}/files`）を追加する
-> - 破棄対象：`/data/extracted/{job_id}`、`/data/ocr_output/{job_id}`、`/data/pdfs/{job_id}.pdf`、`/data/progress/{job_id}.json`
-> - 実施タイミングは性能テスト完了後とする
->
-> 【実施結果】
-> - （性能テスト完了後に実施予定）
->
-
-<a id="be004003"></a>
-### BE004003 OCR 処理性能計測の実施
+### BE004002 OCR 処理性能計測の実施
 
 <div align="right"><a href="#be004">タスク一覧へ↩︎</a></div>
 
@@ -519,9 +503,9 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - 2. `scripts/benchmark_ocr.sh` を ZIP 内の画像ファイル数に依存した汎用ページ数対応に改修
 > - 3. 性能計測の実行と結果のドキュメント記録は今回は実施しない
 > - 2026-09-01: ユーザー指示により本計測を実施。テスト画像は `test_cases/AI ・LLMの実務でつかえるRAG精度改善/AI ・LLMの実務でつかえるRAG精度改善_trimmed/002.png` 〜 `004.png`（3 ページ）を使用
-> - 2026-09-01: `feature/BE004003-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行
+> - 2026-09-01: `feature/BE004002-ocr-performance-test` ブランチを作成し、Docker Compose 上で backend / ocr-worker を起動後に `scripts/benchmark_ocr.sh` を実行
 > - 2026-09-01: OCR 全体時間 396.407 秒、1 ページあたり平均 OCR 処理時間 125.629 秒、合計処理時間 396.914 秒を計測
-> - 2026-09-01: 精度比較レポート [backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md](../test-results/benchmark-BE004003/performance-test-report-BE004003.md) を作成
+> - 2026-09-01: 精度比較レポート [backend/test-results/BE004002/performance-test-report-BE004002.md](../test-results/BE004002/performance-test-report-BE004002.md) を作成
 > - 2026-09-01: `docs/SY-INTEGRATION-TEST-GUIDE.md` の性能テスト結果セクションを更新
 >
 
@@ -561,7 +545,7 @@ OCR 完了後に検索可能 PDF をダウンロードする
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [BE006001](#be006001) 進捗通知のポーリング方式対応 | 2026-08-11 |  | 機能実装 |
+| [BE006001](#be006001) 進捗通知のポーリング方式対応 | 2026-08-11 | 2026-09-09 | 機能実装 |
 
 <a id="be006001"></a>
 ### BE006001 進捗通知のポーリング方式対応
@@ -573,7 +557,11 @@ OCR 完了後に検索可能 PDF をダウンロードする
 > - SSE とポーリングを切り替えられるようにする
 >
 > 【実施結果】
-> - （未実施）
+> - 2026-09-09: `frontend/src/lib/api.ts` に `pollJobProgress` 関数を実装。SSE が利用できないプロキシ環境等では 2 秒間隔で `/api/jobs/{job_id}` をポーリングし進捗を取得
+> - 2026-09-09: `frontend/src/hooks/useOcrJob.ts` に SSE エラー時の polling フォールバックロジックを統合。`subscribeJobProgress` の `onerror` で自動的に `pollJobProgress` に切り替え
+> - 2026-09-09: `frontend/src/components/progress/ProgressPanel.tsx` に polling モード時の「プロキシ環境を検出しました…」メッセージ表示を追加
+> - 2026-09-09: 単体テスト 7 files / 58 tests PASS、`npm run build` 成功
+> - 2026-09-20: OT012001 棚卸しにより、本タスクの完了日付を追記
 >
 
 <a id="be007"></a>
@@ -644,7 +632,7 @@ backend→ocr-worker 通信の非同期化と結果取得
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [BE009001](#be009001) backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する | 2026-09-16 | | 機能実装 |
+| [BE009001](#be009001) backend→ocr-worker 同期 POST /ocr を非同期化し GET /result/{job_id} を追加する | 2026-09-16 | 2026-09-16 | 機能実装 |
 | [BE009002](#be009002) OCR 非同期ポーリングのタイムアウト・継続時間を長時間ジョブに対応させる | 2026-09-16 | 2026-09-16 | 不具合対応 |
 
 <a id="be009001"></a>
@@ -663,6 +651,16 @@ backend→ocr-worker 通信の非同期化と結果取得
 > - backend / ocr-worker のビルドテスト・単体テスト・動作確認を実施する
 >
 > 【実施結果】
+> - 2026-09-16: `backend/docs/BE-ASYNC-OCR-DESIGN.md` を新規作成し、非同期化設計を Mermaid 図（sequenceDiagram, flowchart）付きで記載
+> - 2026-09-16: `ocr-worker/app/main.py` の `POST /ocr` を非同期化し、即座に 202 Accepted を返すように変更
+> - 2026-09-16: `ocr-worker/app/main.py` に `GET /result/{job_id}` エンドポイントを追加。処理中は 202、完了後は 200 + 結果、失敗時は 500、存在しない場合は 404 を返す
+> - 2026-09-16: `ocr-worker/app/result_store.py` を新規作成し、OCR 結果のインメモリ一時保持（TTL 24 時間）を実装
+> - 2026-09-16: `backend/app/services/ocr_engine.py` の `RemoteNdloCrOcrEngine` を非同期ポーリング方式に変更。`run_async` で `POST /ocr` 後に `GET /result/{job_id}` をポーリング
+> - 2026-09-16: `backend/app/routers/jobs.py` の `_run_ocr_and_generate_pdf` を非同期ポーリング＋結果取得方式に変更
+> - 2026-09-16: `docker-compose.yml` から `OCR_WORKER_REQUEST_TIMEOUT` を削除
+> - 2026-09-16: `backend/tests/test_ocr.py` / `ocr-worker/tests/test_main.py` に非同期化・結果取得に関するテストを追加
+> - 2026-09-16: backend 単体テスト 50 件すべて PASS、`ocr-worker` 単体テストも PASS を確認
+> - 2026-09-20: OT012001 棚卸しにより、本タスクの完了日付を追記
 >
 <a id="be009002"></a>
 ### BE009002 OCR 非同期ポーリングのタイムアウト・継続時間を長時間ジョブに対応させる
