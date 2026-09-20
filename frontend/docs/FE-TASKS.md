@@ -326,7 +326,7 @@ frontend コンテナの健全性を維持する
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [FE005001](#fe005001) frontend Docker healthcheck wget 不足修正 | 2026-09-13 |  | バグ修正 |
+| [FE005001](#fe005001) frontend Docker healthcheck wget 不足修正 | 2026-09-13 | 2026-09-13 | バグ修正 |
 
 <a id="fe005001"></a>
 ### FE005001 frontend Docker healthcheck wget 不足修正
