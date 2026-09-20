@@ -32,6 +32,7 @@
 | [OT008](#ot008) | タスク管理ファイルフォーマット統一と整合性全チェック |
 | [OT009](#ot009) | ドキュメント最終更新日メタデータ標準化と運用ルール整備 |
 | [OT010](#ot010) | docs/ 配下の図を Mermaid 化する |
+| [OT011](#ot011) | `frontend` タスク管理表から不要なユースケースを削除する |
 
 ---
 
@@ -634,5 +635,36 @@ docs/ 配下の図を Mermaid 化する
 > - 2026-09-14: `feature/SY002002-get-job-progress-integration` ブランチから `docs/SY-CONTAINER-3LAYER-ARCHITECTURE.md` と `docs/SY-STORAGE-MIGRATION-GUIDE.md` を復元・追加
 > - 2026-09-14: Cline checkpoint から `docs/SY-SSE-PROGRESS-DELIVERY-GUIDE.md` を復元・追加
 > - 2026-09-14: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `docs/README.md` のパイプテーブル整合性を確認（ALL PASS）
+>
+
+<a id="ot011"></a>
+## ユースケースNo | OT011
+
+ユースケース
+`frontend` タスク管理表から不要なユースケースを削除する
+
+<div align="right"><a href="#ユースケース一覧">ユースケース一覧へ↩︎</a></div>
+
+| タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
+|---|---|---|---|
+| [OT011001](#ot011001) `frontend/docs/FE-TASKS.md` から FE004 ユースケースを削除する | 2026-09-20 | 2026-09-20 | ドキュメント整理 |
+
+<a id="ot011001"></a>
+### OT011001 `frontend/docs/FE-TASKS.md` から FE004 ユースケースを削除する
+
+<div align="right"><a href="#ot011">タスク一覧へ↩︎</a></div>
+
+> 【計画】
+> - `frontend/docs/FE-TASKS.md` から不要なユースケース FE004 とタスク FE004001 を削除する
+> - 削除対象:
+>   - ユースケース一覧テーブルの FE004 行
+>   - FE004 ユースケースセクション（タスクテーブルと FE004001 詳細）
+> - `python scripts/lint-task-md.py` でパイプテーブル整合性を検証する
+>
+> 【実施結果】
+> - 2026-09-20: `frontend/docs/FE-TASKS.md` からユースケース一覧テーブルの FE004 行を削除
+> - 2026-09-20: `frontend/docs/FE-TASKS.md` から FE004 ユースケースセクション（FE004001 詳細を含む）を削除
+> - 2026-09-20: `python scripts/lint-task-md.py` で `docs/OT-TASKS.md` / `frontend/docs/FE-TASKS.md` のパイプテーブル整合性を確認（ALL PASS）
+> - 2026-09-20: `memo/` 配下の lint 不整合はユーザーから「私的なメモのため触らないで」と指示があり、対象外とした
 >
 
