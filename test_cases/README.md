@@ -25,7 +25,7 @@ test_cases/
 > **モジュール固有のテスト結果について**:
 > 以下のレポートは各モジュールの `test-results/` に移動しています。
 > - `ocr-results-OW003008/` → [`../ocr-worker/test-results/ocr-results-OW003008/`](../ocr-worker/test-results/ocr-results-OW003008/)
-> - `ocr-results-BE004003/` → [`../backend/test-results/benchmark-BE004003/`](../backend/test-results/benchmark-BE004003/)
+> - `ocr-results-BE004002/` → [`../backend/test-results/benchmark-BE004002/`](../backend/test-results/benchmark-BE004002/)
 ```
 
 ---
@@ -82,13 +82,13 @@ test_cases/
 
 ---
 
-## 4. benchmark-BE004003/ — OCR 処理性能計測レポート（backend/test-results へ移動）
+## 4. benchmark-BE004002/ — OCR 処理性能計測レポート（backend/test-results へ移動）
 
-> **注意**: 本レポートのタスク BE004003 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです。
+> **注意**: 本レポートのタスク BE004002 は backend の「OCR 処理性能計測の実施」であり、localapp の「余白自動検出（BE004003）」とは別タスクです。
 
 | レポートパス | タスク | 実施日 | 評価内容 | 結論 |
 |---|---|---|---|---|
-| [performance-test-report-BE004003.md](../backend/test-results/benchmark-BE004003/performance-test-report-BE004003.md) | [BE004003](../backend/docs/BE-TASKS.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
+| [performance-test-report-BE004002.md](../backend/test-results/benchmark-BE004002/performance-test-report-BE004002.md) | [BE004002](../backend/docs/BE-TASKS.md) | 2026-09-01 | ndlocr_cli の CPU 実行時の処理時間計測 | 3 ページで OCR 全体時間 **396秒**（1ページあたり平均 **126秒**）。HTTP タイムアウト設定に注意が必要 |
 
 **測定対象工程**:
 - Docker Compose 起動時間
@@ -97,8 +97,8 @@ test_cases/
 - ZIP 解凍・PDF 生成時間
 
 **付属データ**:
-- `results-BE004003.csv` — 数値データ（CSV 形式）
-- `results-BE004003.txt` — 数値データ（テキスト形式）
+- `results-BE004002.csv` — 数値データ（CSV 形式）
+- `results-BE004002.txt` — 数値データ（テキスト形式）
 
 ---
 
