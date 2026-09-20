@@ -26,7 +26,7 @@
 | [FE001](#fe001) | `ZIP アーカイブをアップロードして OCR ジョブを開始する` |
 | [FE002](#fe002) | `OCR 処理の進捗をリアルタイムで確認する` |
 | [FE003](#fe003) | `OCR 完了後に検索可能 PDF をダウンロードする` |
-| [FE005](#fe005) | `frontend コンテナの健全性を維持する` |
+| [FE004](#fe004) | `frontend コンテナの健全性を維持する` |
 
 <a id="fe001"></a>
 ## ユースケースNo | 001
@@ -295,8 +295,8 @@ OCR 完了後に検索可能 PDF をダウンロードする
 
 ---
 
-<a id="fe005"></a>
-## ユースケースNo | 005
+<a id="fe004"></a>
+## ユースケースNo | 004
 
 ユースケース
 frontend コンテナの健全性を維持する
@@ -305,12 +305,12 @@ frontend コンテナの健全性を維持する
 
 | タスク | タスク起票日付 | タスク完了日付 | タスク種別 |
 |---|---|---|---|
-| [FE005001](#fe005001) frontend Docker healthcheck wget 不足修正 | 2026-09-13 | 2026-09-13 | バグ修正 |
+| [FE004001](#fe004001) frontend Docker healthcheck wget 不足修正 | 2026-09-13 | 2026-09-13 | バグ修正 |
 
-<a id="fe005001"></a>
-### FE005001 frontend Docker healthcheck wget 不足修正
+<a id="fe004001"></a>
+### FE004001 frontend Docker healthcheck wget 不足修正
 
-<div align="right"><a href="#fe005">タスク一覧へ↩︎</a></div>
+<div align="right"><a href="#fe004">タスク一覧へ↩︎</a></div>
 
 > 【計画】
 > - `docker-compose.yml` の frontend healthcheck を修正する
